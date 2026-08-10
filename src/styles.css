@@ -463,6 +463,10 @@ body:has(.combat-v033){overflow-y:auto;overflow-x:hidden}
 /* Eventos usam apenas a ilustração limpa, sem fragmentos da página do PDF. */
 .event-art img{aspect-ratio:4/3;object-fit:cover;object-position:center}
 
+/* Estado explícito para equipamentos incompatíveis com a classe atual. */
+.item-card button.equip-impossible:disabled{opacity:1;color:#796f66;border-color:#332c27;background:linear-gradient(#171412,#0b0908);box-shadow:inset 0 0 0 1px rgba(255,255,255,.015);cursor:not-allowed}
+.item-card button.equip-level-locked:disabled{opacity:.72;color:#a78f69;background:linear-gradient(#211a13,#100c09);cursor:not-allowed}
+
 /* Menu principal — composição cinematográfica de Eldravar */
 .screen:has(.menu-hero){max-width:none;padding:0}
 .menu-hero{position:relative;isolation:isolate;min-height:100vh;display:flex;align-items:center;justify-content:flex-start;overflow:hidden;padding:clamp(28px,6vw,96px);background-image:linear-gradient(90deg,rgba(4,7,10,.88) 0%,rgba(4,7,10,.66) 31%,rgba(4,7,10,.1) 63%,rgba(4,7,10,.26) 100%),linear-gradient(0deg,rgba(3,3,4,.68),transparent 42%),url('/assets/ui/menu/eldravar-war-menu.png');background-size:cover;background-position:center center}
