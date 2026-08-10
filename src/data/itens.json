@@ -1,0 +1,189 @@
+[
+  {
+    "id": "pocao_cura",
+    "nome": "Poção de Cura",
+    "tipo": "cura",
+    "valor": 8,
+    "preco": 6,
+    "descricao": "Recupera até 8 pontos de vida.",
+    "imagem": "assets/cards/consumiveis/pocao_cura.jpg",
+    "arte": "assets/art/consumables/pocao_cura.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "pocao_cura_maior",
+    "nome": "Poção de Cura Maior",
+    "tipo": "cura",
+    "valor": 15,
+    "preco": 12,
+    "descricao": "Recupera até 15 pontos de vida.",
+    "imagem": "assets/cards/consumiveis/pocao_cura_maior.jpg",
+    "arte": "assets/art/consumables/pocao_cura_maior.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "elixir_forca",
+    "nome": "Elixir de Força",
+    "tipo": "ataque",
+    "valor": 2,
+    "preco": 10,
+    "descricao": "Concede +2 de ataque durante o próximo combate.",
+    "imagem": "assets/cards/consumiveis/elixir_forca.jpg",
+    "arte": "assets/art/consumables/elixir_forca.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "tonico_guardiao",
+    "nome": "Tônico do Guardião",
+    "tipo": "escudo",
+    "valor": 2,
+    "preco": 9,
+    "descricao": "Reduz em 2 o dano de cada ataque inimigo no próximo combate.",
+    "imagem": "assets/cards/consumiveis/tonico_guardiao.jpg",
+    "arte": "assets/art/consumables/tonico_guardiao.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "essencia_vital",
+    "nome": "Essência Vital",
+    "tipo": "vida_max",
+    "valor": 2,
+    "preco": 20,
+    "descricao": "Aumenta permanentemente a vida máxima em 2 e cura 2 pontos.",
+    "imagem": "assets/cards/consumiveis/essencia_vital.jpg",
+    "arte": "assets/art/consumables/essencia_vital.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "bomba_fumaca",
+    "nome": "Bomba de Fumaça",
+    "tipo": "escudo",
+    "valor": 4,
+    "preco": 13,
+    "descricao": "Concede +4 de escudo no próximo combate.",
+    "imagem": "assets/cards/consumiveis/bomba_fumaca.jpg",
+    "arte": "assets/art/consumables/bomba_fumaca.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "oleo_encantado",
+    "nome": "Óleo Encantado",
+    "tipo": "ataque",
+    "valor": 3,
+    "preco": 15,
+    "descricao": "Concede +3 de ataque durante o próximo combate.",
+    "imagem": "assets/cards/consumiveis/oleo_encantado.jpg",
+    "arte": "assets/art/consumables/oleo_encantado.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "antidoto",
+    "nome": "Antídoto Real",
+    "tipo": "cura",
+    "valor": 5,
+    "preco": 8,
+    "descricao": "Recupera até 5 pontos de vida.",
+    "imagem": "assets/cards/consumiveis/antidoto.jpg",
+    "arte": "assets/art/consumables/antidoto.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "elixir_fenix",
+    "nome": "Elixir da Fênix",
+    "tipo": "vida_max",
+    "valor": 1,
+    "preco": 30,
+    "descricao": "Aumenta permanentemente a vida máxima em 1 e recupera toda a vida.",
+    "imagem": "assets/cards/catalogo/216_pocoes_001.jpg",
+    "arte": "assets/art/consumables/elixir_fenix.webp",
+    "raridade": "epico"
+  },
+  {
+    "id": "destilado_destino",
+    "nome": "Destilado do Destino",
+    "tipo": "ataque",
+    "valor": 4,
+    "preco": 18,
+    "descricao": "Concede +4 de ataque no próximo combate.",
+    "imagem": "assets/cards/catalogo/218_pocoes_003.jpg",
+    "arte": "assets/art/consumables/destilado_destino.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "oleo_fogo_ancestral",
+    "nome": "Óleo de Fogo Ancestral",
+    "tipo": "ataque",
+    "valor": 3,
+    "preco": 14,
+    "descricao": "Concede +3 de ataque no próximo combate.",
+    "imagem": "assets/cards/catalogo/219_pocoes_004.jpg",
+    "arte": "assets/art/consumables/oleo_fogo_ancestral.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "pocao_pele_pedra",
+    "nome": "Poção de Pele de Pedra",
+    "tipo": "escudo",
+    "valor": 4,
+    "preco": 16,
+    "descricao": "Concede +4 de escudo no próximo combate.",
+    "imagem": "assets/cards/catalogo/221_pocoes_006.jpg",
+    "arte": "assets/art/consumables/pocao_pele_pedra.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "lagrima_rainha",
+    "nome": "Lágrima da Rainha Perdida",
+    "tipo": "cura",
+    "valor": 12,
+    "preco": 18,
+    "descricao": "Recupera até 12 pontos de vida.",
+    "imagem": "assets/cards/catalogo/222_pocoes_007.jpg",
+    "arte": "assets/art/consumables/lagrima_rainha.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "elixir_reflexo",
+    "nome": "Elixir do Reflexo Prateado",
+    "tipo": "escudo",
+    "valor": 5,
+    "preco": 20,
+    "descricao": "Concede +5 de escudo no próximo combate.",
+    "imagem": "assets/cards/catalogo/223_pocoes_008.jpg",
+    "arte": "assets/art/consumables/elixir_reflexo.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "pocao_vigor",
+    "nome": "Poção de Vigor",
+    "tipo": "cura",
+    "valor": 3,
+    "preco": 5,
+    "descricao": "Recupera até 3 pontos de vida.",
+    "imagem": "assets/cards/catalogo/226_pocoes_011.jpg",
+    "arte": "assets/art/consumables/pocao_vigor.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "po_nevoa",
+    "nome": "Pó de Névoa de Lunargenta",
+    "tipo": "escudo",
+    "valor": 3,
+    "preco": 11,
+    "descricao": "Concede +3 de escudo no próximo combate.",
+    "imagem": "assets/cards/catalogo/227_pocoes_012.jpg",
+    "arte": "assets/art/consumables/po_nevoa.webp",
+    "raridade": "comum"
+  },
+  {
+    "id": "elixir_fera",
+    "nome": "Elixir da Fera Adormecida",
+    "tipo": "ataque",
+    "valor": 5,
+    "preco": 24,
+    "descricao": "Concede +5 de ataque no próximo combate.",
+    "imagem": "assets/cards/catalogo/229_pocoes_014.jpg",
+    "arte": "assets/art/consumables/elixir_fera.webp",
+    "raridade": "raro"
+  }
+]

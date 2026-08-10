@@ -1,0 +1,98 @@
+[
+  {
+    "id": "sentinela_runas",
+    "nome": "Sentinela Menor das Runas",
+    "ataque": 6,
+    "vida": 12,
+    "ouro": 6,
+    "dificuldade": 6,
+    "habilidade": "Rachadura nas Runas",
+    "imagem": "assets/cards/catalogo/188_monstros_001.jpg",
+    "arte": "assets/art/pilot/sentinela-runas-hd-v2.webp",
+    "raridade": "epico"
+  },
+  {
+    "id": "grumnak",
+    "nome": "Grumnak, o Cobrador do Pedágio",
+    "ataque": 2,
+    "vida": 4,
+    "ouro": 2,
+    "dificuldade": 2,
+    "habilidade": "Pedágio ou Sangue",
+    "imagem": "assets/cards/catalogo/189_monstros_002.jpg",
+    "arte": "assets/art/pilot/grumnak-hd-v2.webp",
+    "raridade": "incomum"
+  },
+  {
+    "id": "cabra_malgor",
+    "nome": "Cabra Amaldiçoada de Malgor",
+    "ataque": 4,
+    "vida": 8,
+    "ouro": 4,
+    "dificuldade": 4,
+    "habilidade": "Capricho Sombrio",
+    "imagem": "assets/cards/catalogo/190_monstros_003.jpg",
+    "arte": "assets/art/monsters/cabra_malgor.webp",
+    "raridade": "raro"
+  },
+  {
+    "id": "ilusionista_areias",
+    "nome": "Ilusionista das Areias",
+    "ataque": 4,
+    "vida": 6,
+    "ouro": 4,
+    "dificuldade": 4,
+    "habilidade": "Miragem ou Areia Real",
+    "imagem": "assets/cards/catalogo/191_monstros_004.jpg",
+    "arte": "assets/art/monsters/ilusionista_areias.webp",
+    "raridade": "raro"
+  },
+  {
+    "id": "guardia_seiva",
+    "nome": "Guardiã da Seiva Negra",
+    "ataque": 6,
+    "vida": 9,
+    "ouro": 5,
+    "dificuldade": 5,
+    "habilidade": "Seiva Regenerativa",
+    "imagem": "assets/cards/catalogo/192_monstros_005.jpg",
+    "arte": "assets/art/monsters/guardia_seiva.webp",
+    "raridade": "epico"
+  },
+  {
+    "id": "fanatico_orgulho",
+    "nome": "Fanático do Orgulho",
+    "ataque": 5,
+    "vida": 9,
+    "ouro": 5,
+    "dificuldade": 5,
+    "habilidade": "Orgulho Inabalável",
+    "imagem": "assets/cards/catalogo/193_monstros_006.jpg",
+    "arte": "assets/art/monsters/fanatico_orgulho.webp",
+    "raridade": "epico"
+  },
+  {
+    "id": "corvo_ignaroth",
+    "nome": "Corvo de Ignaroth",
+    "ataque": 4,
+    "vida": 6,
+    "ouro": 4,
+    "dificuldade": 4,
+    "habilidade": "Farejador de Riqueza",
+    "imagem": "assets/cards/catalogo/194_monstros_007.jpg",
+    "arte": "assets/art/monsters/corvo_ignaroth.webp",
+    "raridade": "raro"
+  },
+  {
+    "id": "espectro_rainha",
+    "nome": "Espectro da Rainha Perdida",
+    "ataque": 5,
+    "vida": 12,
+    "ouro": 6,
+    "dificuldade": 6,
+    "habilidade": "Luto Eterno",
+    "imagem": "assets/cards/catalogo/195_monstros_008.jpg",
+    "arte": "assets/art/monsters/espectro_rainha.webp",
+    "raridade": "epico"
+  }
+]

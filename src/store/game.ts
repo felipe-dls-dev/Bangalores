@@ -1,0 +1,267 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import heroes from '../data/herois.json'
+import equipments from '../data/equipamentos.json'
+import consumables from '../data/itens.json'
+import monsters from '../data/monstros.json'
+import territories from '../data/territorios.json'
+import subregions from '../data/subregioes.json'
+import events from '../data/eventos.json'
+import { EXTRA_EQUIPMENT, EXTRA_EVENTS, EXTRA_SUBREGION_ENEMIES } from '../data/extraContent'
+import { CLASS_OFFHANDS } from '../data/offhands'
+import { CLASS_HEADGEAR } from '../data/headgear'
+import { CLASS_ARMOR } from '../data/armorSets'
+import { CLASS_LEGWEAR } from '../data/legwear'
+import { CLASS_BOOTS } from '../data/boots'
+import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent } from '../types'
+
+const HD_ART:Record<string,string> = {
+  'assets/art/monsters/cabra_malgor.webp':'assets/art/hd/monsters/cabra-malgor-hd.webp',
+  'assets/art/monsters/corvo_ignaroth.webp':'assets/art/hd/monsters/corvo-ignaroth-hd.webp',
+  'assets/art/monsters/espectro_rainha.webp':'assets/art/hd/monsters/espectro-rainha-hd.webp',
+  'assets/art/monsters/fanatico_orgulho.webp':'assets/art/hd/monsters/fanatico-orgulho-hd.webp',
+  'assets/art/monsters/grumnak.webp':'assets/art/pilot/grumnak-hd-v2.webp',
+  'assets/art/monsters/guardia_seiva.webp':'assets/art/hd/monsters/guardia-seiva-hd.webp',
+  'assets/art/monsters/ilusionista_areias.webp':'assets/art/hd/monsters/ilusionista-areias-hd.webp',
+  'assets/art/monsters/sentinela_runas.webp':'assets/art/pilot/sentinela-runas-hd-v2.webp',
+  'assets/art/bosses/boss_bandoleiro.webp':'assets/art/hd/bosses/capitao-bandoleiros-hd.webp',
+  'assets/art/bosses/boss_seiva.webp':'assets/art/hd/bosses/matriarca-seiva-hd.webp',
+  'assets/art/bosses/boss_minotauro.webp':'assets/art/hd/bosses/rei-minotauro-hd.webp',
+  'assets/art/bosses/boss_necromante.webp':'assets/art/hd/bosses/necromante-supremo-hd.webp',
+  'assets/art/bosses/boss_malgor.webp':'assets/art/hd/bosses/malgor-rei-sombrio-hd.webp',
+  'assets/art/bosses/boss_troll.webp':'assets/art/pilot/troll-anciao-hd-v2.webp'
+}
+const hdArt=(path:string)=>HD_ART[path]??path
+const hdCollectionArt=(path:string|undefined,collection:string)=>{
+  if(!path)return path
+  const filename=path.split('/').pop()
+  const stem=filename?.replace(/\.[^.]+$/,'')
+  return stem?`assets/art/hd/${collection}/${stem}-hd.webp`:path
+}
+
+const EQUIPMENT_HD_OVERRIDES:Record<string,string> = {
+  lamina_sentinela:'assets/art/hd/equipment/lamina-ultimo-sentinela-hd-v2.webp',
+  machado_cinzento:'assets/art/hd/equipment/machado-montanhas-cinzentas-hd-v2.webp'
+}
+
+export const HEROES = heroes as Hero[]
+const RAW_EQUIPMENT = [...(equipments as Equipment[]).map(equipment=>({
+  ...equipment,
+  arte:EQUIPMENT_HD_OVERRIDES[equipment.id]??hdCollectionArt(equipment.arte,'equipment')
+})),...EXTRA_EQUIPMENT,...CLASS_OFFHANDS,...CLASS_HEADGEAR,...CLASS_ARMOR,...CLASS_LEGWEAR,...CLASS_BOOTS]
+export const CONSUMABLES = (consumables as Consumable[]).map(consumable=>({...consumable,arte:hdCollectionArt(consumable.arte,'consumables')}))
+const SUBREGIONS_LEVEL:Record<string,number>=Object.fromEntries((subregions as Subregion[]).map(subregion=>[subregion.id,subregion.nivelMin]))
+const extraMonsters:Enemy[]=Object.entries(EXTRA_SUBREGION_ENEMIES).flatMap(([subregionId,list])=>list.map((monster,index)=>({id:`extra_${subregionId}_${index}`,nome:monster.nome,ataque:monster.ataque,vida:monster.vida,ouro:monster.ouro,dificuldade:SUBREGIONS_LEVEL[subregionId]??1,habilidade:monster.habilidade,imagem:monster.arte,arte:monster.arte,raridade:'incomum'})))
+export const MONSTERS = [...(monsters as Enemy[]).map(monster=>({...monster,arte:monster.arte?hdArt(monster.arte):monster.arte})),...extraMonsters]
+export const TERRITORIES = territories as Territory[]
+export const SUBREGIONS = (subregions as Subregion[]).map(subregion=>({...subregion,inimigos:[...subregion.inimigos.map(enemy=>({...enemy,arte:hdArt(enemy.arte)})),...(EXTRA_SUBREGION_ENEMIES[subregion.id]??[])],chefe:{...subregion.chefe,arte:hdArt(subregion.chefe.arte)}}))
+const eventArtFromSource=(event:GameEvent)=>{
+  const sourceNumber=Number(event.imagem.match(/\/(\d{3})_eventos_/)?.[1])
+  const artNumber=sourceNumber>=196&&sourceNumber<=215?sourceNumber-195:1
+  return `assets/art/events/event-${String(artNumber).padStart(2,'0')}.jpg`
+}
+export const EVENTS = [...(events as GameEvent[]).map(event=>({...event,arte:eventArtFromSource(event)})),...EXTRA_EVENTS]
+
+const slotOrder: Slot[] = ['amuleto','capacete','anel_1','peitoral','anel_2','calcas','mao_esquerda','mao_direita','botas']
+export const SLOT_ORDER = slotOrder
+
+const starter: Record<string,{equipped:Partial<Record<Slot,string>>, items:Record<string,number>, gold:number}> = {
+  guerreiro: { equipped:{mao_direita:'lamina_vento',mao_esquerda:'leve_estrada',peitoral:'armor_leao_valoria'}, items:{pocao_cura:1}, gold:15 },
+  guardiao: { equipped:{mao_direita:'machado_bronze',mao_esquerda:'pesado_bronze',peitoral:'armor_pesada_khardur'}, items:{pocao_cura:2}, gold:10 },
+  arcanista: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:20 },
+  cacadora: { equipped:{mao_direita:'facas_predador',mao_esquerda:'broquel_raposa',peitoral:'traje_raposa'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:18 }
+}
+
+// Mantidos para a Galeria e compatibilidade com saves antigos.
+const bossByDifficulty: Record<number,Enemy> = {
+  1:{id:'boss_bandoleiro',nome:'Capitão dos Bandoleiros',ataque:5,vida:26,ouro:16,dificuldade:1,habilidade:'Tiro Duplo a cada 3º turno',imagem:'assets/cards/ladroes/1_pipo.jpg',arte:'assets/art/hd/bosses/capitao-bandoleiros-hd.webp',raridade:'epico',boss:true,maxFases:2},
+  2:{id:'boss_seiva',nome:'Matriarca da Seiva Negra',ataque:6,vida:34,ouro:22,dificuldade:2,habilidade:'Regenera 3 de vida ao mudar de fase',imagem:'assets/cards/catalogo/192_monstros_005.jpg',arte:'assets/art/hd/bosses/matriarca-seiva-hd.webp',raridade:'epico',boss:true,maxFases:2},
+  3:{id:'boss_troll',nome:'Troll Ancião de Khar-Dur',ataque:7,vida:42,ouro:28,dificuldade:3,habilidade:'Regeneração e Pisotear',imagem:'assets/cards/catalogo/188_monstros_001.jpg',arte:'assets/art/pilot/troll-anciao-hd-v2.webp',raridade:'epico',boss:true,maxFases:2},
+  4:{id:'boss_minotauro',nome:'Rei Minotauro Escarlate',ataque:8,vida:50,ouro:34,dificuldade:4,habilidade:'Fúria abaixo de 50% da vida',imagem:'assets/cards/catalogo/193_monstros_006.jpg',arte:'assets/art/hd/bosses/rei-minotauro-hd.webp',raridade:'lendario',boss:true,maxFases:2},
+  5:{id:'boss_necromante',nome:'Necromante Supremo',ataque:9,vida:58,ouro:42,dificuldade:5,habilidade:'Dreno de vida',imagem:'assets/cards/catalogo/195_monstros_008.jpg',arte:'assets/art/hd/bosses/necromante-supremo-hd.webp',raridade:'lendario',boss:true,maxFases:2},
+  6:{id:'boss_malgor',nome:'Malgor, o Rei Sombrio',ataque:10,vida:72,ouro:60,dificuldade:6,habilidade:'Três fases e ataque crescente',imagem:'assets/cards/equipamentos/coracao_malgor.jpg',arte:'assets/art/hd/bosses/malgor-rei-sombrio-hd.webp',raridade:'mitico',boss:true,maxFases:3}
+}
+export const BOSSES = bossByDifficulty
+
+const xpCosts=[10,14,19,25,33,43,56,72,92,116,145,180,220,265,315,370,430,495]
+function costForLevel(level:number){
+  while(xpCosts.length < level){ xpCosts.push(Math.ceil(xpCosts[xpCosts.length-1]*1.2)) }
+  return xpCosts[level-1] ?? 10
+}
+function deriveLevel(totalXp:number){ let lvl=1, spent=0; while(totalXp >= spent+costForLevel(lvl)){spent+=costForLevel(lvl);lvl++} return {lvl,progress:totalXp-spent,next:costForLevel(lvl)} }
+function eqById(id?:string){ return EQUIPMENT.find(e=>e.id===id) }
+export type WeaponAffinity='guerreiro'|'guardiao'|'cacadora'|'arcanista'
+const EQUIPMENT_LEVELS=[1,3,5,7,9,11,14,17]
+const LEVEL_RARITY:Rarity[]=['comum','incomum','raro','raro','epico','epico','lendario','lendario']
+const FREE_EQUIPMENT=new Set(['lamina_vento','leve_estrada','armor_leao_valoria','machado_bronze','pesado_bronze','armor_pesada_khardur','orbe_veu','grimorio_lua','veste_estrelas','facas_predador','broquel_raposa','traje_raposa','pederneira_ancestrais','armadura_couro','botas_viajante','calcas_batedor'])
+function equipmentPower(e:Equipment){return e.ataque*2+e.defesa*2+e.vida*.5}
+function balanceEquipment(items:Equipment[]){
+ const groups=new Map<string,Equipment[]>()
+ for(const item of items){const affinity=item.slot==='mao_direita'?equipmentAffinity(item):undefined;const owner=item.classeExclusiva??affinity??'universal';const key=`${owner}:${item.slot}`;groups.set(key,[...(groups.get(key)??[]),item])}
+ const balanced=new Map<string,Equipment>()
+ for(const group of groups.values()){
+  const sorted=[...group].sort((a,b)=>equipmentPower(a)-equipmentPower(b)||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'))
+  sorted.forEach((item,index)=>{const tier=sorted.length===1?0:Math.round(index*7/(sorted.length-1));const free=FREE_EQUIPMENT.has(item.id);const level=free?1:EQUIPMENT_LEVELS[tier];balanced.set(item.id,{...item,nivelMinimo:level,raridade:free?item.raridade:LEVEL_RARITY[tier],preco:Math.max(item.preco,8+level*3)})})
+ }
+ return items.map(item=>balanced.get(item.id)??{...item,nivelMinimo:1})
+}
+export const EQUIPMENT=balanceEquipment(RAW_EQUIPMENT)
+export function equipmentRequiredLevel(e:Equipment){return Math.max(1,e.nivelMinimo??1)}
+export function equipmentLevelAllowed(e:Equipment,xp:number){return deriveLevel(xp).lvl>=equipmentRequiredLevel(e)}
+export function equipmentAffinity(e:Equipment):WeaponAffinity|undefined{const name=e.nome.toLocaleLowerCase('pt-BR');if(/espada|lâmina/.test(name))return'guerreiro';if(/machado|martelo/.test(name))return'guardiao';if(/faca|adaga/.test(name))return'cacadora';if(/cajado|orbe/.test(name))return'arcanista';return undefined}
+export function equipmentAttackForHero(e:Equipment,heroId?:string){const affinity=equipmentAffinity(e);return affinity&&heroId!==affinity?Math.max(0,e.ataque-1):e.ataque}
+export function equipmentCompatibility(e:Equipment,heroId?:string){const affinity=equipmentAffinity(e);if(!affinity)return{affinity:undefined,compatible:true,penalty:0};const compatible=heroId===affinity;return{affinity,compatible,penalty:compatible?0:e.ataque-equipmentAttackForHero(e,heroId)}}
+export function equipmentClassAllowed(e:Equipment,heroId?:string){return !e.classeExclusiva||e.classeExclusiva===heroId}
+
+interface Loot { gold:number; xp:number; itemId?:string; equipmentId?:string; title:string }
+interface EventResult { message:string; roll?:number; tone:'good'|'bad'|'neutral' }
+interface GameState {
+ screen:Screen; heroId?:string; hp:number; gold:number; xp:number; attributePoints:number; attr:{vida:number;ataque:number;defesa:number};
+ inventory:Record<string,number>; equipmentBag:string[]; equipped:Partial<Record<Slot,string>>; territory:string; regionId:string; subregionId?:string; victories:Record<string,number>; subregionVictories:Record<string,number>; bossesDefeated:string[]; subregionBossesDefeated:string[];
+ enemy?:Enemy; enemyHp:number; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; heroSkillUsed:boolean; itemSkillUsed:boolean; shield:number;
+ loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number;
+ newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; continueGame:()=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void;
+ attack:()=>void; heroSkill:()=>void; itemSkill:()=>void; useConsumable:(id:string)=>void; flee:()=>void;
+ buyConsumable:(id:string)=>void; buyEquipment:(id:string)=>void; sellConsumable:(id:string)=>void; sellEquipment:(id:string)=>void;
+ equip:(id:string)=>void; unequip:(slot:Slot)=>void; addAttribute:(k:'vida'|'ataque'|'defesa')=>void; setSelectedGallery:(n:number)=>void; toggleShopMode:()=>void; resolveEvent:(accept:boolean)=>void; finishEvent:()=>void; finishLoot:()=>void; clearSave:()=>void;
+}
+
+function currentSubregion(s:GameState){ return SUBREGIONS.find(x=>x.id===s.subregionId) }
+function rarityForVariant(v:string):Rarity{ return v==='Campeão'?'epico':v==='Elite'?'raro':v==='Veterano'?'incomum':'comum' }
+
+function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
+  const base=sub.inimigos[Math.floor(Math.random()*sub.inimigos.length)]
+  const targetLevel=Math.max(sub.nivelMin,Math.min(sub.nivelMax+1,Math.round((sub.nivelMin+sub.nivelMax)/2 + (Math.random()-.5)*2)))
+  const effectiveLevel=Math.max(targetLevel,Math.min(sub.nivelMax+2,Math.round(targetLevel*.7+playerLevel*.3)))
+  const r=Math.random()
+  const variant=r<.06?'Campeão':r<.21?'Elite':r<.48?'Veterano':'Comum'
+  const hpMult=variant==='Campeão'?2.05:variant==='Elite'?1.55:variant==='Veterano'?1.22:1
+  const atkMult=variant==='Campeão'?1.42:variant==='Elite'?1.24:variant==='Veterano'?1.1:1
+  const goldMult=variant==='Campeão'?2.3:variant==='Elite'?1.7:variant==='Veterano'?1.28:1
+  const levelDelta=Math.max(0,effectiveLevel-sub.nivelMin)
+  const scaledHp=Math.ceil(base.vida*(1+levelDelta*.12)*hpMult)
+  const scaledAtk=Math.ceil(base.ataque*(1+levelDelta*.07)*atkMult)
+  const prefix=variant==='Comum'?'':`${variant}: `
+  const extra=variant==='Campeão'?' • Aura de campeão':variant==='Elite'?' • Técnica de elite':variant==='Veterano'?' • Experiência de combate':''
+  return {
+    id:`${sub.id}_${base.nome.toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${Date.now()}`,
+    nome:prefix+base.nome, ataque:scaledAtk, vida:scaledHp, ouro:Math.ceil(base.ouro*(1+levelDelta*.08)*goldMult), dificuldade:effectiveLevel,
+    habilidade:base.habilidade+extra, imagem:base.arte, arte:base.arte, raridade:rarityForVariant(variant), elite:variant==='Elite'||variant==='Campeão', nivel:effectiveLevel, variante:variant
+  }
+}
+function buildBoss(sub:Subregion):Enemy{
+  const b=sub.chefe
+  return {id:`boss_${sub.id}`,nome:b.nome,ataque:b.ataque,vida:b.vida,ouro:b.ouro,dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:b.maxFases,fase:1,nivel:sub.nivelMax}
+}
+
+export const useGame = create<GameState>()(persist((set,get)=>({
+  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,
+  newGame:(heroId:string)=>{ const h=HEROES.find(x=>x.id===heroId)!; const st=starter[heroId]??starter.guerreiro; const initialHp=h.vida+Object.values(st.equipped).reduce((sum,id)=>sum+(eqById(id)?.vida??0),0); set({screen:'map',heroId,hp:initialHp,gold:st.gold,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{...st.items},equipmentBag:[],equipped:{...st.equipped},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemy:undefined,loot:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0}) },
+  setScreen:(screen:Screen)=>set({screen}), continueGame:()=>set({screen:get().heroId?'map':'select'}),
+  openRegion:(t:Territory)=>set({regionId:t.id,territory:t.nome,subregionId:undefined,explorationNote:undefined,screen:'region'}),
+  openSubregion:(subregionId:string)=>{const sub=SUBREGIONS.find(x=>x.id===subregionId);const region=sub&&TERRITORIES.find(x=>x.id===sub.regionId);if(!sub||!region)return;set({regionId:region.id,territory:region.nome,subregionId:sub.id,explorationNote:`Destino selecionado no mapa: ${sub.nome}.`,screen:'region'})},
+  startEncounter:(subregionId:string)=>{
+    const sub=SUBREGIONS.find(x=>x.id===subregionId); if(!sub)return
+    const s=get(); const progress=s.subregionVictories[sub.id]??0
+    set({subregionId:sub.id,territory:sub.nome,explorationNote:undefined})
+    if(progress>=sub.encontrosNecessarios && !s.subregionBossesDefeated.includes(sub.id)){ set({screen:'bossIntro',enemy:buildBoss(sub)}); return }
+    // Parte das explorações revela uma carta de missão antes do próximo combate.
+    const eventRoll=Math.random()
+    if(eventRoll<.35){const currentEvent=EVENTS[Math.floor(Math.random()*EVENTS.length)];set({screen:'event',currentEvent,eventResult:undefined});return}
+    const lvl=deriveLevel(s.xp).lvl; beginCombat(set,get,buildEnemy(sub,lvl))
+  },
+  startBoss:()=>{const sub=currentSubregion(get());if(sub)beginCombat(set,get,buildBoss(sub))},
+  attack:()=>playerAttack(set,get,'Ataque',0),
+  heroSkill:()=>{ const s=get(); if(s.heroSkillUsed||!s.playerTurn||s.animating||!s.enemy)return; set({heroSkillUsed:true}); const h=HEROES.find(x=>x.id===s.heroId); let bonus=2; if(s.heroId==='guardiao'){set({shield:s.shield+3}); addLog(set,'Habilidade do herói: +3 Escudo.'); enemyAfterDelay(set,get);return} if(s.heroId==='guerreiro'){set({shield:s.shield+2});addLog(set,'Habilidade do herói: +2 Escudo.');enemyAfterDelay(set,get);return} if(s.heroId==='arcanista')bonus=4; if(s.heroId==='cacadora')bonus=3; addLog(set,`${h?.nome}: habilidade ativada!`); playerAttack(set,get,'Habilidade',bonus,true) },
+  itemSkill:()=>{ const s=get(); if(s.itemSkillUsed||!s.playerTurn||s.animating||!s.enemy)return; const equippedIds=Object.values(s.equipped) as (string|undefined)[]; const item=equippedIds.map(id=>eqById(id)).find(e=>e?.habilidade); if(!item){addLog(set,'Nenhum equipamento com habilidade ativa.');return} set({itemSkillUsed:true}); const txt=item.habilidade.toLowerCase(); if(txt.includes('escudo')){set({shield:s.shield+3});addLog(set,`${item.nome}: +3 Escudo.`);enemyAfterDelay(set,get);return} if(txt.includes('recupere')){const m=maxHp(s);set({hp:Math.min(m,s.hp+4)});addLog(set,`${item.nome}: recuperou 4 de vida.`);enemyAfterDelay(set,get);return} playerAttack(set,get,item.nome,3,true) },
+  useConsumable:(id:string)=>{ const s=get(), it=CONSUMABLES.find(x=>x.id===id); if(!it||(s.inventory[id]??0)<=0)return; if(s.screen==='combat'&&(!s.playerTurn||s.animating||!s.enemy))return; const inv={...s.inventory,[id]:(s.inventory[id]??0)-1}; if(inv[id]<=0)delete inv[id]; if(it.tipo==='cura')set({inventory:inv,hp:Math.min(maxHp(s),s.hp+it.valor)}); else if(it.tipo==='vida_max')set({inventory:inv,attr:{...s.attr,vida:s.attr.vida+it.valor},hp:Math.min(maxHp(s)+it.valor,s.hp+it.valor)}); else if(it.tipo==='escudo')set({inventory:inv,shield:s.shield+it.valor}); else {set({inventory:inv,attr:{...s.attr,ataque:s.attr.ataque+Math.max(1,it.valor)}})}; if(s.screen==='combat'){addLog(set,`${it.nome} utilizado: ${it.descricao}`);enemyAfterDelay(set,get)} },
+  flee:()=>{const s=get();if(!s.playerTurn||s.animating)return;if(Math.random()<.6){addLog(set,'Fuga bem-sucedida.');setTimeout(()=>set({screen:s.subregionId?'region':'map',enemy:undefined,pendingAttackBonus:0,shield:0}),450)}else{addLog(set,'A fuga falhou!');enemyAfterDelay(set,get)}},
+  buyConsumable:(id:string)=>{const s=get(),it=CONSUMABLES.find(x=>x.id===id);if(!it||s.gold<it.preco)return;set({gold:s.gold-it.preco,inventory:{...s.inventory,[id]:(s.inventory[id]??0)+1}})},
+  buyEquipment:(id:string)=>{const s=get(),e=eqById(id);if(!e||!equipmentClassAllowed(e,s.heroId)||!equipmentLevelAllowed(e,s.xp)||s.gold<e.preco||s.equipmentBag.length>=8)return;set({gold:s.gold-e.preco,equipmentBag:[...s.equipmentBag,id]})},
+  sellConsumable:(id:string)=>{const s=get(),it=CONSUMABLES.find(x=>x.id===id);if(!it||(s.inventory[id]??0)<=0)return;const inv={...s.inventory,[id]:(s.inventory[id]??0)-1};if(inv[id]<=0)delete inv[id];set({inventory:inv,gold:s.gold+Math.max(1,Math.floor(it.preco/2))})},
+  sellEquipment:(id:string)=>{const s=get(),idx=s.equipmentBag.indexOf(id),e=eqById(id);if(idx<0||!e)return;const bag=[...s.equipmentBag];bag.splice(idx,1);set({equipmentBag:bag,gold:s.gold+Math.max(1,Math.floor(e.preco/2))})},
+  equip:(id:string)=>{const s=get(),e=eqById(id);if(!e||!equipmentClassAllowed(e,s.heroId)||!equipmentLevelAllowed(e,s.xp))return;const idx=s.equipmentBag.indexOf(id);if(idx<0)return;let slot=e.slot; if(slot==='anel_1'&&s.equipped.anel_1) slot='anel_2'; const old=s.equipped[slot]; const bag=[...s.equipmentBag];bag.splice(idx,1);if(old)bag.push(old);set({equipmentBag:bag,equipped:{...s.equipped,[slot]:id}})},
+  unequip:(slot:Slot)=>{const s=get(),id=s.equipped[slot];if(!id||s.equipmentBag.length>=8)return;const eq={...s.equipped};delete eq[slot];set({equipped:eq,equipmentBag:[...s.equipmentBag,id]})},
+  addAttribute:(k:'vida'|'ataque'|'defesa')=>{const s=get();if(s.attributePoints<=0)return;set({attributePoints:s.attributePoints-1,attr:{...s.attr,[k]:s.attr[k]+1},hp:k==='vida'?s.hp+1:s.hp})},
+  setSelectedGallery:(selectedGallery:number)=>set({selectedGallery}),
+  toggleShopMode:()=>set({shopMode:get().shopMode==='buy'?'sell':'buy'}),
+  resolveEvent:(accept:boolean)=>resolveExplorationEvent(set,get,accept),
+  finishEvent:()=>{const result=get().eventResult;set({screen:'region',currentEvent:undefined,eventResult:undefined,explorationNote:result?.message})},
+  finishLoot:()=>set({screen:get().subregionId?'region':'map',enemy:undefined,enemyHp:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,pendingAttackBonus:0}),
+  clearSave:()=>set({screen:'menu',heroId:undefined,hp:0,gold:0,xp:0,inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0})
+}),{name:'bangalores-save-v1',merge:(persisted:any,current:any)=>({...current,...persisted,regionId:persisted?.regionId??'campos_dourados',subregionVictories:persisted?.subregionVictories??{},subregionBossesDefeated:persisted?.subregionBossesDefeated??[],pendingAttackBonus:persisted?.pendingAttackBonus??0,currentEvent:persisted?.currentEvent,eventResult:persisted?.eventResult,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:persisted?.screen==='combat'&&persisted?.enemy?true:(persisted?.playerTurn??false)})}))
+
+function stats(s:GameState){const h=HEROES.find(x=>x.id===s.heroId);let atk=(h?.ataque??0)+s.attr.ataque+s.pendingAttackBonus,life=(h?.vida??0)+s.attr.vida,def=s.attr.defesa;Object.values(s.equipped).forEach(id=>{const e=eqById(id);if(e){atk+=equipmentAttackForHero(e,s.heroId);life+=e.vida;def+=e.defesa}});return{atk,life,def}}
+export function maxHp(s:GameState){return stats(s).life}
+export function attackValue(s:GameState){return stats(s).atk}
+export function defenseValue(s:GameState){return stats(s).def}
+export function levelInfo(xp:number){return deriveLevel(xp)}
+
+function advanceExploration(s:GameState){
+ const id=s.subregionId
+ return id?{...s.subregionVictories,[id]:(s.subregionVictories[id]??0)+1}:s.subregionVictories
+}
+
+function resolveExplorationEvent(set:any,get:any,accept:boolean){
+ const s=get() as GameState
+ const event=s.currentEvent
+ if(!event||s.eventResult)return
+ const progress=advanceExploration(s)
+ if(!accept){set({subregionVictories:progress,eventResult:{message:`Você evitou ${event.nome} e seguiu viagem. A exploração avançou.`,tone:'neutral'}});return}
+
+ const roll=Math.floor(Math.random()*6)+1
+ const common={subregionVictories:progress}
+ if(event.tipo==='ouro'){set({...common,gold:s.gold+event.valor,eventResult:{message:`Missão concluída: +${event.valor} de ouro.`,roll,tone:'good'}});return}
+ if(event.tipo==='dano'){const damage=Math.min(Math.max(0,s.hp-1),event.valor);set({...common,hp:s.hp-damage,eventResult:{message:damage?`O perigo cobrou seu preço: -${damage} de vida.`:'Você escapou por pouco e não perdeu vida.',roll,tone:damage?'bad':'neutral'}});return}
+ if(event.tipo==='cura'){const healed=Math.min(event.valor,Math.max(0,maxHp(s)-s.hp));set({...common,hp:s.hp+healed,eventResult:{message:`Você recebeu ajuda e recuperou ${healed} de vida.`,roll,tone:'good'}});return}
+ if(event.tipo==='escudo'){set({...common,shield:s.shield+event.valor,eventResult:{message:`Aliado conquistado: +${event.valor} de escudo para o próximo combate.`,roll,tone:'good'}});return}
+ if(event.tipo==='ataque'){set({...common,pendingAttackBonus:s.pendingAttackBonus+event.valor,eventResult:{message:`Bênção de combate: +${event.valor} de ataque no próximo combate.`,roll,tone:'good'}});return}
+ if(event.tipo==='dano_ouro'){const damage=Math.min(Math.max(0,s.hp-1),1);set({...common,hp:s.hp-damage,gold:s.gold+event.valor,eventResult:{message:`Você interrompeu o ritual: -${damage} de vida e +${event.valor} de ouro.`,roll,tone:'neutral'}});return}
+ if(event.tipo==='equipamento'){
+   if(s.equipmentBag.length>=8){const gold=Math.max(2,event.valor*2);set({...common,gold:s.gold+gold,eventResult:{message:`Sua mochila estava cheia; o ferreiro pagou ${gold} de ouro pelo material.`,roll,tone:'neutral'}});return}
+   const pool=EQUIPMENT.filter(e=>equipmentLevelAllowed(e,s.xp)&&equipmentClassAllowed(e,s.heroId));const equipment=pool[Math.floor(Math.random()*pool.length)]??EQUIPMENT[0];set({...common,equipmentBag:[...s.equipmentBag,equipment.id],eventResult:{message:`O ferreiro entregou: ${equipment.nome}.`,roll,tone:'good'}});return
+ }
+ if(event.tipo==='item'){const item=CONSUMABLES[Math.floor(Math.random()*CONSUMABLES.length)];set({...common,inventory:{...s.inventory,[item.id]:(s.inventory[item.id]??0)+1},eventResult:{message:`Você recebeu: ${item.nome}.`,roll,tone:'good'}});return}
+
+ const success=roll>=4
+ const amount=Math.max(1,event.valor)
+ if(success){set({...common,gold:s.gold+amount,eventResult:{message:`Sucesso! Você recebeu ${amount} de ouro.`,roll,tone:'good'}})}
+ else {const loss=Math.min(s.gold,Math.max(1,Math.ceil(amount/2)));set({...common,gold:s.gold-loss,eventResult:{message:`A tentativa falhou. Você perdeu ${loss} de ouro.`,roll,tone:'bad'}})}
+}
+
+function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState;set({screen:'combat',enemy,enemyHp:enemy.vida,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:s.shield+(s.heroId==='guardiao'?2:0)});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),800)}
+function addLog(set:any,msg:string){set((s:GameState)=>({combatLog:[...s.combatLog.slice(-12),msg]}))}
+function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=false){
+ const s=get() as GameState
+ if(!s.enemy||!s.playerTurn||s.animating&&!alreadyAnimating)return
+ const dmg=Math.max(1,attackValue(s)+bonus+Math.floor(Math.random()*4)-1)
+ set({animating:true,playerTurn:false,animationActor:'hero',lastDamage:dmg})
+ addLog(set,`${label}: ${dmg} de dano.`)
+ setTimeout(()=>{
+  const now=get() as GameState,en=now.enemy
+  if(!en){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
+  const hp=now.enemyHp-dmg
+  if(en.boss&&en.maxFases&&hp>0){const threshold=en.vida*(1-(en.fase??1)/en.maxFases);if((en.fase??1)<en.maxFases&&hp<=threshold){const nf=(en.fase??1)+1;set({enemy:{...en,fase:nf,ataque:en.ataque+1},enemyHp:Math.max(hp,1)});addLog(set,`FASE ${nf}! ${en.nome} ficou mais agressivo.`);enemyAfterDelay(set,get);return}}
+  if(hp<=0)victory(set,get);else{set({enemyHp:hp});enemyAfterDelay(set,get)}
+ },430)
+}
+function runEnemyAttack(set:any,get:any){const current=get() as GameState;if(!current.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}enemyAttack(set,get)}
+function enemyAfterDelay(set:any,get:any){const enemyId=(get() as GameState).enemy?.id;set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined});setTimeout(()=>runEnemyAttack(set,get),650);setTimeout(()=>{const stalled=get() as GameState;if(stalled.screen==='combat'&&stalled.enemy?.id===enemyId&&stalled.animating&&!stalled.playerTurn){set({animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined});addLog(set,'Fluxo do combate recuperado. Seu turno continua.')}},1800)}
+function enemyAttack(set:any,get:any){
+ const s=get() as GameState
+ if(!s.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
+ let raw=Math.max(1,s.enemy.ataque+Math.floor(Math.random()*3)-1-defenseValue(s)),shield=s.shield
+ const blocked=Math.min(shield,raw),enemyName=s.enemy.nome
+ raw-=blocked;shield-=blocked
+ const hp=Math.max(0,s.hp-raw)
+ set({shield,animating:true,animationActor:'enemy',lastDamage:raw,playerTurn:false})
+ setTimeout(()=>{
+  const current=get() as GameState
+  if(current.screen!=='combat'||!current.enemy)return
+  set({hp,animating:false,animationActor:undefined,playerTurn:hp>0,combatTurn:current.combatTurn+1})
+  addLog(set,`${enemyName} causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.`)
+  if(hp<=0){addLog(set,'Você foi derrotado e retornou aos Campos Dourados.');setTimeout(()=>set({screen:'map',territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,hp:maxHp({...current,hp} as GameState),enemy:undefined,pendingAttackBonus:0,shield:0}),900)}
+ },430)
+}
+function victory(set:any,get:any){const s=get() as GameState,en=s.enemy!;const gold=en.ouro;const before=deriveLevel(s.xp).lvl;const xp=s.xp+gold;const after=deriveLevel(xp).lvl;const points=s.attributePoints+Math.max(0,after-before);const key=s.subregionId??s.territory;const victories={...s.victories,[s.territory]:(s.victories[s.territory]??0)+1};const subregionVictories={...s.subregionVictories,[key]:(s.subregionVictories[key]??0)+1};let bosses=[...s.bossesDefeated],subBosses=[...s.subregionBossesDefeated];if(en.boss){if(!bosses.includes(String(en.dificuldade)))bosses.push(String(en.dificuldade));if(s.subregionId&&!subBosses.includes(s.subregionId))subBosses.push(s.subregionId)}let equipmentBag=[...s.equipmentBag],inventory={...s.inventory};let equipmentId:string|undefined,itemId:string|undefined;if(Math.random()<(en.boss ? .98 : en.elite ? .78 : .58)){if(Math.random()<.55&&equipmentBag.length<8){const pool=EQUIPMENT.filter(e=>equipmentRequiredLevel(e)<=after&&equipmentRequiredLevel(e)<=Math.max(3,(en.nivel??en.dificuldade)+2)&&equipmentClassAllowed(e,s.heroId));const e=pool[Math.floor(Math.random()*pool.length)]??EQUIPMENT.find(item=>equipmentRequiredLevel(item)===1&&equipmentClassAllowed(item,s.heroId))??EQUIPMENT[0];equipmentBag.push(e.id);equipmentId=e.id}else{const i=CONSUMABLES[Math.floor(Math.random()*CONSUMABLES.length)];inventory[i.id]=(inventory[i.id]??0)+1;itemId=i.id}}
+set({gold:s.gold+gold,xp,attributePoints:points,victories,subregionVictories,bossesDefeated:bosses,subregionBossesDefeated:subBosses,equipmentBag,inventory,screen:'loot',enemy:undefined,enemyHp:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,loot:{gold,xp:gold,itemId,equipmentId,title:en.boss?'CHEFE DERROTADO':en.variante==='Campeão'?'CAMPEÃO DERROTADO':'VITÓRIA'}})}

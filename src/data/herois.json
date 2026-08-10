@@ -1,0 +1,42 @@
+[
+  {
+    "id": "guerreiro",
+    "nome": "Guerreiro de Eldravar",
+    "vida": 18,
+    "ataque": 4,
+    "habilidade": "Uma vez por combate, reduza em 2 o dano recebido.",
+    "imagem": "assets/heroes/guerreiro.jpg",
+    "arte": "assets/heroes/guerreiro.jpg",
+    "raridade": "heroico"
+  },
+  {
+    "id": "cacadora",
+    "nome": "Ladino de Eldravar",
+    "vida": 15,
+    "ataque": 5,
+    "habilidade": "Uma vez por combate, execute um ataque furtivo com +3 de dano.",
+    "imagem": "assets/heroes/ladino-eldravar-hd.webp",
+    "arte": "assets/heroes/ladino-eldravar-hd.webp",
+    "raridade": "heroico"
+  },
+  {
+    "id": "arcanista",
+    "nome": "Arcanista do Conclave",
+    "vida": 13,
+    "ataque": 6,
+    "habilidade": "Pode gastar 1 ouro para repetir uma rolagem.",
+    "imagem": "assets/heroes/arcanista.jpg",
+    "arte": "assets/heroes/arcanista.jpg",
+    "raridade": "heroico"
+  },
+  {
+    "id": "guardiao",
+    "nome": "Guardião das Montanhas",
+    "vida": 20,
+    "ataque": 3,
+    "habilidade": "Começa cada combate com 2 pontos de escudo.",
+    "imagem": "assets/heroes/guardiao.jpg",
+    "arte": "assets/heroes/guardiao.jpg",
+    "raridade": "heroico"
+  }
+]
