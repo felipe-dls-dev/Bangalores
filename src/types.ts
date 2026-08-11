@@ -1,5 +1,5 @@
 export type Slot = 'amuleto'|'capacete'|'bolsa'|'anel_1'|'peitoral'|'anel_2'|'calcas'|'mao_esquerda'|'mao_direita'|'botas'
-export type Screen = 'menu'|'select'|'map'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'combat'|'bossIntro'|'loot'|'cardCreator'
+export type Screen = 'menu'|'select'|'map'|'guild'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'combat'|'bossIntro'|'loot'|'cardCreator'
 export type Rarity = 'comum'|'incomum'|'raro'|'epico'|'lendario'|'mitico'|'heroico'
 export interface Hero { id:string; nome:string; vida:number; ataque:number; habilidade:string; imagem:string; arte?:string; raridade?:Rarity }
 export interface Equipment { id:string; nome:string; slot:Slot; preco:number; ataque:number; vida:number; defesa:number; habilidade:string; imagem:string; arte?:string; raridade?:Rarity; classeExclusiva?:'guerreiro'|'guardiao'|'cacadora'|'arcanista'; tipoEquipamento?:string; nivelMinimo?:number; capacidade?:number }
