@@ -321,7 +321,7 @@ body:has(.combat-v033){overflow:hidden}
 .item-art-wrap .art-preview-trigger{min-height:118px}
 .fighter-art>.art-preview-trigger{position:absolute;inset:0;z-index:1}
 .fighter-art>.art-preview-trigger>img{width:100%;height:100%;min-height:0;object-fit:cover}
-.art-preview-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(5,3,2,.78);backdrop-filter:blur(7px);pointer-events:none;animation:artPreviewIn .16s ease-out}
+.art-preview-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:rgba(5,3,2,.78);backdrop-filter:blur(7px);pointer-events:auto;animation:artPreviewIn .16s ease-out}
 .art-preview-card{display:grid;grid-template-columns:minmax(260px,480px) minmax(260px,380px);width:min(900px,calc(100vw - 48px));height:min(720px,calc(100vh - 48px));overflow:hidden;border:1px solid #b17a35;border-radius:16px;background:linear-gradient(145deg,#21160e,#0e0a07);box-shadow:0 28px 90px #000,0 0 34px rgba(205,145,58,.18)}
 .art-preview-card>img{width:100%;height:100%;object-fit:contain;background:radial-gradient(circle,#291d13,#070504)}
 .art-preview-copy{display:flex;flex-direction:column;justify-content:center;gap:16px;padding:34px;border-left:1px solid #65451f;color:#cdbda5}
@@ -330,8 +330,10 @@ body:has(.combat-v033){overflow:hidden}
 .art-preview-copy>span{font-size:1rem;line-height:1.55;color:#c8b9a3}
 .art-preview-copy b{padding:13px 0;border-top:1px solid #55391d;border-bottom:1px solid #55391d;color:#ebc978;font-size:.9rem;line-height:1.45}
 .art-preview-copy em{margin-top:auto;color:#7f7464;font-size:.72rem;font-style:normal}
+.art-preview-close{position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;padding:0;border-radius:50%;font-size:1.45rem;line-height:1;background:rgba(12,8,6,.88)}
+.art-preview-copy{position:relative}
 @keyframes artPreviewIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
-@media(max-width:700px){.art-preview-overlay{display:none}.art-preview-trigger{cursor:default}}
+@media(max-width:700px){.art-preview-overlay{padding:10px}.art-preview-card{grid-template-columns:1fr;width:min(96vw,520px);height:min(94vh,760px)}.art-preview-card>img{min-height:0}.art-preview-copy{padding:20px;border-left:0;border-top:1px solid #65451f;gap:9px}.art-preview-trigger{cursor:zoom-in}.art-preview-copy em{margin-top:0}}
 
 /* Moldura ilustrada oficial: a arte fica atrás e todos os dados permanecem dinâmicos. */
 .game-card.ornate-card{width:min(410px,100%);aspect-ratio:2/3;display:block;overflow:visible;border:0;border-radius:0;background:#090706;box-shadow:0 22px 55px #000;isolation:isolate}

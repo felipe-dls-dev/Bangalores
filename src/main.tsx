@@ -38,14 +38,15 @@ function artStats(card:any,kind?:string){
 function assetUrl(path:string){return /^(data:|blob:|https?:)/.test(path)?path:'./'+path}
 function ArtPreview({image,name,text,stats,className,imgStyle}:{image:string;name:string;text?:string;stats?:string;className?:string;imgStyle?:React.CSSProperties}){
  const [open,setOpen]=React.useState(false)
+ React.useEffect(()=>{if(!open)return;const close=(event:KeyboardEvent)=>{if(event.key==='Escape')setOpen(false)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[open])
  const equipment=className?.includes('slot-art-preview')?EQUIPMENT.find(item=>item.nome===name):undefined
  const emblem=equipment?cardEmblem(equipment,'Equipamento'):undefined
  const owner=equipment?.classeExclusiva??(equipment?equipmentAffinity(equipment):undefined)
  const src=assetUrl(image)
- return <span className={`art-preview-trigger ${className??''}`} onMouseEnter={()=>setOpen(true)} onMouseLeave={()=>setOpen(false)} onFocus={()=>setOpen(true)} onBlur={()=>setOpen(false)} tabIndex={0} aria-label={`Ampliar arte de ${name}`}>
+ return <span className={`art-preview-trigger ${className??''}`} onClick={event=>{event.stopPropagation();setOpen(true)}} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();setOpen(true)}}} role="button" tabIndex={0} aria-haspopup="dialog" aria-label={`Ampliar arte de ${name}`}>
   <img src={src} alt={name} style={imgStyle}/>
   {emblem&&<img className="slot-class-emblem" src={'./'+emblem} alt={owner?classNames[owner]:'Universal'} aria-hidden="true"/>}
-  {open&&createPortal(<span className="art-preview-overlay" aria-hidden="true"><span className="art-preview-card"><img src={src} alt=""/><span className="art-preview-copy"><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}<em>Mantenha o mouse sobre a imagem</em></span></span></span>,document.body)}
+  {open&&createPortal(<span className="art-preview-overlay" role="dialog" aria-modal="true" aria-label={`Arte completa de ${name}`} onClick={()=>setOpen(false)}><span className="art-preview-card" onClick={event=>event.stopPropagation()}><img src={src} alt={name}/><span className="art-preview-copy"><button className="art-preview-close" onClick={()=>setOpen(false)} aria-label="Fechar visualização">×</button><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}<em>Clique fora da janela ou pressione Esc para fechar</em></span></span></span>,document.body)}
  </span>
 }
 function cardRarity(card:any,kind?:string):Rarity{
