@@ -148,7 +148,7 @@ function ShopScreen(){
  const availableConsumables=g.shopMode==='buy'?CONSUMABLES:ownedConsumables
  const availableEquipment=g.shopMode==='buy'?EQUIPMENT:ownedEquipment
  const weapons=availableEquipment.filter(e=>e.slot==='mao_direita')
- const gear=availableEquipment.filter(e=>e.slot!=='mao_direita')
+ const gear=availableEquipment.filter(e=>e.slot!=='mao_direita'&&(!e.classeExclusiva||e.classeExclusiva===g.heroId))
  const tabCount=(target:ShopTab)=>target==='Armas'?weapons.length:target==='Equipamentos'?gear.length:availableConsumables.length
  const filters=tab==='Armas'?weaponFilters:tab==='Equipamentos'?equipmentFilters:consumableFilters
  const matchesWeapon=(e:any,id:string)=>id==='Todos'||(id==='neutra'?!equipmentAffinity(e):equipmentAffinity(e)===id)
