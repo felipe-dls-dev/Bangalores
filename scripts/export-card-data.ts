@@ -7,13 +7,13 @@ import {
 
 const publicRoot = 'https://felipe-dls-dev.github.io/Bangalores/'
 const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Arcanista'}
-const slotNames:Record<string,string>={amuleto:'Amuleto',capacete:'Capacete',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
+const slotNames:Record<string,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
 const artOf=(card:any)=>card.arte??card.imagem??''
 const row=(card:any,categoria:string,extra:Record<string,unknown>={})=>{
   const arte=artOf(card)
   return {
     ID:card.id??'',Nome:card.nome??'',Categoria:categoria,Subcategoria:'',Classe:'Universal',Slot:'',Raridade:card.raridade??'comum',
-    'Nível mínimo':'',Preço:'',Ataque:card.ataque??'',Defesa:card.defesa??'',Vida:card.vida??'',Ouro:card.ouro??'',Valor:card.valor??'',
+    'Nível mínimo':'',Preço:'',Ataque:card.ataque??'',Defesa:card.defesa??'',Vida:card.vida??'',Ouro:card.ouro??'',Valor:card.valor??'',Capacidade:card.capacidade??'',
     'Habilidade / descrição':card.habilidade??card.descricao??'','Caminho da arte':arte,'URL pública da arte':arte?publicRoot+arte:'','Imagem original':card.imagem??'',...extra
   }
 }

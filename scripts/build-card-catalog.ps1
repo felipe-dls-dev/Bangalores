@@ -33,7 +33,7 @@ $rows = Get-Content -LiteralPath $jsonPath -Raw -Encoding UTF8 | ConvertFrom-Jso
 $headers = @($rows[0].PSObject.Properties.Name)
 $sheet = New-Object System.Text.StringBuilder
 [void]$sheet.Append('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>')
-$widths=@(24,38,16,22,15,18,14,14,12,11,11,11,11,11,60,55,70,55)
+$widths=@(24,38,16,22,15,18,14,14,12,11,11,11,11,11,14,60,55,70,55)
 for($i=0;$i -lt $headers.Count;$i++){[void]$sheet.Append("<col min=`"$($i+1)`" max=`"$($i+1)`" width=`"$($widths[$i])`" customWidth=`"1`"/>")}
 [void]$sheet.Append('</cols><sheetData>')
 [void]$sheet.Append('<row r="1" ht="28" customHeight="1">')
@@ -42,7 +42,7 @@ for($i=0;$i -lt $headers.Count;$i++){$cell="$(Column-Name ($i+1))1";$value=Escap
 for($r=0;$r -lt $rows.Count;$r++){
   $rowNumber=$r+2;[void]$sheet.Append("<row r=`"$rowNumber`">")
   for($c=0;$c -lt $headers.Count;$c++){
-    $property=$headers[$c];$value=$rows[$r].$property;$cell="$(Column-Name ($c+1))$rowNumber";$style=if($c -ge 14){2}else{0}
+    $property=$headers[$c];$value=$rows[$r].$property;$cell="$(Column-Name ($c+1))$rowNumber";$style=if($c -ge 15){2}else{0}
     if($value -is [int] -or $value -is [long] -or $value -is [double]){[void]$sheet.Append("<c r=`"$cell`" s=`"$style`"><v>$value</v></c>")}
     else{$escaped=Escape-Xml $value;[void]$sheet.Append("<c r=`"$cell`" t=`"inlineStr`" s=`"$style`"><is><t xml:space=`"preserve`">$escaped</t></is></c>")}
   }
