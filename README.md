@@ -6,6 +6,11 @@
 
 O jogo roda diretamente no navegador e salva o progresso localmente no dispositivo do jogador.
 
+## Catálogo das cartas
+
+A planilha com os dados das cartas e os endereços de suas artes está disponível em
+[docs/catalogo-cartas-bangalores.xlsx](docs/catalogo-cartas-bangalores.xlsx).
+
 **Versão web atual: v0.3.0 — Premium UI** — Web RPG
 
 Versão web experimental do jogo de cartas/RPG, construída com React + TypeScript + Vite + Zustand + Framer Motion.
