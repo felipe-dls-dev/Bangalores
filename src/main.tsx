@@ -112,7 +112,7 @@ function App(){
       {g.screen==='menu'&&<MainMenu/>}{g.screen==='select'&&<HeroSelect/>}{g.screen==='map'&&<MapScreen/>}{g.screen==='region'&&<RegionScreen/>}{g.screen==='event'&&<EventScreen/>}{g.screen==='character'&&<CharacterScreen/>}{g.screen==='inventory'&&<InventoryScreen/>}{g.screen==='equipment'&&<EquipmentScreen/>}{g.screen==='shop'&&<ShopScreen/>}{g.screen==='gallery'&&<GalleryScreen/>}{g.screen==='combat'&&<CombatScreen/>}{g.screen==='bossIntro'&&<BossIntro/>}{g.screen==='loot'&&<LootScreen/>}{g.screen==='cardCreator'&&<CardCreatorScreen/>}
     </motion.main>
    </AnimatePresence>
-   {fleeConfirm&&<div className="escape-confirm-overlay" role="presentation" onClick={()=>setFleeConfirm(false)}><section className="escape-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="escape-flee-title" onClick={event=>event.stopPropagation()}><Footprints/><small>ATALHO ESC DURANTE O COMBATE</small><h2 id="escape-flee-title">Tentar fugir?</h2><p>Esta ação utiliza a mesma mecânica do botão <b>Fugir</b>: há 60% de chance de escapar. Se a tentativa falhar, o inimigo realizará seu turno.</p>{(!g.playerTurn||g.animating)&&<span>Aguarde o seu turno para tentar fugir.</span>}<div><button onClick={()=>setFleeConfirm(false)}>Continuar combate</button><button className="primary" disabled={!g.playerTurn||g.animating} onClick={()=>{setFleeConfirm(false);g.flee()}}><Footprints/>Tentar fugir (60%)</button></div></section></div>}
+   {fleeConfirm&&<div className="escape-confirm-overlay" role="presentation" onClick={()=>setFleeConfirm(false)}><section className="escape-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="escape-flee-title" onClick={event=>event.stopPropagation()}><Footprints/><small>ATALHO ESC DURANTE O COMBATE</small><h2 id="escape-flee-title">Tentar fugir?</h2><p>Um dado amarelo será rolado: <b>5–6</b> permite escapar, <b>4</b> mantém sua ação e <b>1–3</b> encerra seu turno.</p>{(!g.playerTurn||g.animating)&&<span>Aguarde o seu turno para tentar fugir.</span>}<div><button onClick={()=>setFleeConfirm(false)}>Continuar combate</button><button className="primary" disabled={!g.playerTurn||g.animating} onClick={()=>{setFleeConfirm(false);g.flee()}}><Footprints/>Rolar dado de fuga</button></div></section></div>}
    {hero&&g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='cardCreator'&&<footer className="footer-tip">Bangalore's • Auto-save ativo • A aventura continua no próximo acesso.</footer>}
  </div>
 }
@@ -169,6 +169,7 @@ function CombatDiceRoll({roll}:{roll:{attacker:'hero'|'enemy';naturalAttackRoll:
  const defenseDie=<div className="combat-roll-side defense-side"><span>DEFESA • BASE {roll.defenseBase}</span><motion.b className="combat-die defense-die" animate={{rotate:[0,-120,-260,-370,-360],scale:[.75,1.18,.88,1]}} transition={{duration:.55}}>{roll.defenseRoll}</motion.b><em><strong>{roll.attackRoll===1?'Não se aplica':roll.defenseEffect}</strong></em></div>
  return <motion.aside className={`combat-dice-roll ${roll.attacker}`} initial={{opacity:0,y:-18,scale:.9}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-12}} aria-live="assertive"><small>{roll.attacker==='hero'?'SEU TESTE DE ATAQUE':'ATAQUE DO INIMIGO'}</small><div className="combat-dice-pair">{roll.attacker==='hero'?<>{attackDie}<i>VS</i>{defenseDie}</>:<>{defenseDie}<i>VS</i>{attackDie}</>}</div><p>{roll.selfDamage?'FALHA CRÍTICA — DANO NO ATACANTE':'DANO'} <strong>{roll.selfDamage||roll.damage}</strong>{roll.shieldBlocked?` • ESCUDO BLOQUEOU ${roll.shieldBlocked}`:''}</p></motion.aside>
 }
+function FleeDiceRoll({roll}:{roll:{roll:number;outcome:'failed'|'neutral'|'success'}}){const message=roll.outcome==='success'?'Fuga bem-sucedida!':roll.outcome==='neutral'?'Você mantém sua ação':'Fuga falhou — turno perdido';return <motion.aside className={`flee-dice-roll ${roll.outcome}`} initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:.92}} aria-live="assertive"><small>TESTE DE FUGA</small><motion.b className="combat-die flee-die" animate={{rotate:[0,130,280,420,360],scale:[.7,1.22,.88,1]}} transition={{duration:.65}}>{roll.roll}</motion.b><strong>{message}</strong><span>1–3 perde o turno • 4 mantém a ação • 5–6 foge</span></motion.aside>}
 function CombatScreen(){
  const g=useGame(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
@@ -199,12 +200,12 @@ function CombatScreen(){
        <button className="attack-btn premium-action" disabled={disabled} onClick={g.attack}><Sword/>Atacar</button>
        <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={g.heroSkill}><Sparkles/>Habilidade do herói</button>
        <button className="premium-action" disabled={disabled||g.itemSkillUsed} onClick={g.itemSkill}><Shield/>Habilidade do item</button>
-       <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Fugir (60%)</button>
+       <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Tentar fugir</button>
       </div>
    </Panel>
 
    <Panel title="Rolagem dos dados" className="combat-dice-panel combat-dice-area">
-    <AnimatePresence mode="wait">{g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>:<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque e defesa aparecerão aqui.</small></motion.div>}</AnimatePresence>
+    <AnimatePresence mode="wait">{g.fleeRoll&&g.animating?<FleeDiceRoll key={`flee-${g.combatTurn}-${g.fleeRoll.roll}`} roll={g.fleeRoll}/>:g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>:<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque, defesa e fuga aparecerão aqui.</small></motion.div>}</AnimatePresence>
    </Panel>
 
    <Panel className="combat-consumables-panel combat-consumables-area">
