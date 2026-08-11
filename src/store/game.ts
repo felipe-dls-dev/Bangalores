@@ -117,10 +117,11 @@ export function equipmentClassAllowed(e:Equipment,heroId?:string){return !e.clas
 
 interface Loot { gold:number; xp:number; itemId?:string; equipmentId?:string; title:string }
 interface EventResult { message:string; roll?:number; tone:'good'|'bad'|'neutral' }
+interface CombatRoll { attacker:'hero'|'enemy'; attackRoll:number; defenseRoll:number; attackBase:number; defenseBase:number; attackTotal:number; defenseTotal:number; damage:number; shieldBlocked?:number }
 interface GameState {
  screen:Screen; heroId?:string; hp:number; gold:number; xp:number; attributePoints:number; attr:{vida:number;ataque:number;defesa:number};
  inventory:Record<string,number>; equipmentBag:string[]; equipped:Partial<Record<Slot,string>>; territory:string; regionId:string; subregionId?:string; victories:Record<string,number>; subregionVictories:Record<string,number>; bossesDefeated:string[]; subregionBossesDefeated:string[];
- enemy?:Enemy; enemyHp:number; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; heroSkillUsed:boolean; itemSkillUsed:boolean; shield:number;
+ enemy?:Enemy; enemyHp:number; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; combatRoll?:CombatRoll; heroSkillUsed:boolean; itemSkillUsed:boolean; shield:number;
  loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; customCards:CustomCard[];
  newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; continueGame:()=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void;
  attack:()=>void; heroSkill:()=>void; itemSkill:()=>void; useConsumable:(id:string)=>void; flee:()=>void;
@@ -158,7 +159,7 @@ function buildBoss(sub:Subregion):Enemy{
 }
 
 export const useGame = create<GameState>()(persist((set,get)=>({
-  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,customCards:[],
+  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,customCards:[],
   newGame:(heroId:string)=>{ const h=HEROES.find(x=>x.id===heroId)!; const st=starter[heroId]??starter.guerreiro; const initialHp=h.vida+Object.values(st.equipped).reduce((sum,id)=>sum+(eqById(id)?.vida??0),0); set({screen:'map',heroId,hp:initialHp,gold:st.gold,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{...st.items},equipmentBag:[],equipped:{...st.equipped},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemy:undefined,loot:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0}) },
   setScreen:(screen:Screen)=>set({screen}), continueGame:()=>set({screen:get().heroId?'map':'select'}),
   openRegion:(t:Territory)=>set({regionId:t.id,territory:t.nome,subregionId:undefined,explorationNote:undefined,screen:'region'}),
@@ -234,39 +235,44 @@ function resolveExplorationEvent(set:any,get:any,accept:boolean){
  else {const loss=Math.min(s.gold,Math.max(1,Math.ceil(amount/2)));set({...common,gold:s.gold-loss,eventResult:{message:`A tentativa falhou. Você perdeu ${loss} de ouro.`,roll,tone:'bad'}})}
 }
 
-function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState;set({screen:'combat',enemy,enemyHp:enemy.vida,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:s.shield+(s.heroId==='guardiao'?2:0)});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),800)}
+function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState;set({screen:'combat',enemy,enemyHp:enemy.vida,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:s.shield+(s.heroId==='guardiao'?2:0)});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),800)}
 function addLog(set:any,msg:string){set((s:GameState)=>({combatLog:[...s.combatLog.slice(-12),msg]}))}
 function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=false){
  const s=get() as GameState
  if(!s.enemy||!s.playerTurn||s.animating&&!alreadyAnimating)return
- const dmg=Math.max(1,attackValue(s)+bonus+Math.floor(Math.random()*4)-1)
- set({animating:true,playerTurn:false,animationActor:'hero',lastDamage:dmg})
- addLog(set,`${label}: ${dmg} de dano.`)
+ const attackBase=attackValue(s)+bonus,defenseBase=Math.max(0,(s.enemy.dificuldade??1)-2),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1
+ const attackTotal=attackBase+attackRoll,defenseTotal=defenseBase+defenseRoll,dmg=Math.max(1,attackTotal-defenseTotal)
+ const combatRoll:CombatRoll={attacker:'hero',attackRoll,defenseRoll,attackBase,defenseBase,attackTotal,defenseTotal,damage:dmg}
+ set({animating:true,playerTurn:false,animationActor:'hero',lastDamage:dmg,combatRoll})
+ addLog(set,`${label}: ataque ${attackBase}+${attackRoll} contra defesa ${defenseBase}+${defenseRoll} = ${dmg} de dano.`)
  setTimeout(()=>{
   const now=get() as GameState,en=now.enemy
   if(!en){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
   const hp=now.enemyHp-dmg
   if(en.boss&&en.maxFases&&hp>0){const threshold=en.vida*(1-(en.fase??1)/en.maxFases);if((en.fase??1)<en.maxFases&&hp<=threshold){const nf=(en.fase??1)+1;set({enemy:{...en,fase:nf,ataque:en.ataque+1},enemyHp:Math.max(hp,1)});addLog(set,`FASE ${nf}! ${en.nome} ficou mais agressivo.`);enemyAfterDelay(set,get);return}}
   if(hp<=0)victory(set,get);else{set({enemyHp:hp});enemyAfterDelay(set,get)}
- },430)
+ },700)
 }
 function runEnemyAttack(set:any,get:any){const current=get() as GameState;if(!current.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}enemyAttack(set,get)}
-function enemyAfterDelay(set:any,get:any){const enemyId=(get() as GameState).enemy?.id;set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined});setTimeout(()=>runEnemyAttack(set,get),650);setTimeout(()=>{const stalled=get() as GameState;if(stalled.screen==='combat'&&stalled.enemy?.id===enemyId&&stalled.animating&&!stalled.playerTurn){set({animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined});addLog(set,'Fluxo do combate recuperado. Seu turno continua.')}},1800)}
+function enemyAfterDelay(set:any,get:any){const enemyId=(get() as GameState).enemy?.id;set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});setTimeout(()=>runEnemyAttack(set,get),650);setTimeout(()=>{const stalled=get() as GameState;if(stalled.screen==='combat'&&stalled.enemy?.id===enemyId&&stalled.animating&&!stalled.playerTurn){set({animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});addLog(set,'Fluxo do combate recuperado. Seu turno continua.')}},2100)}
 function enemyAttack(set:any,get:any){
  const s=get() as GameState
  if(!s.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
- let raw=Math.max(1,s.enemy.ataque+Math.floor(Math.random()*3)-1-defenseValue(s)),shield=s.shield
+ const attackBase=s.enemy.ataque,defenseBase=defenseValue(s),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1
+ const attackTotal=attackBase+attackRoll,defenseTotal=defenseBase+defenseRoll
+ let raw=Math.max(1,attackTotal-defenseTotal),shield=s.shield
  const blocked=Math.min(shield,raw),enemyName=s.enemy.nome
  raw-=blocked;shield-=blocked
  const hp=Math.max(0,s.hp-raw)
- set({shield,animating:true,animationActor:'enemy',lastDamage:raw,playerTurn:false})
+ const combatRoll:CombatRoll={attacker:'enemy',attackRoll,defenseRoll,attackBase,defenseBase,attackTotal,defenseTotal,damage:raw,shieldBlocked:blocked}
+ set({shield,animating:true,animationActor:'enemy',lastDamage:raw,combatRoll,playerTurn:false})
  setTimeout(()=>{
   const current=get() as GameState
   if(current.screen!=='combat'||!current.enemy)return
-  set({hp,animating:false,animationActor:undefined,playerTurn:hp>0,combatTurn:current.combatTurn+1})
-  addLog(set,`${enemyName} causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.`)
+  set({hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:hp>0,combatTurn:current.combatTurn+1})
+  addLog(set,`${enemyName}: ataque ${attackBase}+${attackRoll} contra defesa ${defenseBase}+${defenseRoll}; causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.`)
   if(hp<=0){addLog(set,'Você foi derrotado e retornou aos Campos Dourados.');setTimeout(()=>set({screen:'map',territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,hp:maxHp({...current,hp} as GameState),enemy:undefined,pendingAttackBonus:0,shield:0}),900)}
- },430)
+ },700)
 }
 function victory(set:any,get:any){const s=get() as GameState,en=s.enemy!;const gold=en.ouro;const before=deriveLevel(s.xp).lvl;const xp=s.xp+gold;const after=deriveLevel(xp).lvl;const points=s.attributePoints+Math.max(0,after-before);const key=s.subregionId??s.territory;const victories={...s.victories,[s.territory]:(s.victories[s.territory]??0)+1};const subregionVictories={...s.subregionVictories,[key]:(s.subregionVictories[key]??0)+1};let bosses=[...s.bossesDefeated],subBosses=[...s.subregionBossesDefeated];if(en.boss){if(!bosses.includes(String(en.dificuldade)))bosses.push(String(en.dificuldade));if(s.subregionId&&!subBosses.includes(s.subregionId))subBosses.push(s.subregionId)}let equipmentBag=[...s.equipmentBag],inventory={...s.inventory};let equipmentId:string|undefined,itemId:string|undefined;if(Math.random()<(en.boss ? .98 : en.elite ? .78 : .58)){if(Math.random()<.55&&equipmentBag.length<equipmentBagCapacity(s)){const pool=EQUIPMENT.filter(e=>equipmentRequiredLevel(e)<=after&&equipmentRequiredLevel(e)<=Math.max(3,(en.nivel??en.dificuldade)+2)&&equipmentClassAllowed(e,s.heroId));const e=pool[Math.floor(Math.random()*pool.length)]??EQUIPMENT.find(item=>equipmentRequiredLevel(item)===1&&equipmentClassAllowed(item,s.heroId))??EQUIPMENT[0];equipmentBag.push(e.id);equipmentId=e.id}else{const i=CONSUMABLES[Math.floor(Math.random()*CONSUMABLES.length)];inventory[i.id]=(inventory[i.id]??0)+1;itemId=i.id}}
 set({gold:s.gold+gold,xp,attributePoints:points,victories,subregionVictories,bossesDefeated:bosses,subregionBossesDefeated:subBosses,equipmentBag,inventory,screen:'loot',enemy:undefined,enemyHp:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,loot:{gold,xp:gold,itemId,equipmentId,title:en.boss?'CHEFE DERROTADO':en.variante==='Campeão'?'CAMPEÃO DERROTADO':'VITÓRIA'}})}
