@@ -117,11 +117,11 @@ export function equipmentClassAllowed(e:Equipment,heroId?:string){return !e.clas
 
 interface Loot { gold:number; xp:number; itemId?:string; equipmentId?:string; title:string }
 interface EventResult { message:string; roll?:number; tone:'good'|'bad'|'neutral' }
-interface CombatRoll { attacker:'hero'|'enemy'; attackRoll:number; defenseRoll:number; attackBase:number; defenseBase:number; attackTotal:number; defenseTotal:number; damage:number; shieldBlocked?:number }
+interface CombatRoll { attacker:'hero'|'enemy'; naturalAttackRoll:number; attackRoll:number; attackBonus:number; defenseRoll:number; attackBase:number; defenseBase:number; attackEffect:string; defenseEffect:string; damage:number; selfDamage:number; shieldBlocked?:number }
 interface GameState {
  screen:Screen; heroId?:string; hp:number; gold:number; xp:number; attributePoints:number; attr:{vida:number;ataque:number;defesa:number};
  inventory:Record<string,number>; equipmentBag:string[]; equipped:Partial<Record<Slot,string>>; territory:string; regionId:string; subregionId?:string; victories:Record<string,number>; subregionVictories:Record<string,number>; bossesDefeated:string[]; subregionBossesDefeated:string[];
- enemy?:Enemy; enemyHp:number; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; combatRoll?:CombatRoll; heroSkillUsed:boolean; itemSkillUsed:boolean; shield:number;
+ enemy?:Enemy; enemyHp:number; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; combatRoll?:CombatRoll; heroRollBonus:number; enemyRollBonus:number; heroSkillUsed:boolean; itemSkillUsed:boolean; shield:number;
  loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; customCards:CustomCard[];
  newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; continueGame:()=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void;
  attack:()=>void; heroSkill:()=>void; itemSkill:()=>void; useConsumable:(id:string)=>void; flee:()=>void;
@@ -159,7 +159,7 @@ function buildBoss(sub:Subregion):Enemy{
 }
 
 export const useGame = create<GameState>()(persist((set,get)=>({
-  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,customCards:[],
+  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroRollBonus:0,enemyRollBonus:0,heroSkillUsed:false,itemSkillUsed:false,shield:0,selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,customCards:[],
   newGame:(heroId:string)=>{ const h=HEROES.find(x=>x.id===heroId)!; const st=starter[heroId]??starter.guerreiro; const initialHp=h.vida+Object.values(st.equipped).reduce((sum,id)=>sum+(eqById(id)?.vida??0),0); set({screen:'map',heroId,hp:initialHp,gold:st.gold,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{...st.items},equipmentBag:[],equipped:{...st.equipped},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemy:undefined,loot:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0}) },
   setScreen:(screen:Screen)=>set({screen}), continueGame:()=>set({screen:get().heroId?'map':'select'}),
   openRegion:(t:Territory)=>set({regionId:t.id,territory:t.nome,subregionId:undefined,explorationNote:undefined,screen:'region'}),
@@ -191,7 +191,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   toggleShopMode:()=>set({shopMode:get().shopMode==='buy'?'sell':'buy'}),
   resolveEvent:(accept:boolean)=>resolveExplorationEvent(set,get,accept),
   finishEvent:()=>{const result=get().eventResult;set({screen:'region',currentEvent:undefined,eventResult:undefined,explorationNote:result?.message})},
-  finishLoot:()=>set({screen:get().subregionId?'region':'map',enemy:undefined,enemyHp:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,pendingAttackBonus:0}),
+  finishLoot:()=>set({screen:get().subregionId?'region':'map',enemy:undefined,enemyHp:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroRollBonus:0,enemyRollBonus:0,heroSkillUsed:false,itemSkillUsed:false,shield:0,pendingAttackBonus:0}),
   clearSave:()=>set({screen:'menu',heroId:undefined,hp:0,gold:0,xp:0,inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0}),
   addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>{const s=get();set({customCards:[...s.customCards,{...card,id:`custom_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,criadoEm:Date.now()}]})},
   removeCustomCard:(id:string)=>{const s=get();set({customCards:s.customCards.filter((c:CustomCard)=>c.id!==id)})}
@@ -235,20 +235,34 @@ function resolveExplorationEvent(set:any,get:any,accept:boolean){
  else {const loss=Math.min(s.gold,Math.max(1,Math.ceil(amount/2)));set({...common,gold:s.gold-loss,eventResult:{message:`A tentativa falhou. Você perdeu ${loss} de ouro.`,roll,tone:'bad'}})}
 }
 
-function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState;set({screen:'combat',enemy,enemyHp:enemy.vida,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:s.shield+(s.heroId==='guardiao'?2:0)});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),800)}
+function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState;set({screen:'combat',enemy,enemyHp:enemy.vida,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroRollBonus:0,enemyRollBonus:0,heroSkillUsed:false,itemSkillUsed:false,shield:s.shield+(s.heroId==='guardiao'?2:0)});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),800)}
 function addLog(set:any,msg:string){set((s:GameState)=>({combatLog:[...s.combatLog.slice(-12),msg]}))}
+function attackEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Ataque desajeitado':roll<=4?'Ataque normal':roll===5?'Ataque forte':'Ataque crítico'}
+function defenseEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Defesa fraca':roll<=4?'Defesa normal':roll===5?'Defesa forte':'Defesa perfeita'}
+function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number){
+ if(attackRoll===1)return{damage:0,selfDamage:Math.max(1,Math.floor(attackBase*.2))}
+ const effectiveAttack=attackBase+(attackRoll===5?1:0)
+ let damage=Math.max(1,effectiveAttack-defenseBase)
+ if(attackRoll===6)damage=Math.max(1,Math.floor(damage*1.5))
+ if(defenseRoll===1)damage=Math.max(1,Math.floor(damage*1.5))
+ else if(defenseRoll===2)damage+=1
+ else if(defenseRoll===5)damage=Math.max(0,damage-1)
+ else if(defenseRoll===6)damage=Math.floor(damage*.5)
+ return{damage,selfDamage:0}
+}
 function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=false){
  const s=get() as GameState
  if(!s.enemy||!s.playerTurn||s.animating&&!alreadyAnimating)return
- const attackBase=attackValue(s)+bonus,defenseBase=Math.max(0,(s.enemy.dificuldade??1)-2),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1
- const attackTotal=attackBase+attackRoll,defenseTotal=defenseBase+defenseRoll,dmg=Math.max(1,attackTotal-defenseTotal)
- const combatRoll:CombatRoll={attacker:'hero',attackRoll,defenseRoll,attackBase,defenseBase,attackTotal,defenseTotal,damage:dmg}
- set({animating:true,playerTurn:false,animationActor:'hero',lastDamage:dmg,combatRoll})
- addLog(set,`${label}: ataque ${attackBase}+${attackRoll} contra defesa ${defenseBase}+${defenseRoll} = ${dmg} de dano.`)
+ const attackBase=attackValue(s)+bonus,defenseBase=Math.max(0,(s.enemy.dificuldade??1)-2),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.heroRollBonus,attackRoll=Math.min(6,naturalAttackRoll+attackBonus),defenseRoll=Math.floor(Math.random()*6)+1
+ const {damage,selfDamage}=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
+ const combatRoll:CombatRoll={attacker:'hero',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage}
+ set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus})
+ addLog(set,`${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}`)
  setTimeout(()=>{
   const now=get() as GameState,en=now.enemy
   if(!en){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
-  const hp=now.enemyHp-dmg
+  if(selfDamage){const heroHp=Math.max(0,now.hp-selfDamage);set({hp:heroHp});if(heroHp<=0){addLog(set,'Você foi derrotado pela falha crítica e retornou aos Campos Dourados.');setTimeout(()=>{const current=get() as GameState;set({screen:'map',territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,hp:maxHp(current),enemy:undefined,pendingAttackBonus:0,shield:0,combatRoll:undefined,heroRollBonus:0,enemyRollBonus:0})},900)}else enemyAfterDelay(set,get);return}
+  const hp=now.enemyHp-damage
   if(en.boss&&en.maxFases&&hp>0){const threshold=en.vida*(1-(en.fase??1)/en.maxFases);if((en.fase??1)<en.maxFases&&hp<=threshold){const nf=(en.fase??1)+1;set({enemy:{...en,fase:nf,ataque:en.ataque+1},enemyHp:Math.max(hp,1)});addLog(set,`FASE ${nf}! ${en.nome} ficou mais agressivo.`);enemyAfterDelay(set,get);return}}
   if(hp<=0)victory(set,get);else{set({enemyHp:hp});enemyAfterDelay(set,get)}
  },700)
@@ -258,19 +272,18 @@ function enemyAfterDelay(set:any,get:any){const enemyId=(get() as GameState).ene
 function enemyAttack(set:any,get:any){
  const s=get() as GameState
  if(!s.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
- const attackBase=s.enemy.ataque,defenseBase=defenseValue(s),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1
- const attackTotal=attackBase+attackRoll,defenseTotal=defenseBase+defenseRoll
- let raw=Math.max(1,attackTotal-defenseTotal),shield=s.shield
- const blocked=Math.min(shield,raw),enemyName=s.enemy.nome
- raw-=blocked;shield-=blocked
- const hp=Math.max(0,s.hp-raw)
- const combatRoll:CombatRoll={attacker:'enemy',attackRoll,defenseRoll,attackBase,defenseBase,attackTotal,defenseTotal,damage:raw,shieldBlocked:blocked}
- set({shield,animating:true,animationActor:'enemy',lastDamage:raw,combatRoll,playerTurn:false})
+ const attackBase=s.enemy.ataque,defenseBase=defenseValue(s),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.enemyRollBonus,attackRoll=Math.min(6,naturalAttackRoll+attackBonus),defenseRoll=Math.floor(Math.random()*6)+1
+ const resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll);let raw=resolved.damage,shield=s.shield
+ const blocked=Math.min(shield,raw),enemyName=s.enemy.nome;raw-=blocked;shield-=blocked
+ const hp=Math.max(0,s.hp-raw),enemyHp=Math.max(0,s.enemyHp-resolved.selfDamage)
+ const combatRoll:CombatRoll={attacker:'enemy',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage:raw,selfDamage:resolved.selfDamage,shieldBlocked:blocked}
+ set({shield,animating:true,animationActor:resolved.selfDamage?'hero':'enemy',lastDamage:resolved.selfDamage||raw,combatRoll,playerTurn:false,enemyRollBonus:0,heroRollBonus:attackRoll===2?1:s.heroRollBonus})
  setTimeout(()=>{
   const current=get() as GameState
   if(current.screen!=='combat'||!current.enemy)return
+  if(resolved.selfDamage){addLog(set,`${enemyName}: falha crítica e recebeu ${resolved.selfDamage} de dano.`);if(enemyHp<=0){victory(set,get);return}set({enemyHp,hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:true,combatTurn:current.combatTurn+1});return}
   set({hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:hp>0,combatTurn:current.combatTurn+1})
-  addLog(set,`${enemyName}: ataque ${attackBase}+${attackRoll} contra defesa ${defenseBase}+${defenseRoll}; causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.`)
+  addLog(set,`${enemyName}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}`)
   if(hp<=0){addLog(set,'Você foi derrotado e retornou aos Campos Dourados.');setTimeout(()=>set({screen:'map',territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,hp:maxHp({...current,hp} as GameState),enemy:undefined,pendingAttackBonus:0,shield:0}),900)}
  },700)
 }
