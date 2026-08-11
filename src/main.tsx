@@ -7,7 +7,7 @@ import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGI
 import type { Slot, Rarity, Subregion } from './types'
 import './styles.css'
 
-const nav=[['map','Mapa',Map],['character','Ficha',ScrollText],['inventory','Mochila',Backpack],['equipment','Equipamentos',Shield],['shop','Loja',ShoppingBag],['gallery','Galeria',Images]] as const
+const nav=[['map','Mapa',Map],['character','Ficha',ScrollText],['inventory','Mochila',Backpack],['equipment','Equipamentos',Shield],['shop','Loja',ShoppingBag],['guild','Guilda',Trophy],['gallery','Galeria',Images]] as const
 const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
 const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Arcanista'}
 function compatibilityLabel(e:any,heroId?:string){if(e.slot==='bolsa')return`Universal • Capacidade: ${e.capacidade??8} espaços`;if(e.classeExclusiva)return equipmentClassAllowed(e,heroId)?`Exclusivo: ${classNames[e.classeExclusiva]} • compatível`:`Exclusivo para ${classNames[e.classeExclusiva]}`;const c=equipmentCompatibility(e,heroId);if(!c.affinity)return'Arma neutra • sem penalidade de classe';return c.compatible?`Afinidade: ${classNames[c.affinity]} • bônus completo`:`Afinidade: ${classNames[c.affinity]} • penalidade: -${c.penalty} ATQ`}
@@ -115,7 +115,6 @@ function App(){
    <AnimatePresence mode="wait">
     <motion.main key={g.screen} className="screen" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.22}}>
       {g.screen==='menu'&&<MainMenu/>}{g.screen==='select'&&<HeroSelect/>}{g.screen==='map'&&<MapScreen/>}{g.screen==='guild'&&<GuildScreen/>}{g.screen==='region'&&<RegionScreen/>}{g.screen==='event'&&<EventScreen/>}{g.screen==='character'&&<CharacterScreen/>}{g.screen==='inventory'&&<InventoryScreen/>}{g.screen==='equipment'&&<EquipmentScreen/>}{g.screen==='shop'&&<ShopScreen/>}{g.screen==='gallery'&&<GalleryScreen/>}{g.screen==='combat'&&<CombatScreen/>}{g.screen==='bossIntro'&&<BossIntro/>}{g.screen==='loot'&&<LootScreen/>}{g.screen==='cardCreator'&&<CardCreatorScreen/>}
-      {g.screen==='map'&&<button className="map-guild-button" onClick={()=>g.setScreen('guild')}><Shield/><span><small>QUADRO DE CONTRATOS</small><strong>Guilda de Eldravar</strong></span></button>}
     </motion.main>
    </AnimatePresence>
    {fleeConfirm&&<div className="escape-confirm-overlay" role="presentation" onClick={()=>setFleeConfirm(false)}><section className="escape-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="escape-flee-title" onClick={event=>event.stopPropagation()}><Footprints/><small>ATALHO ESC DURANTE O COMBATE</small><h2 id="escape-flee-title">Tentar fugir?</h2><p>Um dado amarelo será rolado: <b>5–6</b> permite escapar, <b>4</b> mantém sua ação e <b>1–3</b> encerra seu turno.</p>{(!g.playerTurn||g.animating)&&<span>Aguarde o seu turno para tentar fugir.</span>}<div><button onClick={()=>setFleeConfirm(false)}>Continuar combate</button><button className="primary" disabled={!g.playerTurn||g.animating} onClick={()=>{setFleeConfirm(false);g.flee()}}><Footprints/>Rolar dado de fuga</button></div></section></div>}
