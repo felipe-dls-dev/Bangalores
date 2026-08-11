@@ -237,7 +237,7 @@ function resolveExplorationEvent(set:any,get:any,accept:boolean){
 
 function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState;set({screen:'combat',enemy,enemyHp:enemy.vida,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,heroRollBonus:0,enemyRollBonus:0,heroSkillUsed:false,itemSkillUsed:false,shield:s.shield+(s.heroId==='guardiao'?2:0)});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),800)}
 function addLog(set:any,msg:string){set((s:GameState)=>({combatLog:[...s.combatLog.slice(-12),msg]}))}
-const COMBAT_ROLL_DISPLAY_MS=3000
+const COMBAT_ROLL_DISPLAY_MS=2500
 function attackEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Ataque desajeitado':roll<=4?'Ataque normal':roll===5?'Ataque forte':'Ataque crítico'}
 function defenseEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Defesa fraca':roll<=4?'Defesa normal':roll===5?'Defesa forte':'Defesa perfeita'}
 function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number){

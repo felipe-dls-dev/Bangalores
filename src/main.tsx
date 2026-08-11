@@ -170,8 +170,8 @@ function CombatScreen(){
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
  const disabled=!g.playerTurn||g.animating
  const consumables=(Object.entries(g.inventory) as [string,number][]).filter(([,qty])=>qty>0).map(([id,qty])=>({item:CONSUMABLES.find(x=>x.id===id),qty})).filter(x=>x.item).slice(0,6) as {item:(typeof CONSUMABLES)[number],qty:number}[]
+ const itemAbilities=(Object.values(g.equipped) as (string|undefined)[]).map(id=>EQUIPMENT.find(item=>item.id===id)).filter((item):item is (typeof EQUIPMENT)[number]=>Boolean(item?.habilidade&&item.slot!=='bolsa'))
  return <div className="combat-page premium-combat combat-v033">
-   <AnimatePresence>{g.combatRoll&&g.animating&&<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>}</AnimatePresence>
    <div className="combat-hero-area">
     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined}/>
    </div>
@@ -179,9 +179,9 @@ function CombatScreen(){
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase}/>
    </div>
 
-   <Panel title="Efeitos ativos" className="effects-panel combat-effects-area">
+   <Panel title="Habilidades dos itens" className="effects-panel combat-effects-area">
       {g.shield>0?<div className="active-effect"><Shield/><div><strong>Escudo ativo</strong><small>Absorve até {g.shield} de dano.</small></div></div>:<p className="muted no-effect">Nenhum efeito defensivo ativo.</p>}
-      <div className="active-effect passive"><Sparkles/><div><strong>{h.nome}</strong><small>{h.habilidade}</small></div></div>
+      <div className="combat-item-abilities">{itemAbilities.length?itemAbilities.map(item=><div className="active-effect passive" key={item.id}><Sparkles/><div><strong>{item.nome}</strong><small>{item.habilidade}</small></div></div>):<p className="muted no-effect">Nenhum equipamento com habilidade.</p>}</div>
    </Panel>
 
    <Panel title="Registro de combate" className="combat-log-panel combat-log-area">
@@ -197,6 +197,10 @@ function CombatScreen(){
        <button className="premium-action" disabled={disabled||g.itemSkillUsed} onClick={g.itemSkill}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Fugir (60%)</button>
       </div>
+   </Panel>
+
+   <Panel title="Rolagem dos dados" className="combat-dice-panel combat-dice-area">
+    <AnimatePresence mode="wait">{g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>:<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque e defesa aparecerão aqui.</small></motion.div>}</AnimatePresence>
    </Panel>
 
    <Panel className="combat-consumables-panel combat-consumables-area">
