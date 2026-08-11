@@ -13,7 +13,7 @@ import { CLASS_HEADGEAR } from '../data/headgear'
 import { CLASS_ARMOR } from '../data/armorSets'
 import { CLASS_LEGWEAR } from '../data/legwear'
 import { CLASS_BOOTS } from '../data/boots'
-import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent } from '../types'
+import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard } from '../types'
 
 const HD_ART:Record<string,string> = {
   'assets/art/monsters/cabra_malgor.webp':'assets/art/hd/monsters/cabra-malgor-hd.webp',
@@ -119,11 +119,12 @@ interface GameState {
  screen:Screen; heroId?:string; hp:number; gold:number; xp:number; attributePoints:number; attr:{vida:number;ataque:number;defesa:number};
  inventory:Record<string,number>; equipmentBag:string[]; equipped:Partial<Record<Slot,string>>; territory:string; regionId:string; subregionId?:string; victories:Record<string,number>; subregionVictories:Record<string,number>; bossesDefeated:string[]; subregionBossesDefeated:string[];
  enemy?:Enemy; enemyHp:number; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; heroSkillUsed:boolean; itemSkillUsed:boolean; shield:number;
- loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number;
+ loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; customCards:CustomCard[];
  newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; continueGame:()=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void;
  attack:()=>void; heroSkill:()=>void; itemSkill:()=>void; useConsumable:(id:string)=>void; flee:()=>void;
  buyConsumable:(id:string)=>void; buyEquipment:(id:string)=>void; sellConsumable:(id:string)=>void; sellEquipment:(id:string)=>void;
  equip:(id:string)=>void; unequip:(slot:Slot)=>void; addAttribute:(k:'vida'|'ataque'|'defesa')=>void; setSelectedGallery:(n:number)=>void; toggleShopMode:()=>void; resolveEvent:(accept:boolean)=>void; finishEvent:()=>void; finishLoot:()=>void; clearSave:()=>void;
+ addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>void; removeCustomCard:(id:string)=>void;
 }
 
 function currentSubregion(s:GameState){ return SUBREGIONS.find(x=>x.id===s.subregionId) }
@@ -155,7 +156,7 @@ function buildBoss(sub:Subregion):Enemy{
 }
 
 export const useGame = create<GameState>()(persist((set,get)=>({
-  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,
+  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,customCards:[],
   newGame:(heroId:string)=>{ const h=HEROES.find(x=>x.id===heroId)!; const st=starter[heroId]??starter.guerreiro; const initialHp=h.vida+Object.values(st.equipped).reduce((sum,id)=>sum+(eqById(id)?.vida??0),0); set({screen:'map',heroId,hp:initialHp,gold:st.gold,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},inventory:{...st.items},equipmentBag:[],equipped:{...st.equipped},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemy:undefined,loot:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0}) },
   setScreen:(screen:Screen)=>set({screen}), continueGame:()=>set({screen:get().heroId?'map':'select'}),
   openRegion:(t:Territory)=>set({regionId:t.id,territory:t.nome,subregionId:undefined,explorationNote:undefined,screen:'region'}),
@@ -188,8 +189,10 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   resolveEvent:(accept:boolean)=>resolveExplorationEvent(set,get,accept),
   finishEvent:()=>{const result=get().eventResult;set({screen:'region',currentEvent:undefined,eventResult:undefined,explorationNote:result?.message})},
   finishLoot:()=>set({screen:get().subregionId?'region':'map',enemy:undefined,enemyHp:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,heroSkillUsed:false,itemSkillUsed:false,shield:0,pendingAttackBonus:0}),
-  clearSave:()=>set({screen:'menu',heroId:undefined,hp:0,gold:0,xp:0,inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0})
-}),{name:'bangalores-save-v1',merge:(persisted:any,current:any)=>({...current,...persisted,regionId:persisted?.regionId??'campos_dourados',subregionVictories:persisted?.subregionVictories??{},subregionBossesDefeated:persisted?.subregionBossesDefeated??[],pendingAttackBonus:persisted?.pendingAttackBonus??0,currentEvent:persisted?.currentEvent,eventResult:persisted?.eventResult,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:persisted?.screen==='combat'&&persisted?.enemy?true:(persisted?.playerTurn??false)})}))
+  clearSave:()=>set({screen:'menu',heroId:undefined,hp:0,gold:0,xp:0,inventory:{},equipmentBag:[],equipped:{},territory:'Campos Dourados',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0}),
+  addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>{const s=get();set({customCards:[...s.customCards,{...card,id:`custom_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,criadoEm:Date.now()}]})},
+  removeCustomCard:(id:string)=>{const s=get();set({customCards:s.customCards.filter((c:CustomCard)=>c.id!==id)})}
+}),{name:'bangalores-save-v1',merge:(persisted:any,current:any)=>({...current,...persisted,regionId:persisted?.regionId??'campos_dourados',subregionVictories:persisted?.subregionVictories??{},subregionBossesDefeated:persisted?.subregionBossesDefeated??[],pendingAttackBonus:persisted?.pendingAttackBonus??0,currentEvent:persisted?.currentEvent,eventResult:persisted?.eventResult,customCards:persisted?.customCards??[],animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:persisted?.screen==='combat'&&persisted?.enemy?true:(persisted?.playerTurn??false)})}))
 
 function stats(s:GameState){const h=HEROES.find(x=>x.id===s.heroId);let atk=(h?.ataque??0)+s.attr.ataque+s.pendingAttackBonus,life=(h?.vida??0)+s.attr.vida,def=s.attr.defesa;Object.values(s.equipped).forEach(id=>{const e=eqById(id);if(e){atk+=equipmentAttackForHero(e,s.heroId);life+=e.vida;def+=e.defesa}});return{atk,life,def}}
 export function maxHp(s:GameState){return stats(s).life}

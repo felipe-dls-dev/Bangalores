@@ -1,5 +1,5 @@
 export type Slot = 'amuleto'|'capacete'|'anel_1'|'peitoral'|'anel_2'|'calcas'|'mao_esquerda'|'mao_direita'|'botas'
-export type Screen = 'menu'|'select'|'map'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'combat'|'bossIntro'|'loot'
+export type Screen = 'menu'|'select'|'map'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'combat'|'bossIntro'|'loot'|'cardCreator'
 export type Rarity = 'comum'|'incomum'|'raro'|'epico'|'lendario'|'mitico'|'heroico'
 export interface Hero { id:string; nome:string; vida:number; ataque:number; habilidade:string; imagem:string; arte?:string; raridade?:Rarity }
 export interface Equipment { id:string; nome:string; slot:Slot; preco:number; ataque:number; vida:number; defesa:number; habilidade:string; imagem:string; arte?:string; raridade?:Rarity; classeExclusiva?:'guerreiro'|'guardiao'|'cacadora'|'arcanista'; tipoEquipamento?:string; nivelMinimo?:number }
@@ -10,3 +10,4 @@ export interface Territory { id:string; nome:string; x:number; y:number; dificul
 export interface SubregionEnemy { nome:string; ataque:number; vida:number; ouro:number; habilidade:string; arte:string }
 export interface SubregionBoss { nome:string; ataque:number; vida:number; ouro:number; habilidade:string; arte:string; maxFases:number; raridade:Rarity }
 export interface Subregion { id:string; regionId:string; nome:string; descricao:string; nivelMin:number; nivelMax:number; encontrosNecessarios:number; icone:string; temaLoot:string; desafios:string[]; inimigos:SubregionEnemy[]; chefe:SubregionBoss }
+export interface CustomCard { id:string; nome:string; kind:string; raridade:Rarity; ataque:number; defesa:number; vida:number; habilidade:string; imagem:string; zoom:number; panX:number; panY:number; criadoEm:number }

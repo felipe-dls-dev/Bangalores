@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, Map, ScrollText, Backpack, Shield, ShoppingBag, Images, Menu, Sword, Sparkles, Coins, Trophy, Package, Plus, ArrowLeft, ArrowRight, FlaskConical, Footprints, Dices } from 'lucide-react'
+import { Heart, Map, ScrollText, Backpack, Shield, ShoppingBag, Images, Menu, Sword, Sparkles, Coins, Trophy, Package, Plus, ArrowLeft, ArrowRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn } from 'lucide-react'
 import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed } from './store/game'
 import type { Slot, Rarity, Subregion } from './types'
 import './styles.css'
@@ -35,15 +35,17 @@ function artStats(card:any,kind?:string){
  if(kind==='Herói')return `Ataque ${card.ataque??0} • Vida ${card.vida??0}`
  return `Ataque ${card.ataque??0} • Vida ${card.vida??0}${card.ouro!==undefined?` • Recompensa ${card.ouro} ouro`:''}`
 }
-function ArtPreview({image,name,text,stats,className}:{image:string;name:string;text?:string;stats?:string;className?:string}){
+function assetUrl(path:string){return /^(data:|blob:|https?:)/.test(path)?path:'./'+path}
+function ArtPreview({image,name,text,stats,className,imgStyle}:{image:string;name:string;text?:string;stats?:string;className?:string;imgStyle?:React.CSSProperties}){
  const [open,setOpen]=React.useState(false)
  const equipment=className?.includes('slot-art-preview')?EQUIPMENT.find(item=>item.nome===name):undefined
  const emblem=equipment?cardEmblem(equipment,'Equipamento'):undefined
  const owner=equipment?.classeExclusiva??(equipment?equipmentAffinity(equipment):undefined)
+ const src=assetUrl(image)
  return <span className={`art-preview-trigger ${className??''}`} onMouseEnter={()=>setOpen(true)} onMouseLeave={()=>setOpen(false)} onFocus={()=>setOpen(true)} onBlur={()=>setOpen(false)} tabIndex={0} aria-label={`Ampliar arte de ${name}`}>
-  <img src={'./'+image} alt={name}/>
+  <img src={src} alt={name} style={imgStyle}/>
   {emblem&&<img className="slot-class-emblem" src={'./'+emblem} alt={owner?classNames[owner]:'Universal'} aria-hidden="true"/>}
-  {open&&createPortal(<span className="art-preview-overlay" aria-hidden="true"><span className="art-preview-card"><img src={'./'+image} alt=""/><span className="art-preview-copy"><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}<em>Mantenha o mouse sobre a imagem</em></span></span></span>,document.body)}
+  {open&&createPortal(<span className="art-preview-overlay" aria-hidden="true"><span className="art-preview-card"><img src={src} alt=""/><span className="art-preview-copy"><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}<em>Mantenha o mouse sobre a imagem</em></span></span></span>,document.body)}
  </span>
 }
 function cardRarity(card:any,kind?:string):Rarity{
@@ -69,12 +71,12 @@ function cardBadge(card:any,kind:string,rarity:Rarity){
  if(kind==='Monstro')return'Comum'
  return rarityLabel[rarity]
 }
-function CardFrame({card,kind}:{card:any;kind:string}){
+function CardFrame({card,kind,artStyle}:{card:any;kind:string;artStyle?:React.CSSProperties}){
  const rarity=cardRarity(card,kind),baseEffect=card.habilidade??card.descricao??'Sem efeito especial.',effect=kind==='Equipamento'?`Nível ${equipmentRequiredLevel(card)} • ${baseEffect}`:baseEffect
  const enemy=kind==='Monstro'||kind==='Elite'||kind==='Chefe'||card.boss||card.elite
  const attack=card.ataque??0,defense=card.defesa??(enemy?Math.max(0,(card.dificuldade??1)-2):0),life=card.vida??(kind==='Consumível'?card.valor??0:0)
  return <article className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''}`}>
-  <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)}/></div>
+  <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/></div>
   <img className="ornate-frame" src={'./'+cardSystemRoot+'frame-overlay.png'} alt="" aria-hidden="true"/>
   <h2 className="ornate-name">{card.nome}</h2>
   <img className="ornate-emblem" src={'./'+cardEmblem(card,kind)} alt={enemy?`Categoria ${cardBadge(card,kind,rarity)}`:`Compatibilidade de ${kind}`}/>
@@ -90,18 +92,18 @@ function App(){
  const g=useGame();
  const hero=HEROES.find(h=>h.id===g.heroId)
  return <div className="app-shell">
-   {g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='event'&&<TopBar/>}
+   {g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='event'&&g.screen!=='cardCreator'&&<TopBar/>}
    <AnimatePresence mode="wait">
     <motion.main key={g.screen} className="screen" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.22}}>
-      {g.screen==='menu'&&<MainMenu/>}{g.screen==='select'&&<HeroSelect/>}{g.screen==='map'&&<MapScreen/>}{g.screen==='region'&&<RegionScreen/>}{g.screen==='event'&&<EventScreen/>}{g.screen==='character'&&<CharacterScreen/>}{g.screen==='inventory'&&<InventoryScreen/>}{g.screen==='equipment'&&<EquipmentScreen/>}{g.screen==='shop'&&<ShopScreen/>}{g.screen==='gallery'&&<GalleryScreen/>}{g.screen==='combat'&&<CombatScreen/>}{g.screen==='bossIntro'&&<BossIntro/>}{g.screen==='loot'&&<LootScreen/>}
+      {g.screen==='menu'&&<MainMenu/>}{g.screen==='select'&&<HeroSelect/>}{g.screen==='map'&&<MapScreen/>}{g.screen==='region'&&<RegionScreen/>}{g.screen==='event'&&<EventScreen/>}{g.screen==='character'&&<CharacterScreen/>}{g.screen==='inventory'&&<InventoryScreen/>}{g.screen==='equipment'&&<EquipmentScreen/>}{g.screen==='shop'&&<ShopScreen/>}{g.screen==='gallery'&&<GalleryScreen/>}{g.screen==='combat'&&<CombatScreen/>}{g.screen==='bossIntro'&&<BossIntro/>}{g.screen==='loot'&&<LootScreen/>}{g.screen==='cardCreator'&&<CardCreatorScreen/>}
     </motion.main>
    </AnimatePresence>
-   {hero&&g.screen!=='menu'&&g.screen!=='select'&&<footer className="footer-tip">Bangalore's • Auto-save ativo • A aventura continua no próximo acesso.</footer>}
+   {hero&&g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='cardCreator'&&<footer className="footer-tip">Bangalore's • Auto-save ativo • A aventura continua no próximo acesso.</footer>}
  </div>
 }
 
 function TopBar(){const g=useGame();const h=HEROES.find(x=>x.id===g.heroId);const level=levelInfo(g.xp).lvl;return <header className="topbar"><nav>{nav.map(([id,label,Icon])=><button key={id} className={(g.screen===id||(id==='map'&&g.screen==='region'))?'active':''} onClick={()=>g.setScreen(id)}><Icon size={18}/><span>{label}</span></button>)}</nav><div className="hud"><Heart className="heart" fill="currentColor"/><strong>{g.hp}/{maxHp(g)}</strong><span className="hud-level" title={`${g.xp} de experiência total`}><Sparkles size={16}/><small>NÍVEL</small><strong>{level}</strong></span><div className="brand">Bangalore's</div><button className="menu-mini" onClick={()=>g.setScreen('menu')}><Menu size={18}/>Menu</button></div></header>}
-function MainMenu(){const g=useGame();return <div className="hero-bg menu-hero"><div className="menu-atmosphere"/><section className="menu-card"><p className="menu-eyebrow">AS CRÔNICAS DE ELDRAVAR</p><div className="brand big">Bangalore's</div><div className="menu-divider"><span/></div><p className="tagline">Um RPG de cartas, escolhas e conquistas</p><p className="menu-intro">Escolha seu herói, fortaleça seu arsenal e enfrente as criaturas que marcham sobre Eldravar.</p><div className="menu-actions">{g.heroId&&<button className="primary" onClick={g.continueGame}>Continuar aventura</button>}<button onClick={()=>g.setScreen('select')}>Nova campanha</button>{g.heroId&&<button className="danger-link" onClick={g.clearSave}>Apagar progresso local</button>}</div><p className="save-note"><span>◆</span> O progresso é salvo automaticamente neste navegador.</p></section><aside className="menu-scene-caption"><small>A GUERRA POR ELDRAVAR</small><strong>O reino precisa de um novo campeão.</strong></aside></div>}
+function MainMenu(){const g=useGame();return <div className="hero-bg menu-hero"><div className="menu-atmosphere"/><section className="menu-card"><p className="menu-eyebrow">AS CRÔNICAS DE ELDRAVAR</p><div className="brand big">Bangalore's</div><div className="menu-divider"><span/></div><p className="tagline">Um RPG de cartas, escolhas e conquistas</p><p className="menu-intro">Escolha seu herói, fortaleça seu arsenal e enfrente as criaturas que marcham sobre Eldravar.</p><div className="menu-actions">{g.heroId&&<button className="primary" onClick={g.continueGame}>Continuar aventura</button>}<button onClick={()=>g.setScreen('select')}>Nova campanha</button><button className="ghost-action" onClick={()=>g.setScreen('cardCreator')}><Wand2 size={17}/>Criador de cartas</button>{g.heroId&&<button className="danger-link" onClick={g.clearSave}>Apagar progresso local</button>}</div><p className="save-note"><span>◆</span> O progresso é salvo automaticamente neste navegador.</p></section><aside className="menu-scene-caption"><small>A GUERRA POR ELDRAVAR</small><strong>O reino precisa de um novo campeão.</strong></aside></div>}
 function HeroSelect(){const g=useGame();return <div className="select-page"><div className="section-title"><h1>Escolha seu herói</h1><p>Cada classe começa com um conjunto coerente de equipamentos e consumíveis.</p></div><div className="hero-grid">{HEROES.map(h=><motion.button whileHover={{y:-6}} className="hero-card" key={h.id} onClick={()=>g.newGame(h.id)}><ArtPreview image={cardArt(h)} name={h.nome} text={h.habilidade} stats={artStats(h,'Herói')}/><div><h2>{h.nome}</h2><p>{h.habilidade}</p><div className="mini-stats"><span><Heart size={15}/> {h.vida}</span><span><Sword size={15}/> {h.ataque}</span></div></div></motion.button>)}</div></div>}
 function Panel({title,children,className=''}:{title?:string;children:React.ReactNode;className?:string}){return <section className={'panel '+className}>{title&&<h2 className="panel-title">{title}</h2>}{children}</section>}
 function MapScreen(){const g=useGame();const li=levelInfo(g.xp);return <div className="map-layout"><Panel className="map-panel"><div className="map-wrap"><img src="./assets/maps/eldravar.png" alt="Mapa de Eldravar"/>{TERRITORIES.map(t=>{const subs=SUBREGIONS.filter(s=>s.regionId===t.id);const completed=subs.length>0&&subs.every(s=>g.subregionBossesDefeated.includes(s.id));return <button key={t.id} className={`map-sub-pin map-territory-pin${completed?' completed':''}`} style={{left:`${t.x*100}%`,top:`${t.y*100}%`}} onClick={()=>g.openRegion(t)} title={`Explorar ${t.nome}`} aria-label={`Explorar território ${t.nome}`}><span>{completed?'✓':'◆'}</span><b>{t.nome}</b></button>})}{SUBREGIONS.map(sub=>{const point=SUBREGION_MAP_POINTS[sub.id];if(!point)return null;const completed=g.subregionBossesDefeated.includes(sub.id);return <button key={`sub_${sub.id}`} className={`map-sub-pin${completed?' completed':''}`} style={{left:`${point[0]*100}%`,top:`${point[1]*100}%`}} onClick={()=>g.openSubregion(sub.id)} title={`Acessar diretamente: ${sub.nome}`} aria-label={`Acessar ${sub.nome}`}><span>{completed?'✓':'◆'}</span><b>{sub.nome}</b></button>})}</div></Panel><Panel title="Resumo do herói" className="summary"><Stat label="Vida" value={`${g.hp}/${maxHp(g)}`}/><Stat label="Ataque" value={attackValue(g)}/><Stat label="Defesa" value={defenseValue(g)}/><Stat label="Ouro" value={g.gold}/><Stat label="Equip. guardados" value={`${g.equipmentBag.length}/8`}/><hr/><div className="level-row"><strong>Nível {li.lvl}</strong><span>{li.progress}/{li.next} XP</span></div><div className="xp-track"><div style={{width:`${Math.min(100,li.progress/li.next*100)}%`}}/></div><p className="muted">Experiência total: {g.xp}</p><p className={g.attributePoints?'points hot':'points'}>Pontos de atributo: {g.attributePoints}</p><hr/><strong>Exploração de Eldravar</strong><p className="muted">Todos os losangos dão acesso a territórios ou locais específicos.</p><p className="hint">Passe o mouse para identificar o destino. Um marcador verde indica que seus chefes já foram derrotados.</p></Panel></div>}
@@ -200,6 +202,97 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
  </motion.article>
 }
 function LootScreen(){const g=useGame();const l=g.loot;const e=l?.equipmentId?EQUIPMENT.find(x=>x.id===l.equipmentId):undefined;const i=l?.itemId?CONSUMABLES.find(x=>x.id===l.itemId):undefined;return <div className="loot-page"><Panel><Trophy className="trophy"/><h1>{l?.title??'Vitória'}</h1><div className="loot-stats"><Stat label="Ouro recebido" value={`+${l?.gold??0}`}/><Stat label="Experiência recebida" value={`+${l?.xp??0}`}/>{e&&<ItemCard image={cardArt(e)} rarity={cardRarity(e,'Equipamento')} name={e.nome} subtitle="Equipamento obtido"/>}{i&&<ItemCard image={cardArt(i)} rarity={cardRarity(i,'Consumível')} name={i.nome} subtitle="Consumível obtido"/>}{!e&&!i&&<p className="muted">Nenhum item adicional foi encontrado.</p>}</div><button className="primary" onClick={g.finishLoot}>Voltar ao mapa</button></Panel></div>}
+type DraftKind='Herói'|'Equipamento'|'Consumível'|'Monstro'|'Elite'|'Chefe'|'Evento'
+const creatorKinds:DraftKind[]=['Herói','Equipamento','Consumível','Monstro','Elite','Chefe','Evento']
+const clamp=(v:number,min:number,max:number)=>Math.max(min,Math.min(max,v))
+const maxPan=(zoom:number)=>50*(zoom-1)/zoom
+function artTransform(zoom:number,panX:number,panY:number):React.CSSProperties{
+ return {objectFit:'cover',objectPosition:'50% 50%',transform:`scale(${zoom}) translate(${panX}%,${panY}%)`,transformOrigin:'center'}
+}
+function ArtPositionEditor({src,zoom,panX,panY,onPan}:{src:string;zoom:number;panX:number;panY:number;onPan:(x:number,y:number)=>void}){
+ const boxRef=React.useRef<HTMLDivElement>(null)
+ const drag=React.useRef<{active:boolean;x:number;y:number;panX:number;panY:number}>({active:false,x:0,y:0,panX:0,panY:0})
+ const onPointerDown=(e:React.PointerEvent)=>{ drag.current={active:true,x:e.clientX,y:e.clientY,panX,panY}; (e.target as Element).setPointerCapture(e.pointerId) }
+ const onPointerMove=(e:React.PointerEvent)=>{
+  if(!drag.current.active||!boxRef.current)return
+  const rect=boxRef.current.getBoundingClientRect()
+  const dx=e.clientX-drag.current.x, dy=e.clientY-drag.current.y
+  const limit=maxPan(zoom)
+  const nx=clamp(drag.current.panX+(dx/rect.width)*100/zoom,-limit,limit)
+  const ny=clamp(drag.current.panY+(dy/rect.height)*100/zoom,-limit,limit)
+  onPan(nx,ny)
+ }
+ const onPointerUp=()=>{ drag.current.active=false }
+ return <div ref={boxRef} className="art-editor-box" onPointerDown={src?onPointerDown:undefined} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp}>
+  {src?<img src={src} alt="Arte selecionada" draggable={false} style={{...artTransform(zoom,panX,panY),width:'100%',height:'100%',display:'block',pointerEvents:'none',userSelect:'none'}}/>
+  :<div className="art-editor-empty"><ImageOff/><span>Nenhuma imagem selecionada</span></div>}
+ </div>
+}
+function CardCreatorScreen(){
+ const g=useGame()
+ const fileInputRef=React.useRef<HTMLInputElement>(null)
+ const [draft,setDraft]=React.useState({nome:'Nova Carta',kind:'Herói' as DraftKind,raridade:'comum' as Rarity,ataque:0,defesa:0,vida:0,habilidade:'',imagem:''})
+ const [zoom,setZoomRaw]=React.useState(1.2)
+ const [panX,setPanX]=React.useState(0)
+ const [panY,setPanY]=React.useState(0)
+ const set=(patch:Partial<typeof draft>)=>setDraft(d=>({...d,...patch}))
+ const setZoom=(z:number)=>{ const limit=maxPan(z); setZoomRaw(z); setPanX(p=>clamp(p,-limit,limit)); setPanY(p=>clamp(p,-limit,limit)) }
+ const resetTransform=()=>{ setZoomRaw(1.2); setPanX(0); setPanY(0) }
+ const onPickFile=(e:React.ChangeEvent<HTMLInputElement>)=>{
+  const file=e.target.files?.[0]; if(!file)return
+  const reader=new FileReader()
+  reader.onload=()=>{ set({imagem:reader.result as string}); resetTransform() }
+  reader.readAsDataURL(file)
+  e.target.value=''
+ }
+ const [justSaved,setJustSaved]=React.useState(false)
+ const artStyle=artTransform(zoom,panX,panY)
+ const previewCard={nome:draft.nome||'Nova Carta',ataque:draft.ataque,defesa:draft.defesa,vida:draft.vida,habilidade:draft.habilidade||'Descreva a habilidade ou efeito da carta.',arte:draft.imagem,raridade:draft.raridade,boss:draft.kind==='Chefe',elite:draft.kind==='Elite'}
+ const addToCollection=()=>{
+  if(!draft.imagem)return
+  g.addCustomCard({nome:draft.nome||'Nova Carta',kind:draft.kind,raridade:draft.raridade,ataque:draft.ataque,defesa:draft.defesa,vida:draft.vida,habilidade:draft.habilidade,imagem:draft.imagem,zoom,panX,panY})
+  setJustSaved(true)
+  setTimeout(()=>setJustSaved(false),2200)
+ }
+ return <div className="card-creator-page">
+  <div className="card-creator-head">
+   <button onClick={()=>g.setScreen('menu')}><ArrowLeft/>Menu</button>
+   <div><span className="eyebrow">EM CONSTRUÇÃO</span><h1>Criador de cartas</h1><p>Primeira versão da ferramenta. As regras completas de criação ainda serão definidas — por enquanto, use os campos abaixo para montar e visualizar uma carta com a moldura oficial do jogo.</p></div>
+  </div>
+  <div className="card-creator-layout three-col">
+   <Panel title="Informações da carta" className="card-creator-form">
+    <label className="field">Nome<input value={draft.nome} onChange={e=>set({nome:e.target.value})}/></label>
+    <label className="field">Tipo<select value={draft.kind} onChange={e=>set({kind:e.target.value as DraftKind})}>{creatorKinds.map(k=><option key={k} value={k}>{k}</option>)}</select></label>
+    <label className="field">Raridade<select value={draft.raridade} onChange={e=>set({raridade:e.target.value as Rarity})}>{Object.entries(rarityLabel).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+    <div className="field-row">
+     <label className="field">Ataque<input type="number" value={draft.ataque} onChange={e=>set({ataque:Number(e.target.value)||0})}/></label>
+     <label className="field">Defesa<input type="number" value={draft.defesa} onChange={e=>set({defesa:Number(e.target.value)||0})}/></label>
+     <label className="field">Vida<input type="number" value={draft.vida} onChange={e=>set({vida:Number(e.target.value)||0})}/></label>
+    </div>
+    <label className="field">Habilidade / efeito<textarea rows={3} value={draft.habilidade} onChange={e=>set({habilidade:e.target.value})}/></label>
+   </Panel>
+   <Panel title="Upload da imagem" className="card-creator-upload">
+    <div className="art-upload-row">
+     <button type="button" onClick={()=>fileInputRef.current?.click()}><Upload size={16}/>Escolher imagem do computador</button>
+     {draft.imagem&&<button type="button" className="ghost-action" onClick={()=>{set({imagem:''});resetTransform()}}>Remover</button>}
+    </div>
+    <input ref={fileInputRef} type="file" accept="image/*" style={{display:'none'}} onChange={onPickFile}/>
+    <ArtPositionEditor src={draft.imagem} zoom={zoom} panX={panX} panY={panY} onPan={(x,y)=>{setPanX(x);setPanY(y)}}/>
+    {draft.imagem&&<>
+     <div className="zoom-row"><ZoomIn size={16}/><input type="range" min={1} max={2.5} step={0.02} value={zoom} onChange={e=>setZoom(Number(e.target.value))}/><button type="button" className="ghost-action" onClick={resetTransform}>Centralizar</button></div>
+     <small className="field-hint">Arraste a imagem para posicionar o enquadramento e use o controle de zoom para ajustar.</small>
+    </>}
+   </Panel>
+   <Panel title="Pré-visualização" className="card-creator-preview">
+    <div className="card-creator-preview-inner">
+     <CardFrame card={previewCard} kind={draft.kind} artStyle={draft.imagem?artStyle:undefined}/>
+     <button type="button" className="primary" disabled={!draft.imagem} onClick={addToCollection}><Plus size={16}/>Adicionar à coleção</button>
+     <small className="field-hint">{justSaved?'✓ Adicionada!':`${g.customCards.length} carta${g.customCards.length===1?'':'s'} na coleção`}</small>
+    </div>
+   </Panel>
+  </div>
+ </div>
+}
 function Empty({text}:{text:string}){return <div className="empty"><Package/><p>{text}</p></div>}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>)
