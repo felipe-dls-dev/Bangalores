@@ -17,6 +17,16 @@ export const FORGE_GEMS=[
  {id:'esmeralda_vital',nome:'Esmeralda Vital',stat:'vida' as const,value:4,texto:'+4 de Vida'},
  {id:'ametista_arcana',nome:'Ametista Arcana',stat:'rolagem' as const,value:1,texto:'+1 na primeira rolagem'}
 ] as const
+export type ForgeEffect='critico'|'defesa_perfeita'|'sorte'
+export type ForgeRecipe={id:string;nome:string;equipmentId:string;raridade:string;materials:Record<string,number>;effect?:ForgeEffect;effectText?:string}
+export const FORGE_RECIPES:ForgeRecipe[]=[
+ {id:'receita_couro',nome:'Armadura de Couro Reforçado',equipmentId:'armadura_couro',raridade:'Incomum',materials:{fragmento_fisico:4}},
+ {id:'receita_facas',nome:'Facas Gêmeas Temperadas',equipmentId:'facas_gemeas',raridade:'Raro',materials:{fragmento_fisico:5,essencia_magica:2},effect:'critico',effectText:'+8% de chance de elevar ataques fortes a críticos'},
+ {id:'receita_lamina',nome:'Lâmina do Sentinela Refinada',equipmentId:'lamina_sentinela',raridade:'Épico',materials:{fragmento_fisico:7,essencia_magica:4,safira_guardia:1},effect:'critico',effectText:'+12% de chance de crítico aprimorado'},
+ {id:'receita_manto',nome:'Manto das Cinzas Vivas',equipmentId:'manto_cinzas',raridade:'Épico',materials:{fragmento_fisico:4,essencia_magica:6,rubi_forja:1},effect:'defesa_perfeita',effectText:'+10% de chance de transformar defesa forte em perfeita'},
+ {id:'receita_orbe',nome:'Orbe da Colheita Refinado',equipmentId:'foice_colheitas',raridade:'Lendário',materials:{essencia_magica:8,esmeralda_vital:1,ametista_arcana:1},effect:'sorte',effectText:'+12% de chance de espólio e melhoria da qualidade'},
+ {id:'receita_explorador',nome:'Relíquia do Explorador Afortunado',equipmentId:'amuleto_dragao',raridade:'Lendário',materials:{fragmento_fisico:5,essencia_magica:7,ametista_arcana:2},effect:'sorte',effectText:'+18% de chance e melhor qualidade de espólios'}
+]
 
 export type StoryRequirement={type:'victories'|'bosses'|'material'|'upgrade'|'region';amount:number;target?:string;label:string}
 export type StoryChoice={id:string;text:string;next:string;consequence:string;gold?:number;material?:string}
