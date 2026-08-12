@@ -186,6 +186,9 @@ function ShopScreen(){
  const matchesConsumable=(item:any,id:string)=>id==='Todos'||(id==='cura'?(item.tipo==='cura'||item.tipo==='vida_max'):(item.tipo!=='cura'&&item.tipo!=='vida_max'))
  const equipment=tab==='Armas'?weapons.filter(e=>matchesWeapon(e,filter)):tab==='Equipamentos'?gear.filter(e=>matchesGear(e,filter)):[]
  const consumables=tab==='Consumíveis'?availableConsumables.filter(item=>matchesConsumable(item,filter)):[]
+ const rarityOrder:Record<Rarity,number>={comum:0,incomum:1,raro:2,epico:3,lendario:4,mitico:5,heroico:6}
+ equipment.sort((a,b)=>equipmentRequiredLevel(a)-equipmentRequiredLevel(b)||(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.nome.localeCompare(b.nome,'pt-BR'))
+ consumables.sort((a,b)=>(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'))
  const filterCount=(id:string)=>tab==='Armas'?weapons.filter(e=>matchesWeapon(e,id)).length:tab==='Equipamentos'?gear.filter(e=>matchesGear(e,id)).length:availableConsumables.filter(item=>matchesConsumable(item,id)).length
  const chooseTab=(next:ShopTab)=>{setTab(next);setFilter('Todos')}
  const changeMode=()=>{g.toggleShopMode();setFilter('Todos')}
