@@ -10,6 +10,13 @@ export const REGION_MATERIALS:Record<string,{id:string;nome:string;elemento:Elem
 export const SET_BONUSES=[{key:'lua',nome:'Regalia Lunargenta',two:'+1 defesa',four:'+2 vida e afinidade com natureza'},{key:'cinza',nome:'Arsenal das Cinzas',two:'+1 ataque',four:'primeiro ataque causa +2 de dano'},{key:'kh ar|khar|runa|bronze',nome:'Legado de Khar-Dur',two:'+2 vida',four:'+2 escudo inicial'},{key:'eclipse|véu|vazio',nome:'Vestes do Eclipse',two:'+1 ataque',four:'+1 em rolagens contra chefes'}]
 export const STATUS_INFO=[['veneno','Sofre dano ao fim do turno.'],['queimadura','Sofre dano de fogo por três turnos.'],['sangramento','Ataques físicos ampliam o dano.'],['atordoamento','Perde a próxima ação.'],['congelamento','Ataque reduzido temporariamente.'],['maldição','Rolagens recebem penalidade.'],['regeneração','Recupera vida por turno.']] as const
 export const ELEMENTS:Element[]=['fisico','fogo','gelo','natureza','sombra','luz','arcano']
+export const FORGE_MATERIALS=[{id:'fragmento_fisico',nome:'Fragmento Físico',texto:'Metal, couro e madeira recuperados.'},{id:'essencia_magica',nome:'Essência Mágica',texto:'Energia extraída de itens encantados.'}] as const
+export const FORGE_GEMS=[
+ {id:'rubi_forja',nome:'Rubi da Forja',stat:'ataque' as const,value:2,texto:'+2 de Ataque'},
+ {id:'safira_guardia',nome:'Safira da Guarda',stat:'defesa' as const,value:1,texto:'+1 de Defesa'},
+ {id:'esmeralda_vital',nome:'Esmeralda Vital',stat:'vida' as const,value:4,texto:'+4 de Vida'},
+ {id:'ametista_arcana',nome:'Ametista Arcana',stat:'rolagem' as const,value:1,texto:'+1 na primeira rolagem'}
+] as const
 
 export type StoryRequirement={type:'victories'|'bosses'|'material'|'upgrade'|'region';amount:number;target?:string;label:string}
 export type StoryChoice={id:string;text:string;next:string;consequence:string;gold?:number;material?:string}
