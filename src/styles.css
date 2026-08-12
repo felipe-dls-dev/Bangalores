@@ -405,6 +405,9 @@ body:has(.combat-v033){overflow-y:auto;overflow-x:hidden}
 .map-sub-pin.completed{border-color:#79ad67;color:#b7e59e;background:linear-gradient(145deg,#294122,#101b0d)}
 .map-territory-pin{z-index:5;width:29px;height:29px;border-width:2px;box-shadow:0 0 0 3px rgba(7,5,3,.58),0 3px 12px #000}
 .map-territory-pin>span{font-size:.82rem}
+.map-territory-pin>b{bottom:calc(100% + 8px);display:block;max-width:170px;padding:6px 10px;border-color:#b67d34;background:linear-gradient(145deg,rgba(35,23,13,.96),rgba(10,7,5,.96));color:#f0cb80;font:700 clamp(.58rem,.72vw,.76rem) Georgia,serif;letter-spacing:.035em;text-transform:uppercase;opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);text-shadow:0 2px 4px #000;box-shadow:0 5px 14px rgba(0,0,0,.78)}
+.map-territory-pin.completed>b{border-color:#628653;color:#c7e7ad;background:linear-gradient(145deg,rgba(28,50,23,.96),rgba(9,19,8,.96))}
+.map-territory-pin:hover>b,.map-territory-pin:focus-visible>b{transform:translateX(-50%) translateY(-2px);border-color:#efbc61;color:#ffe0a0}
 
 .shop-category-filters{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #49341f}
 .shop-empty{grid-column:1/-1;min-height:230px;display:grid;place-items:center;align-content:center;gap:10px;border:1px dashed #584025;border-radius:12px;color:#887b69;background:rgba(15,10,7,.45)}
