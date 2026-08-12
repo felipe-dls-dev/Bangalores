@@ -22,7 +22,8 @@ const consumableFilters=[['Todos','Todos'],['cura','Cura'],['bonus','Bônus']] a
 const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
  campos_estrada:[.20,.35],campos_ponte:[.28,.58],lunar_bosque:[.75,.51],lunar_goblins:[.66,.52],lunar_monolito:[.70,.37],lunar_aranhas:[.87,.59],
  montanhas_passagem:[.35,.14],montanhas_mina:[.38,.27],montanhas_gelo:[.43,.22],pico_encosta:[.60,.19],pico_ninho_dragao:[.68,.14],
- mortas_campos:[.58,.78],mortas_catacumbas:[.57,.69],khar_galerias:[.35,.71],khar_labirinto:[.40,.72],khar_templo_minotauro:[.34,.84]
+ mortas_campos:[.58,.78],mortas_catacumbas:[.57,.69],khar_galerias:[.35,.71],khar_labirinto:[.40,.72],khar_templo_minotauro:[.34,.84],
+ eclipse_portoes:[.47,.51],eclipse_torre:[.52,.47],eclipse_trono:[.54,.54]
 }
 
 const rarityLabel:Record<Rarity,string>={comum:'Comum',incomum:'Incomum',raro:'Raro',epico:'Épico',lendario:'Lendário',mitico:'Mítico',heroico:'Heróico'}

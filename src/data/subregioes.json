@@ -147,5 +147,33 @@
       {"nome":"Guardião do Altar","ataque":10,"vida":40,"ouro":11,"habilidade":"Proteção cerimonial","arte":"assets/art/monsters/sentinela_runas.webp"}
     ],
     "chefe":{"nome":"Minotauro Ancestral","ataque":14,"vida":92,"ouro":74,"habilidade":"Investida, fúria e golpe sísmico","arte":"assets/art/bosses/boss_minotauro.webp","maxFases":3,"raridade":"lendario"}
+  },
+
+  {
+    "id":"eclipse_portoes","regionId":"coracao_eclipse","nome":"Portões do Eclipse","descricao":"Fortificações negras cercam o centro de Eldravar. Apenas aventureiros veteranos sobrevivem às sentinelas do Véu.","nivelMin":16,"nivelMax":19,"encontrosNecessarios":6,"icone":"🌑","temaLoot":"Equipamentos épicos, runas do eclipse e grandes tesouros","desafios":["Muralha viva","Chuva de fragmentos","Patrulha do Véu","Portão sem fechadura"],
+    "inimigos":[
+      {"nome":"Cavaleiro do Eclipse","ataque":17,"vida":58,"ouro":20,"habilidade":"Lâmina do crepúsculo","arte":"assets/art/monsters/fanatico_orgulho.webp"},
+      {"nome":"Sentinela do Véu","ataque":16,"vida":68,"ouro":21,"habilidade":"Barreira do vazio","arte":"assets/art/monsters/sentinela_runas.webp"},
+      {"nome":"Devorador de Luz","ataque":18,"vida":54,"ouro":22,"habilidade":"Extinguir esperança","arte":"assets/art/monsters/espectro_rainha.webp"}
+    ],
+    "chefe":{"nome":"Asterion, Guardião do Eclipse","ataque":22,"vida":156,"ouro":135,"habilidade":"Muralha absoluta, lâmina astral e julgamento do Véu","arte":"assets/art/bosses/boss_minotauro.webp","maxFases":3,"raridade":"mitico"}
+  },
+  {
+    "id":"eclipse_torre","regionId":"coracao_eclipse","nome":"Torre do Véu Partido","descricao":"Uma torre impossível ergue-se sobre a fenda central, distorcendo espaço, magia e memória.","nivelMin":19,"nivelMax":22,"encontrosNecessarios":7,"icone":"🜁","temaLoot":"Grimórios míticos, armas do vazio e relíquias arcanas","desafios":["Escadaria infinita","Biblioteca sem tempo","Sala dos reflexos","Observatório partido"],
+    "inimigos":[
+      {"nome":"Arcanista Sem Rosto","ataque":20,"vida":66,"ouro":24,"habilidade":"Roubo de memória","arte":"assets/art/monsters/ilusionista_areias.webp"},
+      {"nome":"Espectro do Tempo Partido","ataque":21,"vida":62,"ouro":25,"habilidade":"Atraso temporal","arte":"assets/art/monsters/espectro_rainha.webp"},
+      {"nome":"Golem de Cristal Negro","ataque":19,"vida":82,"ouro":26,"habilidade":"Reflexão arcana","arte":"assets/art/monsters/sentinela_runas.webp"}
+    ],
+    "chefe":{"nome":"Vaelora, Senhora do Véu","ataque":26,"vida":204,"ouro":175,"habilidade":"Dobra temporal, tempestade arcana e reflexo da morte","arte":"assets/art/bosses/boss_necromante.webp","maxFases":4,"raridade":"mitico"}
+  },
+  {
+    "id":"eclipse_trono","regionId":"coracao_eclipse","nome":"Trono do Vazio","descricao":"No coração exato do continente, uma entidade anterior aos reinos aguarda o aventureiro mais poderoso de Eldravar.","nivelMin":22,"nivelMax":26,"encontrosNecessarios":8,"icone":"♛","temaLoot":"Tesouros míticos, equipamentos finais e artefatos únicos","desafios":["Mar de sombras","Coro dos derrotados","Ponte do fim","Salão dos sete selos","O último juramento"],
+    "inimigos":[
+      {"nome":"Arauto do Fim","ataque":23,"vida":78,"ouro":29,"habilidade":"Presságio inevitável","arte":"assets/art/monsters/fanatico_orgulho.webp"},
+      {"nome":"Dragão do Vazio","ataque":24,"vida":86,"ouro":31,"habilidade":"Sopro de matéria negra","arte":"assets/art/monsters/corvo_ignaroth.webp"},
+      {"nome":"Titã Sem Nome","ataque":22,"vida":102,"ouro":32,"habilidade":"Corpo além da realidade","arte":"assets/art/monsters/sentinela_runas.webp"}
+    ],
+    "chefe":{"nome":"Nihraz, Imperador do Vazio","ataque":31,"vida":280,"ouro":260,"habilidade":"Quatro fases, colapso do Véu, corrupção crescente e golpe do fim","arte":"assets/art/bosses/boss_malgor.webp","maxFases":4,"raridade":"mitico"}
   }
 ]
