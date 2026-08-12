@@ -16,6 +16,8 @@ import { CLASS_BOOTS } from '../data/boots'
 import { BACKPACKS } from '../data/backpacks'
 import { EXPANDED_SUBREGIONS } from '../data/expandedSubregions'
 import monsterArt from '../data/monsterArt.json'
+import eventArt from '../data/eventArt.json'
+import bossArt from '../data/bossArt.json'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard } from '../types'
 
 const HD_ART:Record<string,string> = {
@@ -36,6 +38,8 @@ const HD_ART:Record<string,string> = {
 }
 const hdArt=(path:string)=>HD_ART[path]??path
 const MONSTER_ART=monsterArt as Record<string,string>
+const EVENT_ART=eventArt as Record<string,string>
+const BOSS_ART=bossArt as Record<string,string>
 const namedMonsterArt=(name:string,fallback:string)=>MONSTER_ART[name]??fallback
 const hdCollectionArt=(path:string|undefined,collection:string)=>{
   if(!path)return path
@@ -62,13 +66,13 @@ const SUBREGIONS_LEVEL:Record<string,number>=Object.fromEntries(ALL_SUBREGIONS.m
 const extraMonsters:Enemy[]=Object.entries(EXTRA_SUBREGION_ENEMIES).flatMap(([subregionId,list])=>list.map((monster,index)=>{const arte=namedMonsterArt(monster.nome,monster.arte);return{id:`extra_${subregionId}_${index}`,nome:monster.nome,ataque:monster.ataque,vida:monster.vida,ouro:monster.ouro,dificuldade:SUBREGIONS_LEVEL[subregionId]??1,habilidade:monster.habilidade,imagem:arte,arte,raridade:'incomum'}}))
 export const MONSTERS = [...(monsters as Enemy[]).map(monster=>{const fallback=monster.arte?hdArt(monster.arte):monster.imagem;const arte=namedMonsterArt(monster.nome,fallback);return{...monster,imagem:arte,arte}}),...extraMonsters]
 export const TERRITORIES = territories as Territory[]
-export const SUBREGIONS = ALL_SUBREGIONS.map(subregion=>({...subregion,inimigos:[...subregion.inimigos.map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,hdArt(enemy.arte))})),...(EXTRA_SUBREGION_ENEMIES[subregion.id]??[]).map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,enemy.arte)}))],chefe:{...subregion.chefe,arte:hdArt(subregion.chefe.arte)}}))
+export const SUBREGIONS = ALL_SUBREGIONS.map(subregion=>({...subregion,inimigos:[...subregion.inimigos.map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,hdArt(enemy.arte))})),...(EXTRA_SUBREGION_ENEMIES[subregion.id]??[]).map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,enemy.arte)}))],chefe:{...subregion.chefe,arte:BOSS_ART[subregion.chefe.nome]??hdArt(subregion.chefe.arte)}}))
 const eventArtFromSource=(event:GameEvent)=>{
   const sourceNumber=Number(event.imagem.match(/\/(\d{3})_eventos_/)?.[1])
   const artNumber=sourceNumber>=196&&sourceNumber<=215?sourceNumber-195:1
   return `assets/art/events/event-${String(artNumber).padStart(2,'0')}.jpg`
 }
-export const EVENTS = [...(events as GameEvent[]).map(event=>({...event,arte:eventArtFromSource(event)})),...EXTRA_EVENTS]
+export const EVENTS = [...(events as GameEvent[]).map(event=>({...event,arte:EVENT_ART[event.nome]??eventArtFromSource(event)})),...EXTRA_EVENTS.map(event=>({...event,arte:EVENT_ART[event.nome]??event.arte}))]
 
 const slotOrder: Slot[] = ['amuleto','capacete','bolsa','mao_direita','peitoral','mao_esquerda','anel_1','calcas','anel_2','botas']
 export const SLOT_ORDER = slotOrder
@@ -89,7 +93,7 @@ const bossByDifficulty: Record<number,Enemy> = {
   5:{id:'boss_necromante',nome:'Necromante Supremo',ataque:9,vida:58,ouro:42,dificuldade:5,habilidade:'Dreno de vida',imagem:'assets/cards/catalogo/195_monstros_008.jpg',arte:'assets/art/hd/bosses/necromante-supremo-hd.webp',raridade:'lendario',boss:true,maxFases:2},
   6:{id:'boss_malgor',nome:'Malgor, o Rei Sombrio',ataque:10,vida:72,ouro:60,dificuldade:6,habilidade:'Três fases e ataque crescente',imagem:'assets/cards/equipamentos/coracao_malgor.jpg',arte:'assets/art/hd/bosses/malgor-rei-sombrio-hd.webp',raridade:'mitico',boss:true,maxFases:3}
 }
-export const BOSSES = bossByDifficulty
+export const BOSSES = Object.fromEntries(Object.entries(bossByDifficulty).map(([difficulty,boss])=>{const arte=BOSS_ART[boss.nome]??boss.arte;return[difficulty,{...boss,imagem:arte,arte}]})) as Record<number,Enemy>
 
 const xpCosts=[10,14,19,25,33,43,56,72,92,116,145,180,220,265,315,370,430,495]
 function costForLevel(level:number){
