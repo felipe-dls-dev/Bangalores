@@ -59,7 +59,9 @@ const RAW_EQUIPMENT = [...(equipments as Equipment[]).map(equipment=>({
   ...equipment,
   arte:EQUIPMENT_HD_OVERRIDES[equipment.id]??hdCollectionArt(equipment.arte,'equipment')
 })),...EXTRA_EQUIPMENT,...CLASS_OFFHANDS,...CLASS_HEADGEAR,...CLASS_ARMOR,...CLASS_LEGWEAR,...CLASS_BOOTS,...BACKPACKS]
-const ITEM_PRICE_MULTIPLIER=1.6
+// Economia da loja: mantém o balanceamento-base anterior (1,6×) e aplica
+// o novo encarecimento global de 10× a equipamentos e consumíveis.
+const ITEM_PRICE_MULTIPLIER=16
 const LIFE_CHANCE:Record<string,number>={essencia_vital:.35,elixir_fenix:.5}
 export const CONSUMABLES = (consumables as Consumable[]).map(consumable=>({...consumable,preco:Math.ceil(consumable.preco*ITEM_PRICE_MULTIPLIER),descricao:consumable.tipo==='vida_max'?`${Math.round((LIFE_CHANCE[consumable.id]??.35)*100)}% de chance de aumentar permanentemente a vida máxima em ${consumable.valor}.${consumable.id==='elixir_fenix'?' Recupera toda a vida em caso de sucesso.':` Cura ${consumable.valor} em caso de sucesso.`}`:consumable.descricao,arte:hdCollectionArt(consumable.arte,'consumables')}))
 const ALL_SUBREGIONS=[...(subregions as Subregion[]),...EXPANDED_SUBREGIONS]
