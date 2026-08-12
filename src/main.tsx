@@ -20,10 +20,13 @@ const weaponFilters=[['Todos','Todas'],['guerreiro','Guerreiro'],['guardiao','Gu
 const equipmentFilters=[['Todos','Todos'],['bolsa','Bolsas'],['mao_esquerda','Mão esquerda'],['peitoral','Armaduras'],['capacete','Capacetes'],['calcas','Calças'],['botas','Botas'],['aneis','Anéis'],['amuleto','Amuletos']] as const
 const consumableFilters=[['Todos','Todos'],['cura','Cura'],['bonus','Bônus']] as const
 const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
- campos_estrada:[.16,.32],campos_ponte:[.30,.49],lunar_bosque:[.73,.38],lunar_goblins:[.82,.52],lunar_monolito:[.73,.59],lunar_aranhas:[.88,.63],
- montanhas_passagem:[.27,.12],montanhas_mina:[.40,.20],montanhas_gelo:[.34,.27],pico_encosta:[.64,.12],pico_ninho_dragao:[.78,.20],
- mortas_campos:[.62,.70],mortas_catacumbas:[.78,.75],khar_galerias:[.23,.69],khar_labirinto:[.34,.78],khar_templo_minotauro:[.25,.87],
- eclipse_portoes:[.44,.55],eclipse_torre:[.51,.40],eclipse_trono:[.54,.49]
+ campos_estrada:[.12,.31],campos_ponte:[.30,.52],campos_fazendas:[.19,.45],campos_moinho:[.28,.35],campos_ruinas:[.13,.53],
+ lunar_bosque:[.75,.35],lunar_goblins:[.86,.47],lunar_monolito:[.72,.59],lunar_aranhas:[.88,.65],lunar_lago:[.82,.36],lunar_raizes:[.78,.53],lunar_pantano:[.91,.55],
+ montanhas_passagem:[.23,.09],montanhas_mina:[.42,.20],montanhas_gelo:[.32,.27],montanhas_forte:[.44,.10],montanhas_abismo:[.25,.23],montanhas_cume:[.35,.08],
+ pico_encosta:[.61,.10],pico_ninho_dragao:[.80,.20],pico_cinzas:[.62,.25],pico_forja:[.73,.29],pico_cratera:[.86,.10],
+ mortas_campos:[.60,.72],mortas_catacumbas:[.78,.77],mortas_vila:[.68,.65],mortas_brejo:[.88,.79],mortas_torre:[.73,.88],
+ khar_galerias:[.18,.69],khar_labirinto:[.34,.79],khar_templo_minotauro:[.22,.89],khar_forjas:[.30,.67],khar_cofre:[.39,.87],khar_profundezas:[.13,.82],
+ eclipse_portoes:[.43,.55],eclipse_torre:[.51,.37],eclipse_trono:[.55,.50],eclipse_jardim:[.45,.42],eclipse_arquivo:[.58,.43],eclipse_fenda:[.48,.61]
 }
 
 const rarityLabel:Record<Rarity,string>={comum:'Comum',incomum:'Incomum',raro:'Raro',epico:'Épico',lendario:'Lendário',mitico:'Mítico',heroico:'Heróico'}

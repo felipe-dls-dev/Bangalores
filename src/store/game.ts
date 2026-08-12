@@ -14,6 +14,7 @@ import { CLASS_ARMOR } from '../data/armorSets'
 import { CLASS_LEGWEAR } from '../data/legwear'
 import { CLASS_BOOTS } from '../data/boots'
 import { BACKPACKS } from '../data/backpacks'
+import { EXPANDED_SUBREGIONS } from '../data/expandedSubregions'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard } from '../types'
 
 const HD_ART:Record<string,string> = {
@@ -53,11 +54,12 @@ const RAW_EQUIPMENT = [...(equipments as Equipment[]).map(equipment=>({
 const ITEM_PRICE_MULTIPLIER=1.6
 const LIFE_CHANCE:Record<string,number>={essencia_vital:.35,elixir_fenix:.5}
 export const CONSUMABLES = (consumables as Consumable[]).map(consumable=>({...consumable,preco:Math.ceil(consumable.preco*ITEM_PRICE_MULTIPLIER),descricao:consumable.tipo==='vida_max'?`${Math.round((LIFE_CHANCE[consumable.id]??.35)*100)}% de chance de aumentar permanentemente a vida máxima em ${consumable.valor}.${consumable.id==='elixir_fenix'?' Recupera toda a vida em caso de sucesso.':` Cura ${consumable.valor} em caso de sucesso.`}`:consumable.descricao,arte:hdCollectionArt(consumable.arte,'consumables')}))
-const SUBREGIONS_LEVEL:Record<string,number>=Object.fromEntries((subregions as Subregion[]).map(subregion=>[subregion.id,subregion.nivelMin]))
+const ALL_SUBREGIONS=[...(subregions as Subregion[]),...EXPANDED_SUBREGIONS]
+const SUBREGIONS_LEVEL:Record<string,number>=Object.fromEntries(ALL_SUBREGIONS.map(subregion=>[subregion.id,subregion.nivelMin]))
 const extraMonsters:Enemy[]=Object.entries(EXTRA_SUBREGION_ENEMIES).flatMap(([subregionId,list])=>list.map((monster,index)=>({id:`extra_${subregionId}_${index}`,nome:monster.nome,ataque:monster.ataque,vida:monster.vida,ouro:monster.ouro,dificuldade:SUBREGIONS_LEVEL[subregionId]??1,habilidade:monster.habilidade,imagem:monster.arte,arte:monster.arte,raridade:'incomum'})))
 export const MONSTERS = [...(monsters as Enemy[]).map(monster=>({...monster,arte:monster.arte?hdArt(monster.arte):monster.arte})),...extraMonsters]
 export const TERRITORIES = territories as Territory[]
-export const SUBREGIONS = (subregions as Subregion[]).map(subregion=>({...subregion,inimigos:[...subregion.inimigos.map(enemy=>({...enemy,arte:hdArt(enemy.arte)})),...(EXTRA_SUBREGION_ENEMIES[subregion.id]??[])],chefe:{...subregion.chefe,arte:hdArt(subregion.chefe.arte)}}))
+export const SUBREGIONS = ALL_SUBREGIONS.map(subregion=>({...subregion,inimigos:[...subregion.inimigos.map(enemy=>({...enemy,arte:hdArt(enemy.arte)})),...(EXTRA_SUBREGION_ENEMIES[subregion.id]??[])],chefe:{...subregion.chefe,arte:hdArt(subregion.chefe.arte)}}))
 const eventArtFromSource=(event:GameEvent)=>{
   const sourceNumber=Number(event.imagem.match(/\/(\d{3})_eventos_/)?.[1])
   const artNumber=sourceNumber>=196&&sourceNumber<=215?sourceNumber-195:1
