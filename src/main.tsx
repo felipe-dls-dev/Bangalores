@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Map, ScrollText, Backpack, Shield, ShoppingBag, Images, Menu, Sword, Sparkles, Coins, Trophy, Package, Plus, ArrowLeft, ArrowRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn } from 'lucide-react'
-import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance } from './store/game'
+import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_GEMS, FORGE_MATERIALS, FORGE_RECIPES, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode } from './data/expansion'
 import './styles.css'
@@ -367,7 +367,9 @@ function Empty({text}:{text:string}){return <div className="empty"><Package/><p>
 
 function GuildScreen(){
  const g=useGame()
- const reputation=g.guildClaimed.reduce((sum,id)=>sum+(GUILD_MISSIONS.find(m=>m.id===id)?.dificuldade??0),0)
+ const renewedMissions=availableGuildMissions(g.guildClaimed)
+ GUILD_MISSIONS.splice(0,GUILD_MISSIONS.length,...renewedMissions)
+ const reputation=g.guildClaimed.reduce((sum,id)=>sum+(guildMissionById(id)?.dificuldade??0),0)
  const rank=guildRankFor(reputation),rankIndex=GUILD_RANKS.findIndex(r=>r.id===rank.id),nextRank=GUILD_RANKS[rankIndex+1]
  const active=g.guildAccepted.filter(id=>!g.guildClaimed.includes(id)).length
  const missionProgress=(mission:(typeof GUILD_MISSIONS)[number])=>mission.tipo==='delivery'&&mission.itemId?(g.equipmentBag.includes(mission.itemId)?1:0):Math.min(mission.quantidade,g.guildProgress[mission.id]??0)
