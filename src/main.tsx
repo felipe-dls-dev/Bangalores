@@ -145,9 +145,10 @@ function App(){
 }
 
 function CoopBattleSync(){
- const coop=useCoop(),screen=useGame(state=>state.screen),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),receiveEnemy=useGame(state=>state.receiveCoopEnemyAttack),battle=coop.room?.shared_state?.battle as {id?:string;enemyHp?:number;activeUserId?:string;lastRoll?:any;turn?:number}|undefined,handledEnemyTurn=React.useRef(''),receivedRoll=React.useRef('')
+ const coop=useCoop(),screen=useGame(state=>state.screen),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),receiveEnemy=useGame(state=>state.receiveCoopEnemyAttack),battle=coop.room?.shared_state?.battle as {id?:string;enemyHp?:number;activeUserId?:string;lastRoll?:any;turn?:number}|undefined,handledEnemyTurn=React.useRef(''),receivedRoll=React.useRef(''),enemyExecutor=React.useRef(coop.resolveEnemyTurn)
+ enemyExecutor.current=coop.resolveEnemyTurn
  React.useEffect(()=>{if(!battle?.id||typeof battle.enemyHp!=='number'||screen!=='combat'||enemyHp===battle.enemyHp)return;sync(battle.enemyHp)},[battle?.id,battle?.enemyHp,screen,enemyHp,sync])
- React.useEffect(()=>{const key=`${battle?.id}:${battle?.turn}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;handledEnemyTurn.current=key;const timer=setTimeout(()=>void coop.resolveEnemyTurn(),900);return()=>clearTimeout(timer)},[battle?.id,battle?.turn,battle?.activeUserId,screen,coop.room?.host_id,coop.userId,coop.resolveEnemyTurn])
+ React.useEffect(()=>{const key=`${battle?.id}:${battle?.turn}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;const timer=setTimeout(()=>{handledEnemyTurn.current=key;void enemyExecutor.current()},900);return()=>clearTimeout(timer)},[battle?.id,battle?.turn,battle?.activeUserId,screen,coop.room?.host_id,coop.userId])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`${battle?.id}:${battle?.turn}`;if(screen!=='combat'||roll?.attacker!=='enemy'||roll.targetUserId!==coop.userId||receivedRoll.current===key)return;receivedRoll.current=key;receiveEnemy(Number(roll.damage??0),roll)},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveEnemy])
  return null
 }
