@@ -1,0 +1,21 @@
+import React from 'react'
+import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
+
+type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;selectDestination:(regionId:string,subregionId:string)=>Promise<void>}
+const CoopContext=React.createContext<CoopContextValue|null>(null)
+const ROOM_KEY='bangalores-coop-room-id'
+
+export function CoopProvider({children}:{children:React.ReactNode}){
+ const [room,setRoom]=React.useState<OnlineRoom|null>(null),[members,setMembers]=React.useState<OnlineMember[]>([]),[userId,setUserId]=React.useState(''),[onlineCount,setOnlineCount]=React.useState(0),[busy,setBusy]=React.useState(false),[notice,setNotice]=React.useState('')
+ const channel=React.useRef<ReturnType<typeof subscribeToOnlineRoom>>(null),roomRef=React.useRef<OnlineRoom|null>(null)
+ const refresh=React.useCallback(async(roomId:string)=>{try{const data=await loadOnlineRoom(roomId);roomRef.current=data.room;setRoom(data.room);setMembers(data.members)}catch(error){localStorage.removeItem(ROOM_KEY);roomRef.current=null;setRoom(null);setMembers([]);setNotice(error instanceof Error?error.message:'A sala não está mais disponível.')}},[])
+ const connect=React.useCallback(async(roomId:string,id?:string)=>{await unsubscribeFromOnlineRoom(channel.current);const user=id?{id}:await ensureOnlineUser();setUserId(user.id);localStorage.setItem(ROOM_KEY,roomId);await refresh(roomId);channel.current=subscribeToOnlineRoom(roomId,()=>void refresh(roomId),presence=>setOnlineCount(Object.keys(presence).length));setNotice('Sala conectada em tempo real.')},[refresh])
+ React.useEffect(()=>{const roomId=localStorage.getItem(ROOM_KEY);if(roomId)void connect(roomId);return()=>{void unsubscribeFromOnlineRoom(channel.current)}},[connect])
+ const create=async(name:string,heroId?:string)=>{setBusy(true);try{localStorage.setItem('bangalores-coop-name',name.trim());const result=await createOnlineRoom(name,heroId);await connect(result.room_id,result.user_id)}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível criar a sala.')}finally{setBusy(false)}}
+ const join=async(code:string,name:string,heroId?:string)=>{setBusy(true);try{localStorage.setItem('bangalores-coop-name',name.trim());const result=await joinOnlineRoom(code,name,heroId);await connect(result.room_id,result.user_id)}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível entrar na sala.')}finally{setBusy(false)}}
+ const leave=async()=>{if(!roomRef.current)return;setBusy(true);try{await leaveOnlineRoom(roomRef.current.id);await unsubscribeFromOnlineRoom(channel.current);channel.current=null;localStorage.removeItem(ROOM_KEY);roomRef.current=null;setRoom(null);setMembers([]);setOnlineCount(0);setNotice('Você saiu da sala.')}finally{setBusy(false)}}
+ const toggleReady=async(heroId?:string)=>{const current=roomRef.current,me=members.find(member=>member.user_id===userId);if(!current||!me)return;setBusy(true);try{await setMemberReady(current.id,!me.ready,heroId);await refresh(current.id)}finally{setBusy(false)}}
+ const selectDestination=async(regionId:string,subregionId:string)=>{const current=roomRef.current;if(!current||current.host_id!==userId)return;setBusy(true);try{await publishRoomState(current.id,{...current.shared_state,destination:{regionId,subregionId,selectedBy:userId,selectedAt:new Date().toISOString()},rewardRule:{type:'damage_proportional',formula:'player_damage / group_damage'}},current.state_version);await refresh(current.id)}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível selecionar o destino.')}finally{setBusy(false)}}
+ return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,selectDestination}}>{children}</CoopContext.Provider>
+}
+export function useCoop(){const value=React.useContext(CoopContext);if(!value)throw new Error('CoopProvider não encontrado.');return value}
