@@ -116,7 +116,7 @@ function CardFrame({card,kind,artStyle}:{card:any;kind:string;artStyle?:React.CS
 }
 
 function App(){
- React.useEffect(()=>{const heal=()=>{const s=useGame.getState() as any;if(!s.heroId||s.screen==='combat'||s.hp<=0)return;const now=Date.now(),interval=s.regenBoostUntil>now?30000:60000,last=s.lastPassiveHealAt??now,points=Math.floor((now-last)/interval);if(points>0)useGame.setState({hp:Math.min(maxHp(s),s.hp+points),lastPassiveHealAt:last+points*interval} as any)};heal();const timer=setInterval(heal,10000),unsubscribe=useGame.subscribe((state:any,previous:any)=>{if((state.inventory.tonico_regeneracao??0)<(previous.inventory.tonico_regeneracao??0))useGame.setState({regenBoostUntil:Date.now()+3600000,lastPassiveHealAt:Date.now(),explorationNote:'Tônico da Regeneração Acelerada: cura acelerada ativa por 1 hora.'} as any)});return()=>{clearInterval(timer);unsubscribe()}},[])
+ React.useEffect(()=>{const heal=()=>{const s=useGame.getState() as any;if(!s.heroId||s.hp<=0)return;const now=Date.now(),interval=s.regenBoostUntil>now?30000:60000,last=s.lastPassiveHealAt??now,points=Math.floor((now-last)/interval);if(points>0)useGame.setState({hp:Math.min(maxHp(s),s.hp+points),lastPassiveHealAt:last+points*interval} as any)};heal();const timer=setInterval(heal,10000),unsubscribe=useGame.subscribe((state:any,previous:any)=>{if((state.inventory.tonico_regeneracao??0)<(previous.inventory.tonico_regeneracao??0))useGame.setState({regenBoostUntil:Date.now()+3600000,lastPassiveHealAt:Date.now(),explorationNote:'Tônico da Regeneração Acelerada: cura acelerada ativa por 1 hora.'} as any)});return()=>{clearInterval(timer);unsubscribe()}},[])
  const g=useGame();
  const hero=HEROES.find(h=>h.id===g.heroId)
  const [fleeConfirm,setFleeConfirm]=React.useState(false)
