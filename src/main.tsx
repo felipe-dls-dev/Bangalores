@@ -20,7 +20,7 @@ const allGallery=[...HEROES.map(x=>({...x,kind:'Herói'})),...EQUIPMENT.map(x=>(
 const galleryCategories=[['Todos','Todas'],['Herói','Heróis'],['Equipamento','Equipamentos'],['Consumível','Consumíveis'],['Monstro','Monstros'],['Elite','Monstros de elite'],['Chefe','Chefes'],['Evento','Eventos']] as const
 const shopTabs=['Armas','Equipamentos','Consumíveis'] as const
 type ShopTab=typeof shopTabs[number]
-const weaponFilters=[['Todos','Todas'],['guerreiro','Guerreiro'],['guardiao','Guardião'],['cacadora','Ladino'],['arcanista','Arcanista'],['neutra','Neutras']] as const
+const weaponFilters=[['Todos','Todas'],['guerreiro','Guerreiro'],['guardiao','Guardião'],['cacadora','Ladino'],['arcanista','Arcanista'],['druida','Druida'],['cacador','Caçador'],['neutra','Neutras']] as const
 const equipmentFilters=[['Todos','Todos'],['bolsa','Bolsas'],['mao_esquerda','Mão esquerda'],['peitoral','Armaduras'],['capacete','Capacetes'],['calcas','Calças'],['botas','Botas'],['aneis','Anéis'],['amuleto','Amuletos']] as const
 const consumableFilters=[['Todos','Todos'],['cura','Cura'],['bonus','Bônus']] as const
 const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
@@ -88,7 +88,7 @@ function cardEmblem(card:any,kind:string){
  if(kind==='Elite'||card.elite)return cardSystemRoot+'enemy-elite-v2.webp'
  if(kind==='Monstro')return cardSystemRoot+'enemy-common-v2.webp'
  const classId=kind==='Herói'?card.id:(card.classeExclusiva??(kind==='Equipamento'?equipmentAffinity(card):undefined))
- const icon=({guerreiro:'class-warrior.webp',guardiao:'class-guardian.webp',cacadora:'class-rogue.webp',arcanista:'class-arcanist.webp'} as Record<string,string>)[classId]
+ const icon=({guerreiro:'class-warrior.webp',guardiao:'class-guardian.webp',cacadora:'class-rogue.webp',arcanista:'class-arcanist.webp',druida:'class-arcanist.webp',cacador:'class-rogue.webp'} as Record<string,string>)[classId]
  return cardSystemRoot+(icon??'class-universal.webp')
 }
 function cardBadge(card:any,kind:string,rarity:Rarity){

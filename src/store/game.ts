@@ -14,6 +14,7 @@ import { CLASS_ARMOR } from '../data/armorSets'
 import { CLASS_LEGWEAR } from '../data/legwear'
 import { CLASS_BOOTS } from '../data/boots'
 import { BACKPACKS } from '../data/backpacks'
+import { NEW_CLASS_EQUIPMENT } from '../data/newClassEquipment'
 import { EXPANDED_SUBREGIONS } from '../data/expandedSubregions'
 import monsterArt from '../data/monsterArt.json'
 import eventArt from '../data/eventArt.json'
@@ -58,7 +59,7 @@ export const HEROES = heroes as Hero[]
 const RAW_EQUIPMENT = [...(equipments as Equipment[]).map(equipment=>({
   ...equipment,
   arte:EQUIPMENT_HD_OVERRIDES[equipment.id]??hdCollectionArt(equipment.arte,'equipment')
-})),...EXTRA_EQUIPMENT,...CLASS_OFFHANDS,...CLASS_HEADGEAR,...CLASS_ARMOR,...CLASS_LEGWEAR,...CLASS_BOOTS,...BACKPACKS]
+})),...EXTRA_EQUIPMENT,...CLASS_OFFHANDS,...CLASS_HEADGEAR,...CLASS_ARMOR,...CLASS_LEGWEAR,...CLASS_BOOTS,...NEW_CLASS_EQUIPMENT,...BACKPACKS]
 // Economia da loja: mantém o balanceamento-base anterior (1,6×) e aplica
 // o novo encarecimento global de 10× a equipamentos e consumíveis.
 const ITEM_PRICE_MULTIPLIER=16
@@ -85,8 +86,8 @@ const starter: Record<string,{equipped:Partial<Record<Slot,string>>, items:Recor
   guardiao: { equipped:{mao_direita:'machado_bronze',mao_esquerda:'pesado_bronze',peitoral:'armor_pesada_khardur',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:10 },
   arcanista: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:20 },
   cacadora: { equipped:{mao_direita:'facas_predador',mao_esquerda:'broquel_raposa',peitoral:'traje_raposa',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:18 }
-  ,druida: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:16 }
-  ,cacador: { equipped:{mao_direita:'facas_predador',mao_esquerda:'broquel_raposa',peitoral:'traje_raposa',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:17 }
+  ,druida: { equipped:{mao_direita:'druida_arma_broto_lunargenta',mao_esquerda:'druida_mao_esquerda_broto_lunargenta',peitoral:'druida_peitoral_broto_lunargenta',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:16 }
+  ,cacador: { equipped:{mao_direita:'cacador_arma_vigia_das_cinzas',mao_esquerda:'cacador_mao_esquerda_vigia_das_cinzas',peitoral:'cacador_peitoral_vigia_das_cinzas',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:17 }
 }
 
 // Mantidos para a Galeria e compatibilidade com saves antigos.
@@ -107,7 +108,7 @@ function costForLevel(level:number){
 }
 function deriveLevel(totalXp:number){ let lvl=1, spent=0; while(totalXp >= spent+costForLevel(lvl)){spent+=costForLevel(lvl);lvl++} return {lvl,progress:totalXp-spent,next:costForLevel(lvl)} }
 function eqById(id?:string){ return EQUIPMENT.find(e=>e.id===id) }
-export type WeaponAffinity='guerreiro'|'guardiao'|'cacadora'|'arcanista'
+export type WeaponAffinity='guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida'|'cacador'
 const EQUIPMENT_LEVELS=[1,3,5,7,9,11,14,17]
 const LEVEL_RARITY:Rarity[]=['comum','incomum','raro','raro','epico','epico','lendario','lendario']
 const FREE_EQUIPMENT=new Set(['lamina_vento','leve_estrada','armor_leao_valoria','machado_bronze','pesado_bronze','armor_pesada_khardur','orbe_veu','grimorio_lua','veste_estrelas','facas_predador','broquel_raposa','traje_raposa','pederneira_ancestrais','armadura_couro','botas_viajante','calcas_batedor'])
@@ -131,10 +132,10 @@ function monsterLootLevel(enemy:Enemy){const level=Math.max(1,enemy.nivel??enemy
 function monsterDropChance(enemy:Enemy){const level=Math.max(1,enemy.nivel??enemy.dificuldade);return enemy.boss?1:enemy.elite?Math.min(.82,.58+level*.012):Math.min(.58,.30+level*.012)}
 function equipmentLootPool(enemy:Enemy,heroId:string|undefined,heroLevel:number){const cap=Math.min(heroLevel,monsterLootLevel(enemy));return EQUIPMENT.filter(e=>!FREE_EQUIPMENT.has(e.id)&&equipmentRequiredLevel(e)<=cap&&equipmentClassAllowed(e,heroId))}
 function consumableLootPool(enemy:Enemy){const cap=monsterLootLevel(enemy);return CONSUMABLES.filter(item=>(CONSUMABLE_LOOT_LEVEL[item.raridade??'comum']??1)<=cap)}
-export function equipmentAffinity(e:Equipment):WeaponAffinity|undefined{const name=e.nome.toLocaleLowerCase('pt-BR');if(/espada|lâmina/.test(name))return'guerreiro';if(/machado|martelo/.test(name))return'guardiao';if(/faca|adaga/.test(name))return'cacadora';if(/cajado|orbe/.test(name))return'arcanista';return undefined}
+export function equipmentAffinity(e:Equipment):WeaponAffinity|undefined{if(e.tipoEquipamento==='arco'||e.tipoEquipamento==='balestra')return'cacador';if(e.tipoEquipamento==='cajado_natureza'||e.tipoEquipamento==='pergaminho')return'druida';const name=e.nome.toLocaleLowerCase('pt-BR');if(/arco|balestra/.test(name))return'cacador';if(/cajado.*(broto|raiz|orvalho|carvalho|lua verde|seiva|lunargenta|arquedruida)|pergaminho/.test(name))return'druida';if(/espada|lâmina/.test(name))return'guerreiro';if(/machado|martelo/.test(name))return'guardiao';if(/faca|adaga/.test(name))return'cacadora';if(/cajado|orbe/.test(name))return'arcanista';return undefined}
 export function equipmentAttackForHero(e:Equipment,heroId?:string){const affinity=equipmentAffinity(e);return affinity&&heroId!==affinity?Math.max(0,e.ataque-1):e.ataque}
-export function equipmentCompatibility(e:Equipment,heroId?:string){const affinity=equipmentAffinity(e);if(!affinity)return{affinity:undefined,compatible:true,penalty:0};const compatible=heroId===affinity||(heroId==='druida'&&affinity==='arcanista')||(heroId==='cacador'&&affinity==='cacadora');return{affinity,compatible,penalty:compatible?0:e.ataque-equipmentAttackForHero(e,heroId)}}
-export function equipmentClassAllowed(e:Equipment,heroId?:string){return !e.classeExclusiva||e.classeExclusiva===heroId||(heroId==='druida'&&e.classeExclusiva==='arcanista')||(heroId==='cacador'&&e.classeExclusiva==='cacadora')}
+export function equipmentCompatibility(e:Equipment,heroId?:string){const affinity=equipmentAffinity(e);if(!affinity)return{affinity:undefined,compatible:true,penalty:0};const compatible=heroId===affinity;return{affinity,compatible,penalty:compatible?0:e.ataque-equipmentAttackForHero(e,heroId)}}
+export function equipmentClassAllowed(e:Equipment,heroId?:string){return !e.classeExclusiva||e.classeExclusiva===heroId}
 
 interface Loot { gold:number; xp:number; itemId?:string; equipmentId?:string; title:string }
 interface EventResult { message:string; roll?:number; tone:'good'|'bad'|'neutral' }
