@@ -98,7 +98,8 @@ function CardFrame({card,kind,artStyle}:{card:any;kind:string;artStyle?:React.CS
  const rarity=cardRarity(card,kind),baseEffect=card.habilidade??card.descricao??'Sem efeito especial.',effect=kind==='Equipamento'?`Nível ${equipmentRequiredLevel(card)} • ${baseEffect}`:baseEffect
  const enemy=kind==='Monstro'||kind==='Elite'||kind==='Chefe'||card.boss||card.elite
  const attack=card.ataque??0,defense=card.defesa??(enemy?Math.max(0,(card.dificuldade??1)-2):0),life=card.vida??(kind==='Consumível'?card.valor??0:0)
- return <article className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''}`}>
+ const nameLength=String(card.nome??'').length,nameSize=nameLength>32?'name-xlong':nameLength>23?'name-long':nameLength>16?'name-medium':'name-short',effectSize=String(effect).length>105?'effect-long':String(effect).length>68?'effect-medium':'effect-short'
+ return <article className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize}`}>
   <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/></div>
   <img className="ornate-frame" src={'./'+cardSystemRoot+'frame-overlay.png'} alt="" aria-hidden="true"/>
   <h2 className="ornate-name">{card.nome}</h2>
