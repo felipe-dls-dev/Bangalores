@@ -1,7 +1,7 @@
 [
   {
     "id": "guerreiro",
-    "nome": "Guerreiro de Eldravar",
+    "nome": "Legionário do Pico Escarlate",
     "vida": 18,
     "ataque": 4,
     "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base.",
@@ -11,7 +11,7 @@
   },
   {
     "id": "cacadora",
-    "nome": "Ladino de Eldravar",
+    "nome": "Lâmina Mercenária de Khar-Dur",
     "vida": 15,
     "ataque": 5,
     "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: pode atacar duas vezes no turno.",
@@ -21,7 +21,7 @@
   },
   {
     "id": "arcanista",
-    "nome": "Arcanista do Conclave",
+    "nome": "Erudito do Eclipse",
     "vida": 13,
     "ataque": 6,
     "habilidade": "Passivo: 50% de chance de melhorar ouro ou espólios. Ativo: +2 nos dados e +10% de Ataque e Defesa para todos os aliados.",
@@ -31,12 +31,32 @@
   },
   {
     "id": "guardiao",
-    "nome": "Guardião das Montanhas",
+    "nome": "Sentinela dos Portões Cinzentos",
     "vida": 20,
     "ataque": 3,
     "habilidade": "Passivo: inicia a batalha com +2 de Defesa. Ativo — Provocar: inimigos priorizam atacar o Guardião.",
     "imagem": "assets/heroes/guardiao-montanhas-v2.png",
     "arte": "assets/heroes/guardiao-montanhas-v2.png",
+    "raridade": "heroico"
+  },
+  {
+    "id": "druida",
+    "nome": "Druida da Floresta Lunargenta",
+    "vida": 17,
+    "ataque": 4,
+    "habilidade": "Passivo: 25% de chance de aplicar -1 ao próximo dado inimigo. Ativo: cura 30% da vida máxima do aliado mais ferido.",
+    "imagem": "assets/heroes/druida-lunargenta.png",
+    "arte": "assets/heroes/druida-lunargenta.png",
+    "raridade": "heroico"
+  },
+  {
+    "id": "cacador",
+    "nome": "Caçador das Terras Mortas",
+    "vida": 16,
+    "ataque": 5,
+    "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: amplia a faixa crítica do grupo para resultados 5 e 6.",
+    "imagem": "assets/heroes/cacador-terras-mortas.png",
+    "arte": "assets/heroes/cacador-terras-mortas.png",
     "raridade": "heroico"
   }
 ]
