@@ -7,7 +7,7 @@ import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGI
 import type { Slot, Rarity, Subregion, GameEvent } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_GEMS, FORGE_MATERIALS, FORGE_RECIPES, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode } from './data/expansion'
 import { createOnlineRoom, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, normalizeRoomCode, onlineConfigured, setMemberReady, subscribeToOnlineRoom, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './online/supabase'
-import { CoopProvider } from './online/CoopContext'
+import { CoopProvider, useCoop } from './online/CoopContext'
 import PersistentCoopScreen from './online/CoopScreen'
 import './styles.css'
 
@@ -131,7 +131,7 @@ function App(){
   document.addEventListener('keydown',handleEscape)
   return()=>document.removeEventListener('keydown',handleEscape)
  },[fleeConfirm,g.screen,hero,g.setScreen])
- return <div className="app-shell">
+ return <div className="app-shell"><CoopBattleSync/>
    {g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='event'&&g.screen!=='cardCreator'&&<TopBar/>}
    <AnimatePresence mode="wait">
     <motion.main key={g.screen} className="screen" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.22}}>
@@ -142,6 +142,13 @@ function App(){
    {fleeConfirm&&<div className="escape-confirm-overlay" role="presentation" onClick={()=>setFleeConfirm(false)}><section className="escape-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="escape-flee-title" onClick={event=>event.stopPropagation()}><Footprints/><small>ATALHO ESC DURANTE O COMBATE</small><h2 id="escape-flee-title">Tentar fugir?</h2><p>Um dado amarelo será rolado: <b>5–6</b> permite escapar, <b>4</b> mantém sua ação e <b>1–3</b> encerra seu turno.</p>{(!g.playerTurn||g.animating)&&<span>Aguarde o seu turno para tentar fugir.</span>}<div><button onClick={()=>setFleeConfirm(false)}>Continuar combate</button><button className="primary" disabled={!g.playerTurn||g.animating} onClick={()=>{setFleeConfirm(false);g.flee()}}><Footprints/>Rolar dado de fuga</button></div></section></div>}
    {hero&&g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='cardCreator'&&<footer className="footer-tip">Bangalore's • Auto-save ativo • A aventura continua no próximo acesso.</footer>}
  </div>
+}
+
+function CoopBattleSync(){
+ const coop=useCoop(),screen=useGame(state=>state.screen),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),battle=coop.room?.shared_state?.battle as {id?:string;status?:string;enemyHp?:number}|undefined,lastShared=React.useRef<number|undefined>()
+ React.useEffect(()=>{if(!battle?.id||typeof battle.enemyHp!=='number')return;lastShared.current=battle.enemyHp;if(screen==='combat'&&enemyHp!==battle.enemyHp)sync(battle.enemyHp)},[battle?.id,battle?.enemyHp,screen,sync])
+ React.useEffect(()=>{if(battle?.status!=='playing'||lastShared.current===undefined||enemyHp>=lastShared.current)return;const damage=lastShared.current-enemyHp;lastShared.current=enemyHp;void coop.applyEnemyDamage(damage)},[enemyHp,battle?.status,coop.applyEnemyDamage])
+ return null
 }
 
 function TopBar(){const g=useGame();const h=HEROES.find(x=>x.id===g.heroId);const level=levelInfo(g.xp).lvl,capacity=equipmentBagCapacity(g);return <header className="topbar"><nav>{nav.map(([id,label,Icon])=><button key={id} className={(g.screen===id||(id==='map'&&g.screen==='region'))?'active':''} onClick={()=>g.setScreen(id)}><Icon size={18}/><span>{label}</span></button>)}</nav><div className="hud"><span className="hud-vital" title="Vida atual e vida máxima"><Heart className="heart" fill="currentColor"/><strong>{g.hp}/{maxHp(g)}</strong></span><span className="hud-resource hud-bag" title={`${g.equipmentBag.length} equipamentos guardados em ${capacity} espaços`}><Backpack size={17}/><strong>{g.equipmentBag.length}/{capacity}</strong></span><span className="hud-resource hud-gold" title={`${g.gold} moedas de ouro`}><Coins size={17}/><strong>{g.gold}</strong></span><span className="hud-level" title={`${g.xp} de experiência total`}><Sparkles size={16}/><small>NÍVEL</small><strong>{level}</strong></span><div className="brand">Bangalore's</div><button className="menu-mini" onClick={()=>g.setScreen('menu')}><Menu size={18}/>Menu</button></div></header>}
