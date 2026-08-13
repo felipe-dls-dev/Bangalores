@@ -345,16 +345,27 @@ function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:numbe
 function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
  const s=get() as GameState
  const goldLost=Math.min(s.gold,Math.ceil(s.gold*.3))
- const eligible=(Object.entries(s.equipped) as [Slot,string][]).filter(([slot,id])=>slot!=='bolsa'&&Boolean(id))
+ const eligible=(Object.entries(s.equipped) as [Slot,string][]).filter(([,id])=>Boolean(id))
  const lostEntry=eligible.length&&Math.random()<.2?eligible[Math.floor(Math.random()*eligible.length)]:undefined
  const equipped={...s.equipped}
+ let equipmentBag=[...s.equipmentBag]
  const equipmentUpgrades={...s.equipmentUpgrades},equipmentGems={...s.equipmentGems},craftedEffects={...s.craftedEffects}
  let itemMessage='Nenhum equipamento foi perdido.'
- if(lostEntry){const [slot,id]=lostEntry;delete equipped[slot];delete equipmentUpgrades[id];delete equipmentGems[id];delete craftedEffects[id];itemMessage=`O equipamento ${eqById(id)?.nome??id} foi perdido, incluindo suas melhorias e encaixes.`}
+ if(lostEntry){
+  const [slot,id]=lostEntry
+  delete equipped[slot]
+  const storedLost=slot==='bolsa'?[...equipmentBag]:[]
+  if(slot==='bolsa')equipmentBag=[]
+  const remainingEquipped=new Set(Object.values(equipped))
+  for(const lostId of [id,...storedLost])if(!remainingEquipped.has(lostId)){delete equipmentUpgrades[lostId];delete equipmentGems[lostId];delete craftedEffects[lostId]}
+  itemMessage=slot==='bolsa'
+   ?`A bolsa ${eqById(id)?.nome??id} foi perdida com ${storedLost.length} equipamento${storedLost.length===1?'':'s'} armazenado${storedLost.length===1?'':'s'}. Os consumíveis foram preservados.`
+   :`O equipamento ${eqById(id)?.nome??id} foi perdido, incluindo suas melhorias e encaixes.`
+ }
  const penalty=`Derrota: você perdeu ${goldLost} moedas de ouro. ${itemMessage}`
  const recovered={...s,equipped,gold:s.gold-goldLost,hp:0} as GameState
  addLog(set,`${reason} ${penalty}`)
- set({screen:s.subregionId?'region':'map',subregionId:undefined,explorationNote:penalty,gold:s.gold-goldLost,equipped,equipmentUpgrades,equipmentGems,craftedEffects,hp:maxHp(recovered),enemy:undefined,enemyHp:0,combatMinions:[],pendingAttackBonus:0,shield:0,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false})
+ set({screen:s.subregionId?'region':'map',subregionId:undefined,explorationNote:penalty,gold:s.gold-goldLost,equipped,equipmentBag,equipmentUpgrades,equipmentGems,craftedEffects,hp:maxHp(recovered),enemy:undefined,enemyHp:0,combatMinions:[],pendingAttackBonus:0,shield:0,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false})
 }
 function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=false){
  const s=get() as GameState
