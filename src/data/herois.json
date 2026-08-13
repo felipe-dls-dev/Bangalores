@@ -5,8 +5,8 @@
     "vida": 18,
     "ataque": 4,
     "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base.",
-    "imagem": "assets/heroes/guerreiro.jpg",
-    "arte": "assets/heroes/guerreiro.jpg",
+    "imagem": "assets/heroes/guerreiro-eldravar-v2.png",
+    "arte": "assets/heroes/guerreiro-eldravar-v2.png",
     "raridade": "heroico"
   },
   {
@@ -15,8 +15,8 @@
     "vida": 15,
     "ataque": 5,
     "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: pode atacar duas vezes no turno.",
-    "imagem": "assets/heroes/ladino-eldravar-hd.webp",
-    "arte": "assets/heroes/ladino-eldravar-hd.webp",
+    "imagem": "assets/heroes/ladino-eldravar-v2.png",
+    "arte": "assets/heroes/ladino-eldravar-v2.png",
     "raridade": "heroico"
   },
   {
@@ -25,8 +25,8 @@
     "vida": 13,
     "ataque": 6,
     "habilidade": "Passivo: 50% de chance de melhorar ouro ou espólios. Ativo: +2 nos dados e +10% de Ataque e Defesa para todos os aliados.",
-    "imagem": "assets/heroes/arcanista.jpg",
-    "arte": "assets/heroes/arcanista.jpg",
+    "imagem": "assets/heroes/arcanista-conclave-v2.png",
+    "arte": "assets/heroes/arcanista-conclave-v2.png",
     "raridade": "heroico"
   },
   {
@@ -35,8 +35,8 @@
     "vida": 20,
     "ataque": 3,
     "habilidade": "Passivo: inicia a batalha com +2 de Defesa. Ativo — Provocar: inimigos priorizam atacar o Guardião.",
-    "imagem": "assets/heroes/guardiao.jpg",
-    "arte": "assets/heroes/guardiao.jpg",
+    "imagem": "assets/heroes/guardiao-montanhas-v2.png",
+    "arte": "assets/heroes/guardiao-montanhas-v2.png",
     "raridade": "heroico"
   }
 ]
