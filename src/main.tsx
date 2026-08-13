@@ -226,6 +226,7 @@ function CombatScreen(){
    </div>
    <div className="combat-enemy-area">
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase}/>
+    {Boolean(g.combatMinions?.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{g.combatMinions!.filter(minion=>minion.hp>0).map(minion=><article key={minion.id}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>)}</div>}
    </div>
 
    <Panel title="Habilidades dos itens" className="effects-panel combat-effects-area">
