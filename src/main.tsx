@@ -145,9 +145,10 @@ function App(){
 }
 
 function CoopBattleSync(){
- const coop=useCoop(),screen=useGame(state=>state.screen),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),battle=coop.room?.shared_state?.battle as {id?:string;status?:string;enemyHp?:number}|undefined,lastShared=React.useRef<number|undefined>()
- React.useEffect(()=>{if(!battle?.id||typeof battle.enemyHp!=='number')return;lastShared.current=battle.enemyHp;if(screen==='combat'&&enemyHp!==battle.enemyHp)sync(battle.enemyHp)},[battle?.id,battle?.enemyHp,screen,sync])
- React.useEffect(()=>{if(battle?.status!=='playing'||lastShared.current===undefined||enemyHp>=lastShared.current)return;const damage=lastShared.current-enemyHp;lastShared.current=enemyHp;void coop.applyEnemyDamage(damage)},[enemyHp,battle?.status,coop.applyEnemyDamage])
+ const coop=useCoop(),screen=useGame(state=>state.screen),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),receiveEnemy=useGame(state=>state.receiveCoopEnemyAttack),battle=coop.room?.shared_state?.battle as {id?:string;enemyHp?:number;activeUserId?:string;lastRoll?:any;turn?:number}|undefined,handledEnemyTurn=React.useRef(''),receivedRoll=React.useRef('')
+ React.useEffect(()=>{if(!battle?.id||typeof battle.enemyHp!=='number'||screen!=='combat'||enemyHp===battle.enemyHp)return;sync(battle.enemyHp)},[battle?.id,battle?.enemyHp,screen,enemyHp,sync])
+ React.useEffect(()=>{const key=`${battle?.id}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;handledEnemyTurn.current=key;const timer=setTimeout(()=>void coop.resolveEnemyTurn(),900);return()=>clearTimeout(timer)},[battle?.id,battle?.activeUserId,screen,coop.room?.host_id,coop.userId,coop.resolveEnemyTurn])
+ React.useEffect(()=>{const roll=battle?.lastRoll,key=`${battle?.id}:${battle?.turn}`;if(screen!=='combat'||roll?.attacker!=='enemy'||roll.targetUserId!==coop.userId||receivedRoll.current===key)return;receivedRoll.current=key;receiveEnemy(Number(roll.damage??0),roll)},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveEnemy])
  return null
 }
 
@@ -262,9 +263,9 @@ function CombatDiceRoll({roll}:{roll:{attacker:'hero'|'enemy';naturalAttackRoll:
 }
 function FleeDiceRoll({roll}:{roll:{roll:number;outcome:'failed'|'neutral'|'success'}}){const message=roll.outcome==='success'?'Fuga bem-sucedida!':roll.outcome==='neutral'?'Você mantém sua ação':'Fuga falhou — turno perdido';return <motion.aside className={`flee-dice-roll ${roll.outcome}`} initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:.92}} aria-live="assertive"><small>TESTE DE FUGA</small><motion.b className="combat-die flee-die" animate={{rotate:[0,130,280,420,360],scale:[.7,1.22,.88,1]}} transition={{duration:.65}}>{roll.roll}</motion.b><strong>{message}</strong><span>1–3 perde o turno • 4 mantém a ação • 5–6 foge</span></motion.aside>}
 function CombatScreen(){
- const g=useGame(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy
+ const g=useGame(),coop=useCoop(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy,battle=coop.room?.shared_state?.battle as any,isCoop=Boolean(coop.room&&battle?.status==='playing'),myTurn=isCoop?battle.activeUserId===coop.userId:g.playerTurn
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
- const disabled=!g.playerTurn||g.animating
+ const disabled=!myTurn||g.animating,sharedRoll=isCoop?battle.lastRoll:undefined
  const consumables=(Object.entries(g.inventory) as [string,number][]).filter(([,qty])=>qty>0).map(([id,qty])=>({item:CONSUMABLES.find(x=>x.id===id),qty})).filter(x=>x.item).slice(0,6) as {item:(typeof CONSUMABLES)[number],qty:number}[]
  const itemAbilities=(Object.values(g.equipped) as (string|undefined)[]).map(id=>EQUIPMENT.find(item=>item.id===id)).filter((item):item is (typeof EQUIPMENT)[number]=>Boolean(item?.habilidade&&item.slot!=='bolsa'))
  return <div className="combat-page premium-combat combat-v033">
@@ -284,12 +285,12 @@ function CombatScreen(){
    <Panel title="Registro de combate" className="combat-log-panel combat-log-area">
     <div className="combat-log-turn" aria-label={`Turno ${g.combatTurn}`}><small>TURNO</small><strong>{g.combatTurn}</strong></div>
     <div className="combat-initiative"><span className={'coin '+(g.coin?'flipped':'')}>{g.coin==='cara'?'C':'K'}</span><small>{g.coin==='cara'?'Cara: herói iniciou':'Coroa: inimigo iniciou'}</small></div>
-    <div className="combat-log premium-log">{g.combatLog.map((x,i)=><motion.p key={i+x} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}}><span className="log-dot">◉</span>{x}</motion.p>)}</div>
+    <div className="combat-log premium-log">{(isCoop?(battle.log??[]):g.combatLog).map((x:string,i:number)=><motion.p key={i+x} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}}><span className="log-dot">◉</span>{x}</motion.p>)}</div>
    </Panel>
 
    <Panel title="Ações" className="combat-actions-panel combat-actions-area">
       <div className="combat-actions-grid">
-       <button className="attack-btn premium-action" disabled={disabled} onClick={g.attack}><Sword/>Atacar</button>
+       <button className="attack-btn premium-action" disabled={disabled} onClick={()=>isCoop?void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2)):g.attack()}><Sword/>Atacar</button>
        <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={g.heroSkill}><Sparkles/>Habilidade do herói</button>
        <button className="premium-action" disabled={disabled||g.itemSkillUsed} onClick={g.itemSkill}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Tentar fugir</button>
@@ -297,7 +298,7 @@ function CombatScreen(){
    </Panel>
 
    <Panel title="Rolagem dos dados" className="combat-dice-panel combat-dice-area">
-    <AnimatePresence mode="wait">{g.fleeRoll&&g.animating?<FleeDiceRoll key={`flee-${g.combatTurn}-${g.fleeRoll.roll}`} roll={g.fleeRoll}/>:g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>:<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque, defesa e fuga aparecerão aqui.</small></motion.div>}</AnimatePresence>
+    <AnimatePresence mode="wait">{sharedRoll?<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>{sharedRoll.actor}: ataque {sharedRoll.attackRoll} × defesa {sharedRoll.defenseRoll}</strong><small>Dano causado: {sharedRoll.damage}</small></motion.div>:g.fleeRoll&&g.animating?<FleeDiceRoll key={`flee-${g.combatTurn}-${g.fleeRoll.roll}`} roll={g.fleeRoll}/>:g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>:<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque, defesa e fuga aparecerão aqui.</small></motion.div>}</AnimatePresence>
    </Panel>
 
    <Panel className="combat-consumables-panel combat-consumables-area">
