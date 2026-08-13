@@ -270,6 +270,8 @@ function CombatScreen(){
  const disabled=!myTurn||g.animating,sharedRoll=isCoop?battle.lastRoll:undefined
  const consumables=(Object.entries(g.inventory) as [string,number][]).filter(([,qty])=>qty>0).map(([id,qty])=>({item:CONSUMABLES.find(x=>x.id===id),qty})).filter(x=>x.item).slice(0,6) as {item:(typeof CONSUMABLES)[number],qty:number}[]
  const itemAbilities=(Object.values(g.equipped) as (string|undefined)[]).map(id=>EQUIPMENT.find(item=>item.id===id)).filter((item):item is (typeof EQUIPMENT)[number]=>Boolean(item?.habilidade&&item.slot!=='bolsa'))
+ const useCoopHeroSkill=()=>{if(g.heroSkillUsed||!myTurn)return;let damage=0,effect=h.habilidade;if(g.heroId==='guardiao'){useGame.setState({shield:g.shield+3,heroSkillUsed:true});effect='+3 de escudo'}else if(g.heroId==='guerreiro'){useGame.setState({shield:g.shield+2,heroSkillUsed:true});effect='+2 de escudo'}else{damage=Math.max(1,attackValue(g)+(g.heroId==='arcanista'?4:3)-Math.max(0,(e.dificuldade??1)-2));useGame.setState({heroSkillUsed:true})}void coop.coopAbility(`Habilidade de ${h.nome}`,damage,effect)}
+ const useCoopItemSkill=()=>{if(g.itemSkillUsed||!myTurn)return;const item=itemAbilities[0];if(!item)return;const txt=item.habilidade.toLowerCase();let damage=0,effect=item.habilidade;if(txt.includes('escudo')){useGame.setState({shield:g.shield+3,itemSkillUsed:true});effect='+3 de escudo'}else if(txt.includes('recupere')){const healed=Math.min(4,maxHp(g)-g.hp);useGame.setState({hp:Math.min(maxHp(g),g.hp+4),itemSkillUsed:true});effect=`recuperou ${healed} de vida`}else{damage=Math.max(1,attackValue(g)+3-Math.max(0,(e.dificuldade??1)-2));useGame.setState({itemSkillUsed:true})}void coop.coopAbility(item.nome,damage,effect)}
  return <div className="combat-page premium-combat combat-v033">
    <div className="combat-hero-area">
     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined}/>
@@ -293,8 +295,8 @@ function CombatScreen(){
    <Panel title="Ações" className="combat-actions-panel combat-actions-area">
       <div className="combat-actions-grid">
        <button className="attack-btn premium-action" disabled={disabled} onClick={()=>isCoop?void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2)):g.attack()}><Sword/>Atacar</button>
-       <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={g.heroSkill}><Sparkles/>Habilidade do herói</button>
-       <button className="premium-action" disabled={disabled||g.itemSkillUsed} onClick={g.itemSkill}><Shield/>Habilidade do item</button>
+       <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>Habilidade do herói</button>
+       <button className="premium-action" disabled={disabled||g.itemSkillUsed||!itemAbilities.length} onClick={()=>isCoop?useCoopItemSkill():g.itemSkill()}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Tentar fugir</button>
       </div>
    </Panel>
