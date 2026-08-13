@@ -4,7 +4,7 @@
     "nome": "Guerreiro de Eldravar",
     "vida": 18,
     "ataque": 4,
-    "habilidade": "Uma vez por combate, reduza em 2 o dano recebido.",
+    "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base.",
     "imagem": "assets/heroes/guerreiro.jpg",
     "arte": "assets/heroes/guerreiro.jpg",
     "raridade": "heroico"
@@ -14,7 +14,7 @@
     "nome": "Ladino de Eldravar",
     "vida": 15,
     "ataque": 5,
-    "habilidade": "Uma vez por combate, execute um ataque furtivo com +3 de dano.",
+    "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: pode atacar duas vezes no turno.",
     "imagem": "assets/heroes/ladino-eldravar-hd.webp",
     "arte": "assets/heroes/ladino-eldravar-hd.webp",
     "raridade": "heroico"
@@ -24,7 +24,7 @@
     "nome": "Arcanista do Conclave",
     "vida": 13,
     "ataque": 6,
-    "habilidade": "Pode gastar 1 ouro para repetir uma rolagem.",
+    "habilidade": "Passivo: 50% de chance de melhorar ouro ou espólios. Ativo: +2 nos dados e +10% de Ataque e Defesa para todos os aliados.",
     "imagem": "assets/heroes/arcanista.jpg",
     "arte": "assets/heroes/arcanista.jpg",
     "raridade": "heroico"
@@ -34,7 +34,7 @@
     "nome": "Guardião das Montanhas",
     "vida": 20,
     "ataque": 3,
-    "habilidade": "Começa cada combate com 2 pontos de escudo.",
+    "habilidade": "Passivo: inicia a batalha com +2 de Defesa. Ativo — Provocar: inimigos priorizam atacar o Guardião.",
     "imagem": "assets/heroes/guardiao.jpg",
     "arte": "assets/heroes/guardiao.jpg",
     "raridade": "heroico"
