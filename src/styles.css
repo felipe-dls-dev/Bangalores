@@ -631,6 +631,29 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .topbar nav .nav-tooltip:before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#6c522f}
 .topbar nav button:hover .nav-tooltip,.topbar nav button:focus-visible .nav-tooltip{opacity:1;transform:translate(-50%,0) scale(1)}
 @media(max-width:760px){.topbar nav .nav-tooltip{top:auto;bottom:calc(100% + 6px)}.topbar nav .nav-tooltip:before{bottom:auto;top:100%;border-bottom-color:transparent;border-top-color:#6c522f}}
+/* Shop redesign: compact scannable rows instead of big portrait cards */
+.shop-filter-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.shop-filter-row .shop-category-filters{margin-bottom:0;padding-bottom:0;border-bottom:none;flex:1 1 auto}
+.shop-sort{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.shop-sort small{color:#a99879;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+.shop-sort button{padding:.34rem .64rem;font-size:.78rem;border-radius:999px}
+.shop-list{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 300px);min-height:320px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:#704b25 transparent}
+.shop-row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:14px;align-items:center;padding:9px 14px;border:1px solid #3d2b19;border-radius:10px;background:linear-gradient(145deg,#1b130d,#100a07);transition:border-color .15s ease,opacity .15s ease}
+.shop-row:hover{border-color:#6c522f}
+.shop-row-thumb{width:56px;height:56px;border-radius:8px;overflow:hidden;flex:none;background:radial-gradient(circle,#2b2018,#080605)}
+.shop-row-thumb img{width:100%;height:100%;object-fit:cover}
+.shop-row-info{min-width:0;display:grid;gap:2px}
+.shop-row-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.shop-row-title strong{font-size:.92rem;color:#f1e2c2}
+.shop-row-emblem{width:16px;height:16px;border-radius:50%;object-fit:cover;opacity:.85}
+.shop-row-meta{color:#a99879;font-size:.72rem;letter-spacing:.02em}
+.shop-row-desc{margin:0;color:#c9b696;font-size:.76rem;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.shop-row-action{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.shop-row-price{display:flex;align-items:center;gap:4px;color:var(--gold2);font-weight:700;font-size:.88rem;white-space:nowrap}
+.shop-row-action button{padding:.4rem .8rem;font-size:.78rem;white-space:nowrap}
+.shop-row.unaffordable{opacity:.55}
+.shop-row.unaffordable .shop-row-price{color:#c17a5f}
+@media(max-width:700px){.shop-row{grid-template-columns:48px minmax(0,1fr);grid-template-areas:"thumb info" "action action"}.shop-row-thumb{grid-area:thumb;width:48px;height:48px}.shop-row-info{grid-area:info}.shop-row-action{grid-area:action;flex-direction:row;align-items:center;justify-content:space-between;margin-top:6px}.shop-list{max-height:none}}
 /* Menu button dropdown: other screens + exit/switch campaign */
 .menu-dropdown-wrap{position:relative}
 .menu-caret{transition:transform .18s ease}
