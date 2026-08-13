@@ -370,10 +370,11 @@ function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
    ?`A bolsa ${eqById(id)?.nome??id} foi perdida com ${storedLost.length} equipamento${storedLost.length===1?'':'s'} armazenado${storedLost.length===1?'':'s'}. Os consumíveis foram preservados.`
    :`O equipamento ${eqById(id)?.nome??id} foi perdido, incluindo suas melhorias e encaixes.`
  }
- const penalty=`Derrota: você perdeu ${goldLost} moedas de ouro. ${itemMessage}`
  const recovered={...s,equipped,gold:s.gold-goldLost,hp:0} as GameState
+ const recoveredHp=maxHp(recovered)
+ const penalty=`Derrota: você perdeu ${goldLost} moedas de ouro. ${itemMessage} Após o resgate, sua vida foi restaurada para ${recoveredHp}/${recoveredHp}.`
  addLog(set,`${reason} ${penalty}`)
- set({screen:s.subregionId?'region':'map',subregionId:undefined,explorationNote:penalty,gold:s.gold-goldLost,equipped,equipmentBag,equipmentUpgrades,equipmentGems,craftedEffects,hp:maxHp(recovered),enemy:undefined,enemyHp:0,combatMinions:[],pendingAttackBonus:0,shield:0,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false})
+ set({screen:s.subregionId?'region':'map',subregionId:undefined,explorationNote:penalty,gold:s.gold-goldLost,equipped,equipmentBag,equipmentUpgrades,equipmentGems,craftedEffects,hp:recoveredHp,enemy:undefined,enemyHp:0,combatMinions:[],pendingAttackBonus:0,shield:0,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false})
 }
 function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=false){
  const s=get() as GameState
