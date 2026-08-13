@@ -147,7 +147,7 @@ function App(){
 function CoopBattleSync(){
  const coop=useCoop(),screen=useGame(state=>state.screen),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),receiveEnemy=useGame(state=>state.receiveCoopEnemyAttack),battle=coop.room?.shared_state?.battle as {id?:string;enemyHp?:number;activeUserId?:string;lastRoll?:any;turn?:number}|undefined,handledEnemyTurn=React.useRef(''),receivedRoll=React.useRef('')
  React.useEffect(()=>{if(!battle?.id||typeof battle.enemyHp!=='number'||screen!=='combat'||enemyHp===battle.enemyHp)return;sync(battle.enemyHp)},[battle?.id,battle?.enemyHp,screen,enemyHp,sync])
- React.useEffect(()=>{const key=`${battle?.id}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;handledEnemyTurn.current=key;const timer=setTimeout(()=>void coop.resolveEnemyTurn(),900);return()=>clearTimeout(timer)},[battle?.id,battle?.activeUserId,screen,coop.room?.host_id,coop.userId,coop.resolveEnemyTurn])
+ React.useEffect(()=>{const key=`${battle?.id}:${battle?.turn}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;handledEnemyTurn.current=key;const timer=setTimeout(()=>void coop.resolveEnemyTurn(),900);return()=>clearTimeout(timer)},[battle?.id,battle?.turn,battle?.activeUserId,screen,coop.room?.host_id,coop.userId,coop.resolveEnemyTurn])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`${battle?.id}:${battle?.turn}`;if(screen!=='combat'||roll?.attacker!=='enemy'||roll.targetUserId!==coop.userId||receivedRoll.current===key)return;receivedRoll.current=key;receiveEnemy(Number(roll.damage??0),roll)},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveEnemy])
  return null
 }
@@ -284,7 +284,7 @@ function CombatScreen(){
 
    <Panel title="Registro de combate" className="combat-log-panel combat-log-area">
     <div className="combat-log-turn" aria-label={`Turno ${g.combatTurn}`}><small>TURNO</small><strong>{g.combatTurn}</strong></div>
-    <div className="combat-initiative"><span className={'coin '+(g.coin?'flipped':'')}>{g.coin==='cara'?'C':'K'}</span><small>{g.coin==='cara'?'Cara: herói iniciou':'Coroa: inimigo iniciou'}</small></div>
+    <div className="combat-initiative"><span className={'coin '+(g.coin?'flipped':'')}>{isCoop?(battle.initiativeIndex+1):(g.coin==='cara'?'C':'K')}</span><small>{isCoop?`Rodada ${battle.round} • Ordem: ${(battle.initiativeNames??[]).join(' → ')}`:(g.coin==='cara'?'Cara: herói iniciou':'Coroa: inimigo iniciou')}</small></div>
     <div className="combat-log premium-log">{(isCoop?(battle.log??[]):g.combatLog).map((x:string,i:number)=><motion.p key={i+x} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}}><span className="log-dot">◉</span>{x}</motion.p>)}</div>
    </Panel>
 
