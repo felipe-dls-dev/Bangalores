@@ -151,6 +151,7 @@ function CoopBattleSync(){
  React.useEffect(()=>{if(battle?.status!=='won'||!battle.id||!battle.subregionId||!battle.enemy)return;const contributions=battle.damageByPlayer??{},total=Object.values(contributions).reduce((sum,value)=>sum+Math.max(0,Number(value)||0),0),mine=Math.max(0,Number(contributions[coop.userId])||0),share=total>0?mine/total:1/Math.max(1,coop.members.length);completeVictory(battle.id,battle.subregionId,battle.enemy,share)},[battle?.id,battle?.status,battle?.subregionId,battle?.enemy,battle?.damageByPlayer,coop.userId,coop.members.length,completeVictory])
  React.useEffect(()=>{const key=`${battle?.id}:${battle?.turn}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;const timer=setTimeout(()=>{handledEnemyTurn.current=key;void enemyExecutor.current()},900);return()=>clearTimeout(timer)},[battle?.id,battle?.turn,battle?.activeUserId,screen,coop.room?.host_id,coop.userId])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`${battle?.id}:${battle?.turn}`;if(screen!=='combat'||roll?.attacker!=='enemy'||roll.targetUserId!==coop.userId||receivedRoll.current===key)return;receivedRoll.current=key;receiveEnemy(Number(roll.damage??0),roll)},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveEnemy])
+ React.useEffect(()=>{if(screen==='combat'&&useGame.getState().hp<=0&&battle?.activeUserId===coop.userId)void coop.coopAbility('Derrota',0,'não pode mais agir')},[screen,battle?.activeUserId,coop.userId])
  return null
 }
 
@@ -267,7 +268,7 @@ function FleeDiceRoll({roll}:{roll:{roll:number;outcome:'failed'|'neutral'|'succ
 function CombatScreen(){
  const g=useGame(),coop=useCoop(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy,battle=coop.room?.shared_state?.battle as any,isCoop=Boolean(coop.room&&battle?.status==='playing'),myTurn=isCoop?battle.activeUserId===coop.userId:g.playerTurn
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
- const disabled=!myTurn||g.animating,sharedRoll=isCoop?battle.lastRoll:undefined
+ const defeated=g.hp<=0,disabled=!myTurn||g.animating||defeated,sharedRoll=isCoop?battle.lastRoll:undefined
  const consumables=(Object.entries(g.inventory) as [string,number][]).filter(([,qty])=>qty>0).map(([id,qty])=>({item:CONSUMABLES.find(x=>x.id===id),qty})).filter(x=>x.item).slice(0,6) as {item:(typeof CONSUMABLES)[number],qty:number}[]
  const itemAbilities=(Object.values(g.equipped) as (string|undefined)[]).map(id=>EQUIPMENT.find(item=>item.id===id)).filter((item):item is (typeof EQUIPMENT)[number]=>Boolean(item?.habilidade&&item.slot!=='bolsa'))
  const useCoopHeroSkill=()=>{if(g.heroSkillUsed||!myTurn)return;let damage=0,effect=h.habilidade;if(g.heroId==='guardiao'){useGame.setState({shield:g.shield+3,heroSkillUsed:true});effect='+3 de escudo'}else if(g.heroId==='guerreiro'){useGame.setState({shield:g.shield+2,heroSkillUsed:true});effect='+2 de escudo'}else{damage=Math.max(1,attackValue(g)+(g.heroId==='arcanista'?4:3)-Math.max(0,(e.dificuldade??1)-2));useGame.setState({heroSkillUsed:true})}void coop.coopAbility(`Habilidade de ${h.nome}`,damage,effect)}
@@ -293,6 +294,7 @@ function CombatScreen(){
    </Panel>
 
    <Panel title="Ações" className="combat-actions-panel combat-actions-area">
+      {defeated&&<p className="coop-defeated-notice">DERROTADO • Você não pode mais realizar ações nesta batalha. As penalidades serão aplicadas ao final.</p>}
       <div className="combat-actions-grid">
        <button className="attack-btn premium-action" disabled={disabled} onClick={()=>isCoop?void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2)):g.attack()}><Sword/>Atacar</button>
        <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>Habilidade do herói</button>
