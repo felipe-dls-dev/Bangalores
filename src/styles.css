@@ -654,6 +654,10 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .shop-row.unaffordable{opacity:.55}
 .shop-row.unaffordable .shop-row-price{color:#c17a5f}
 @media(max-width:700px){.shop-row{grid-template-columns:48px minmax(0,1fr);grid-template-areas:"thumb info" "action action"}.shop-row-thumb{grid-area:thumb;width:48px;height:48px}.shop-row-info{grid-area:info}.shop-row-action{grid-area:action;flex-direction:row;align-items:center;justify-content:space-between;margin-top:6px}.shop-list{max-height:none}}
+/* Talent tree on the Ficha screen: let it use the full column height
+   instead of the 250px cap shared with .system-list elsewhere, which
+   left most of the panel empty and forced its own tiny scrollbar */
+.char-grid .system-list{max-height:none;overflow:visible}
 /* Menu button dropdown: other screens + exit/switch campaign */
 .menu-dropdown-wrap{position:relative}
 .menu-caret{transition:transform .18s ease}
