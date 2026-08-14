@@ -17,6 +17,7 @@ import { CLASS_BOOTS } from '../data/boots'
 import { BACKPACKS } from '../data/backpacks'
 import { NEW_CLASS_EQUIPMENT } from '../data/newClassEquipment'
 import { EXPANDED_SUBREGIONS } from '../data/expandedSubregions'
+import { STEELMERE_SUBREGIONS } from '../data/subregioesSteelmere'
 import monsterArt from '../data/monsterArt.json'
 import eventArt from '../data/eventArt.json'
 import bossArt from '../data/bossArt.json'
@@ -66,7 +67,7 @@ const RAW_EQUIPMENT = [...(equipments as Equipment[]).map(equipment=>({
 const ITEM_PRICE_MULTIPLIER=16
 const LIFE_CHANCE:Record<string,number>={essencia_vital:.35,elixir_fenix:.5}
 export const CONSUMABLES = [...(consumables as Consumable[]).map(consumable=>({...consumable,preco:Math.ceil(consumable.preco*ITEM_PRICE_MULTIPLIER),descricao:consumable.tipo==='vida_max'?`${Math.round((LIFE_CHANCE[consumable.id]??.35)*100)}% de chance de aumentar permanentemente a vida máxima em ${consumable.valor}.${consumable.id==='elixir_fenix'?' Recupera toda a vida em caso de sucesso.':` Cura ${consumable.valor} em caso de sucesso.`}`:consumable.descricao,arte:hdCollectionArt(consumable.arte,'consumables')})),{id:'tonico_regeneracao',nome:'Tônico da Regeneração Acelerada',tipo:'regen_boost',valor:1,preco:960,descricao:'Durante 1 hora, recupera 1 ponto de vida a cada 30 segundos fora de combate.',imagem:'assets/art/consumables/pocao_cura.webp',arte:'assets/art/hd/consumables/pocao_cura-hd.webp',raridade:'raro' as Rarity}]
-const ALL_SUBREGIONS=[...(subregions as Subregion[]),...EXPANDED_SUBREGIONS]
+const ALL_SUBREGIONS=[...(subregions as Subregion[]),...EXPANDED_SUBREGIONS,...STEELMERE_SUBREGIONS]
 const SUBREGIONS_LEVEL:Record<string,number>=Object.fromEntries(ALL_SUBREGIONS.map(subregion=>[subregion.id,subregion.nivelMin]))
 const extraMonsters:Enemy[]=Object.entries(EXTRA_SUBREGION_ENEMIES).flatMap(([subregionId,list])=>list.map((monster,index)=>{const arte=namedMonsterArt(monster.nome,monster.arte);return{id:`extra_${subregionId}_${index}`,nome:monster.nome,ataque:monster.ataque,vida:monster.vida,ouro:monster.ouro,dificuldade:SUBREGIONS_LEVEL[subregionId]??1,habilidade:monster.habilidade,imagem:arte,arte,raridade:'incomum'}}))
 export const MONSTERS = [...(monsters as Enemy[]).map(monster=>{const fallback=monster.arte?hdArt(monster.arte):monster.imagem;const arte=namedMonsterArt(monster.nome,fallback);return{...monster,imagem:arte,arte}}),...extraMonsters]
