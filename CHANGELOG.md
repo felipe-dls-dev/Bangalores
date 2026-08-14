@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.0 — Exploração de Eldravar
+## v0.4.0 — Exploração de Havendown
 - Regiões do mapa agora abrem uma tela de sub-regiões antes do combate.
 - Adicionados Labirinto de Khar-Dur, Templo do Minotauro, Ninho do Dragão Vermelho, Caverna de Gelo e Mina dos Anões Caídos.
 - Cada sub-região possui nível recomendado, progresso próprio, desafios, tema de loot, inimigos e chefe exclusivo.

@@ -1,6 +1,6 @@
 [
   {
-    "id":"campos_estrada","regionId":"campos_dourados","nome":"Estrada dos Campos Dourados","descricao":"Rotas de caravanas, pequenas fazendas e os primeiros perigos de Eldravar.","nivelMin":1,"nivelMax":2,"encontrosNecessarios":3,"icone":"🌾","temaLoot":"Couro, poções e armas simples","desafios":["Caravana atacada","Pedágio improvisado","Baú abandonado"],
+    "id":"campos_estrada","regionId":"campos_dourados","nome":"Estrada dos Campos Dourados","descricao":"Rotas de caravanas, pequenas fazendas e os primeiros perigos de Havendown.","nivelMin":1,"nivelMax":2,"encontrosNecessarios":3,"icone":"🌾","temaLoot":"Couro, poções e armas simples","desafios":["Caravana atacada","Pedágio improvisado","Baú abandonado"],
     "inimigos":[
       {"nome":"Bandido da Estrada","ataque":2,"vida":7,"ouro":2,"habilidade":"Golpe oportunista","arte":"assets/art/monsters/grumnak.webp"},
       {"nome":"Lobo dos Campos","ataque":2,"vida":8,"ouro":2,"habilidade":"Mordida veloz","arte":"assets/art/monsters/cabra_malgor.webp"},
@@ -150,7 +150,7 @@
   },
 
   {
-    "id":"eclipse_portoes","regionId":"coracao_eclipse","nome":"Portões do Eclipse","descricao":"Fortificações negras cercam o centro de Eldravar. Apenas aventureiros veteranos sobrevivem às sentinelas do Véu.","nivelMin":16,"nivelMax":19,"encontrosNecessarios":6,"icone":"🌑","temaLoot":"Equipamentos épicos, runas do eclipse e grandes tesouros","desafios":["Muralha viva","Chuva de fragmentos","Patrulha do Véu","Portão sem fechadura"],
+    "id":"eclipse_portoes","regionId":"coracao_eclipse","nome":"Portões do Eclipse","descricao":"Fortificações negras cercam o centro de Havendown. Apenas aventureiros veteranos sobrevivem às sentinelas do Véu.","nivelMin":16,"nivelMax":19,"encontrosNecessarios":6,"icone":"🌑","temaLoot":"Equipamentos épicos, runas do eclipse e grandes tesouros","desafios":["Muralha viva","Chuva de fragmentos","Patrulha do Véu","Portão sem fechadura"],
     "inimigos":[
       {"nome":"Cavaleiro do Eclipse","ataque":17,"vida":58,"ouro":20,"habilidade":"Lâmina do crepúsculo","arte":"assets/art/monsters/fanatico_orgulho.webp"},
       {"nome":"Sentinela do Véu","ataque":16,"vida":68,"ouro":21,"habilidade":"Barreira do vazio","arte":"assets/art/monsters/sentinela_runas.webp"},
@@ -168,7 +168,7 @@
     "chefe":{"nome":"Vaelora, Senhora do Véu","ataque":26,"vida":204,"ouro":175,"habilidade":"Dobra temporal, tempestade arcana e reflexo da morte","arte":"assets/art/bosses/boss_necromante.webp","maxFases":4,"raridade":"mitico"}
   },
   {
-    "id":"eclipse_trono","regionId":"coracao_eclipse","nome":"Trono do Vazio","descricao":"No coração exato do continente, uma entidade anterior aos reinos aguarda o aventureiro mais poderoso de Eldravar.","nivelMin":22,"nivelMax":26,"encontrosNecessarios":8,"icone":"♛","temaLoot":"Tesouros míticos, equipamentos finais e artefatos únicos","desafios":["Mar de sombras","Coro dos derrotados","Ponte do fim","Salão dos sete selos","O último juramento"],
+    "id":"eclipse_trono","regionId":"coracao_eclipse","nome":"Trono do Vazio","descricao":"No coração exato do continente, uma entidade anterior aos reinos aguarda o aventureiro mais poderoso de Havendown.","nivelMin":22,"nivelMax":26,"encontrosNecessarios":8,"icone":"♛","temaLoot":"Tesouros míticos, equipamentos finais e artefatos únicos","desafios":["Mar de sombras","Coro dos derrotados","Ponte do fim","Salão dos sete selos","O último juramento"],
     "inimigos":[
       {"nome":"Arauto do Fim","ataque":23,"vida":78,"ouro":29,"habilidade":"Presságio inevitável","arte":"assets/art/monsters/fanatico_orgulho.webp"},
       {"nome":"Dragão do Vazio","ataque":24,"vida":86,"ouro":31,"habilidade":"Sopro de matéria negra","arte":"assets/art/monsters/corvo_ignaroth.webp"},

@@ -1,9 +1,9 @@
 [
-  {"id":"campos_dourados","nome":"Campos Dourados","x":0.22,"y":0.40,"dificuldade":1,"nivelMin":1,"nivelMax":4,"descricao":"Planícies, estradas e a fronteira civilizada de Eldravar."},
+  {"id":"campos_dourados","nome":"Campos Dourados","x":0.22,"y":0.40,"dificuldade":1,"nivelMin":1,"nivelMax":4,"descricao":"Planícies, estradas e a fronteira civilizada de Havendown."},
   {"id":"floresta_lunargenta","nome":"Floresta Lunargenta","x":0.78,"y":0.47,"dificuldade":2,"nivelMin":3,"nivelMax":8,"descricao":"Bosques encantados, goblins, espíritos e criaturas venenosas."},
   {"id":"montanhas_cinzentas","nome":"Montanhas Cinzentas","x":0.25,"y":0.20,"dificuldade":3,"nivelMin":6,"nivelMax":11,"descricao":"Passagens perigosas, minas abandonadas e cavernas congeladas."},
   {"id":"pico_escarlate","nome":"Pico Escarlate","x":0.73,"y":0.22,"dificuldade":4,"nivelMin":9,"nivelMax":18,"descricao":"Terras vulcânicas e o temido Ninho do Dragão Vermelho."},
   {"id":"terras_mortas","nome":"Terras Mortas","x":0.70,"y":0.78,"dificuldade":5,"nivelMin":10,"nivelMax":15,"descricao":"Campos amaldiçoados, catacumbas e necromancia."},
   {"id":"khar_dur","nome":"Khar-Dur","x":0.31,"y":0.77,"dificuldade":6,"nivelMin":5,"nivelMax":11,"descricao":"Ruínas anãs, o grande labirinto e o Templo do Minotauro."},
-  {"id":"coracao_eclipse","nome":"Coração do Eclipse","x":0.50,"y":0.47,"dificuldade":7,"nivelMin":16,"nivelMax":26,"descricao":"A região central de Eldravar, onde o Véu foi rompido e as criaturas mais poderosas disputam o Trono do Vazio."}
+  {"id":"coracao_eclipse","nome":"Coração do Eclipse","x":0.50,"y":0.47,"dificuldade":7,"nivelMin":16,"nivelMax":26,"descricao":"A região central de Havendown, onde o Véu foi rompido e as criaturas mais poderosas disputam o Trono do Vazio."}
 ]

@@ -4,7 +4,7 @@ Esta versão é uma nova base web. Ela não executa o código Pygame anterior; r
 
 ## Sistemas migrados
 - heróis e imagens;
-- mapa de Eldravar;
+- mapa de Havendown;
 - equipamentos e cartas;
 - consumíveis;
 - mochila e limite de 8 equipamentos não equipados;

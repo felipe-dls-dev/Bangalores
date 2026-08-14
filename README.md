@@ -20,7 +20,7 @@ Versão web experimental do jogo de cartas/RPG, construída com React + TypeScri
 - Nome do jogo alterado para **Bangalore's**.
 - Seleção de heróis com imagens.
 - Equipamentos iniciais coerentes por classe.
-- Mapa interativo de Eldravar.
+- Mapa interativo de Havendown.
 - Ficha com vida, ataque, defesa, XP, níveis e pontos de atributo.
 - 1 ouro ganho em combate = 1 XP. Ouro de vendas não concede XP.
 - Mochila com consumíveis e limite de 8 equipamentos não equipados.
