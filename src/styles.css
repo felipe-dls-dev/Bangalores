@@ -691,3 +691,7 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .link-action{background:none;border:none;color:var(--gold2);text-decoration:underline;padding:2px;font-size:.82rem;cursor:pointer}
 .link-action:hover{color:#fff2c9}
 .menu-dropdown-account{display:flex;align-items:center;gap:7px;padding:.4rem .6rem;margin-bottom:4px;color:#a99879;font-size:.72rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* Cross-world travel (Havendown <-> Steelmere) */
+.map-travel-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:10px 0 14px;padding:.6rem 1rem;border:1px solid #6c522f;border-radius:8px;background:linear-gradient(180deg,#2c1d11,#17100b);color:var(--gold2);font-weight:700}
+.map-travel-button:hover{background:linear-gradient(180deg,#3a2716,#1d150d)}
+.map-index-soon{margin:0 0 4px;padding:.5rem .7rem;color:#a99879;font-size:.78rem;font-style:italic}
