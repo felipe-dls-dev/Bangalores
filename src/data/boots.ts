@@ -42,7 +42,7 @@ export const CLASS_BOOTS: Equipment[] = [
     ['boots_war_cavaleiro', 'Botas do Último Cavaleiro', 'war_cavaleiro.webp'],
   ]),
   ...make('guardiao', 'botas_pesadas', [
-    ['boots_guard_khardur', 'Botas Pesadas de Khar-Dur', 'guard_khardur.webp'],
+    ['boots_guard_khardur', 'Botas Pesadas de Kholgard', 'guard_khardur.webp'],
     ['boots_guard_montanha', 'Botas da Montanha Imóvel', 'guard_montanha.webp'],
     ['boots_guard_forja', 'Botas da Forja Profunda', 'guard_forja.webp'],
     ['boots_guard_bastiao', 'Botas do Bastião Anão', 'guard_bastiao.webp'],

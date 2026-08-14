@@ -4,8 +4,8 @@ type NewClass='druida'|'cacador'
 type Theme={id:string;name:string;rarity:Rarity;level:number}
 const levels=[1,3,5,7,9,11,14,18]
 const rarities:Rarity[]=['comum','incomum','raro','raro','epico','epico','lendario','lendario']
-const druidNames=['Broto Lunargenta','Círculo das Raízes','Orvalho Ancestral','Espírito do Carvalho','Lua Verdejante','Seiva Primordial','Coração da Floresta','Arquedruida Eterno']
-const hunterNames=['Vigia das Cinzas','Rastreador de Ossos','Corvo do Ermo','Presa Sepulcral','Lua Morta','Predador de Morvath','Último Sobrevivente','Carrasco das Terras Mortas']
+const druidNames=['Broto de Abdendriel','Círculo das Raízes','Orvalho Ancestral','Espírito do Carvalho','Lua Verdejante','Seiva Primordial','Coração da Floresta','Arquedruida Eterno']
+const hunterNames=['Vigia das Cinzas','Rastreador de Ossos','Corvo do Ermo','Presa Sepulcral','Lua Morta','Predador de Morvath','Último Sobrevivente','Carrasco de Morvath']
 const themes=(names:string[]):Theme[]=>names.map((name,i)=>({id:name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_'),name,rarity:rarities[i],level:levels[i]}))
 const druidThemes=themes(druidNames),hunterThemes=themes(hunterNames)
 const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Coroa',bolsa:'Bolsa',anel_1:'Anel',peitoral:'Vestes',anel_2:'Anel',calcas:'Perneiras',mao_esquerda:'Pergaminho',mao_direita:'Arma',botas:'Botas'}
@@ -15,7 +15,7 @@ const hunterQuiverArt=['vigia-cinzas','rastreador-ossos','corvo-ermo','presa-sep
 const slotArt=(classe:NewClass,slot:Slot,i:number)=>{if(slot==='mao_esquerda')return classe==='druida'?druidScrollArt[i]:hunterQuiverArt[i];const roots:Record<string,string>={peitoral:'armor-sets',capacete:'headgear',calcas:'legwear',botas:'boots',mao_esquerda:'offhands'},prefix=classe==='druida'?'arc':'rogue',files=classe==='druida'?['estrelas','chama','veu','runas','tempestade','tempo','lua','primeiro']:['raposa','contrabandista','lua','aranha','beco','moedas','fantasma','rei'];return`assets/art/hd/${roots[slot]}/${prefix}_${files[i]}.webp`}
 const equipmentSet=(classe:NewClass,list:Theme[]):Equipment[]=>list.flatMap((theme,i)=>(['capacete','peitoral','calcas','botas','mao_esquerda'] as Slot[]).map(slot=>{const stat=slotStats(classe,slot,i),druid=classe==='druida',name=slot==='mao_esquerda'&&druid?`Pergaminho de ${theme.name}`:slot==='mao_esquerda'?`Aljava de ${theme.name}`:`${slotNames[slot]} de ${theme.name}`;return{id:`${classe}_${slot}_${theme.id}`,nome:name,slot,preco:20+theme.level*7,ataque:stat.ataque,vida:stat.vida,defesa:stat.defesa,habilidade:druid?`Sabedoria de ${theme.name}: fortalece cura, controle e proteção natural.`:`Instinto de ${theme.name}: aprimora precisão, esquiva e ataques críticos.`,imagem:slotArt(classe,slot,i),arte:slotArt(classe,slot,i),raridade:theme.rarity,classeExclusiva:classe,tipoEquipamento:druid?(slot==='mao_esquerda'?'pergaminho':'vestimenta_natural'):(slot==='mao_esquerda'?'aljava':'traje_cacador'),nivelMinimo:theme.level}}))
 const weaponNames={
- druida:['Cajado do Primeiro Broto','Cajado das Raízes Profundas','Cajado do Orvalho Prateado','Cajado do Carvalho Ancião','Cajado da Lua Verde','Cajado da Seiva Primordial','Cajado do Coração Lunargenta','Cajado do Arquedruida'],
+ druida:['Cajado do Primeiro Broto','Cajado das Raízes Profundas','Cajado do Orvalho Prateado','Cajado do Carvalho Ancião','Cajado da Lua Verde','Cajado da Seiva Primordial','Cajado do Coração de Abdendriel','Cajado do Arquedruida'],
  cacador:['Arco do Vigia das Cinzas','Balestra do Ossário','Arco do Corvo do Ermo','Balestra da Presa Sepulcral','Arco da Lua Morta','Balestra de Morvath','Arco do Último Sobrevivente','Balestra do Carrasco']
 }
 const druidWeaponArt=['primeiro-broto','raizes-profundas','orvalho-prateado','carvalho-anciao','lua-verde','seiva-primordial','coracao-lunargenta','arquedruida'].map(file=>`assets/art/hd/druid-weapons/${file}.png`)

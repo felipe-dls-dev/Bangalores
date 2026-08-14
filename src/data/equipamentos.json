@@ -131,7 +131,7 @@
   },
   {
     "id": "elmo_ferro",
-    "nome": "Elmo de Ferro de Khar-Dur",
+    "nome": "Elmo Rúnico de Kholgard",
     "slot": "capacete",
     "preco": 18,
     "ataque": 0,
@@ -157,7 +157,7 @@
   },
   {
     "id": "calcas_batedor",
-    "nome": "Calças do Batedor Lunargenta",
+    "nome": "Calças do Batedor Lunar",
     "slot": "calcas",
     "preco": 16,
     "ataque": 1,
@@ -196,7 +196,7 @@
   },
   {
     "id": "botas_brasa",
-    "nome": "Botas de Brasa Escarlate",
+    "nome": "Botas de Brasa do Dragão",
     "slot": "botas",
     "preco": 28,
     "ataque": 1,
@@ -235,7 +235,7 @@
   },
   {
     "id": "machado_cinzento",
-    "nome": "Machado das Montanhas Cinzentas",
+    "nome": "Machado das Cinzas de Kaldrum",
     "slot": "mao_direita",
     "preco": 29,
     "ataque": 2,

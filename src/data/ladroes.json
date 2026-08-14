@@ -1,14 +1,14 @@
 [
-  {"id":"pipo","nome":"Pipo Dedos-Leves","territorio":"Campos Dourados","ataque":2,"vida":3,"ouro":1,"imagem":"assets/cards/ladroes/1_pipo.jpg"},
-  {"id":"mara","nome":"Mara Passo-Raso","territorio":"Campos Dourados","ataque":3,"vida":4,"ouro":1,"imagem":"assets/cards/ladroes/1_mara.jpg"},
-  {"id":"silvo","nome":"Silvo Folha-Corta","territorio":"Floresta Lunargenta","ataque":3,"vida":5,"ouro":2,"imagem":"assets/cards/ladroes/2_silvo.jpg"},
-  {"id":"nara","nome":"Nara das Cordas","territorio":"Floresta Lunargenta","ataque":3,"vida":6,"ouro":2,"imagem":"assets/cards/ladroes/2_nara.jpg"},
-  {"id":"brokk","nome":"Brokk Quebra-Cofres","territorio":"Montanhas Cinzentas","ataque":4,"vida":6,"ouro":3,"imagem":"assets/cards/ladroes/4_brokk.jpg"},
-  {"id":"tessa","nome":"Tessa Fumaça Bronze","territorio":"Montanhas Cinzentas","ataque":4,"vida":8,"ouro":3,"imagem":"assets/cards/ladroes/4_tessa.jpg"},
-  {"id":"vargan","nome":"Vargan Lama Negra","territorio":"Pico Escarlate","ataque":4,"vida":10,"ouro":4,"imagem":"assets/cards/ladroes/3_vargan.jpg"},
-  {"id":"lys","nome":"Lys Sussurro Pálido","territorio":"Pico Escarlate","ataque":5,"vida":8,"ouro":4,"imagem":"assets/cards/ladroes/3_lys.jpg"},
-  {"id":"ossan","nome":"Ossan, o Sem-Rosto","territorio":"Terras Mortas","ataque":6,"vida":10,"ouro":5,"imagem":"assets/cards/ladroes/5_ossan.jpg"},
-  {"id":"velka","nome":"Velka Colecionadora","territorio":"Terras Mortas","ataque":5,"vida":12,"ouro":5,"imagem":"assets/cards/ladroes/5_velka.jpg"},
-  {"id":"drazhar","nome":"Drazhar Lâmina Negra","territorio":"Labirinto Khar-Dur","ataque":7,"vida":14,"ouro":6,"imagem":"assets/cards/ladroes/6_drazhar.jpg"},
-  {"id":"seraphina","nome":"Seraphina, Rainha","territorio":"Labirinto Khar-Dur","ataque":8,"vida":16,"ouro":7,"imagem":"assets/cards/ladroes/6_seraphina.png"}
+  {"id":"pipo","nome":"Pipo Dedos-Leves","territorio":"Planícies de Alvora","ataque":2,"vida":3,"ouro":1,"imagem":"assets/cards/ladroes/1_pipo.jpg"},
+  {"id":"mara","nome":"Mara Passo-Raso","territorio":"Planícies de Alvora","ataque":3,"vida":4,"ouro":1,"imagem":"assets/cards/ladroes/1_mara.jpg"},
+  {"id":"silvo","nome":"Silvo Folha-Corta","territorio":"Floresta de Abdendriel","ataque":3,"vida":5,"ouro":2,"imagem":"assets/cards/ladroes/2_silvo.jpg"},
+  {"id":"nara","nome":"Nara das Cordas","territorio":"Floresta de Abdendriel","ataque":3,"vida":6,"ouro":2,"imagem":"assets/cards/ladroes/2_nara.jpg"},
+  {"id":"brokk","nome":"Brokk Quebra-Cofres","territorio":"Serra de Kaldrum","ataque":4,"vida":6,"ouro":3,"imagem":"assets/cards/ladroes/4_brokk.jpg"},
+  {"id":"tessa","nome":"Tessa Fumaça Bronze","territorio":"Serra de Kaldrum","ataque":4,"vida":8,"ouro":3,"imagem":"assets/cards/ladroes/4_tessa.jpg"},
+  {"id":"vargan","nome":"Vargan Lama Negra","territorio":"Pico de Ignaris","ataque":4,"vida":10,"ouro":4,"imagem":"assets/cards/ladroes/3_vargan.jpg"},
+  {"id":"lys","nome":"Lys Sussurro Pálido","territorio":"Pico de Ignaris","ataque":5,"vida":8,"ouro":4,"imagem":"assets/cards/ladroes/3_lys.jpg"},
+  {"id":"ossan","nome":"Ossan, o Sem-Rosto","territorio":"Terras de Morvath","ataque":6,"vida":10,"ouro":5,"imagem":"assets/cards/ladroes/5_ossan.jpg"},
+  {"id":"velka","nome":"Velka Colecionadora","territorio":"Terras de Morvath","ataque":5,"vida":12,"ouro":5,"imagem":"assets/cards/ladroes/5_velka.jpg"},
+  {"id":"drazhar","nome":"Drazhar Lâmina Negra","territorio":"Labirinto Kholgard","ataque":7,"vida":14,"ouro":6,"imagem":"assets/cards/ladroes/6_drazhar.jpg"},
+  {"id":"seraphina","nome":"Seraphina, Rainha","territorio":"Labirinto Kholgard","ataque":8,"vida":16,"ouro":7,"imagem":"assets/cards/ladroes/6_seraphina.png"}
 ]

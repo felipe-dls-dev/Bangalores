@@ -21,7 +21,7 @@ const rows:Row[]=[
  ['mortas_torre','terras_mortas','Torre da Necromancia',15,18,'🗼','Relíquias míticas e magia sombria','Arquimorto de Morvath'],
  ['khar_forjas','khar_dur','Forjas Silenciosas',7,10,'🔥','Metais anões e martelos','Forjador de Ferro Negro'],
  ['khar_cofre','khar_dur','Cofre dos Reis Anões',9,12,'🔐','Ouro, joias e armaduras','Rei de Bronze Desperto'],
- ['khar_profundezas','khar_dur','Profundezas de Khar-Dur',11,14,'⛏️','Runas ancestrais e equipamentos épicos','Devorador das Profundezas'],
+ ['khar_profundezas','khar_dur','Profundezas de Kholgard',11,14,'⛏️','Runas ancestrais e equipamentos épicos','Devorador das Profundezas'],
  ['eclipse_jardim','coracao_eclipse','Jardim das Estrelas Mortas',18,21,'✦','Fragmentos astrais e orbes','Astrônomo Devorado'],
  ['eclipse_arquivo','coracao_eclipse','Arquivo das Eras Perdidas',21,24,'📜','Grimórios míticos e relíquias','Cronista do Fim'],
  ['eclipse_fenda','coracao_eclipse','Fenda Primordial',24,28,'🜏','Artefatos finais e tesouros do vazio','Abominação Primordial']

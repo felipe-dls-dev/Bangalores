@@ -15,14 +15,14 @@ export const CLASS_OFFHANDS:Equipment[]=[
   ['leve_lua','Escudo Leve da Lua de Ferro',27,2,2,'Reflexo lunar: desvia energia hostil.','leve_lua.webp','raro'],
   ['leve_cavaleiro','Escudo Leve do Último Cavaleiro',41,4,3,'Última vigília: não abandona seu portador.','leve_cavaleiro.webp','lendario']]),
  ...make('guardiao','escudo_pesado',[
-  ['pesado_khardur','Escudo Pesado de Khar-Dur',20,3,2,'Firmeza anã: defesa maciça.','pesado_khardur.webp','incomum'],
+  ['pesado_khardur','Escudo Pesado de Kholgard',20,3,2,'Firmeza anã: defesa maciça.','pesado_khardur.webp','incomum'],
   ['pesado_montanha','Escudo Pesado da Montanha Imóvel',34,5,3,'Imóvel: absorve impactos devastadores.','pesado_montanha.webp','epico'],
   ['pesado_forja','Escudo Pesado da Forja Profunda',26,4,3,'Calor da forja: resistência ancestral.','pesado_forja.webp','raro'],
   ['pesado_bastiao','Escudo Pesado do Bastião Anão',29,4,3,'Portão de ferro: protege como uma muralha.','pesado_bastiao.webp','raro'],
   ['pesado_geada','Escudo Pesado da Geada Azul',23,3,3,'Geada: amortece o primeiro golpe.','pesado_geada.webp','raro'],
   ['pesado_runico','Escudo Pesado do Guardião Rúnico',32,4,4,'Selo protetor: runas reforçam a defesa.','pesado_runico.webp','epico'],
   ['pesado_bronze','Escudo Pesado do Coração de Bronze',18,3,2,'Coração firme: aumenta a vida máxima.','pesado_bronze.webp','incomum'],
-  ['pesado_muralha','Escudo Pesado da Última Muralha',46,6,5,'Inquebrável: defesa suprema de Khar-Dur.','pesado_muralha.webp','lendario']]),
+  ['pesado_muralha','Escudo Pesado da Última Muralha',46,6,5,'Inquebrável: defesa suprema de Kholgard.','pesado_muralha.webp','lendario']]),
  ...make('cacadora','broquel',[
   ['broquel_raposa','Broquel da Raposa Cinzenta',14,0,1,'Astúcia: defesa sem perder agilidade.','broquel_raposa.webp','comum'],
   ['broquel_contrabandista','Broquel do Contrabandista',18,1,1,'Compartimento secreto: guarda recursos.','broquel_contrabandista.webp','incomum'],

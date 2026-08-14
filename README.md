@@ -79,4 +79,4 @@ O save fica no navegador do jogador (`localStorage`, chave `bangalores-save-v1`)
 ## Exploração por sub-regiões (v0.4.0)
 O mapa agora funciona em duas etapas: escolha uma região principal e, em seguida, selecione uma sub-região. Cada sub-região tem faixa de nível, progresso, eventos de exploração, inimigos próprios, variantes de dificuldade e um chefe desbloqueado após completar a exploração necessária.
 
-Destaques: Labirinto de Khar-Dur, Templo do Minotauro, Mina dos Anões Caídos, Caverna de Gelo e Ninho do Dragão Vermelho.
+Destaques: Labirinto de Kholgard, Templo do Minotauro, Mina dos Anões Caídos, Caverna de Gelo e Ninho do Dragão Vermelho.

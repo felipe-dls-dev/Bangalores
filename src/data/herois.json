@@ -1,7 +1,7 @@
 [
   {
     "id": "guerreiro",
-    "nome": "Legionário do Pico Escarlate",
+    "nome": "Legionário do Pico de Ignaris",
     "vida": 18,
     "ataque": 4,
     "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base.",
@@ -11,7 +11,7 @@
   },
   {
     "id": "cacadora",
-    "nome": "Lâmina Mercenária de Khar-Dur",
+    "nome": "Lâmina Mercenária de Kholgard",
     "vida": 15,
     "ataque": 5,
     "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: pode atacar duas vezes no turno.",
@@ -21,7 +21,7 @@
   },
   {
     "id": "arcanista",
-    "nome": "Erudito do Eclipse",
+    "nome": "Erudito do Sol Negro",
     "vida": 13,
     "ataque": 6,
     "habilidade": "Passivo: 50% de chance de melhorar ouro ou espólios. Ativo: +2 nos dados e +10% de Ataque e Defesa para todos os aliados.",
@@ -41,7 +41,7 @@
   },
   {
     "id": "druida",
-    "nome": "Druida da Floresta Lunargenta",
+    "nome": "Druida da Floresta de Abdendriel",
     "vida": 17,
     "ataque": 4,
     "habilidade": "Passivo: 25% de chance de aplicar -1 ao próximo dado inimigo. Ativo: cura 30% da vida máxima do aliado mais ferido.",
@@ -51,7 +51,7 @@
   },
   {
     "id": "cacador",
-    "nome": "Caçador das Terras Mortas",
+    "nome": "Caçador das Terras de Morvath",
     "vida": 16,
     "ataque": 5,
     "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: amplia a faixa crítica do grupo para resultados 5 e 6.",
