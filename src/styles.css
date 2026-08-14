@@ -691,7 +691,3 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .link-action{background:none;border:none;color:var(--gold2);text-decoration:underline;padding:2px;font-size:.82rem;cursor:pointer}
 .link-action:hover{color:#fff2c9}
 .menu-dropdown-account{display:flex;align-items:center;gap:7px;padding:.4rem .6rem;margin-bottom:4px;color:#a99879;font-size:.72rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:#a99879;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}
-.auth-divider span{flex:1;height:1px;background:#4d3b27}
-.auth-google-button{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:.65rem 1rem;border:1px solid #4d3b27;border-radius:8px;background:#efe5cf;color:#1f1a12;font-weight:700}
-.auth-google-button:hover:not(:disabled){background:#fff8e6}
