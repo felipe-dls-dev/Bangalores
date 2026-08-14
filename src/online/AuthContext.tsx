@@ -1,10 +1,10 @@
 import React from 'react'
 import type { User } from '@supabase/supabase-js'
-import { supabase, onlineConfigured, signUpWithEmail, signInWithEmail, signOutUser, requestPasswordReset, fetchPlayerCampaigns, upsertPlayerCampaign, deletePlayerCampaigns } from './supabase'
+import { supabase, onlineConfigured, signUpWithEmail, signInWithEmail, signOutUser, signInWithGoogle, requestPasswordReset, fetchPlayerCampaigns, upsertPlayerCampaign, deletePlayerCampaigns } from './supabase'
 import { useGame } from '../store/game'
 
 type AuthStatus='loading'|'signedOut'|'signedIn'
-type AuthContextValue={status:AuthStatus;user:User|null;busy:boolean;error:string;signUp:(email:string,password:string)=>Promise<boolean>;signIn:(email:string,password:string)=>Promise<boolean>;signOut:()=>Promise<void>;resetPassword:(email:string)=>Promise<boolean>;clearError:()=>void}
+type AuthContextValue={status:AuthStatus;user:User|null;busy:boolean;error:string;signUp:(email:string,password:string)=>Promise<boolean>;signIn:(email:string,password:string)=>Promise<boolean>;signInGoogle:()=>Promise<void>;signOut:()=>Promise<void>;resetPassword:(email:string)=>Promise<boolean>;clearError:()=>void}
 const AuthContext=React.createContext<AuthContextValue|null>(null)
 
 function translateAuthError(message:string){
@@ -14,6 +14,7 @@ function translateAuthError(message:string){
  if(/rate limit/i.test(message))return 'Muitas tentativas. Aguarde um instante e tente novamente.'
  if(/email.*invalid|invalid.*email/i.test(message))return 'Digite um e-mail válido.'
  if(/failed to fetch|network|load failed/i.test(message))return 'Não foi possível conectar ao serviço de contas. Verifique sua internet e tente novamente.'
+ if(/provider is not enabled|unsupported provider/i.test(message))return 'Login com Google ainda não foi habilitado neste projeto.'
  return message
 }
 
@@ -73,10 +74,11 @@ export function AuthProvider({children}:{children:React.ReactNode}){
 
  const signUp=async(email:string,password:string)=>{setBusy(true);setError('');try{await signUpWithEmail(email,password);return true}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível criar a conta.');return false}finally{setBusy(false)}}
  const signIn=async(email:string,password:string)=>{setBusy(true);setError('');try{await signInWithEmail(email,password);return true}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível entrar.');return false}finally{setBusy(false)}}
+ const signInGoogle=async()=>{setBusy(true);setError('');try{await signInWithGoogle()}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível entrar com o Google.');setBusy(false)}}
  const signOut=async()=>{setBusy(true);try{await signOutUser()}finally{setBusy(false)}}
  const resetPassword=async(email:string)=>{setBusy(true);setError('');try{await requestPasswordReset(email);return true}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível enviar o e-mail.');return false}finally{setBusy(false)}}
  const clearError=()=>setError('')
 
- return <AuthContext.Provider value={{status,user,busy,error,signUp,signIn,signOut,resetPassword,clearError}}>{children}</AuthContext.Provider>
+ return <AuthContext.Provider value={{status,user,busy,error,signUp,signIn,signInGoogle,signOut,resetPassword,clearError}}>{children}</AuthContext.Provider>
 }
 export function useAuth(){const value=React.useContext(AuthContext);if(!value)throw new Error('AuthProvider não encontrado.');return value}
