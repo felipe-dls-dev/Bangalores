@@ -680,3 +680,14 @@ body::after{content:"VERSÃO 0.6.8 • 13/08/2026 17:04 • Classes separadas, p
    cascade for `animation` even as future version bumps only touch `content`. */
 body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 @keyframes version-toast-fade{to{opacity:0;visibility:hidden}}
+/* Account sign-in / sign-up screen */
+.auth-card{display:flex;flex-direction:column;gap:2px}
+.auth-form{display:flex;flex-direction:column;gap:14px;margin-top:18px;text-align:left}
+.field-label{display:flex;align-items:center;gap:6px}
+.auth-error{margin:0;padding:8px 10px;border:1px solid #8c342d;border-radius:8px;background:#2b0d0bcc;color:#ef9c91;font-size:.82rem}
+.auth-notice{margin:0;padding:8px 10px;border:1px solid #4f694d;border-radius:8px;background:#0f1a0fcc;color:#b6d9ae;font-size:.82rem}
+.auth-links{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:14px}
+.auth-links .ghost-action{width:100%;justify-content:center}
+.link-action{background:none;border:none;color:var(--gold2);text-decoration:underline;padding:2px;font-size:.82rem;cursor:pointer}
+.link-action:hover{color:#fff2c9}
+.menu-dropdown-account{display:flex;align-items:center;gap:7px;padding:.4rem .6rem;margin-bottom:4px;color:#a99879;font-size:.72rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
