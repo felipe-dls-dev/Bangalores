@@ -4,7 +4,7 @@ import { supabase, onlineConfigured, signUpWithEmail, signInWithEmail, signOutUs
 import { useGame } from '../store/game'
 
 type AuthStatus='loading'|'signedOut'|'signedIn'
-type AuthContextValue={status:AuthStatus;user:User|null;busy:boolean;error:string;signUp:(email:string,password:string)=>Promise<boolean>;signIn:(email:string,password:string)=>Promise<boolean>;signOut:()=>Promise<void>;resetPassword:(email:string)=>Promise<boolean>;clearError:()=>void}
+type AuthContextValue={status:AuthStatus;user:User|null;busy:boolean;error:string;signUp:(email:string,password:string)=>Promise<'signed-in'|'pending'|false>;signIn:(email:string,password:string)=>Promise<boolean>;signOut:()=>Promise<void>;resetPassword:(email:string)=>Promise<boolean>;clearError:()=>void}
 const AuthContext=React.createContext<AuthContextValue|null>(null)
 
 function translateAuthError(message:string){
@@ -71,7 +71,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   return useGame.subscribe((state,previous)=>{if(state.campaigns!==previous.campaigns)pushCampaigns(user.id)})
  },[status,user,pushCampaigns])
 
- const signUp=async(email:string,password:string)=>{setBusy(true);setError('');try{await signUpWithEmail(email,password);return true}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível criar a conta.');return false}finally{setBusy(false)}}
+ const signUp=async(email:string,password:string)=>{setBusy(true);setError('');try{const data=await signUpWithEmail(email,password);return data.session?'signed-in':'pending'}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível criar a conta.');return false}finally{setBusy(false)}}
  const signIn=async(email:string,password:string)=>{setBusy(true);setError('');try{await signInWithEmail(email,password);return true}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível entrar.');return false}finally{setBusy(false)}}
  const signOut=async()=>{setBusy(true);try{await signOutUser()}finally{setBusy(false)}}
  const resetPassword=async(email:string)=>{setBusy(true);setError('');try{await requestPasswordReset(email);return true}catch(err){setError(err instanceof Error?translateAuthError(err.message):'Não foi possível enviar o e-mail.');return false}finally{setBusy(false)}}

@@ -209,7 +209,7 @@ function AuthScreen(){
   event.preventDefault()
   setNotice('')
   if(mode==='reset'){if(await auth.resetPassword(email))setNotice('Se este e-mail tiver uma conta, enviamos um link para redefinir a senha.');return}
-  if(mode==='signup'){if(await auth.signUp(email,password))setNotice('Conta criada! Verifique seu e-mail para confirmar o cadastro antes de entrar.');return}
+  if(mode==='signup'){const result=await auth.signUp(email,password);if(result==='pending')setNotice('Conta criada! Verifique seu e-mail para confirmar o cadastro antes de entrar.');return}
   await auth.signIn(email,password)
  }
  return <div className="hero-bg menu-hero"><div className="menu-atmosphere"/><section className="menu-card auth-card">
