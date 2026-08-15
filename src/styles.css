@@ -344,7 +344,7 @@ body:has(.combat-v033){overflow:hidden}
 /* Moldura ilustrada oficial: a arte fica atrás e todos os dados permanecem dinâmicos. */
 .game-card.ornate-card{width:min(410px,100%);aspect-ratio:2/3;display:block;overflow:visible;border:0;border-radius:0;background:#090706;box-shadow:0 22px 55px #000;isolation:isolate}
 .game-card.ornate-card::before,.game-card.ornate-card::after{display:none}
-.ornate-art{position:absolute;z-index:1;left:7.32%;top:12.24%;width:80.08%;height:68.75%;overflow:hidden;background:#080604}
+.ornate-art{position:absolute;z-index:1;left:4%;top:11%;width:84%;height:77%;overflow:hidden;background:#080604}
 .ornate-art .art-preview-trigger{position:absolute;z-index:1;inset:0;width:100%;height:100%;overflow:hidden}
 .ornate-art .art-preview-trigger>img{position:absolute;z-index:1;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.2);transform-origin:center}
 .ornate-frame{position:absolute!important;z-index:20!important;inset:0;width:100%;height:100%;pointer-events:none;object-fit:fill}
