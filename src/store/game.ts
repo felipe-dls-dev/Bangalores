@@ -350,7 +350,7 @@ function summonBossMinions(enemy:Enemy,phase:number):CombatMinion[]{const count=
 const COMBAT_ROLL_DISPLAY_MS=2500
 function attackEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Ataque desajeitado':roll<=4?'Ataque normal':roll===5?'Ataque forte':'Ataque crítico'}
 function defenseEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Defesa fraca':roll<=4?'Defesa normal':roll===5?'Defesa forte':'Defesa perfeita'}
-function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number){
+export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number){
  if(attackRoll===1)return{damage:0,selfDamage:Math.max(1,Math.floor(attackBase*.2))}
  const effectiveAttack=attackBase+(attackRoll===5?1:0)
  let damage=Math.max(1,effectiveAttack-defenseBase)
