@@ -355,6 +355,16 @@ body:has(.combat-v033){overflow:hidden}
 .ornate-attack{top:35.5%}.ornate-defense{top:51.2%}.ornate-life{top:66.7%}
 .ornate-effect{position:absolute;z-index:30;left:13.5%;bottom:5.1%;width:74%;height:7.2%;margin:0;display:flex;align-items:flex-start;color:#2b1b0d;font:600 clamp(.5rem,1.2vw,.72rem)/1.25 Georgia,serif;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .ornate-enemy .ornate-badge{color:#321408}
+.frame-theme-death .ornate-name{left:10%;top:4.3%;width:70%;height:7.6%}
+.frame-theme-death .ornate-emblem{right:2%;top:10.5%;width:18%}
+.frame-theme-death .ornate-badge{right:1%;top:30%;width:19%;height:4%}
+.frame-theme-death .ornate-stat{right:1%;width:9.5%;height:9%}
+.frame-theme-death .ornate-attack{top:39.5%}
+.frame-theme-death .ornate-defense{top:55.5%}
+.frame-theme-death .ornate-life{top:71.5%}
+.frame-theme-death .ornate-effect{left:11%;bottom:3.3%;width:69%;height:7%}
+.combat-card-fighter .ornate-card.frame-theme-death>.ornate-emblem{right:2%!important;top:10.5%!important;width:18%!important;max-width:18%!important}
+.combat-card-fighter .ornate-card.frame-theme-death h2.ornate-name{left:10%;top:4.3%;width:70%;height:7.6%}
 .gallery-card .game-card.ornate-card{width:auto;height:min(100%,72vh);max-width:100%;max-height:72vh;aspect-ratio:2/3}
 .gallery-card .game-card.ornate-card>.ornate-frame{width:100%;height:100%;max-width:none;max-height:none}
 .gallery-card .game-card.ornate-card .ornate-art img{width:100%;height:100%;max-width:none;max-height:none}
@@ -512,6 +522,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 
 /* Texto restrito à área útil do pergaminho inferior da moldura. */
 .ornate-card .ornate-effect,.combat-card-fighter .ornate-card .ornate-effect{display:-webkit-box;box-sizing:border-box;left:13.3%;top:86.25%;bottom:auto;width:73.4%;height:6.25%;margin:0;padding:.35% 1.25% 0;overflow:hidden;align-items:flex-start;text-align:left;white-space:normal;overflow-wrap:break-word;word-break:normal;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;line-height:1.08}.ornate-card.effect-short .ornate-effect{font-size:clamp(.5rem,1.04vw,.68rem)}.ornate-card.effect-medium .ornate-effect{font-size:clamp(.45rem,.9vw,.58rem)}.ornate-card.effect-long .ornate-effect{font-size:clamp(.4rem,.78vw,.51rem)}.ornate-card.effect-xlong .ornate-effect{font-size:clamp(.36rem,.69vw,.45rem);line-height:1.04}.combat-card-fighter .ornate-card .ornate-effect{font-size:clamp(.42rem,.58vw,.54rem)}.combat-card-fighter .ornate-card.effect-medium .ornate-effect{font-size:clamp(.39rem,.52vw,.48rem)}.combat-card-fighter .ornate-card.effect-long .ornate-effect{font-size:clamp(.35rem,.46vw,.43rem)}.combat-card-fighter .ornate-card.effect-xlong .ornate-effect{font-size:clamp(.32rem,.41vw,.38rem)}
+.ornate-card.frame-theme-death .ornate-effect,.combat-card-fighter .ornate-card.frame-theme-death .ornate-effect{left:11%!important;top:89.5%!important;width:69%!important;height:7%!important}
 .ornate-card.effect-medium .ornate-effect,.ornate-card.effect-long .ornate-effect,.ornate-card.effect-xlong .ornate-effect{top:85.82%;padding-top:.1%}.combat-card-fighter .ornate-card.effect-medium .ornate-effect,.combat-card-fighter .ornate-card.effect-long .ornate-effect,.combat-card-fighter .ornate-card.effect-xlong .ornate-effect{top:85.78%;padding-top:.08%}
 
 .gallery-progress{display:grid;grid-template-columns:auto minmax(180px,1fr) auto;align-items:center;gap:16px;margin-bottom:12px;padding:10px 14px;border:1px solid #62441f;border-radius:10px;background:linear-gradient(145deg,#24170e,#100b08)}.gallery-progress>div:first-child{display:flex;align-items:center;gap:9px}.gallery-progress svg{color:#e8bd66}.gallery-progress span{display:flex;align-items:baseline;gap:8px}.gallery-progress small{color:#a98a5b;font-size:.58rem;letter-spacing:.1em}.gallery-progress strong{color:#f0c978}.gallery-progress-track{height:8px;overflow:hidden;border:1px solid #513718;border-radius:99px;background:#080604}.gallery-progress-track i{display:block;height:100%;background:linear-gradient(90deg,#80511f,#e3ad4e)}.gallery-progress p{margin:0;color:#9e8d73;font-size:.72rem}.gallery-undiscovered{min-height:58vh;display:grid;place-items:center;align-content:center;text-align:center;color:#9f8e74}.gallery-undiscovered svg{width:56px;height:56px;color:#75552d}.gallery-undiscovered h2{color:#e3c180;font:700 1.4rem Georgia,serif}.gallery-undiscovered p{max-width:520px}@media(max-width:700px){.gallery-progress{grid-template-columns:1fr}.gallery-progress p{display:none}}

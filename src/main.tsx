@@ -17,7 +17,7 @@ const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa
 const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Arcanista',druida:'Druida',cacador:'Caçador'}
 // Themed card frames per region, matching each region's lore (lava/volcano -> fire, undead catacombs -> death, etc).
 // Regions left out (campos_dourados, trilhouro) keep the default gold frame-overlay.png.
-const REGION_FRAME:Record<string,string>={floresta_lunargenta:'jungle',montanhas_cinzentas:'ice',pico_escarlate:'fire',terras_mortas:'purple',khar_dur:'steel',coracao_eclipse:'purple',frostgard:'ice',engrenverde:'jungle',vulcannis:'fire',ferrujal:'red',coroferro:'steel',aetherium:'purple'}
+const REGION_FRAME:Record<string,string>={floresta_lunargenta:'jungle',montanhas_cinzentas:'ice',pico_escarlate:'fire',terras_mortas:'death',khar_dur:'steel',coracao_eclipse:'death',frostgard:'ice',engrenverde:'jungle',vulcannis:'fire',ferrujal:'red',coroferro:'steel',aetherium:'purple'}
 function compatibilityLabel(e:any,heroId?:string){if(e.slot==='bolsa')return`Universal • Capacidade: ${e.capacidade??8} espaços`;if(e.classeExclusiva)return equipmentClassAllowed(e,heroId)?`Exclusivo: ${classNames[e.classeExclusiva]} • compatível`:`Exclusivo para ${classNames[e.classeExclusiva]}`;const c=equipmentCompatibility(e,heroId);if(!c.affinity)return'Arma neutra • sem penalidade de classe';return c.compatible?`Afinidade: ${classNames[c.affinity]} • bônus completo`:`Afinidade: ${classNames[c.affinity]} • penalidade: -${c.penalty} ATQ`}
 const eliteGallery=MONSTERS.map(x=>({...x,id:`elite_${x.id}`,nome:`Elite: ${x.nome}`,ataque:Math.ceil(x.ataque*1.24),vida:Math.ceil(x.vida*1.55),ouro:Math.ceil(x.ouro*1.7),habilidade:`${x.habilidade} • Técnica de elite`,elite:true,raridade:'raro' as Rarity,kind:'Elite'}))
 const allGallery=[...HEROES.map(x=>({...x,kind:'Herói'})),...EQUIPMENT.map(x=>({...x,kind:'Equipamento'})),...CONSUMABLES.map(x=>({...x,kind:'Consumível'})),...MONSTERS.map(x=>({...x,kind:'Monstro'})),...eliteGallery,...Object.values(BOSSES).map(x=>({...x,kind:'Chefe'})),...EVENTS.map(x=>({...x,kind:'Evento'}))]
@@ -107,7 +107,7 @@ function CardFrame({card,kind,artStyle,frameTheme}:{card:any;kind:string;artStyl
  const enemy=kind==='Monstro'||kind==='Elite'||kind==='Chefe'||card.boss||card.elite
  const attack=card.ataque??0,defense=card.defesa??(enemy?Math.max(0,(card.dificuldade??1)-2):0),life=card.vida??(kind==='Consumível'?card.valor??0:0)
  const nameLength=String(card.nome??'').length,nameSize=nameLength>32?'name-xlong':nameLength>23?'name-long':nameLength>16?'name-medium':'name-short',effectLength=String(effect).length,effectSize=effectLength>92?'effect-xlong':effectLength>66?'effect-long':effectLength>42?'effect-medium':'effect-short'
- return <article className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize}`}>
+ return <article className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize} ${frameTheme?`frame-theme-${frameTheme}`:''}`}>
   <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/></div>
   <img className="ornate-frame" src={'./'+cardSystemRoot+(frameTheme?`frame-${frameTheme}.png`:'frame-overlay.png')} alt="" aria-hidden="true"/>
   <h2 className="ornate-name">{card.nome}</h2>
