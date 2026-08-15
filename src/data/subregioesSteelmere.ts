@@ -1,7 +1,7 @@
 import type { Rarity, Subregion, SubregionEnemy } from '../types'
 
 type Row=[id:string,regionId:string,nome:string,nivelMin:number,nivelMax:number,icone:string,tema:string,chefe:string,tier:number]
-const enemyArt=['assets/art/monsters/sentinela_runas.webp','assets/art/monsters/espectro_rainha.webp','assets/art/monsters/fanatico_orgulho.webp','assets/art/monsters/grumnak.webp','assets/art/monsters/ilusionista_areias.webp','assets/art/monsters/corvo_ignaroth.webp','assets/art/monsters/cabra_malgor.webp']
+const enemyArt=['assets/art/monsters/steelmere/automato-sentinela.webp','assets/art/monsters/steelmere/batedor-a-vapor.webp','assets/art/monsters/steelmere/elemental-de-vapor.webp','assets/art/monsters/steelmere/arauto-blindado.webp','assets/art/monsters/steelmere/automato-corrompido.webp','assets/art/monsters/steelmere/espectro-mecanico.webp']
 const bossArt=['assets/art/bosses/boss_troll.webp','assets/art/bosses/boss_minotauro.webp','assets/art/bosses/boss_malgor.webp','assets/art/bosses/boss_necromante.webp','assets/art/bosses/boss_bandoleiro.webp','assets/art/bosses/boss_seiva.webp']
 
 const rows:Row[]=[
