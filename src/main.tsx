@@ -102,34 +102,14 @@ function cardBadge(card:any,kind:string,rarity:Rarity){
  if(kind==='Monstro')return'Comum'
  return rarityLabel[rarity]
 }
-function AttackFX({type}:{type:AttackAnimType}){
- if(type==='corte')return <div className="atk-fx atk-fx-corte"><span/></div>
- if(type==='facas')return <div className="atk-fx atk-fx-facas"><span/><span/></div>
- if(type==='garras')return <div className="atk-fx atk-fx-garras"><span/><span/><span/></div>
- if(type==='martelo')return <div className="atk-fx atk-fx-martelo"><svg viewBox="0 0 100 100" className="atk-crack" aria-hidden="true">
-   <path d="M50 50 L44 30 L56 22 L40 2"/>
-   <path d="M50 50 L68 38 L60 24 L92 10"/>
-   <path d="M50 50 L66 64 L58 78 L88 96"/>
-   <path d="M50 50 L32 62 L40 76 L10 92"/>
-   <path d="M50 50 L30 40 L38 26 L6 14"/>
-  </svg></div>
- if(type==='magico')return <div className="atk-fx atk-fx-magico"><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-flame"/><span className="atk-flame"/></div>
- if(type==='furo')return <div className="atk-fx atk-fx-furo"><span/><span/><span/><span/></div>
- if(type==='espinhos')return <div className="atk-fx atk-fx-espinhos"><svg viewBox="0 0 100 100" className="atk-vines" aria-hidden="true">
-   <path className="atk-vine" d="M8 12 C 20 22, 12 38, 22 46 C 32 54, 14 62, 24 70 C 34 78, 40 82, 48 90"/>
-   <path className="atk-vine" d="M92 14 C 78 24, 86 40, 76 48 C 66 56, 84 64, 74 72 C 64 80, 58 84, 50 92"/>
-   <path className="atk-thorn" d="M16 26 L6 20"/>
-   <path className="atk-thorn" d="M22 46 L34 42"/>
-   <path className="atk-thorn" d="M18 66 L6 70"/>
-   <path className="atk-thorn" d="M40 82 L48 74"/>
-   <path className="atk-thorn" d="M82 22 L94 16"/>
-   <path className="atk-thorn" d="M76 48 L64 44"/>
-   <path className="atk-thorn" d="M78 68 L90 72"/>
-   <path className="atk-thorn" d="M56 88 L48 96"/>
-  </svg></div>
- return null
+const fxRoot=cardSystemRoot+'fx/'
+function AttackFX({type,critical}:{type:AttackAnimType;critical?:boolean}){
+ return <img className="fx-overlay-img fx-attack" src={'./'+fxRoot+type+(critical?'-critico':'')+'.webp'} alt="" aria-hidden="true"/>
 }
-function CardFrame({card,kind,artStyle,frameTheme,attackFx}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType}){
+function SupportFX({type}:{type:'fortificacao'|'cura'}){
+ return <img className="fx-overlay-img fx-support" src={'./'+fxRoot+type+'.webp'} alt="" aria-hidden="true"/>
+}
+function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supportFx}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType;attackFxCritical?:boolean;supportFx?:'fortificacao'|'cura'}){
  const rarity=cardRarity(card,kind),baseEffect=card.habilidade??card.descricao??'Sem efeito especial.',effect=kind==='Equipamento'?`Nível ${equipmentRequiredLevel(card)} • ${baseEffect}`:baseEffect
  const enemy=kind==='Monstro'||kind==='Elite'||kind==='Chefe'||card.boss||card.elite
  const attack=card.ataque??0,defense=card.defesa??(enemy?Math.max(0,(card.dificuldade??1)-2):0),life=card.vida??(kind==='Consumível'?card.valor??0:0)
@@ -144,7 +124,8 @@ function CardFrame({card,kind,artStyle,frameTheme,attackFx}:{card:any;kind:strin
   <span className="ornate-stat ornate-defense">{enemy?defense:`+${defense}`}</span>
   <span className="ornate-stat ornate-life">{enemy?life:`+${life}`}</span>
   <p className="ornate-effect">{effect}</p>
-  {attackFx&&<AttackFX type={attackFx}/>}
+  {attackFx&&<AttackFX type={attackFx} critical={attackFxCritical}/>}
+  {supportFx&&<SupportFX type={supportFx}/>}
  </article>
 }
 
@@ -401,10 +382,10 @@ function CombatScreen(){
  const useCoopItemSkill=()=>{if(g.itemSkillUsed||!myTurn)return;const item=itemAbilities[0];if(!item)return;const txt=item.habilidade.toLowerCase();let damage=0,effect=item.habilidade;if(txt.includes('escudo')){useGame.setState({shield:g.shield+3,itemSkillUsed:true});effect='+3 de escudo'}else if(txt.includes('recupere')){const healed=Math.min(4,maxHp(g)-g.hp);useGame.setState({hp:Math.min(maxHp(g),g.hp+4),itemSkillUsed:true});effect=`recuperou ${healed} de vida`}else{damage=Math.max(1,attackValue(g)+3-Math.max(0,(e.dificuldade??1)-2));useGame.setState({itemSkillUsed:true})}void coop.coopAbility(item.nome,damage,effect)}
  return <div className="combat-page premium-combat combat-v033">
    <div className="combat-hero-area">
-    <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={enemyWeaponAnimationType(e)}/>
+    <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={enemyWeaponAnimationType(e)} attackCritical={g.combatRoll?.attacker==='enemy'&&g.combatRoll.attackRoll===6} supportFx={g.supportFx?.type}/>
    </div>
    <div className="combat-enemy-area">
-    <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={heroWeaponAnimationType(g.equipped.mao_direita)}/>
+    <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={heroWeaponAnimationType(g.equipped.mao_direita)} attackCritical={g.combatRoll?.attacker==='hero'&&g.combatRoll.attackRoll===6}/>
     {Boolean(g.combatMinions?.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{g.combatMinions!.filter(minion=>minion.hp>0).map(minion=><article key={minion.id}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>)}</div>}
    </div>
 
@@ -442,11 +423,11 @@ function CombatScreen(){
 
    <div className="combat-tip"><Sparkles size={15}/> Dica: use os consumíveis no momento certo — utilizar um item consome seu turno.</div>
  </div>}
-function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType}){
+function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType,attackCritical,supportFx}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'}){
  const galleryKind=side==='hero'?'Herói':boss?'Chefe':kind==='ELITE'?'Elite':'Monstro'
  const card={id:classId,nome:name,arte:image,habilidade:ability,ataque:attack,defesa:defense,vida:max,boss,elite:kind==='ELITE',raridade:side==='hero'?'heroico':boss?'lendario':kind==='ELITE'?'raro':'comum'}
  return <motion.article className={'fighter premium-fighter combat-card-fighter '+side+(boss?' boss':'')} animate={shaking?{x:[0,-9,8,-5,0]}:{x:0}} transition={{duration:.35}}>
-  <CardFrame card={card} kind={galleryKind} frameTheme={frameTheme} attackFx={shaking?attackType:undefined}/>
+  <CardFrame card={card} kind={galleryKind} frameTheme={frameTheme} attackFx={shaking?attackType:undefined} attackFxCritical={shaking?attackCritical:undefined} supportFx={supportFx}/>
   {boss&&<small className="combat-card-phase">FASE {phase??1}</small>}
   {shaking&&damage!==undefined&&<motion.div className="floating-damage" initial={{opacity:0,y:10,scale:.7}} animate={{opacity:1,y:-45,scale:1.2}} transition={{duration:.5}}>-{damage}</motion.div>}
   <div className="hp-label"><span>Vida</span><strong>{Math.max(0,hp)}/{max}</strong></div><div className="hp-track"><motion.div animate={{width:`${Math.max(0,hp/max*100)}%`}} transition={{duration:.45}}/></div>
