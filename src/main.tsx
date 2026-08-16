@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Map, ScrollText, Backpack, Shield, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Coins, Trophy, Skull, Package, Plus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane } from 'lucide-react'
-import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked } from './store/game'
+import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, type AttackAnimType } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_GEMS, FORGE_MATERIALS, FORGE_RECIPES, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode } from './data/expansion'
 import { createOnlineRoom, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, normalizeRoomCode, onlineConfigured, setMemberReady, subscribeToOnlineRoom, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './online/supabase'
@@ -102,7 +102,16 @@ function cardBadge(card:any,kind:string,rarity:Rarity){
  if(kind==='Monstro')return'Comum'
  return rarityLabel[rarity]
 }
-function CardFrame({card,kind,artStyle,frameTheme}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string}){
+function AttackFX({type}:{type:AttackAnimType}){
+ if(type==='corte')return <div className="atk-fx atk-fx-corte"><span/></div>
+ if(type==='facas')return <div className="atk-fx atk-fx-facas"><span/><span/></div>
+ if(type==='garras')return <div className="atk-fx atk-fx-garras"><span/><span/><span/></div>
+ if(type==='martelo')return <div className="atk-fx atk-fx-martelo"><svg viewBox="0 0 100 100" className="atk-crack" aria-hidden="true"><path d="M50 8 L45 38 L62 44 L38 54 L53 68 L34 63 L37 92"/><path d="M50 8 L60 32 L41 41 L64 56 L47 66 L67 80"/></svg></div>
+ if(type==='magico')return <div className="atk-fx atk-fx-magico"><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-flame"/><span className="atk-flame"/></div>
+ if(type==='furo')return <div className="atk-fx atk-fx-furo"><span/><span/><span/><span/></div>
+ return null
+}
+function CardFrame({card,kind,artStyle,frameTheme,attackFx}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType}){
  const rarity=cardRarity(card,kind),baseEffect=card.habilidade??card.descricao??'Sem efeito especial.',effect=kind==='Equipamento'?`Nível ${equipmentRequiredLevel(card)} • ${baseEffect}`:baseEffect
  const enemy=kind==='Monstro'||kind==='Elite'||kind==='Chefe'||card.boss||card.elite
  const attack=card.ataque??0,defense=card.defesa??(enemy?Math.max(0,(card.dificuldade??1)-2):0),life=card.vida??(kind==='Consumível'?card.valor??0:0)
@@ -117,6 +126,7 @@ function CardFrame({card,kind,artStyle,frameTheme}:{card:any;kind:string;artStyl
   <span className="ornate-stat ornate-defense">{enemy?defense:`+${defense}`}</span>
   <span className="ornate-stat ornate-life">{enemy?life:`+${life}`}</span>
   <p className="ornate-effect">{effect}</p>
+  {attackFx&&<AttackFX type={attackFx}/>}
  </article>
 }
 
@@ -373,10 +383,10 @@ function CombatScreen(){
  const useCoopItemSkill=()=>{if(g.itemSkillUsed||!myTurn)return;const item=itemAbilities[0];if(!item)return;const txt=item.habilidade.toLowerCase();let damage=0,effect=item.habilidade;if(txt.includes('escudo')){useGame.setState({shield:g.shield+3,itemSkillUsed:true});effect='+3 de escudo'}else if(txt.includes('recupere')){const healed=Math.min(4,maxHp(g)-g.hp);useGame.setState({hp:Math.min(maxHp(g),g.hp+4),itemSkillUsed:true});effect=`recuperou ${healed} de vida`}else{damage=Math.max(1,attackValue(g)+3-Math.max(0,(e.dificuldade??1)-2));useGame.setState({itemSkillUsed:true})}void coop.coopAbility(item.nome,damage,effect)}
  return <div className="combat-page premium-combat combat-v033">
    <div className="combat-hero-area">
-    <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined}/>
+    <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={enemyWeaponAnimationType(e)}/>
    </div>
    <div className="combat-enemy-area">
-    <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']}/>
+    <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={heroWeaponAnimationType(g.equipped.mao_direita)}/>
     {Boolean(g.combatMinions?.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{g.combatMinions!.filter(minion=>minion.hp>0).map(minion=><article key={minion.id}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>)}</div>}
    </div>
 
@@ -414,11 +424,11 @@ function CombatScreen(){
 
    <div className="combat-tip"><Sparkles size={15}/> Dica: use os consumíveis no momento certo — utilizar um item consome seu turno.</div>
  </div>}
-function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string}){
+function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType}){
  const galleryKind=side==='hero'?'Herói':boss?'Chefe':kind==='ELITE'?'Elite':'Monstro'
  const card={id:classId,nome:name,arte:image,habilidade:ability,ataque:attack,defesa:defense,vida:max,boss,elite:kind==='ELITE',raridade:side==='hero'?'heroico':boss?'lendario':kind==='ELITE'?'raro':'comum'}
  return <motion.article className={'fighter premium-fighter combat-card-fighter '+side+(boss?' boss':'')} animate={shaking?{x:[0,-9,8,-5,0]}:{x:0}} transition={{duration:.35}}>
-  <CardFrame card={card} kind={galleryKind} frameTheme={frameTheme}/>
+  <CardFrame card={card} kind={galleryKind} frameTheme={frameTheme} attackFx={shaking?attackType:undefined}/>
   {boss&&<small className="combat-card-phase">FASE {phase??1}</small>}
   {shaking&&damage!==undefined&&<motion.div className="floating-damage" initial={{opacity:0,y:10,scale:.7}} animate={{opacity:1,y:-45,scale:1.2}} transition={{duration:.5}}>-{damage}</motion.div>}
   <div className="hp-label"><span>Vida</span><strong>{Math.max(0,hp)}/{max}</strong></div><div className="hp-track"><motion.div animate={{width:`${Math.max(0,hp/max*100)}%`}} transition={{duration:.45}}/></div>

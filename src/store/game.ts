@@ -138,6 +138,29 @@ function consumableLootPool(enemy:Enemy){const cap=monsterLootLevel(enemy);retur
 export function equipmentAffinity(e:Equipment):WeaponAffinity|undefined{if(e.tipoEquipamento==='arco'||e.tipoEquipamento==='balestra')return'cacador';if(e.tipoEquipamento==='cajado_natureza'||e.tipoEquipamento==='pergaminho')return'druida';const name=e.nome.toLocaleLowerCase('pt-BR');if(/arco|balestra/.test(name))return'cacador';if(/cajado.*(broto|raiz|orvalho|carvalho|lua verde|seiva|lunargenta|arquedruida)|pergaminho/.test(name))return'druida';if(/espada|lâmina/.test(name))return'guerreiro';if(/machado|martelo/.test(name))return'guardiao';if(/faca|adaga/.test(name))return'cacadora';if(/cajado|orbe/.test(name))return'arcanista';return undefined}
 const FACAS_OFFHAND_ATTACK_BONUS=1
 export function equipmentWeaponClass(e?:Equipment):'facas'|'adaga'|undefined{if(!e||e.slot!=='mao_direita')return undefined;if(e.tipoEquipamento==='facas')return'facas';if(e.tipoEquipamento==='adaga')return'adaga';const name=e.nome.toLocaleLowerCase('pt-BR');if(/facas?\b/.test(name))return'facas';if(/adaga/.test(name))return'adaga';return undefined}
+export type AttackAnimType='corte'|'facas'|'martelo'|'magico'|'furo'|'garras'
+export function heroWeaponAnimationType(weaponId?:string):AttackAnimType{
+ const e=eqById(weaponId)
+ if(!e)return'corte'
+ const weaponClass=equipmentWeaponClass(e)
+ if(weaponClass==='facas')return'facas'
+ if(weaponClass==='adaga')return'corte'
+ if(e.tipoEquipamento==='arco'||e.tipoEquipamento==='balestra')return'furo'
+ if(e.tipoEquipamento==='cajado_natureza')return'magico'
+ const name=e.nome.toLocaleLowerCase('pt-BR')
+ if(/martelo/.test(name))return'martelo'
+ if(/cajado|orbe|grim[óo]rio|varinha|tomo/.test(name))return'magico'
+ if(/arco|balestra|besta\b/.test(name))return'furo'
+ return'corte'
+}
+export function enemyWeaponAnimationType(enemy:Enemy):AttackAnimType{
+ const nome=enemy.nome.toLocaleLowerCase('pt-BR'),hab=(enemy.habilidade??'').toLocaleLowerCase('pt-BR')
+ if(/flecha|seta\b|besta\b|arco\b|dispara|tiro/.test(hab)||/arqueiro|atirador|besteiro/.test(nome))return'furo'
+ if(/lobo|urso|fera|felino|c[ãa]o\b|corvo|ave\b|javali|aranha|inseto|escorpi|verme|drag[ãa]o|draconato|wyrm|filhote|garra/.test(nome))return'garras'
+ if(/golem|sentinela|guardi[ãa]o|guardi[ãa]|magma|pedra|metal|ferro|armadura/.test(nome))return'martelo'
+ if(/ilusionista|arcano|feiticeir|mago|xam[ãa]|esp[íi]rito|fantasma|espectro|necro|sombra/.test(nome))return'magico'
+ return'corte'
+}
 export function equipmentAttackForHero(e:Equipment,heroId?:string){const affinity=equipmentAffinity(e);return affinity&&heroId!==affinity?Math.max(0,e.ataque-1):e.ataque}
 export function equipmentCompatibility(e:Equipment,heroId?:string){const affinity=equipmentAffinity(e);if(!affinity)return{affinity:undefined,compatible:true,penalty:0};const compatible=heroId===affinity;return{affinity,compatible,penalty:compatible?0:e.ataque-equipmentAttackForHero(e,heroId)}}
 export function equipmentClassAllowed(e:Equipment,heroId?:string){return !e.classeExclusiva||e.classeExclusiva===heroId}
