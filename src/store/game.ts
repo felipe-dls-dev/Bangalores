@@ -122,7 +122,15 @@ function balanceEquipment(items:Equipment[]){
  const balanced=new Map<string,Equipment>()
  for(const group of groups.values()){
   const sorted=[...group].sort((a,b)=>equipmentPower(a)-equipmentPower(b)||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'))
-  sorted.forEach((item,index)=>{const tier=sorted.length===1?0:Math.round(index*7/(sorted.length-1));const free=FREE_EQUIPMENT.has(item.id);const level=free?1:EQUIPMENT_LEVELS[tier];balanced.set(item.id,{...item,nivelMinimo:level,raridade:free?item.raridade:LEVEL_RARITY[tier],preco:Math.max(item.preco,8+level*3)})})
+  const priced=sorted.map((item,index)=>{const tier=sorted.length===1?0:Math.round(index*7/(sorted.length-1));const free=FREE_EQUIPMENT.has(item.id);const level=free?1:EQUIPMENT_LEVELS[tier];return{item,level,rarity:free?item.raridade:LEVEL_RARITY[tier],preco:Math.max(item.preco,8+level*3)}})
+  // Um preço-base mais alto do que o piso do seu tier só é mantido (nunca reduzido) até aqui, então um item
+  // mais fraco cujo preço original veio inflado (ex.: por causa de uma habilidade especial) podia acabar
+  // custando mais do que um item estritamente melhor no mesmo grupo (mesmo dentro do mesmo tier, já que o
+  // tier agrupa faixas de poder, não valores exatos). `sorted`/`priced` já está em ordem crescente de poder,
+  // então basta percorrer do mais forte para o mais fraco reduzindo cada preço ao mínimo já visto à frente.
+  let ceiling=Infinity
+  for(let i=priced.length-1;i>=0;i--){priced[i].preco=Math.min(priced[i].preco,ceiling);ceiling=Math.min(ceiling,priced[i].preco)}
+  for(const{item,level,rarity,preco}of priced)balanced.set(item.id,{...item,nivelMinimo:level,raridade:rarity,preco})
  }
  return items.map(item=>{const result=item.slot==='bolsa'?item:(balanced.get(item.id)??{...item,nivelMinimo:1});return{...result,preco:Math.ceil(result.preco*ITEM_PRICE_MULTIPLIER)}})
 }
