@@ -106,10 +106,10 @@ const fxRoot=cardSystemRoot+'fx/'
 function AttackFX({type,critical}:{type:AttackAnimType;critical?:boolean}){
  return <img className="fx-overlay-img fx-attack" src={'./'+fxRoot+type+(critical?'-critico':'')+'.webp'} alt="" aria-hidden="true"/>
 }
-function SupportFX({type}:{type:'fortificacao'|'cura'}){
+function SupportFX({type}:{type:'fortificacao'|'cura'|'cura-item'}){
  return <img className="fx-overlay-img fx-support" src={'./'+fxRoot+type+'.webp'} alt="" aria-hidden="true"/>
 }
-function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supportFx}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType;attackFxCritical?:boolean;supportFx?:'fortificacao'|'cura'}){
+function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supportFx}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType;attackFxCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item'}){
  const rarity=cardRarity(card,kind),baseEffect=card.habilidade??card.descricao??'Sem efeito especial.',effect=kind==='Equipamento'?`Nível ${equipmentRequiredLevel(card)} • ${baseEffect}`:baseEffect
  const enemy=kind==='Monstro'||kind==='Elite'||kind==='Chefe'||card.boss||card.elite
  const attack=card.ataque??0,defense=card.defesa??(enemy?Math.max(0,(card.dificuldade??1)-2):0),life=card.vida??(kind==='Consumível'?card.valor??0:0)
@@ -175,7 +175,8 @@ function CoopBattleSync(){
   receivedAbility.current=key
   const type=String(roll.effectType??'')
   if(type==='WARRIOR_BUFF'||type==='ARCANE_GROUP_BUFF'||type==='HUNTER_CRITICAL'||/escudo/i.test(type))receiveSupportFx('fortificacao')
-  else if(type==='DRUID_HEAL'||/recupere/i.test(type))receiveSupportFx('cura')
+  else if(type==='DRUID_HEAL')receiveSupportFx('cura')
+  else if(/recupere/i.test(type))receiveSupportFx('cura-item')
   else if(Number(roll.damage)>0)receiveHeroAction(Number(roll.damage),{})
  },[battle?.id,battle?.turn,battle?.lastRoll,screen,receiveSupportFx,receiveHeroAction])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`heal:${battle?.id}:${battle?.turn}`;if(screen!=='combat'||!roll?.healAmount||roll.healTargetUserId!==coop.userId||receivedHeal.current===key)return;receivedHeal.current=key;receiveHeal(Number(roll.healAmount??0))},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveHeal])
@@ -436,7 +437,7 @@ function CombatScreen(){
 
    <div className="combat-tip"><Sparkles size={15}/> Dica: use os consumíveis no momento certo — utilizar um item consome seu turno.</div>
  </div>}
-function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType,attackCritical,supportFx}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'}){
+function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType,attackCritical,supportFx}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item'}){
  const galleryKind=side==='hero'?'Herói':boss?'Chefe':kind==='ELITE'?'Elite':'Monstro'
  const card={id:classId,nome:name,arte:image,habilidade:ability,ataque:attack,defesa:defense,vida:max,boss,elite:kind==='ELITE',raridade:side==='hero'?'heroico':boss?'lendario':kind==='ELITE'?'raro':'comum'}
  return <motion.article className={'fighter premium-fighter combat-card-fighter '+side+(boss?' boss':'')} animate={shaking?{x:[0,-9,8,-5,0]}:{x:0}} transition={{duration:.35}}>
