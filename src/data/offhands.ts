@@ -40,5 +40,5 @@ export const CLASS_OFFHANDS:Equipment[]=[
   ['grimorio_tempestade','Grimório da Tempestade Azul',31,2,2,'Descarga escrita: relâmpago arcano.','grimorio_tempestade.webp','epico'],
   ['grimorio_tempo','Grimório do Tempo Perdido',34,3,2,'Página roubada: altera a iniciativa.','grimorio_tempo.webp','epico'],
   ['grimorio_lua','Grimório da Lua Morta',17,1,1,'Eclipse menor: poder em locais sombrios.','grimorio_lua.webp','incomum'],
-  ['grimorio_primeiro','Grimório do Primeiro Arcanista',45,4,3,'Conhecimento primordial: domínio arcano supremo.','grimorio_primeiro.webp','lendario']])
+  ['grimorio_primeiro','Grimório do Primeiro Mago',45,4,3,'Conhecimento primordial: domínio arcano supremo.','grimorio_primeiro.webp','lendario']])
 ]

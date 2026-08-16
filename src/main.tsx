@@ -14,7 +14,7 @@ import './styles.css'
 
 const nav=[['map','Mapa',Map],['character','Ficha',ScrollText],['inventory','Mochila',Backpack],['equipment','Equipamentos',Shield],['shop','Loja',ShoppingBag],['forge','Forja',Wand2],['guild','Guilda',Trophy],['chronicle','Crônicas',History],['gallery','Coleção',Images],['coop','Coop',Users],['tutorial','Tutorial',BookOpen]] as const
 const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
-const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Arcanista',druida:'Druida',cacador:'Caçador'}
+const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Mago',druida:'Druida',cacador:'Caçador'}
 // Themed card frames per region, matching each region's lore (lava/volcano -> fire, undead catacombs -> death, etc).
 // Regions left out (campos_dourados, trilhouro) keep the default gold frame-overlay.png.
 const CATEGORY_FRAME:Record<string,string>={CHEFE:'red',ELITE:'purple',INIMIGO:'green'}
@@ -24,7 +24,7 @@ const allGallery=[...HEROES.map(x=>({...x,kind:'Herói'})),...EQUIPMENT.map(x=>(
 const galleryCategories=[['Todos','Todas'],['Herói','Heróis'],['Equipamento','Equipamentos'],['Consumível','Consumíveis'],['Monstro','Monstros'],['Elite','Monstros de elite'],['Chefe','Chefes'],['Evento','Eventos']] as const
 const shopTabs=['Armas','Equipamentos','Consumíveis'] as const
 type ShopTab=typeof shopTabs[number]
-const weaponFilters=[['Todos','Todas'],['guerreiro','Guerreiro'],['guardiao','Guardião'],['cacadora','Ladino'],['arcanista','Arcanista'],['druida','Druida'],['cacador','Caçador'],['neutra','Neutras']] as const
+const weaponFilters=[['Todos','Todas'],['guerreiro','Guerreiro'],['guardiao','Guardião'],['cacadora','Ladino'],['arcanista','Mago'],['druida','Druida'],['cacador','Caçador'],['neutra','Neutras']] as const
 const equipmentFilters=[['Todos','Todos'],['bolsa','Bolsas'],['mao_esquerda','Mão esquerda'],['peitoral','Armaduras'],['capacete','Capacetes'],['calcas','Calças'],['botas','Botas'],['aneis','Anéis'],['amuleto','Amuletos']] as const
 const consumableFilters=[['Todos','Todos'],['cura','Cura'],['bonus','Bônus']] as const
 const sortOptions=[['padrao','Padrão'],['preco','Preço'],['raridade','Raridade'],['nome','Nome']] as const
@@ -203,7 +203,7 @@ function CoopScreen(){const g=useGame(),[name,setName]=React.useState(()=>localS
 const TUTORIAL_CHAPTERS=[
  ['História de Havendown','Havendown é um reino dividido por guerras, monstros e antigas forças arcanas. Como aventureiro, você atravessa regiões cada vez mais perigosas, ajuda a Guilda e reúne poder para enfrentar os soberanos do Reino do Sol Negro.'],
  ['Primeiros passos e acessos','Use o menu superior para abrir Mapa, Ficha, Mochila, Equipamentos, Loja, Forja, Guilda, Crônicas, Coleção e este Tutorial. Passe o mouse sobre cada ícone para ver o nome da tela. A tecla Esc retorna ao mapa; durante uma batalha, ela abre a confirmação da tentativa de fuga.'],
- ['Heróis, classes e atributos','Guerreiro, Guardião, Ladino e Arcanista têm identidades e equipamentos preferidos. Vida determina sua resistência, Ataque influencia o dano e Defesa reduz os golpes recebidos. Subir de nível concede pontos para distribuir na Ficha.'],
+ ['Heróis, classes e atributos','Guerreiro, Guardião, Ladino e Mago têm identidades e equipamentos preferidos. Vida determina sua resistência, Ataque influencia o dano e Defesa reduz os golpes recebidos. Subir de nível concede pontos para distribuir na Ficha.'],
  ['Mapa, regiões e sub-regiões','As regiões estão ordenadas por dificuldade. O marcador grande abre a região; os marcadores menores acessam sub-regiões. Complete encontros para revelar o chefe local. Marcadores verdes indicam chefes já derrotados.'],
  ['Exploração e eventos','Durante a viagem surgem encontros com história, objetivo, recompensa e risco. Leia os efeitos antes de aceitar. Algumas abordagens especiais dependem da classe ou de características do herói.'],
  ['Combate e turnos','Em seu turno, ataque, use a habilidade do herói, ative uma habilidade de equipamento, consuma um item ou tente fugir. Chefes podem mudar de fase, convocar capangas e fazer cada capanga atacar em seu próprio turno.'],

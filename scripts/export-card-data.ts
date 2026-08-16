@@ -6,7 +6,7 @@ import {
 } from '../src/store/game'
 
 const publicRoot = 'https://felipe-dls-dev.github.io/Bangalores/'
-const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Arcanista'}
+const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Mago'}
 const slotNames:Record<string,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
 const artOf=(card:any)=>card.arte??card.imagem??''
 const row=(card:any,categoria:string,extra:Record<string,unknown>={})=>{

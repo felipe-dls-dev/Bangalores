@@ -69,6 +69,6 @@ export const CLASS_BOOTS: Equipment[] = [
     ['boots_arc_tempestade', 'Botas da Tempestade Azul', 'arc_tempestade.webp'],
     ['boots_arc_tempo', 'Botas do Tempo Perdido', 'arc_tempo.webp'],
     ['boots_arc_lua', 'Botas da Lua Morta', 'arc_lua.webp'],
-    ['boots_arc_primeiro', 'Botas do Primeiro Arcanista', 'arc_primeiro.webp'],
+    ['boots_arc_primeiro', 'Botas do Primeiro Mago', 'arc_primeiro.webp'],
   ]),
 ]
