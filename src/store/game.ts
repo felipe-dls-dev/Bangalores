@@ -372,6 +372,15 @@ const ATTACK_TIER_PHRASE:Record<number,string[]>={
  6:['e acerta um golpe absolutamente certeiro e devastador','e o ataque é um sucesso absoluto, decisivo','e desfere um golpe crítico impecável'],
 }
 function attackTierPhrase(roll:number){return pick(ATTACK_TIER_PHRASE[roll]??ATTACK_TIER_PHRASE[3])}
+const DEFENSE_TIER_PHRASE:Record<number,string[]>={
+ 1:['erra completamente a defesa e sofre o golpe em cheio','falha a guarda e é pego em cheio pelo ataque','não consegue reagir a tempo e recebe o golpe com força total'],
+ 2:['ergue uma defesa fraca e absorve pouco do impacto','reage tarde demais e bloqueia só parte do golpe','vacila na guarda e deixa o ataque quase intacto'],
+ 3:['bloqueia o ataque normalmente','consegue se defender sem dificuldade','absorve o golpe com uma defesa sólida'],
+ 4:['bloqueia o ataque normalmente','consegue se defender sem dificuldade','absorve o golpe com uma defesa sólida'],
+ 5:['reage a tempo e reduz o impacto do golpe','apara boa parte do ataque com uma defesa firme','consegue amortecer o golpe com eficiência'],
+ 6:['realiza uma defesa perfeita e neutraliza quase todo o impacto','bloqueia com uma técnica impecável, cortando o dano pela metade','ergue uma guarda impecável e minimiza o estrago'],
+}
+function defenseTierPhrase(roll:number){return pick(DEFENSE_TIER_PHRASE[roll]??DEFENSE_TIER_PHRASE[3])}
 const ENEMY_ATTACK_FLAVOR:[RegExp,string[]][]=[
  [/lobo|urso|fera|felino|c[ãa]o\b|corvo|ave\b|besta|javali/,['salta e morde com fúria animal','rosna e investe com presas afiadas','ataca com instinto selvagem','avança em silêncio e golpeia com garras']],
  [/goblin|bandid|salteador|mercen[áa]ri|guarda|cultista|fan[áa]tic|ladr[ãa]o|pirata|capit[ãa]o/,['avança gritando e golpeia sem cuidado','ataca com uma arma improvisada','investe com selvageria tosca','ri com escárnio e ataca']],
@@ -432,7 +441,8 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const combatRoll:CombatRoll={attacker:'hero',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage}
  set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus})
  const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=`${heroApproachPhrase(s.heroId,weaponName)}, ${attackTierPhrase(attackRoll)}`
- addLog(set,`${heroName} ${narration}. ${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}`)
+ const defenseNarration=selfDamage?'':` ${s.enemy.nome} ${defenseTierPhrase(defenseRoll)}.`
+ addLog(set,`${heroName} ${narration}.${defenseNarration} ${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}`)
  setTimeout(()=>{
   const now=get() as GameState,en=now.enemy
   if(!en){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
@@ -452,7 +462,7 @@ function enemyAttack(set:any,get:any){
  if(!s.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
  const attackBase=s.enemy.ataque,defenseBase=defenseValue(s),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.enemyRollBonus,attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+attackBonus-(s.heroId==='druida'&&Math.random()<.25?1:0))),naturalDefenseRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.min(6,naturalDefenseRoll+(s.classRollBonus??0)+(hasCraftedEffect(s,'defesa_perfeita')&&naturalDefenseRoll===5?1:0))
  const dodged=(s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll);let raw=dodged?0:resolved.damage,shield=s.shield
- const blocked=Math.min(shield,raw),enemyName=s.enemy.nome,enemyApproach=enemyApproachPhrase(s.enemy);raw-=blocked;shield-=blocked
+ const blocked=Math.min(shield,raw),enemyName=s.enemy.nome,enemyApproach=enemyApproachPhrase(s.enemy),heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'Você';raw-=blocked;shield-=blocked
  const hp=Math.max(0,s.hp-raw),enemyHp=Math.max(0,s.enemyHp-resolved.selfDamage)
  const combatRoll:CombatRoll={attacker:'enemy',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage:raw,selfDamage:resolved.selfDamage,shieldBlocked:blocked}
  set({shield,animating:true,animationActor:resolved.selfDamage?'hero':'enemy',lastDamage:resolved.selfDamage||raw,combatRoll,playerTurn:false,enemyRollBonus:0,heroRollBonus:attackRoll===2?1:s.heroRollBonus})
@@ -461,7 +471,7 @@ function enemyAttack(set:any,get:any){
   if(current.screen!=='combat'||!current.enemy)return
   if(resolved.selfDamage){addLog(set,`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}, sofrendo ${resolved.selfDamage} de dano do próprio golpe.`);if(enemyHp<=0){victory(set,get);return}set({enemyHp,hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:true,combatTurn:current.combatTurn+1});return}
   set({hp,animationActor:undefined,combatRoll:undefined,playerTurn:false})
-  addLog(set,dodged?`${enemyName} ${enemyApproach}, mas a Esquiva do Ladino faz o golpe errar completamente.`:`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}. Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}`)
+  addLog(set,dodged?`${enemyName} ${enemyApproach}, mas a Esquiva do Ladino faz o golpe errar completamente.`:`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}. ${heroName} ${defenseTierPhrase(defenseRoll)}. Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}`)
   if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get),900);return}resolveMinionAttacks(set,get,()=>{const latest=get() as GameState;if(latest.screen==='combat')set({animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:true,combatTurn:latest.combatTurn+1})})
  },COMBAT_ROLL_DISPLAY_MS)
 }
