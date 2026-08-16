@@ -21,7 +21,7 @@
   },
   {
     "id": "arcanista",
-    "nome": "Erudito do Sol Negro",
+    "nome": "Mago do Sol Negro",
     "vida": 13,
     "ataque": 6,
     "habilidade": "Passivo: 50% de chance de melhorar ouro ou espólios. Ativo: +2 nos dados e +10% de Ataque e Defesa para todos os aliados.",
