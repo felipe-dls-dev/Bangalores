@@ -107,11 +107,11 @@ function AttackFX({type}:{type:AttackAnimType}){
  if(type==='facas')return <div className="atk-fx atk-fx-facas"><span/><span/></div>
  if(type==='garras')return <div className="atk-fx atk-fx-garras"><span/><span/><span/></div>
  if(type==='martelo')return <div className="atk-fx atk-fx-martelo"><svg viewBox="0 0 100 100" className="atk-crack" aria-hidden="true">
-   <path d="M50 50 L46 34 L54 30 L49 12"/>
-   <path d="M50 50 L64 42 L60 30 L76 20"/>
-   <path d="M50 50 L63 60 L58 70 L74 84"/>
-   <path d="M50 50 L38 58 L43 68 L26 82"/>
-   <path d="M50 50 L36 42 L41 30 L20 22"/>
+   <path d="M50 50 L44 30 L56 22 L40 2"/>
+   <path d="M50 50 L68 38 L60 24 L92 10"/>
+   <path d="M50 50 L66 64 L58 78 L88 96"/>
+   <path d="M50 50 L32 62 L40 76 L10 92"/>
+   <path d="M50 50 L30 40 L38 26 L6 14"/>
   </svg></div>
  if(type==='magico')return <div className="atk-fx atk-fx-magico"><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-flame"/><span className="atk-flame"/></div>
  if(type==='furo')return <div className="atk-fx atk-fx-furo"><span/><span/><span/><span/></div>
