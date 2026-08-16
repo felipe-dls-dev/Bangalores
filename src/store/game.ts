@@ -358,10 +358,20 @@ const HERO_ATTACK_FLAVOR:Record<string,((arma:string)=>string)[]>={
  arcanista:[arma=>`conjura energia arcana e golpeia com ${arma}`,arma=>`canaliza poder arcano e ataca com ${arma}`,arma=>`tece um feitiço rápido e golpeia com ${arma}`,arma=>`libera uma explosão de magia com ${arma}`],
  druida:[arma=>`invoca a fúria da natureza e ataca com ${arma}`,arma=>`canaliza o poder de Abdendriel e golpeia com ${arma}`,arma=>`ataca com a força selvagem da floresta usando ${arma}`,arma=>`golpeia com a energia da terra usando ${arma}`],
 }
-function heroActionNarration(heroId:string|undefined,weapon:string|undefined){
+function pick<T>(arr:T[]){return arr[Math.floor(Math.random()*arr.length)]}
+function heroApproachPhrase(heroId:string|undefined,weapon:string|undefined){
  const arma=weapon??'as próprias mãos',pool=HERO_ATTACK_FLAVOR[heroId??'']??HERO_ATTACK_FLAVOR.guerreiro
- return pool[Math.floor(Math.random()*pool.length)](arma)
+ return pick(pool)(arma)
 }
+const ATTACK_TIER_PHRASE:Record<number,string[]>={
+ 1:['mas o golpe sai desastrado e acerta o próprio corpo','mas escorrega e o golpe se volta contra si mesmo','mas perde o equilíbrio e sofre com o próprio ataque'],
+ 2:['mas o golpe é desajeitado e abre uma brecha perigosa','mas erra o ângulo e deixa a guarda aberta','mas o movimento hesitante expõe uma falha na defesa'],
+ 3:['e o golpe acerta em cheio','e o ataque conecta normalmente','e acerta o alvo sem dificuldade'],
+ 4:['e o golpe acerta em cheio','e o ataque conecta normalmente','e acerta o alvo sem dificuldade'],
+ 5:['e desfere um golpe forte e preciso','e acerta com força extra','e o golpe conecta com potência redobrada'],
+ 6:['e acerta um golpe absolutamente certeiro e devastador','e o ataque é um sucesso absoluto, decisivo','e desfere um golpe crítico impecável'],
+}
+function attackTierPhrase(roll:number){return pick(ATTACK_TIER_PHRASE[roll]??ATTACK_TIER_PHRASE[3])}
 const ENEMY_ATTACK_FLAVOR:[RegExp,string[]][]=[
  [/lobo|urso|fera|felino|c[ãa]o\b|corvo|ave\b|besta|javali/,['salta e morde com fúria animal','rosna e investe com presas afiadas','ataca com instinto selvagem','avança em silêncio e golpeia com garras']],
  [/goblin|bandid|salteador|mercen[áa]ri|guarda|cultista|fan[áa]tic|ladr[ãa]o|pirata|capit[ãa]o/,['avança gritando e golpeia sem cuidado','ataca com uma arma improvisada','investe com selvageria tosca','ri com escárnio e ataca']],
@@ -372,10 +382,10 @@ const ENEMY_ATTACK_FLAVOR:[RegExp,string[]][]=[
  [/ilusionista|arcano|feiticeir|mago|xam[ãa]/,['conjura energia sombria e ataca','canaliza um feitiço rápido e golpeia','tece uma ilusão e ataca de surpresa']],
 ]
 const ENEMY_BOSS_FLAVOR=['avança com fúria implacável e ataca','solta um rugido ensurdecedor antes do golpe','ataca com toda a força de um chefe da região','concentra poder sombrio e desfere um golpe devastador']
-function enemyActionNarration(enemy:Enemy){
+function enemyApproachPhrase(enemy:Enemy){
  const nome=enemy.nome.toLocaleLowerCase('pt-BR'),categoria=ENEMY_ATTACK_FLAVOR.find(([regex])=>regex.test(nome))?.[1]??['avança e golpeia sem hesitar','ataca com selvageria','desfere um golpe rápido']
  const pool=enemy.boss?[...categoria,...ENEMY_BOSS_FLAVOR]:categoria
- return pool[Math.floor(Math.random()*pool.length)]
+ return pick(pool)
 }
 export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number){
  if(attackRoll===1)return{damage:0,selfDamage:Math.max(1,Math.floor(attackBase*.2))}
@@ -421,7 +431,7 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const {damage,selfDamage}=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
  const combatRoll:CombatRoll={attacker:'hero',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage}
  set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus})
- const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=heroActionNarration(s.heroId,weaponName)
+ const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=`${heroApproachPhrase(s.heroId,weaponName)}, ${attackTierPhrase(attackRoll)}`
  addLog(set,`${heroName} ${narration}. ${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}`)
  setTimeout(()=>{
   const now=get() as GameState,en=now.enemy
@@ -442,16 +452,16 @@ function enemyAttack(set:any,get:any){
  if(!s.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
  const attackBase=s.enemy.ataque,defenseBase=defenseValue(s),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.enemyRollBonus,attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+attackBonus-(s.heroId==='druida'&&Math.random()<.25?1:0))),naturalDefenseRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.min(6,naturalDefenseRoll+(s.classRollBonus??0)+(hasCraftedEffect(s,'defesa_perfeita')&&naturalDefenseRoll===5?1:0))
  const dodged=(s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll);let raw=dodged?0:resolved.damage,shield=s.shield
- const blocked=Math.min(shield,raw),enemyName=s.enemy.nome,enemyNarration=enemyActionNarration(s.enemy);raw-=blocked;shield-=blocked
+ const blocked=Math.min(shield,raw),enemyName=s.enemy.nome,enemyApproach=enemyApproachPhrase(s.enemy);raw-=blocked;shield-=blocked
  const hp=Math.max(0,s.hp-raw),enemyHp=Math.max(0,s.enemyHp-resolved.selfDamage)
  const combatRoll:CombatRoll={attacker:'enemy',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage:raw,selfDamage:resolved.selfDamage,shieldBlocked:blocked}
  set({shield,animating:true,animationActor:resolved.selfDamage?'hero':'enemy',lastDamage:resolved.selfDamage||raw,combatRoll,playerTurn:false,enemyRollBonus:0,heroRollBonus:attackRoll===2?1:s.heroRollBonus})
  setTimeout(()=>{
   const current=get() as GameState
   if(current.screen!=='combat'||!current.enemy)return
-  if(resolved.selfDamage){addLog(set,`${enemyName} ${enemyNarration}, mas tropeça: falha crítica e recebeu ${resolved.selfDamage} de dano.`);if(enemyHp<=0){victory(set,get);return}set({enemyHp,hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:true,combatTurn:current.combatTurn+1});return}
+  if(resolved.selfDamage){addLog(set,`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}, sofrendo ${resolved.selfDamage} de dano do próprio golpe.`);if(enemyHp<=0){victory(set,get);return}set({enemyHp,hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:true,combatTurn:current.combatTurn+1});return}
   set({hp,animationActor:undefined,combatRoll:undefined,playerTurn:false})
-  addLog(set,dodged?`${enemyName} ${enemyNarration}, mas a Esquiva do Ladino faz o golpe errar completamente.`:`${enemyName} ${enemyNarration}. Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}`)
+  addLog(set,dodged?`${enemyName} ${enemyApproach}, mas a Esquiva do Ladino faz o golpe errar completamente.`:`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}. Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}`)
   if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get),900);return}resolveMinionAttacks(set,get,()=>{const latest=get() as GameState;if(latest.screen==='combat')set({animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:true,combatTurn:latest.combatTurn+1})})
  },COMBAT_ROLL_DISPLAY_MS)
 }
