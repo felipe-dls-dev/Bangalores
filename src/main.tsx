@@ -525,7 +525,7 @@ function GuildScreen(){
  const reputation=g.guildClaimed.reduce((sum,id)=>sum+(guildMissionById(id)?.dificuldade??0),0)
  const rank=guildRankFor(reputation),rankIndex=GUILD_RANKS.findIndex(r=>r.id===rank.id),nextRank=GUILD_RANKS[rankIndex+1]
  const active=g.guildAccepted.filter(id=>!g.guildClaimed.includes(id)).length
- const missionProgress=(mission:(typeof GUILD_MISSIONS)[number])=>mission.tipo==='delivery'&&mission.itemId?(g.equipmentBag.includes(mission.itemId)?1:0):Math.min(mission.quantidade,g.guildProgress[mission.id]??0)
+ const missionProgress=(mission:(typeof GUILD_MISSIONS)[number])=>mission.tipo==='delivery'&&mission.itemId?((g.equipmentBag.includes(mission.itemId)||Object.values(g.equipped).includes(mission.itemId))?1:0):Math.min(mission.quantidade,g.guildProgress[mission.id]??0)
  const completed=GUILD_MISSIONS.filter(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&missionProgress(m)>=m.quantidade).length
  const bagFull=g.equipmentBag.length>=equipmentBagCapacity(g)
  return <div className="guild-page"><Panel className="guild-head"><button onClick={()=>g.setScreen('map')}><ArrowLeft/>Voltar ao mapa</button><div><span className="eyebrow">SALÃO DOS AVENTUREIROS</span><h1>Guilda de Havendown</h1><p>Aceite contratos, aumente sua reputação e conquiste acesso às missões mais valiosas.</p></div><Shield className="guild-crest"/></Panel>
