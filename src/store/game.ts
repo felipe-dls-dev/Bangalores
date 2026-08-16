@@ -350,6 +350,33 @@ function summonBossMinions(enemy:Enemy,phase:number):CombatMinion[]{const count=
 const COMBAT_ROLL_DISPLAY_MS=2500
 function attackEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Ataque desajeitado':roll<=4?'Ataque normal':roll===5?'Ataque forte':'Ataque crítico'}
 function defenseEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Defesa fraca':roll<=4?'Defesa normal':roll===5?'Defesa forte':'Defesa perfeita'}
+const HERO_ATTACK_FLAVOR:Record<string,((arma:string)=>string)[]>={
+ guerreiro:[arma=>`avança com fúria e crava ${arma} no inimigo`,arma=>`golpeia com força bruta usando ${arma}`,arma=>`ruge um grito de guerra e ataca com ${arma}`,arma=>`avança sem hesitar e desfere um corte selvagem com ${arma}`],
+ guardiao:[arma=>`avança com o escudo à frente e golpeia com ${arma}`,arma=>`bloqueia o caminho do inimigo e retribui com ${arma}`,arma=>`protege a linha de frente e contra-ataca com ${arma}`,arma=>`firma os pés no chão e golpeia com ${arma}`],
+ cacadora:[arma=>`desliza pelas sombras e ataca com ${arma}`,arma=>`golpeia com agilidade felina usando ${arma}`,arma=>`aproveita uma brecha e acerta com ${arma}`,arma=>`ataca com precisão letal usando ${arma}`],
+ cacador:[arma=>`mira com precisão e ataca com ${arma}`,arma=>`avança em silêncio e golpeia com ${arma}`,arma=>`aproveita uma abertura e acerta com ${arma}`,arma=>`ataca com instinto de caçador usando ${arma}`],
+ arcanista:[arma=>`conjura energia arcana e golpeia com ${arma}`,arma=>`canaliza poder arcano e ataca com ${arma}`,arma=>`tece um feitiço rápido e golpeia com ${arma}`,arma=>`libera uma explosão de magia com ${arma}`],
+ druida:[arma=>`invoca a fúria da natureza e ataca com ${arma}`,arma=>`canaliza o poder de Abdendriel e golpeia com ${arma}`,arma=>`ataca com a força selvagem da floresta usando ${arma}`,arma=>`golpeia com a energia da terra usando ${arma}`],
+}
+function heroActionNarration(heroId:string|undefined,weapon:string|undefined){
+ const arma=weapon??'as próprias mãos',pool=HERO_ATTACK_FLAVOR[heroId??'']??HERO_ATTACK_FLAVOR.guerreiro
+ return pool[Math.floor(Math.random()*pool.length)](arma)
+}
+const ENEMY_ATTACK_FLAVOR:[RegExp,string[]][]=[
+ [/lobo|urso|fera|felino|c[ãa]o\b|corvo|ave\b|besta|javali/,['salta e morde com fúria animal','rosna e investe com presas afiadas','ataca com instinto selvagem','avança em silêncio e golpeia com garras']],
+ [/goblin|bandid|salteador|mercen[áa]ri|guarda|cultista|fan[áa]tic|ladr[ãa]o|pirata|capit[ãa]o/,['avança gritando e golpeia sem cuidado','ataca com uma arma improvisada','investe com selvageria tosca','ri com escárnio e ataca']],
+ [/drag[ãa]o|draconato|wyrm|filhote/,['solta um rugido e ataca com garras flamejantes','golpeia com a cauda e cospe brasas','avança com fúria draconiana','abre as asas e mergulha em ataque']],
+ [/esquelet|zumbi|morto|espectro|fantasma|necro|sombra/,['avança com movimentos rígidos e sinistros','golpeia com uma força além da morte','desliza como sombra e ataca','ergue os braços e golpeia com um gemido gélido']],
+ [/aranha|inseto|verme|escorpi/,['ataca com presas venenosas','golpeia com múltiplas patas afiadas','envolve o alvo em fios pegajosos e ataca']],
+ [/golem|sentinela|guardi[ãa]o|guardi[ãa]|magma|pedra|metal|ferro|armadura/,['avança com passos pesados e golpeia','desfere um golpe lento mas devastador','ataca com força bruta e mecânica']],
+ [/ilusionista|arcano|feiticeir|mago|xam[ãa]/,['conjura energia sombria e ataca','canaliza um feitiço rápido e golpeia','tece uma ilusão e ataca de surpresa']],
+]
+const ENEMY_BOSS_FLAVOR=['avança com fúria implacável e ataca','solta um rugido ensurdecedor antes do golpe','ataca com toda a força de um chefe da região','concentra poder sombrio e desfere um golpe devastador']
+function enemyActionNarration(enemy:Enemy){
+ const nome=enemy.nome.toLocaleLowerCase('pt-BR'),categoria=ENEMY_ATTACK_FLAVOR.find(([regex])=>regex.test(nome))?.[1]??['avança e golpeia sem hesitar','ataca com selvageria','desfere um golpe rápido']
+ const pool=enemy.boss?[...categoria,...ENEMY_BOSS_FLAVOR]:categoria
+ return pool[Math.floor(Math.random()*pool.length)]
+}
 export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number){
  if(attackRoll===1)return{damage:0,selfDamage:Math.max(1,Math.floor(attackBase*.2))}
  const effectiveAttack=attackBase+(attackRoll===5?1:0)
@@ -394,7 +421,8 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const {damage,selfDamage}=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
  const combatRoll:CombatRoll={attacker:'hero',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage}
  set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus})
- addLog(set,`${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}`)
+ const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=heroActionNarration(s.heroId,weaponName)
+ addLog(set,`${heroName} ${narration}. ${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}`)
  setTimeout(()=>{
   const now=get() as GameState,en=now.enemy
   if(!en){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
@@ -414,16 +442,16 @@ function enemyAttack(set:any,get:any){
  if(!s.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
  const attackBase=s.enemy.ataque,defenseBase=defenseValue(s),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.enemyRollBonus,attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+attackBonus-(s.heroId==='druida'&&Math.random()<.25?1:0))),naturalDefenseRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.min(6,naturalDefenseRoll+(s.classRollBonus??0)+(hasCraftedEffect(s,'defesa_perfeita')&&naturalDefenseRoll===5?1:0))
  const dodged=(s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll);let raw=dodged?0:resolved.damage,shield=s.shield
- const blocked=Math.min(shield,raw),enemyName=s.enemy.nome;raw-=blocked;shield-=blocked
+ const blocked=Math.min(shield,raw),enemyName=s.enemy.nome,enemyNarration=enemyActionNarration(s.enemy);raw-=blocked;shield-=blocked
  const hp=Math.max(0,s.hp-raw),enemyHp=Math.max(0,s.enemyHp-resolved.selfDamage)
  const combatRoll:CombatRoll={attacker:'enemy',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage:raw,selfDamage:resolved.selfDamage,shieldBlocked:blocked}
  set({shield,animating:true,animationActor:resolved.selfDamage?'hero':'enemy',lastDamage:resolved.selfDamage||raw,combatRoll,playerTurn:false,enemyRollBonus:0,heroRollBonus:attackRoll===2?1:s.heroRollBonus})
  setTimeout(()=>{
   const current=get() as GameState
   if(current.screen!=='combat'||!current.enemy)return
-  if(resolved.selfDamage){addLog(set,`${enemyName}: falha crítica e recebeu ${resolved.selfDamage} de dano.`);if(enemyHp<=0){victory(set,get);return}set({enemyHp,hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:true,combatTurn:current.combatTurn+1});return}
+  if(resolved.selfDamage){addLog(set,`${enemyName} ${enemyNarration}, mas tropeça: falha crítica e recebeu ${resolved.selfDamage} de dano.`);if(enemyHp<=0){victory(set,get);return}set({enemyHp,hp,animating:false,animationActor:undefined,combatRoll:undefined,playerTurn:true,combatTurn:current.combatTurn+1});return}
   set({hp,animationActor:undefined,combatRoll:undefined,playerTurn:false})
-  addLog(set,dodged?`Esquiva do Ladino: ${enemyName} errou completamente o ataque.`:`${enemyName}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}`)
+  addLog(set,dodged?`${enemyName} ${enemyNarration}, mas a Esquiva do Ladino faz o golpe errar completamente.`:`${enemyName} ${enemyNarration}. Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}`)
   if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get),900);return}resolveMinionAttacks(set,get,()=>{const latest=get() as GameState;if(latest.screen==='combat')set({animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:true,combatTurn:latest.combatTurn+1})})
  },COMBAT_ROLL_DISPLAY_MS)
 }
