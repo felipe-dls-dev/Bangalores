@@ -146,7 +146,7 @@ function consumableLootPool(enemy:Enemy){const cap=monsterLootLevel(enemy);retur
 export function equipmentAffinity(e:Equipment):WeaponAffinity|undefined{if(e.tipoEquipamento==='arco'||e.tipoEquipamento==='balestra')return'cacador';if(e.tipoEquipamento==='cajado_natureza'||e.tipoEquipamento==='pergaminho')return'druida';const name=e.nome.toLocaleLowerCase('pt-BR');if(/arco|balestra/.test(name))return'cacador';if(/cajado.*(broto|raiz|orvalho|carvalho|lua verde|seiva|lunargenta|arquedruida)|pergaminho/.test(name))return'druida';if(/espada|lâmina/.test(name))return'guerreiro';if(/machado|martelo/.test(name))return'guardiao';if(/faca|adaga/.test(name))return'cacadora';if(/cajado|orbe/.test(name))return'arcanista';return undefined}
 const FACAS_OFFHAND_ATTACK_BONUS=1
 export function equipmentWeaponClass(e?:Equipment):'facas'|'adaga'|undefined{if(!e||e.slot!=='mao_direita')return undefined;if(e.tipoEquipamento==='facas')return'facas';if(e.tipoEquipamento==='adaga')return'adaga';const name=e.nome.toLocaleLowerCase('pt-BR');if(/facas?\b/.test(name))return'facas';if(/adaga/.test(name))return'adaga';return undefined}
-export type AttackAnimType='corte'|'facas'|'martelo'|'magico'|'furo'|'garras'
+export type AttackAnimType='corte'|'facas'|'martelo'|'magico'|'furo'|'garras'|'espinhos'
 export function heroWeaponAnimationType(weaponId?:string):AttackAnimType{
  const e=eqById(weaponId)
  if(!e)return'corte'
@@ -154,7 +154,7 @@ export function heroWeaponAnimationType(weaponId?:string):AttackAnimType{
  if(weaponClass==='facas')return'facas'
  if(weaponClass==='adaga')return'corte'
  if(e.tipoEquipamento==='arco'||e.tipoEquipamento==='balestra')return'furo'
- if(e.tipoEquipamento==='cajado_natureza')return'magico'
+ if(e.tipoEquipamento==='cajado_natureza')return'espinhos'
  const name=e.nome.toLocaleLowerCase('pt-BR')
  if(/martelo/.test(name))return'martelo'
  if(/cajado|orbe|grim[óo]rio|varinha|tomo/.test(name))return'magico'

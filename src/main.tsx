@@ -115,6 +115,18 @@ function AttackFX({type}:{type:AttackAnimType}){
   </svg></div>
  if(type==='magico')return <div className="atk-fx atk-fx-magico"><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-smoke"/><span className="atk-flame"/><span className="atk-flame"/></div>
  if(type==='furo')return <div className="atk-fx atk-fx-furo"><span/><span/><span/><span/></div>
+ if(type==='espinhos')return <div className="atk-fx atk-fx-espinhos"><svg viewBox="0 0 100 100" className="atk-vines" aria-hidden="true">
+   <path className="atk-vine" d="M8 12 C 20 22, 12 38, 22 46 C 32 54, 14 62, 24 70 C 34 78, 40 82, 48 90"/>
+   <path className="atk-vine" d="M92 14 C 78 24, 86 40, 76 48 C 66 56, 84 64, 74 72 C 64 80, 58 84, 50 92"/>
+   <path className="atk-thorn" d="M16 26 L6 20"/>
+   <path className="atk-thorn" d="M22 46 L34 42"/>
+   <path className="atk-thorn" d="M18 66 L6 70"/>
+   <path className="atk-thorn" d="M40 82 L48 74"/>
+   <path className="atk-thorn" d="M82 22 L94 16"/>
+   <path className="atk-thorn" d="M76 48 L64 44"/>
+   <path className="atk-thorn" d="M78 68 L90 72"/>
+   <path className="atk-thorn" d="M56 88 L48 96"/>
+  </svg></div>
  return null
 }
 function CardFrame({card,kind,artStyle,frameTheme,attackFx}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType}){
