@@ -746,3 +746,10 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
    o box absolutamente posicionado ainda contava para a largura rolável da página,
    criando ~48px de espaço fantasma no mobile. Permite quebrar linha e limita a largura. */
 @media(max-width:760px){.topbar nav .nav-tooltip{white-space:normal;max-width:150px;text-align:center}}
+/* Mesmo padrão de novo: uma redefinição posterior de .premium-fighter (sem media query)
+   fixa min-height:460px, vencendo o valor de 520px pensado para telas estreitas. */
+@media(max-width:760px){.premium-fighter{min-height:520px}}
+/* .recipe-grid tinha um @media(max-width:950px){grid-template-columns:1fr} que perdia, na
+   faixa de 701-950px, para uma redefinição posterior cujo próprio @media(max-width:1180px)
+   aplica 2 colunas nessa faixa. */
+@media(max-width:950px){.recipe-grid{grid-template-columns:1fr}}
