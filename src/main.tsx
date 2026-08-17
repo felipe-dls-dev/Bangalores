@@ -15,6 +15,7 @@ import './styles.css'
 const nav=[['map','Mapa',Map],['character','Ficha',ScrollText],['inventory','Mochila',Backpack],['equipment','Equipamentos',Shield],['shop','Loja',ShoppingBag],['forge','Forja',Wand2],['guild','Guilda',Trophy],['chronicle','Crônicas',History],['gallery','Coleção',Images],['coop','Coop',Users],['tutorial','Tutorial',BookOpen]] as const
 const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
 const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Mago',druida:'Druida',cacador:'Caçador'}
+const heroSkillNames:Record<string,string>={guerreiro:'Ímpeto Marcial',guardiao:'Provocar',cacadora:'Ataque Duplo',arcanista:'Ascensão Arcana',druida:'Renovo de Abdendriel',cacador:'Marca do Predador'}
 // Themed card frames per region, matching each region's lore (lava/volcano -> fire, undead catacombs -> death, etc).
 // Regions left out (campos_dourados, trilhouro) keep the default gold frame-overlay.png.
 const CATEGORY_FRAME:Record<string,string>={CHEFE:'red',ELITE:'purple',INIMIGO:'green'}
@@ -418,7 +419,7 @@ function CombatScreen(){
       {defeated&&<p className="coop-defeated-notice">DERROTADO • Você não pode mais realizar ações nesta batalha. As penalidades serão aplicadas ao final.</p>}
       <div className="combat-actions-grid">
        <button className="attack-btn premium-action" disabled={disabled} onClick={()=>isCoop?void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2)):g.attack()}><Sword/>Atacar</button>
-       <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>Habilidade do herói</button>
+       <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}</button>
        <button className="premium-action" disabled={disabled||g.itemSkillUsed||!itemAbilities.length} onClick={()=>isCoop?useCoopItemSkill():g.itemSkill()}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Tentar fugir</button>
       </div>
