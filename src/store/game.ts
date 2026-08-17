@@ -228,7 +228,7 @@ function nextStoryEvent(s:GameState){for(const chain of EVENT_CHAINS){for(let i=
 function equipmentSetCounts(s:GameState){const names=Object.values(s.equipped).map(id=>eqById(id)?.nome.toLocaleLowerCase('pt-BR')??'');return{lua:names.filter(n=>/lua|lunar|lunargenta|abdendriel/.test(n)).length,cinzas:names.filter(n=>/cinza|dragão|escarlate/.test(n)).length,khar:names.filter(n=>/khar|runa|bronze|kholgard/.test(n)).length,eclipse:names.filter(n=>/eclipse|sombr|malgor/.test(n)).length}}
 function hasCraftedEffect(s:GameState,effect:ForgeEffect){return Object.values(s.equipped).some(id=>Boolean(id)&&s.craftedEffects?.[id!]===effect)}
 const RARITY_TIER:Record<Rarity,number>={comum:0,incomum:1,raro:2,epico:3,lendario:4,mitico:5,heroico:6}
-function druidHealProc(s:GameState){
+export function druidHealProc(s:GameState){
  if(s.heroId!=='druida')return{chance:0,amount:0}
  const items=[eqById(s.equipped.mao_direita),eqById(s.equipped.mao_esquerda)].filter((e):e is Equipment=>Boolean(e&&(e.tipoEquipamento==='cajado_natureza'||e.tipoEquipamento==='pergaminho')))
  if(!items.length)return{chance:0,amount:0}
