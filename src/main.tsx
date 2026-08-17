@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, Map, ScrollText, Backpack, Shield, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Coins, Trophy, Skull, Package, Plus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane } from 'lucide-react'
+import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane } from 'lucide-react'
 import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, type AttackAnimType } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_GEMS, FORGE_MATERIALS, FORGE_RECIPES, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode } from './data/expansion'
@@ -401,7 +401,7 @@ function CombatScreen(){
    </div>
    <div className="combat-enemy-area">
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} attackCritical={currentAttackCritical}/>
-    {Boolean(g.combatMinions?.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{g.combatMinions!.filter(minion=>minion.hp>0).map(minion=><article key={minion.id}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>)}</div>}
+    {Boolean(g.combatMinions?.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{g.combatMinions!.filter(minion=>minion.hp>0).map(minion=>isCoop?<article key={minion.id}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>:<article key={minion.id} className="targetable" role="button" tabIndex={disabled?-1:0} aria-disabled={disabled} title={`Atacar ${minion.nome} em vez do alvo principal`} onClick={()=>{if(!disabled)g.attack(minion.id)}} onKeyDown={event=>{if(!disabled&&(event.key==='Enter'||event.key===' ')){event.preventDefault();g.attack(minion.id)}}}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>)}</div>}
    </div>
 
    <Panel title="Habilidades dos itens" className="effects-panel combat-effects-area">
@@ -422,6 +422,8 @@ function CombatScreen(){
        <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}</button>
        <button className="premium-action" disabled={disabled||g.itemSkillUsed||!itemAbilities.length} onClick={()=>isCoop?useCoopItemSkill():g.itemSkill()}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Tentar fugir</button>
+       {!isCoop&&<button className="premium-action" disabled={disabled} title="Abre mão do ataque para reduzir o dano do próximo golpe do inimigo." onClick={g.defend}><ShieldHalf/>Postura defensiva</button>}
+       {!isCoop&&<button className="premium-action fervor-action" disabled={disabled||(g.fervor??0)<3} title="Acerta uma rolagem de ataque cheia com um crítico garantido." onClick={g.useFervor}><Zap/>Fervor de Combate ({Math.min(3,g.fervor??0)}/3)</button>}
       </div>
    </Panel>
 

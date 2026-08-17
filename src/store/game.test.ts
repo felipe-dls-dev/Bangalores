@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { useGame, EQUIPMENT, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
@@ -159,5 +159,70 @@ describe('druidHealProc', () => {
     expect(topProc.chance).toBeGreaterThan(starterProc.chance)
     expect(topProc.amount).toBeGreaterThan(starterProc.amount)
     expect(topProc.chance).toBeLessThanOrEqual(0.45)
+  })
+})
+
+const fakeEnemy = { id: 'x', nome: 'Inimigo de Teste', vida: 999, ataque: 3, dificuldade: 2, ouro: 5, habilidade: '' } as any
+
+describe('combate: postura defensiva e Fervor de Combate', () => {
+  it('defend() só age no turno do jogador, com inimigo vivo, e consome o turno na hora', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ enemy: undefined, playerTurn: true, animating: false, braced: false } as any)
+    useGame.getState().defend()
+    expect(useGame.getState().braced).toBe(false) // sem inimigo, não faz nada
+
+    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: false, animating: false, braced: false } as any)
+    useGame.getState().defend()
+    expect(useGame.getState().braced).toBe(false) // fora do turno, não faz nada
+
+    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, braced: false } as any)
+    useGame.getState().defend()
+    const s = useGame.getState()
+    expect(s.braced).toBe(true)
+    expect(s.playerTurn).toBe(false)
+  })
+
+  it('useFervor() é bloqueado abaixo do medidor cheio e consome o medidor imediatamente ao usar', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, fervor: 2 } as any)
+    useGame.getState().useFervor()
+    expect(useGame.getState().fervor).toBe(2)
+
+    useGame.setState({ fervor: 3 } as any)
+    useGame.getState().useFervor()
+    const s = useGame.getState()
+    expect(s.fervor).toBe(0)
+    expect(s.animating).toBe(true)
+  })
+
+  it('newGame() zera braced e fervor de uma campanha anterior', () => {
+    useGame.getState().newGame('arcanista')
+    useGame.setState({ braced: true, fervor: 3 } as any)
+    useGame.getState().newGame('guerreiro')
+    const s = useGame.getState()
+    expect(s.braced).toBe(false)
+    expect(s.fervor).toBe(0)
+  })
+})
+
+describe('combate: atacar um capanga específico', () => {
+  it('dano vai para o capanga escolhido, não para o inimigo principal', () => {
+    vi.useFakeTimers()
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    try {
+      useGame.getState().newGame('guerreiro')
+      useGame.setState({
+        enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false,
+        combatMinions: [{ id: 'm1', nome: 'Capanga de Teste', hp: 10, maxHp: 10, ataque: 2 }]
+      } as any)
+      useGame.getState().attack('m1')
+      vi.advanceTimersByTime(2600)
+      const s = useGame.getState()
+      expect(s.enemyHp).toBe(999)
+      expect(s.combatMinions?.[0].hp).toBeLessThan(10)
+    } finally {
+      randomSpy.mockRestore()
+      vi.useRealTimers()
+    }
   })
 })

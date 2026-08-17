@@ -765,3 +765,13 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
    as demais na altura do próprio conteúdo. */
 .char-grid>.panel:not(:first-child){height:auto;align-self:start}
 .gallery>.panel:last-child{height:auto;align-self:start}
+
+/* Alvo de capangas em combate: transforma o card informativo em um alvo clicável. */
+.boss-minion-row article.targetable{cursor:pointer;transition:.15s ease}
+.boss-minion-row article.targetable:hover,.boss-minion-row article.targetable:focus-visible{border-color:#e0935f;box-shadow:0 4px 15px #000,0 0 0 2px rgba(224,147,95,.4);outline:none}
+.boss-minion-row article.targetable:active{transform:scale(.97)}
+.boss-minion-row article.targetable[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+/* Botão de Fervor de Combate: destaque sutil quando o medidor está cheio e pronto pra uso. */
+.fervor-action:not(:disabled){border-color:#d8a340!important;box-shadow:0 0 0 1px rgba(216,163,64,.5),0 0 18px rgba(216,163,64,.28)!important;animation:fervor-ready 1.8s ease-in-out infinite}
+@keyframes fervor-ready{0%,100%{box-shadow:0 0 0 1px rgba(216,163,64,.5),0 0 18px rgba(216,163,64,.28)}50%{box-shadow:0 0 0 1px rgba(216,163,64,.7),0 0 26px rgba(216,163,64,.45)}}
+@media(prefers-reduced-motion:reduce){.fervor-action:not(:disabled){animation:none}}
