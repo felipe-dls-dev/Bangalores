@@ -85,12 +85,12 @@ const slotOrder: Slot[] = ['amuleto','capacete','bolsa','mao_direita','peitoral'
 export const SLOT_ORDER = slotOrder
 
 const starter: Record<string,{equipped:Partial<Record<Slot,string>>, items:Record<string,number>, gold:number}> = {
-  guerreiro: { equipped:{mao_direita:'lamina_vento',mao_esquerda:'leve_estrada',peitoral:'armor_leao_valoria',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1}, gold:15 },
-  guardiao: { equipped:{mao_direita:'machado_bronze',mao_esquerda:'pesado_bronze',peitoral:'armor_pesada_khardur',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:10 },
-  arcanista: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:20 },
-  cacadora: { equipped:{mao_direita:'facas_predador',peitoral:'traje_raposa',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:18 }
-  ,druida: { equipped:{mao_direita:'druida_arma_broto_de_abdendriel',mao_esquerda:'druida_mao_esquerda_broto_de_abdendriel',peitoral:'druida_peitoral_broto_de_abdendriel',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:16 }
-  ,cacador: { equipped:{mao_direita:'cacador_arma_vigia_das_cinzas',mao_esquerda:'cacador_mao_esquerda_vigia_das_cinzas',peitoral:'cacador_peitoral_vigia_das_cinzas',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:17 }
+  guerreiro: { equipped:{mao_direita:'lamina_vento',mao_esquerda:'leve_estrada',peitoral:'armor_leao_valoria',bolsa:'sacola_4'}, items:{pocao_cura:1}, gold:15 },
+  guardiao: { equipped:{mao_direita:'machado_bronze',mao_esquerda:'pesado_bronze',peitoral:'armor_pesada_khardur',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:10 },
+  arcanista: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas',bolsa:'sacola_4'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:20 },
+  cacadora: { equipped:{mao_direita:'facas_predador',peitoral:'traje_raposa',bolsa:'sacola_4'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:18 }
+  ,druida: { equipped:{mao_direita:'druida_arma_broto_de_abdendriel',mao_esquerda:'druida_mao_esquerda_broto_de_abdendriel',peitoral:'druida_peitoral_broto_de_abdendriel',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:16 }
+  ,cacador: { equipped:{mao_direita:'cacador_arma_vigia_das_cinzas',mao_esquerda:'cacador_mao_esquerda_vigia_das_cinzas',peitoral:'cacador_peitoral_vigia_das_cinzas',bolsa:'sacola_4'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:17 }
 }
 
 // Mantidos para a Galeria e compatibilidade com saves antigos.
@@ -114,7 +114,7 @@ function eqById(id?:string){ return EQUIPMENT.find(e=>e.id===id) }
 export type WeaponAffinity='guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida'|'cacador'
 const EQUIPMENT_LEVELS=[1,3,5,7,9,11,14,17]
 const LEVEL_RARITY:Rarity[]=['comum','incomum','raro','raro','epico','epico','lendario','lendario']
-const FREE_EQUIPMENT=new Set(['lamina_vento','leve_estrada','armor_leao_valoria','machado_bronze','pesado_bronze','armor_pesada_khardur','orbe_veu','grimorio_lua','veste_estrelas','facas_predador','broquel_raposa','traje_raposa','pederneira_ancestrais','armadura_couro','botas_viajante','calcas_batedor'])
+const FREE_EQUIPMENT=new Set(['lamina_vento','leve_estrada','armor_leao_valoria','machado_bronze','pesado_bronze','armor_pesada_khardur','orbe_veu','grimorio_lua','veste_estrelas','facas_predador','broquel_raposa','traje_raposa','pederneira_ancestrais','armadura_couro','botas_viajante','calcas_batedor','druida_arma_broto_de_abdendriel','druida_mao_esquerda_broto_de_abdendriel','druida_peitoral_broto_de_abdendriel','cacador_arma_vigia_das_cinzas','cacador_mao_esquerda_vigia_das_cinzas','cacador_peitoral_vigia_das_cinzas','sacola_4'])
 function equipmentPower(e:Equipment){return e.ataque*2+e.defesa*2+e.vida*.5}
 function balanceEquipment(items:Equipment[]){
  const groups=new Map<string,Equipment[]>()
