@@ -3,10 +3,10 @@ import type { Equipment, Rarity } from '../types'
 type ClassId='guerreiro'|'guardiao'|'cacadora'|'arcanista'
 type HeadRow=[string,string,string]
 const progression=[
- {preco:14,vida:1,defesa:1,raridade:'comum'}, {preco:18,vida:1,defesa:1,raridade:'incomum'},
- {preco:22,vida:2,defesa:1,raridade:'raro'}, {preco:25,vida:1,defesa:2,raridade:'raro'},
- {preco:29,vida:2,defesa:2,raridade:'epico'}, {preco:20,vida:2,defesa:1,raridade:'incomum'},
- {preco:27,vida:2,defesa:2,raridade:'raro'}, {preco:42,vida:4,defesa:3,raridade:'lendario'}
+ {preco:14,vida:1,defesa:1,raridade:'comum'}, {preco:18,vida:1,defesa:2,raridade:'incomum'},
+ {preco:22,vida:2,defesa:3,raridade:'raro'}, {preco:25,vida:1,defesa:4,raridade:'raro'},
+ {preco:29,vida:2,defesa:5,raridade:'epico'}, {preco:20,vida:2,defesa:6,raridade:'incomum'},
+ {preco:27,vida:2,defesa:7,raridade:'raro'}, {preco:42,vida:4,defesa:8,raridade:'lendario'}
 ] as const
 const make=(classe:ClassId,tipo:string,rows:HeadRow[]):Equipment[]=>rows.map(([id,nome,file],i)=>{const p=progression[i];return{id,nome,slot:'capacete',preco:p.preco,ataque:0,vida:p.vida,defesa:p.defesa,habilidade:`Proteção de ${nome}: reforça a defesa e a identidade da classe.`,imagem:`assets/art/hd/headgear/${file}`,arte:`assets/art/hd/headgear/${file}`,raridade:p.raridade as Rarity,classeExclusiva:classe,tipoEquipamento:tipo}})
 

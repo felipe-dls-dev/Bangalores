@@ -11,7 +11,7 @@ const make = (classe: ClassId, tipo: string, rows: Row[]): Equipment[] => rows.m
   const light = classe === 'cacadora'
   const arcane = classe === 'arcanista'
   const vida = (heavy ? 2 : light ? 0 : 1) + Math.floor(i / 4)
-  const defesa = (heavy ? 2 : light ? 0 : arcane ? 0 : 1) + Math.floor(i / 5)
+  const defesa = (heavy ? 2 : light ? 0 : arcane ? 0 : 1) + i
   const image = `assets/art/hd/boots/${file}`
   return {
     id,
