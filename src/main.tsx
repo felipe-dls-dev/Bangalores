@@ -161,7 +161,7 @@ function App(){
 }
 
 function CoopBattleSync(){
- const coop=useCoop(),screen=useGame(state=>state.screen),hp=useGame(state=>state.hp),xp=useGame(state=>state.xp),shield=useGame(state=>state.shield),subregionVictories=useGame(state=>state.subregionVictories),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),completeVictory=useGame(state=>state.completeCoopVictory),completeDefeat=useGame(state=>state.completeCoopDefeat),receiveEnemy=useGame(state=>state.receiveCoopEnemyAttack),receiveHeroAction=useGame(state=>state.receiveCoopHeroAction),receiveSupportFx=useGame(state=>state.receiveCoopSupportFx),receiveHeal=useGame(state=>state.receiveCoopHeal),battle=coop.room?.shared_state?.battle as {id?:string;status?:string;subregionId?:string;enemy?:any;enemyHp?:number;damageByPlayer?:Record<string,number>;activeUserId?:string;lastRoll?:any;turn?:number}|undefined,handledEnemyTurn=React.useRef(''),receivedRoll=React.useRef(''),receivedHeroRoll=React.useRef(''),receivedAbility=React.useRef(''),receivedHeal=React.useRef(''),receivedSelf=React.useRef(''),handledDefeat=React.useRef(''),enemyExecutor=React.useRef(coop.resolveEnemyTurn),publishedVitals=React.useRef('')
+ const coop=useCoop(),screen=useGame(state=>state.screen),hp=useGame(state=>state.hp),xp=useGame(state=>state.xp),shield=useGame(state=>state.shield),subregionVictories=useGame(state=>state.subregionVictories),enemyHp=useGame(state=>state.enemyHp),sync=useGame(state=>state.syncCoopEnemyHp),completeVictory=useGame(state=>state.completeCoopVictory),completeDefeat=useGame(state=>state.completeCoopDefeat),receiveEnemy=useGame(state=>state.receiveCoopEnemyAttack),receiveHeroAction=useGame(state=>state.receiveCoopHeroAction),receiveSupportFx=useGame(state=>state.receiveCoopSupportFx),receiveHeal=useGame(state=>state.receiveCoopHeal),battle=coop.room?.shared_state?.battle as {id?:string;status?:string;subregionId?:string;enemy?:any;enemyHp?:number;damageByPlayer?:Record<string,number>;activeUserId?:string;lastRoll?:any;minionRolls?:any[];turn?:number}|undefined,handledEnemyTurn=React.useRef(''),receivedRoll=React.useRef(''),receivedHeroRoll=React.useRef(''),receivedAbility=React.useRef(''),receivedHeal=React.useRef(''),receivedSelf=React.useRef(''),receivedMinions=React.useRef(''),handledDefeat=React.useRef(''),enemyExecutor=React.useRef(coop.resolveEnemyTurn),publishedVitals=React.useRef('')
  enemyExecutor.current=coop.resolveEnemyTurn
  React.useEffect(()=>{const roomId=coop.room?.id,userId=coop.userId,g=useGame.getState(),myMaxHp=maxHp(g),myDefense=defenseValue(g),level=levelInfo(xp).lvl,rollBonus=g.classRollBonus??0,critDefenseBoost=hasCraftedEffect(g,'defesa_perfeita'),key=`${roomId}:${userId}:${hp}:${myMaxHp}:${myDefense}:${level}:${shield}:${rollBonus}:${critDefenseBoost}`;if(!roomId||!userId||publishedVitals.current===key)return;publishedVitals.current=key;void coop.publishProgress(subregionVictories,{hp,maxHp:myMaxHp,level,defense:myDefense,shield,rollBonus,critDefenseBoost})},[coop.room?.id,coop.userId,hp,xp,shield,subregionVictories,screen,coop.publishProgress])
  React.useEffect(()=>{if(!battle?.id||typeof battle.enemyHp!=='number'||screen!=='combat'||enemyHp===battle.enemyHp)return;sync(battle.enemyHp)},[battle?.id,battle?.enemyHp,screen,enemyHp,sync])
@@ -182,6 +182,9 @@ function CoopBattleSync(){
  },[battle?.id,battle?.turn,battle?.lastRoll,screen,receiveSupportFx,receiveHeroAction])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`heal:${battle?.id}:${battle?.turn}`;if(screen!=='combat'||!roll?.healAmount||roll.healTargetUserId!==coop.userId||receivedHeal.current===key)return;receivedHeal.current=key;receiveHeal(Number(roll.healAmount??0))},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveHeal])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`self:${battle?.id}:${battle?.turn}`;if(screen!=='combat'||!roll?.selfDamage||roll.selfDamageUserId!==coop.userId||receivedSelf.current===key)return;receivedSelf.current=key;receiveEnemy(Number(roll.selfDamage??0),{})},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveEnemy])
+ // Capangas de chefe agora existem no coop também — cada um pode acertar um alvo diferente
+ // do inimigo principal no mesmo turno, então aplica cada golpe relevante separadamente.
+ React.useEffect(()=>{const rolls=battle?.minionRolls,key=`minions:${battle?.id}:${battle?.turn}`;if(screen!=='combat'||!Array.isArray(rolls)||!rolls.length||receivedMinions.current===key)return;receivedMinions.current=key;for(const roll of rolls)if(roll?.targetUserId===coop.userId)receiveEnemy(Number(roll.damage??0),roll)},[battle?.id,battle?.turn,battle?.minionRolls,screen,coop.userId,receiveEnemy])
  React.useEffect(()=>{if(screen==='combat'&&useGame.getState().hp<=0&&battle?.activeUserId===coop.userId)void coop.coopAbility('Derrota',0,'não pode mais agir')},[screen,battle?.activeUserId,coop.userId])
  return null
 }
@@ -402,6 +405,15 @@ function CombatScreen(){
   const heal=druidHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico')
   void coop.coopAttack(attackValue(g)+3,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,item.nome)
   if(g.heroRollBonus)useGame.setState({heroRollBonus:0})}
+ // Postura defensiva, Fervor de Combate e alvo em capangas existiam só no modo solo —
+ // aqui espelham o mesmo botão/ação, mas via coopAttack/coopDefend (estado compartilhado).
+ const activeMinions:{id:string;nome:string;hp:number;maxHp:number;ataque:number}[]=isCoop?((battle.combatMinions as any[])??[]):(g.combatMinions??[])
+ const coopFervor=isCoop?Number(battle.playerBuffs?.[coop.userId]?.fervor??0):0
+ const fervorLevel=isCoop?coopFervor:(g.fervor??0)
+ const performCoopAttack=(targetMinionId?:string)=>{const heal=druidHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico');void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId);if(g.heroRollBonus)useGame.setState({heroRollBonus:0})}
+ const performAttack=(targetMinionId?:string)=>{if(isCoop)performCoopAttack(targetMinionId);else g.attack(targetMinionId)}
+ const performDefend=()=>{if(isCoop)void coop.coopDefend();else g.defend()}
+ const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=druidHealProc(g);void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true)}else g.useFervor()}
  const attacker=g.combatRoll?.attacker
  const currentAttackType=attacker==='hero'?heroWeaponAnimationType(g.equipped.mao_direita):attacker==='enemy'?enemyWeaponAnimationType(e):undefined
  const currentAttackCritical=g.combatRoll?.attackRoll===6
@@ -411,7 +423,7 @@ function CombatScreen(){
    </div>
    <div className="combat-enemy-area">
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} attackCritical={currentAttackCritical}/>
-    {Boolean(g.combatMinions?.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{g.combatMinions!.filter(minion=>minion.hp>0).map(minion=>isCoop?<article key={minion.id}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>:<article key={minion.id} className="targetable" role="button" tabIndex={disabled?-1:0} aria-disabled={disabled} title={`Atacar ${minion.nome} em vez do alvo principal`} onClick={()=>{if(!disabled)g.attack(minion.id)}} onKeyDown={event=>{if(!disabled&&(event.key==='Enter'||event.key===' ')){event.preventDefault();g.attack(minion.id)}}}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>)}</div>}
+    {Boolean(activeMinions.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{activeMinions.filter(minion=>minion.hp>0).map(minion=><article key={minion.id} className="targetable" role="button" tabIndex={disabled?-1:0} aria-disabled={disabled} title={`Atacar ${minion.nome} em vez do alvo principal`} onClick={()=>{if(!disabled)performAttack(minion.id)}} onKeyDown={event=>{if(!disabled&&(event.key==='Enter'||event.key===' ')){event.preventDefault();performAttack(minion.id)}}}><Shield/><span><strong>{minion.nome}</strong><small>ATQ {minion.ataque} • VIDA {minion.hp}/{minion.maxHp}</small><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i></span></article>)}</div>}
    </div>
 
    <Panel title="Habilidades dos itens" className="effects-panel combat-effects-area">
@@ -428,12 +440,12 @@ function CombatScreen(){
    <Panel title="Ações" className="combat-actions-panel combat-actions-area">
       {defeated&&<p className="coop-defeated-notice">DERROTADO • Você não pode mais realizar ações nesta batalha. As penalidades serão aplicadas ao final.</p>}
       <div className="combat-actions-grid">
-       <button className="attack-btn premium-action" disabled={disabled} onClick={()=>{if(isCoop){const heal=druidHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico');void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount);if(g.heroRollBonus)useGame.setState({heroRollBonus:0})}else g.attack()}}><Sword/>Atacar</button>
+       <button className="attack-btn premium-action" disabled={disabled} onClick={()=>performAttack()}><Sword/>Atacar</button>
        <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}</button>
        <button className="premium-action" disabled={disabled||g.itemSkillUsed||!itemAbilities.length} onClick={()=>isCoop?useCoopItemSkill():g.itemSkill()}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Tentar fugir</button>
-       {!isCoop&&<button className="premium-action" disabled={disabled} title="Abre mão do ataque para reduzir o dano do próximo golpe do inimigo." onClick={g.defend}><ShieldHalf/>Postura defensiva</button>}
-       {!isCoop&&<button className="premium-action fervor-action" disabled={disabled||(g.fervor??0)<3} title="Acerta uma rolagem de ataque cheia com um crítico garantido." onClick={g.useFervor}><Zap/>Fervor de Combate ({Math.min(3,g.fervor??0)}/3)</button>}
+       <button className="premium-action" disabled={disabled} title="Abre mão do ataque para reduzir o dano do próximo golpe do inimigo." onClick={performDefend}><ShieldHalf/>Postura defensiva</button>
+       <button className="premium-action fervor-action" disabled={disabled||fervorLevel<3} title="Acerta uma rolagem de ataque cheia com um crítico garantido." onClick={performFervor}><Zap/>Fervor de Combate ({Math.min(3,fervorLevel)}/3)</button>
       </div>
    </Panel>
 
