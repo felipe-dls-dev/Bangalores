@@ -21,7 +21,8 @@ import { STEELMERE_SUBREGIONS } from '../data/subregioesSteelmere'
 import monsterArt from '../data/monsterArt.json'
 import eventArt from '../data/eventArt.json'
 import bossArt from '../data/bossArt.json'
-import { DIFFICULTIES, FORGE_GEMS, FORGE_RECIPES, REGION_MATERIALS, STORY_CHAPTERS, TALENTS, type DifficultyMode, type ForgeEffect } from '../data/expansion'
+import { DIFFICULTIES, FORGE_GEMS, REGION_MATERIALS, STORY_CHAPTERS, TALENTS, type DifficultyMode, type ForgeEffect } from '../data/expansion'
+import { buildForgeRecipes } from '../data/forgeRecipes'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard } from '../types'
 
 const HD_ART:Record<string,string> = {
@@ -135,6 +136,7 @@ function balanceEquipment(items:Equipment[]){
  return items.map(item=>{const result=item.slot==='bolsa'?item:(balanced.get(item.id)??{...item,nivelMinimo:1});return{...result,preco:Math.ceil(result.preco*ITEM_PRICE_MULTIPLIER)}})
 }
 export const EQUIPMENT=balanceEquipment(RAW_EQUIPMENT)
+export const FORGE_RECIPES=buildForgeRecipes(EQUIPMENT)
 export function equipmentBagCapacity(s:{equipped:Partial<Record<Slot,string>>}){return eqById(s.equipped.bolsa)?.capacidade??8}
 export function equipmentRequiredLevel(e:Equipment){return Math.max(1,e.nivelMinimo??1)}
 export function equipmentLevelAllowed(e:Equipment,xp:number){return deriveLevel(xp).lvl>=equipmentRequiredLevel(e)}
@@ -239,7 +241,7 @@ export function druidHealProc(s:GameState){
 export function equipmentSocketCount(e:Equipment){const rarity=e.raridade??'comum';return rarity==='mitico'||rarity==='heroico'?3:rarity==='lendario'||rarity==='epico'?2:rarity==='raro'||rarity==='incomum'?1:0}
 export function dismantlePreview(e:Equipment){const tier=Math.max(1,Math.ceil(equipmentRequiredLevel(e)/4)),physical=Math.max(1,tier+(e.slot==='mao_direita'||e.slot==='mao_esquerda'?1:0)),magical=Math.max(0,(e.raridade==='comum'?0:1)+(e.raridade==='epico'||e.raridade==='lendario'||e.raridade==='mitico'?1:0)),gemChance=Math.min(.85,.08+tier*.05+(equipmentSocketCount(e)*.12));return{physical,magical,gemChance}}
 export function forgeLevelInfo(xp:number){let level=1,spent=0,next=40;while(level<10&&xp>=spent+next){spent+=next;level++;next=40+level*25}return{level,progress:xp-spent,next,max:level>=10}}
-export function forgeRecipeLevel(recipeId:string){return Math.min(6,Math.max(1,FORGE_RECIPES.findIndex(r=>r.id===recipeId)+1))}
+export function forgeRecipeLevel(recipeId:string){const index=FORGE_RECIPES.findIndex(r=>r.id===recipeId);if(index<0)return 6;return Math.min(10,Math.max(1,Math.ceil((index+1)*10/FORGE_RECIPES.length)))}
 export function forgeSuccessChance(recipeId:string,forgeXp:number){const mastery=forgeLevelInfo(forgeXp).level,required=forgeRecipeLevel(recipeId);return Math.max(.45,Math.min(.95,.72+(mastery-required)*.06))}
 export function storyRequirementProgress(s:GameState){const chapter=STORY_CHAPTERS.find(c=>c.id===s.storyChapterId),req=chapter?.requirement;if(!req)return{current:1,required:1,complete:true};let current=0;if(req.type==='victories')current=req.target?SUBREGIONS.filter(sub=>sub.regionId===req.target).reduce((sum,sub)=>sum+(s.subregionVictories[sub.id]??0),0):Object.values(s.victories).reduce((a,b)=>a+b,0);if(req.type==='bosses')current=s.subregionBossesDefeated.length;if(req.type==='material')current=s.materials[req.target??'']??0;if(req.type==='upgrade')current=Object.values(s.equipmentUpgrades).filter(v=>v>0).length;if(req.type==='region')current=SUBREGIONS.filter(sub=>sub.regionId===req.target&&s.subregionBossesDefeated.includes(sub.id)).length;return{current:Math.min(current,req.amount),required:req.amount,complete:current>=req.amount}}
 

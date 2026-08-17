@@ -19,7 +19,10 @@ export const FORGE_GEMS=[
 ] as const
 export type ForgeEffect='critico'|'defesa_perfeita'|'sorte'
 export type ForgeRecipe={id:string;nome:string;equipmentId:string;raridade:string;materials:Record<string,number>;effect?:ForgeEffect;effectText?:string}
-export const FORGE_RECIPES:ForgeRecipe[]=[
+// Receitas artesanais originais, preservadas com seus materiais e efeitos únicos.
+// O catálogo completo (uma receita por equipamento) é montado em ../data/forgeRecipes.ts,
+// que mescla esta lista com receitas geradas a partir de src/store/game.ts's EQUIPMENT.
+export const CURATED_FORGE_RECIPES:ForgeRecipe[]=[
  {id:'receita_couro',nome:'Armadura de Couro Reforçado',equipmentId:'armadura_couro',raridade:'Incomum',materials:{fragmento_fisico:4}},
  {id:'receita_facas',nome:'Facas Gêmeas Temperadas',equipmentId:'facas_gemeas',raridade:'Raro',materials:{fragmento_fisico:5,essencia_magica:2},effect:'critico',effectText:'+8% de chance de elevar ataques fortes a críticos'},
  {id:'receita_lamina',nome:'Lâmina do Sentinela Refinada',equipmentId:'lamina_sentinela',raridade:'Épico',materials:{fragmento_fisico:7,essencia_magica:4,safira_guardia:1},effect:'critico',effectText:'+12% de chance de crítico aprimorado'},
