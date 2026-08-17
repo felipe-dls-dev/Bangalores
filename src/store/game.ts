@@ -21,7 +21,7 @@ import { STEELMERE_SUBREGIONS } from '../data/subregioesSteelmere'
 import monsterArt from '../data/monsterArt.json'
 import eventArt from '../data/eventArt.json'
 import bossArt from '../data/bossArt.json'
-import { DIFFICULTIES, FORGE_GEMS, REGION_MATERIALS, STORY_CHAPTERS, TALENTS, type DifficultyMode, type ForgeAttribute, type ForgeEffect } from '../data/expansion'
+import { DIFFICULTIES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, REGION_MATERIALS, STORY_CHAPTERS, TALENTS, type DifficultyMode, type ForgeBonus, type ForgeChoice, type ForgeEffect } from '../data/expansion'
 import { buildForgeRecipes } from '../data/forgeRecipes'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard } from '../types'
 
@@ -217,7 +217,7 @@ interface GameState {
  buyConsumable:(id:string)=>void; buyEquipment:(id:string)=>void; sellConsumable:(id:string)=>void; sellEquipment:(id:string)=>void;
  equip:(id:string)=>void; unequip:(slot:Slot)=>void; addAttribute:(k:'vida'|'ataque'|'defesa')=>void; setSelectedGallery:(n:number)=>void; toggleShopMode:()=>void; resolveEvent:(accept:boolean,approach?:'class')=>void; finishEvent:()=>void; finishLoot:()=>void; clearSave:()=>void;
  addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>void; removeCustomCard:(id:string)=>void;
- setDifficulty:(mode:DifficultyMode)=>void;unlockTalent:(id:string)=>void;craftEquipment:(recipeId?:string,attribute?:ForgeAttribute)=>void;upgradeEquipment:(id:string)=>void;dismantleEquipment:(id:string)=>void;socketGem:(equipmentId:string,gemId:string)=>void;removeGem:(equipmentId:string,index:number)=>void;startDungeon:()=>void;leaveDungeon:()=>void;startRevenge:(subregionId:string)=>void;chooseStory:(choiceId:string)=>void;
+ setDifficulty:(mode:DifficultyMode)=>void;unlockTalent:(id:string)=>void;craftEquipment:(recipeId?:string,choice?:ForgeChoice)=>void;upgradeEquipment:(id:string)=>void;dismantleEquipment:(id:string)=>void;socketGem:(equipmentId:string,gemId:string)=>void;removeGem:(equipmentId:string,index:number)=>void;startDungeon:()=>void;leaveDungeon:()=>void;startRevenge:(subregionId:string)=>void;chooseStory:(choiceId:string)=>void;
 }
 
 const EVENT_CHAINS=[
@@ -340,14 +340,16 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   removeCustomCard:(id:string)=>{const s=get();set({customCards:s.customCards.filter((c:CustomCard)=>c.id!==id)})}
   ,setDifficulty:(difficultyMode:DifficultyMode)=>set({difficultyMode})
   ,unlockTalent:(id:string)=>{const s=get(),talent=TALENTS.find(t=>t.id===id),level=deriveLevel(s.xp).lvl;if(!talent||level<talent.level||s.talents.includes(id))return;set({talents:[...s.talents,id]})}
-  ,craftEquipment:(recipeId?:string,attribute?:ForgeAttribute)=>{
+  ,craftEquipment:(recipeId?:string,choice?:ForgeChoice)=>{
    const s=get(),recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&eqById(recipe.equipmentId),required=recipe?forgeRecipeLevel(recipe.id):99,forgeXp=s.forgeXp??0
-   const gem=attribute&&recipe?.attributeChoice?FORGE_GEMS.find(g=>g.stat===attribute):undefined
-   if(attribute&&!gem)return
+   const isAttribute=choice==='ataque'||choice==='defesa'||choice==='vida'
+   const gem=choice&&recipe?.attributeChoice?(isAttribute?FORGE_GEMS.find(g=>g.stat===choice):FORGE_GEMS.find(g=>g.id===FORGE_BONUS_MATERIAL[choice as ForgeBonus])):undefined
+   if(choice&&!gem)return
    const cost=gem?{...recipe!.materials,[gem.id]:(recipe!.materials[gem.id]??0)+1}:recipe?.materials
    if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||s.equipmentBag.length>=equipmentBagCapacity(s)||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
    const materials={...s.materials},success=Math.random()<forgeSuccessChance(recipe.id,forgeXp),xpGain=success?18+required*7:8+required*3
    for(const [id,qty] of Object.entries(cost))materials[id]-=success?qty:Math.max(1,Math.ceil(qty/2))
+   const bonusEffect=!isAttribute&&choice?choice as ForgeBonus:undefined
    set({
     materials,
     forgeXp:forgeXp+xpGain,
@@ -355,14 +357,14 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     forgeSuccesses:(s.forgeSuccesses??0)+(success?1:0),
     ...(success?{
      equipmentBag:[...s.equipmentBag,item.id],
-     craftedEffects:recipe.effect?{...s.craftedEffects,[item.id]:recipe.effect}:s.craftedEffects,
-     ...(gem?{equipmentGems:{...s.equipmentGems,[item.id]:[gem.id]},forgedGemLocked:{...s.forgedGemLocked,[item.id]:true}}:{})
+     craftedEffects:bonusEffect?{...s.craftedEffects,[item.id]:bonusEffect}:recipe.effect?{...s.craftedEffects,[item.id]:recipe.effect}:s.craftedEffects,
+     ...(isAttribute&&gem?{equipmentGems:{...s.equipmentGems,[item.id]:[gem.id]},forgedGemLocked:{...s.forgedGemLocked,[item.id]:true}}:{})
     }:{}),
-    explorationNote:success?`Forja bem-sucedida: ${recipe.nome}${gem?` — ${gem.texto} embutido no item`:''}. +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`
+    explorationNote:success?`Forja bem-sucedida: ${recipe.nome}${gem?` — ${isAttribute?gem.texto:FORGE_BONUS_LABELS[choice as ForgeBonus]} aplicado ao item`:''}. +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`
    })
   }
   ,upgradeEquipment:(id:string)=>{const s=get(),item=eqById(id),level=s.equipmentUpgrades[id]??0,cost=10+(level+1)*10;if(!item||level>=3||s.gold<cost)return;set({gold:s.gold-cost,equipmentUpgrades:{...s.equipmentUpgrades,[id]:level+1},explorationNote:`${item.nome} aprimorado para +${level+1}.`})}
-  ,dismantleEquipment:(id:string)=>{const s=get(),index=s.equipmentBag.indexOf(id),item=eqById(id);if(index<0||!item)return;const yieldInfo=dismantlePreview(item),materials={...s.materials,fragmento_fisico:(s.materials.fragmento_fisico??0)+yieldInfo.physical,essencia_magica:(s.materials.essencia_magica??0)+yieldInfo.magical},installed=s.equipmentGems[id]??[];for(const gem of installed)materials[gem]=(materials[gem]??0)+1;let gemName='';if(Math.random()<yieldInfo.gemChance){const gem=FORGE_GEMS[Math.floor(Math.random()*FORGE_GEMS.length)];materials[gem.id]=(materials[gem.id]??0)+1;gemName=` • Pedra encontrada: ${gem.nome}`};const bag=[...s.equipmentBag];bag.splice(index,1);const equipmentGems={...s.equipmentGems};delete equipmentGems[id];const forgedGemLocked={...s.forgedGemLocked};delete forgedGemLocked[id];set({equipmentBag:bag,equipmentGems,forgedGemLocked,materials,explorationNote:`${item.nome} desmontado: +${yieldInfo.physical} fragmentos físicos, +${yieldInfo.magical} essências mágicas${gemName}.`})}
+  ,dismantleEquipment:(id:string)=>{const s=get(),index=s.equipmentBag.indexOf(id),item=eqById(id);if(index<0||!item)return;const yieldInfo=dismantlePreview(item),materials={...s.materials,fragmento_fisico:(s.materials.fragmento_fisico??0)+yieldInfo.physical,essencia_magica:(s.materials.essencia_magica??0)+yieldInfo.magical},installed=s.equipmentGems[id]??[];for(const gem of installed)materials[gem]=(materials[gem]??0)+1;let gemName='';if(Math.random()<yieldInfo.gemChance){const gem=FORGE_GEMS[Math.floor(Math.random()*FORGE_GEMS.length)];materials[gem.id]=(materials[gem.id]??0)+1;gemName=` • Pedra encontrada: ${gem.nome}`};const bag=[...s.equipmentBag];bag.splice(index,1);const equipmentGems={...s.equipmentGems};delete equipmentGems[id];const forgedGemLocked={...s.forgedGemLocked};delete forgedGemLocked[id];const craftedEffects={...s.craftedEffects};delete craftedEffects[id];set({equipmentBag:bag,equipmentGems,forgedGemLocked,craftedEffects,materials,explorationNote:`${item.nome} desmontado: +${yieldInfo.physical} fragmentos físicos, +${yieldInfo.magical} essências mágicas${gemName}.`})}
   ,socketGem:(equipmentId:string,gemId:string)=>{const s=get(),item=eqById(equipmentId),installed=s.equipmentGems[equipmentId]??[];if(!item||!Object.values(s.equipped).includes(equipmentId)||installed.length>=equipmentSocketCount(item)||(s.materials[gemId]??0)<=0||!FORGE_GEMS.some(g=>g.id===gemId))return;set({materials:{...s.materials,[gemId]:s.materials[gemId]-1},equipmentGems:{...s.equipmentGems,[equipmentId]:[...installed,gemId]},explorationNote:`Pedra instalada em ${item.nome}.`})}
   ,removeGem:(equipmentId:string,index:number)=>{const s=get(),installed=[...(s.equipmentGems[equipmentId]??[])],gemId=installed[index];if(!gemId||(index===0&&s.forgedGemLocked?.[equipmentId]))return;installed.splice(index,1);set({materials:{...s.materials,[gemId]:(s.materials[gemId]??0)+1},equipmentGems:{...s.equipmentGems,[equipmentId]:installed},explorationNote:'Pedra removida e devolvida ao inventário.'})}
   ,startDungeon:()=>{const s=get(),sub=SUBREGIONS.find(x=>x.regionId===s.regionId)??SUBREGIONS[0],depth=(s.dungeonActive?s.dungeonDepth:0)+1;const enemy=difficultyEnemy(depth%5===0?buildBoss(sub):buildEnemy(sub,deriveLevel(s.xp).lvl+depth),s.difficultyMode);beginCombat(set,get,{...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*(1+depth*.12)),ouro:Math.ceil(enemy.ouro*(1+depth*.18)),dungeon:true});set({dungeonDepth:depth,dungeonActive:true})}
@@ -463,11 +465,11 @@ function enemyApproachPhrase(enemy:Enemy){
  const pool=enemy.boss?[...categoria,...ENEMY_BOSS_FLAVOR]:categoria
  return pick(pool)
 }
-export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number){
+export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number,critBonusPct=0){
  if(attackRoll===1)return{damage:0,selfDamage:Math.max(1,Math.floor(attackBase*.2))}
  const effectiveAttack=attackBase+(attackRoll===5?1:0)
  let damage=Math.max(1,effectiveAttack-defenseBase)
- if(attackRoll===6)damage=Math.max(1,Math.floor(damage*1.5))
+ if(attackRoll===6)damage=Math.max(1,Math.floor(damage*(1.5+critBonusPct)))
  if(defenseRoll===1)damage=Math.max(1,Math.floor(damage*1.5))
  else if(defenseRoll===2)damage+=1
  else if(defenseRoll===5)damage=Math.max(0,damage-1)
@@ -505,10 +507,12 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  if(!s.enemy||!s.playerTurn||s.animating&&!alreadyAnimating)return
  if(forceCrit&&(s.fervor??0)<3)return
  const target=targetMinionId?(s.combatMinions??[]).find(m=>m.id===targetMinionId&&m.hp>0):undefined
- const attackBase=attackValue(s)+bonus,defenseBase=target?0:Math.max(0,(s.enemy.dificuldade??1)-2),naturalAttackRoll=forceCrit?6:Math.floor(Math.random()*6)+1,attackBonus=s.heroRollBonus+(s.classRollBonus??0),attackRoll=forceCrit?6:Math.min(6,naturalAttackRoll+attackBonus+((hasCraftedEffect(s,'critico')||s.groupCriticalBoost)&&naturalAttackRoll===5?1:0)),defenseRoll=Math.floor(Math.random()*6)+1
- const {damage,selfDamage}=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
+ const forgedCrit=!forceCrit&&hasCraftedEffect(s,'critico_forjado')&&Math.random()<.05
+ const attackBase=attackValue(s)+bonus,defenseBase=target?0:Math.max(0,(s.enemy.dificuldade??1)-2),naturalAttackRoll=forceCrit||forgedCrit?6:Math.floor(Math.random()*6)+1,attackBonus=s.heroRollBonus+(s.classRollBonus??0),attackRoll=forceCrit||forgedCrit?6:Math.min(6,naturalAttackRoll+attackBonus+((hasCraftedEffect(s,'critico')||s.groupCriticalBoost)&&naturalAttackRoll===5?1:0)),defenseRoll=Math.floor(Math.random()*6)+1
+ const critBonusPct=hasCraftedEffect(s,'dano_critico_bonus')?.1:0
+ const {damage,selfDamage}=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll,critBonusPct)
  const combatRoll:CombatRoll={attacker:'hero',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage}
- const healProc=druidHealProc(s),healed=Math.random()<healProc.chance,healAmount=healed?Math.max(0,Math.min(healProc.amount,maxHp(s)-s.hp)):0
+ const healProc=druidHealProc(s),healed=Math.random()<healProc.chance,forgedHeal=hasCraftedEffect(s,'cura_forjada')&&Math.random()<.05,curaBonusMult=1+(hasCraftedEffect(s,'cura_bonus')?.1:0),rawHeal=((healed?healProc.amount:0)+(forgedHeal?Math.max(2,Math.round(attackBase*.25)):0))*curaBonusMult,healAmount=rawHeal>0?Math.max(0,Math.min(Math.round(rawHeal),maxHp(s)-s.hp)):0
  const fervor=forceCrit?0:attackRoll===6?Math.min(3,(s.fervor??0)+1):(s.fervor??0)
  set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus,hp:healAmount>0?s.hp+healAmount:s.hp,fervor})
  if(healAmount>0)triggerSupportFx(set,get,'cura')
@@ -540,7 +544,7 @@ function enemyAttack(set:any,get:any){
  const s=get() as GameState
  if(!s.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
  const attackBase=s.enemy.ataque,defenseBase=defenseValue(s)+(s.braced?2:0),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.enemyRollBonus,attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+attackBonus-(s.heroId==='druida'&&Math.random()<.25?1:0))),naturalDefenseRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.min(6,naturalDefenseRoll+(s.classRollBonus??0)+(hasCraftedEffect(s,'defesa_perfeita')&&naturalDefenseRoll===5?1:0))
- const dodged=(s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll);let raw=dodged?0:resolved.damage,shield=s.shield
+ const dodged=((s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2)||(hasCraftedEffect(s,'esquiva_forjada')&&Math.random()<.05),resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll);let raw=dodged?0:resolved.damage,shield=s.shield
  const blocked=Math.min(shield,raw),enemyName=s.enemy.nome,enemyApproach=enemyApproachPhrase(s.enemy),heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'Você';raw-=blocked;shield-=blocked
  const hp=Math.max(0,s.hp-raw),enemyHp=Math.max(0,s.enemyHp-resolved.selfDamage)
  const combatRoll:CombatRoll={attacker:'enemy',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage:raw,selfDamage:resolved.selfDamage,shieldBlocked:blocked}

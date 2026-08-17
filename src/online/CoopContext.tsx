@@ -2,8 +2,8 @@ import React from 'react'
 import { resolveCombatRoll, summonBossMinions } from '../store/game'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
 type CoopDestinationKind='encounter'|'subregionBoss'|'regionBoss'
-type CoopVitals={hp:number;maxHp:number;level:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean}
-type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;selectDestination:(regionId:string,subregionId:string,kind?:CoopDestinationKind)=>Promise<void>;confirmTravel:(enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopDefend:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
+type CoopVitals={hp:number;maxHp:number;level:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean}
+type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;selectDestination:(regionId:string,subregionId:string,kind?:CoopDestinationKind)=>Promise<void>;confirmTravel:(enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopDefend:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
 const CoopContext=React.createContext<CoopContextValue|null>(null),ROOM_KEY='bangalores-coop-room-id'
 const shuffled=(values:string[])=>{const result=[...values];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}return result}
 const nextInitiative=(battle:any)=>{const order=Array.isArray(battle.initiativeOrder)?battle.initiativeOrder:[],nextIndex=(Number(battle.initiativeIndex??0)+1)%Math.max(1,order.length),round=nextIndex===0?Number(battle.round??1)+1:Number(battle.round??1);return{activeUserId:order[nextIndex],initiativeIndex:nextIndex,round}}
@@ -21,7 +21,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
  const publishProgress=async(progress:Record<string,number>,vitals:CoopVitals)=>{if(!roomRef.current)return;try{await updateState(current=>({...current.shared_state,memberProgress:{...((current.shared_state.memberProgress as Record<string,unknown>)??{}),[userId]:progress},memberVitals:{...((current.shared_state.memberVitals as Record<string,unknown>)??{}),[userId]:vitals}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível sincronizar o progresso da campanha.')}}
  const selectDestination=async(regionId:string,subregionId:string,kind:CoopDestinationKind='encounter')=>{if(roomRef.current?.host_id!==userId)return;setBusy(true);try{await updateState(current=>({...current.shared_state,destination:{regionId,subregionId,kind,selectedBy:userId,selectedAt:new Date().toISOString()},travelAcceptedBy:[],battle:undefined,rewardRule:{type:'damage_proportional',formula:'player_damage / group_damage'}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível selecionar o destino.')}finally{setBusy(false)}}
  const confirmTravel=async(enemy?:Record<string,unknown>)=>{setBusy(true);try{await updateState(current=>{const accepted=[...new Set([...(Array.isArray(current.shared_state.travelAcceptedBy)?current.shared_state.travelAcceptedBy as string[]:[]),userId])],allAccepted=membersRef.current.length>=2&&membersRef.current.every(member=>accepted.includes(member.user_id)),enemyHp=Number((enemy as any)?.vida??0),initiativeOrder=shuffled([...membersRef.current.map(member=>member.user_id),'enemy']),activeUserId=initiativeOrder[0],initiativeNames=initiativeOrder.map(id=>id==='enemy'?String((enemy as any)?.nome??'Inimigo'):membersRef.current.find(member=>member.user_id===id)?.display_name??'Aventureiro');return{...current.shared_state,travelAcceptedBy:accepted,...(allAccepted?{battle:{id:`coop_${Date.now()}`,status:'playing',subregionId:(current.shared_state.destination as any)?.subregionId,startedAt:new Date().toISOString(),enemy,enemyHp,combatMinions:[],damageByPlayer:{},initiativeOrder,initiativeNames,initiativeIndex:0,activeUserId,turn:1,round:1,log:[`Iniciativa sorteada: ${initiativeNames.join(' → ')}.`]}}:{})}})}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível confirmar a viagem.')}finally{setBusy(false)}}
- const coopAttack=async(attackBase:number,defenseBase:number,rollBonus=0,critBoost=false,healChance=0,healAmount=0,label?:string,targetMinionId?:string,forceCrit=false)=>{try{await updateState(current=>{
+ const coopAttack=async(attackBase:number,defenseBase:number,rollBonus=0,critBoost=false,healChance=0,healAmount=0,label?:string,targetMinionId?:string,forceCrit=false,critChancePct=0,critDamageBonusPct=0)=>{try{await updateState(current=>{
   const battle=current.shared_state.battle as any
   if(!battle||battle.status!=='playing'||battle.activeUserId!==userId)return current.shared_state
   const group=battle.groupBuff??{},personal=battle.playerBuffs?.[userId]??{}
@@ -30,14 +30,16 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const target=targetMinionId?minions.find(m=>m.id===targetMinionId&&m.hp>0):undefined
   const totalRollBonus=Number(group.roll??0)+Number(personal.roll??0)+Number(personal.nextRoll??0)+rollBonus
   const totalCritBoost=Boolean(group.critBoost)||critBoost
-  const naturalAttackRoll=forceCrit?6:1+Math.floor(Math.random()*6)
-  const attackRoll=forceCrit?6:Math.min(6,naturalAttackRoll+totalRollBonus+(totalCritBoost&&naturalAttackRoll===5?1:0))
+  // Crítico forjado é um proc independente da forja (não consome Fervor, ao contrário de forceCrit).
+  const forgedCrit=!forceCrit&&critChancePct>0&&Math.random()<critChancePct
+  const naturalAttackRoll=forceCrit||forgedCrit?6:1+Math.floor(Math.random()*6)
+  const attackRoll=forceCrit||forgedCrit?6:Math.min(6,naturalAttackRoll+totalRollBonus+(totalCritBoost&&naturalAttackRoll===5?1:0))
   const defenseRoll=1+Math.floor(Math.random()*6)
   const buffedAttack=Math.ceil(attackBase*(1+Number(group.attackPct??0)+Number(personal.attackPct??0)))
   // Reaproveita a mesma resolução de dado do modo solo (game.ts) em vez de uma fórmula
   // paralela: antes o crítico e a defesa perfeita do coop tinham magnitude bem diferente
   // do solo, e a falha crítica não causava autodano nenhum no herói.
-  const{damage,selfDamage}=resolveCombatRoll(buffedAttack,target?0:defenseBase,attackRoll,defenseRoll)
+  const{damage,selfDamage}=resolveCombatRoll(buffedAttack,target?0:defenseBase,attackRoll,defenseRoll,critDamageBonusPct)
   const foeName=target?String(target.nome):String(battle.enemy?.nome??'o inimigo')
   let enemyHp=Number(battle.enemyHp??0),combatMinions=minions,enemy=battle.enemy,actual=0,felled=false,phased=false
   if(target){
@@ -121,7 +123,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const defenseRoll=Math.min(6,naturalDefenseRoll+Number(battle.groupBuff?.roll??0)+Number(targetVitals.rollBonus??0)+(critDefenseBoost?1:0))
    const defensePct=Number(battle.groupBuff?.defensePct??0)+Number(targetBuffs.defensePct??0)
    const defenseBase=Math.ceil(Number(targetVitals.defense??0)*(1+defensePct))+(targetBuffs.braced?2:0)
-   const rogueDodge=(target.hero_id==='cacadora'||target.hero_id==='cacador')&&Math.random()<.2
+   const rogueDodge=((target.hero_id==='cacadora'||target.hero_id==='cacador')&&Math.random()<.2)||(Boolean(targetVitals.dodgeBoost)&&Math.random()<.05)
    const resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
    const rawDamage=rogueDodge?0:resolved.damage
    const shieldBlocked=Math.min(Number(targetVitals.shield??0),rawDamage)

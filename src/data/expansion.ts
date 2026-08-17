@@ -17,8 +17,12 @@ export const FORGE_GEMS=[
  {id:'esmeralda_vital',nome:'Esmeralda Vital',stat:'vida' as const,value:4,texto:'+4 de Vida'},
  {id:'ametista_arcana',nome:'Ametista Arcana',stat:'rolagem' as const,value:1,texto:'+1 na primeira rolagem'}
 ] as const
-export type ForgeEffect='critico'|'defesa_perfeita'|'sorte'
+export type ForgeEffect='critico'|'defesa_perfeita'|'sorte'|'critico_forjado'|'esquiva_forjada'|'cura_forjada'|'dano_critico_bonus'|'cura_bonus'
 export type ForgeAttribute='ataque'|'defesa'|'vida'
+export type ForgeBonus='critico_forjado'|'esquiva_forjada'|'cura_forjada'|'dano_critico_bonus'|'cura_bonus'
+export type ForgeChoice=ForgeAttribute|ForgeBonus
+export const FORGE_BONUS_MATERIAL:Record<ForgeBonus,string>={critico_forjado:'rubi_forja',dano_critico_bonus:'rubi_forja',esquiva_forjada:'safira_guardia',cura_forjada:'esmeralda_vital',cura_bonus:'esmeralda_vital'}
+export const FORGE_BONUS_LABELS:Record<ForgeBonus,string>={critico_forjado:'5% de crítico',esquiva_forjada:'5% de esquiva',cura_forjada:'5% de cura',dano_critico_bonus:'+10% dano crítico',cura_bonus:'+10% de cura'}
 export type ForgeRecipe={id:string;nome:string;equipmentId:string;raridade:string;materials:Record<string,number>;effect?:ForgeEffect;effectText?:string;attributeChoice?:boolean}
 // Receitas artesanais originais, preservadas com seus materiais e efeitos únicos.
 // O catálogo completo (uma receita por equipamento) é montado em ../data/forgeRecipes.ts,
