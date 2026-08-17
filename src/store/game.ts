@@ -227,6 +227,15 @@ const EVENT_CHAINS=[
 function nextStoryEvent(s:GameState){for(const chain of EVENT_CHAINS){for(let i=1;i<chain.length;i++){if(s.storyFlags.includes(chain[i-1])&&!s.storyFlags.includes(chain[i])){const next=EVENTS.find(e=>e.nome===chain[i]);if(next)return next}}}return undefined}
 function equipmentSetCounts(s:GameState){const names=Object.values(s.equipped).map(id=>eqById(id)?.nome.toLocaleLowerCase('pt-BR')??'');return{lua:names.filter(n=>/lua|lunar|lunargenta|abdendriel/.test(n)).length,cinzas:names.filter(n=>/cinza|dragão|escarlate/.test(n)).length,khar:names.filter(n=>/khar|runa|bronze|kholgard/.test(n)).length,eclipse:names.filter(n=>/eclipse|sombr|malgor/.test(n)).length}}
 function hasCraftedEffect(s:GameState,effect:ForgeEffect){return Object.values(s.equipped).some(id=>Boolean(id)&&s.craftedEffects?.[id!]===effect)}
+const RARITY_TIER:Record<Rarity,number>={comum:0,incomum:1,raro:2,epico:3,lendario:4,mitico:5,heroico:6}
+function druidHealProc(s:GameState){
+ if(s.heroId!=='druida')return{chance:0,amount:0}
+ const items=[eqById(s.equipped.mao_direita),eqById(s.equipped.mao_esquerda)].filter((e):e is Equipment=>Boolean(e&&(e.tipoEquipamento==='cajado_natureza'||e.tipoEquipamento==='pergaminho')))
+ if(!items.length)return{chance:0,amount:0}
+ let chance=0,amount=0
+ for(const item of items){const tier=RARITY_TIER[item.raridade??'comum']??0,level=item.nivelMinimo??1;chance+=.05+tier*.025+level*.005;amount+=1+tier+Math.floor(level/4)}
+ return{chance:Math.min(.45,chance),amount:Math.max(1,amount)}
+}
 export function equipmentSocketCount(e:Equipment){const rarity=e.raridade??'comum';return rarity==='mitico'||rarity==='heroico'?3:rarity==='lendario'||rarity==='epico'?2:rarity==='raro'||rarity==='incomum'?1:0}
 export function dismantlePreview(e:Equipment){const tier=Math.max(1,Math.ceil(equipmentRequiredLevel(e)/4)),physical=Math.max(1,tier+(e.slot==='mao_direita'||e.slot==='mao_esquerda'?1:0)),magical=Math.max(0,(e.raridade==='comum'?0:1)+(e.raridade==='epico'||e.raridade==='lendario'||e.raridade==='mitico'?1:0)),gemChance=Math.min(.85,.08+tier*.05+(equipmentSocketCount(e)*.12));return{physical,magical,gemChance}}
 export function forgeLevelInfo(xp:number){let level=1,spent=0,next=40;while(level<10&&xp>=spent+next){spent+=next;level++;next=40+level*25}return{level,progress:xp-spent,next,max:level>=10}}
@@ -473,10 +482,12 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const attackBase=attackValue(s)+bonus,defenseBase=Math.max(0,(s.enemy.dificuldade??1)-2),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.heroRollBonus+(s.classRollBonus??0),attackRoll=Math.min(6,naturalAttackRoll+attackBonus+((hasCraftedEffect(s,'critico')||s.groupCriticalBoost)&&naturalAttackRoll===5?1:0)),defenseRoll=Math.floor(Math.random()*6)+1
  const {damage,selfDamage}=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
  const combatRoll:CombatRoll={attacker:'hero',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage}
- set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus})
+ const healProc=druidHealProc(s),healed=Math.random()<healProc.chance,healAmount=healed?Math.max(0,Math.min(healProc.amount,maxHp(s)-s.hp)):0
+ set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus,hp:healAmount>0?s.hp+healAmount:s.hp})
+ if(healAmount>0)triggerSupportFx(set,get,'cura')
  const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=`${heroApproachPhrase(s.heroId,weaponName)}, ${attackTierPhrase(attackRoll)}`
  const defenseNarration=selfDamage?'':` ${s.enemy.nome} ${defenseTierPhrase(defenseRoll)}.`
- addLog(set,`${heroName} ${narration}.${defenseNarration} ${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}`)
+ addLog(set,`${heroName} ${narration}.${defenseNarration} ${label}: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). ${selfDamage?`Recebeu ${selfDamage} de dano.`:`Causou ${damage} de dano.`}${attackRoll===2?' Inimigo recebe +1 na próxima rolagem.':''}${healAmount>0?` A energia natural do equipamento pulsa e recupera ${healAmount} de vida.`:''}`)
  setTimeout(()=>{
   const now=get() as GameState,en=now.enemy
   if(!en){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
