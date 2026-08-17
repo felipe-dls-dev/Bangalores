@@ -89,7 +89,7 @@ const starter: Record<string,{equipped:Partial<Record<Slot,string>>, items:Recor
   guardiao: { equipped:{mao_direita:'machado_bronze',mao_esquerda:'pesado_bronze',peitoral:'armor_pesada_khardur',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:10 },
   arcanista: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:20 },
   cacadora: { equipped:{mao_direita:'facas_predador',peitoral:'traje_raposa',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:18 }
-  ,druida: { equipped:{mao_direita:'druida_arma_broto_lunargenta',mao_esquerda:'druida_mao_esquerda_broto_lunargenta',peitoral:'druida_peitoral_broto_lunargenta',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:16 }
+  ,druida: { equipped:{mao_direita:'druida_arma_broto_de_abdendriel',mao_esquerda:'druida_mao_esquerda_broto_de_abdendriel',peitoral:'druida_peitoral_broto_de_abdendriel',bolsa:'mochila_pequena_8'}, items:{pocao_cura:2}, gold:16 }
   ,cacador: { equipped:{mao_direita:'cacador_arma_vigia_das_cinzas',mao_esquerda:'cacador_mao_esquerda_vigia_das_cinzas',peitoral:'cacador_peitoral_vigia_das_cinzas',bolsa:'mochila_pequena_8'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:17 }
 }
 
