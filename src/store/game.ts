@@ -21,7 +21,7 @@ import { STEELMERE_SUBREGIONS } from '../data/subregioesSteelmere'
 import monsterArt from '../data/monsterArt.json'
 import eventArt from '../data/eventArt.json'
 import bossArt from '../data/bossArt.json'
-import { DIFFICULTIES, FORGE_GEMS, REGION_MATERIALS, STORY_CHAPTERS, TALENTS, type DifficultyMode, type ForgeEffect } from '../data/expansion'
+import { DIFFICULTIES, FORGE_GEMS, REGION_MATERIALS, STORY_CHAPTERS, TALENTS, type DifficultyMode, type ForgeAttribute, type ForgeEffect } from '../data/expansion'
 import { buildForgeRecipes } from '../data/forgeRecipes'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard } from '../types'
 
@@ -217,7 +217,7 @@ interface GameState {
  buyConsumable:(id:string)=>void; buyEquipment:(id:string)=>void; sellConsumable:(id:string)=>void; sellEquipment:(id:string)=>void;
  equip:(id:string)=>void; unequip:(slot:Slot)=>void; addAttribute:(k:'vida'|'ataque'|'defesa')=>void; setSelectedGallery:(n:number)=>void; toggleShopMode:()=>void; resolveEvent:(accept:boolean,approach?:'class')=>void; finishEvent:()=>void; finishLoot:()=>void; clearSave:()=>void;
  addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>void; removeCustomCard:(id:string)=>void;
- setDifficulty:(mode:DifficultyMode)=>void;unlockTalent:(id:string)=>void;craftEquipment:(recipeId?:any)=>void;upgradeEquipment:(id:string)=>void;dismantleEquipment:(id:string)=>void;socketGem:(equipmentId:string,gemId:string)=>void;removeGem:(equipmentId:string,index:number)=>void;startDungeon:()=>void;leaveDungeon:()=>void;startRevenge:(subregionId:string)=>void;chooseStory:(choiceId:string)=>void;
+ setDifficulty:(mode:DifficultyMode)=>void;unlockTalent:(id:string)=>void;craftEquipment:(recipeId?:string,attribute?:ForgeAttribute)=>void;upgradeEquipment:(id:string)=>void;dismantleEquipment:(id:string)=>void;socketGem:(equipmentId:string,gemId:string)=>void;removeGem:(equipmentId:string,index:number)=>void;startDungeon:()=>void;leaveDungeon:()=>void;startRevenge:(subregionId:string)=>void;chooseStory:(choiceId:string)=>void;
 }
 
 const EVENT_CHAINS=[
@@ -340,7 +340,27 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   removeCustomCard:(id:string)=>{const s=get();set({customCards:s.customCards.filter((c:CustomCard)=>c.id!==id)})}
   ,setDifficulty:(difficultyMode:DifficultyMode)=>set({difficultyMode})
   ,unlockTalent:(id:string)=>{const s=get(),talent=TALENTS.find(t=>t.id===id),level=deriveLevel(s.xp).lvl;if(!talent||level<talent.level||s.talents.includes(id))return;set({talents:[...s.talents,id]})}
-  ,craftEquipment:(recipeId?:string)=>{const s=get(),recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&eqById(recipe.equipmentId),required=recipe?forgeRecipeLevel(recipe.id):99,forgeXp=s.forgeXp??0;if(!recipe||!item||forgeLevelInfo(forgeXp).level<required||s.equipmentBag.length>=equipmentBagCapacity(s)||!equipmentClassAllowed(item,s.heroId)||Object.entries(recipe.materials).some(([id,qty])=>(s.materials[id]??0)<qty))return;const materials={...s.materials},success=Math.random()<forgeSuccessChance(recipe.id,forgeXp),xpGain=success?18+required*7:8+required*3;for(const [id,qty] of Object.entries(recipe.materials))materials[id]-=success?qty:Math.max(1,Math.ceil(qty/2));set({materials,forgeXp:forgeXp+xpGain,forgeAttempts:(s.forgeAttempts??0)+1,forgeSuccesses:(s.forgeSuccesses??0)+(success?1:0),...(success?{equipmentBag:[...s.equipmentBag,item.id],craftedEffects:recipe.effect?{...s.craftedEffects,[item.id]:recipe.effect}:s.craftedEffects}:{}),explorationNote:success?`Forja bem-sucedida: ${recipe.nome}. +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`})}
+  ,craftEquipment:(recipeId?:string,attribute?:ForgeAttribute)=>{
+   const s=get(),recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&eqById(recipe.equipmentId),required=recipe?forgeRecipeLevel(recipe.id):99,forgeXp=s.forgeXp??0
+   const gem=attribute&&recipe?.attributeChoice?FORGE_GEMS.find(g=>g.stat===attribute):undefined
+   if(attribute&&!gem)return
+   const cost=gem?{...recipe!.materials,[gem.id]:(recipe!.materials[gem.id]??0)+1}:recipe?.materials
+   if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||s.equipmentBag.length>=equipmentBagCapacity(s)||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
+   const materials={...s.materials},success=Math.random()<forgeSuccessChance(recipe.id,forgeXp),xpGain=success?18+required*7:8+required*3
+   for(const [id,qty] of Object.entries(cost))materials[id]-=success?qty:Math.max(1,Math.ceil(qty/2))
+   set({
+    materials,
+    forgeXp:forgeXp+xpGain,
+    forgeAttempts:(s.forgeAttempts??0)+1,
+    forgeSuccesses:(s.forgeSuccesses??0)+(success?1:0),
+    ...(success?{
+     equipmentBag:[...s.equipmentBag,item.id],
+     craftedEffects:recipe.effect?{...s.craftedEffects,[item.id]:recipe.effect}:s.craftedEffects,
+     ...(gem?{equipmentGems:{...s.equipmentGems,[item.id]:[gem.id]}}:{})
+    }:{}),
+    explorationNote:success?`Forja bem-sucedida: ${recipe.nome}${gem?` — ${gem.texto} embutido no item`:''}. +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`
+   })
+  }
   ,upgradeEquipment:(id:string)=>{const s=get(),item=eqById(id),level=s.equipmentUpgrades[id]??0,cost=10+(level+1)*10;if(!item||level>=3||s.gold<cost)return;set({gold:s.gold-cost,equipmentUpgrades:{...s.equipmentUpgrades,[id]:level+1},explorationNote:`${item.nome} aprimorado para +${level+1}.`})}
   ,dismantleEquipment:(id:string)=>{const s=get(),index=s.equipmentBag.indexOf(id),item=eqById(id);if(index<0||!item)return;const yieldInfo=dismantlePreview(item),materials={...s.materials,fragmento_fisico:(s.materials.fragmento_fisico??0)+yieldInfo.physical,essencia_magica:(s.materials.essencia_magica??0)+yieldInfo.magical},installed=s.equipmentGems[id]??[];for(const gem of installed)materials[gem]=(materials[gem]??0)+1;let gemName='';if(Math.random()<yieldInfo.gemChance){const gem=FORGE_GEMS[Math.floor(Math.random()*FORGE_GEMS.length)];materials[gem.id]=(materials[gem.id]??0)+1;gemName=` • Pedra encontrada: ${gem.nome}`};const bag=[...s.equipmentBag];bag.splice(index,1);const equipmentGems={...s.equipmentGems};delete equipmentGems[id];set({equipmentBag:bag,equipmentGems,materials,explorationNote:`${item.nome} desmontado: +${yieldInfo.physical} fragmentos físicos, +${yieldInfo.magical} essências mágicas${gemName}.`})}
   ,socketGem:(equipmentId:string,gemId:string)=>{const s=get(),item=eqById(equipmentId),installed=s.equipmentGems[equipmentId]??[];if(!item||!Object.values(s.equipped).includes(equipmentId)||installed.length>=equipmentSocketCount(item)||(s.materials[gemId]??0)<=0||!FORGE_GEMS.some(g=>g.id===gemId))return;set({materials:{...s.materials,[gemId]:s.materials[gemId]-1},equipmentGems:{...s.equipmentGems,[equipmentId]:[...installed,gemId]},explorationNote:`Pedra instalada em ${item.nome}.`})}

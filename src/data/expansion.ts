@@ -18,7 +18,8 @@ export const FORGE_GEMS=[
  {id:'ametista_arcana',nome:'Ametista Arcana',stat:'rolagem' as const,value:1,texto:'+1 na primeira rolagem'}
 ] as const
 export type ForgeEffect='critico'|'defesa_perfeita'|'sorte'
-export type ForgeRecipe={id:string;nome:string;equipmentId:string;raridade:string;materials:Record<string,number>;effect?:ForgeEffect;effectText?:string}
+export type ForgeAttribute='ataque'|'defesa'|'vida'
+export type ForgeRecipe={id:string;nome:string;equipmentId:string;raridade:string;materials:Record<string,number>;effect?:ForgeEffect;effectText?:string;attributeChoice?:boolean}
 // Receitas artesanais originais, preservadas com seus materiais e efeitos únicos.
 // O catálogo completo (uma receita por equipamento) é montado em ../data/forgeRecipes.ts,
 // que mescla esta lista com receitas geradas a partir de src/store/game.ts's EQUIPMENT.
