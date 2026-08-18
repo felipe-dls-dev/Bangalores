@@ -435,6 +435,18 @@ function coopHealProc(g:any){
  const bonusMult=1+(hasCraftedEffect(g,'cura_bonus')?.1:0)
  return{chance:Math.min(1,druid.chance+forgedChance),amount:Math.round(Math.max(druid.amount,forgedAmount)*bonusMult)}
 }
+function CoopTeammatesRow({coop,battle}:{coop:any,battle:any}){
+ const teammates=coop.members.filter((member:any)=>member.user_id!==coop.userId)
+ if(!teammates.length)return null
+ const memberVitals=(coop.room?.shared_state?.memberVitals??{}) as Record<string,{hp?:number;maxHp?:number}>
+ return <div className="coop-teammates-row">{teammates.map((member:any)=>{
+  const hero=HEROES.find(x=>x.id===member.hero_id),vitals=memberVitals[member.user_id],hp=vitals?.hp??0,max=Math.max(1,vitals?.maxHp??1),pct=vitals?Math.max(0,Math.min(100,hp/max*100)):0,fallen=Boolean(vitals)&&hp<=0,active=battle?.activeUserId===member.user_id
+  return <article key={member.id} className={`coop-teammate-chip${active?' active':''}${fallen?' fallen':''}`} title={`${member.display_name} • ${hero?.nome??'Aventureiro'} • Vida ${hp}/${max}`}>
+   {hero&&<img src={assetUrl(cardArt(hero))} alt=""/>}
+   <div><strong>{member.display_name}</strong><i><b style={{width:`${pct}%`}}/></i><small>{vitals?`${hp}/${max}`:'—'}</small></div>
+  </article>
+ })}</div>
+}
 function CombatScreen(){
  const g=useGame(),coop=useCoop(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy,battle=coop.room?.shared_state?.battle as any,isCoop=Boolean(coop.room&&battle?.status==='playing'),myTurn=isCoop?battle.activeUserId===coop.userId:g.playerTurn
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
@@ -497,6 +509,7 @@ function CombatScreen(){
  return <div className="combat-page premium-combat combat-v033">
    <div className="combat-hero-area">
     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type}/>
+    {isCoop&&<CoopTeammatesRow coop={coop} battle={battle}/>}
    </div>
    <div className="combat-enemy-area">
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} attackCritical={currentAttackCritical}/>

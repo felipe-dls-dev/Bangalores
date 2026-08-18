@@ -79,7 +79,19 @@ body:has(.combat-v031){overflow:hidden}
  gap:9px;
  min-height:0;
 }
-.combat-hero-area{grid-area:hero;min-height:0}
+.combat-hero-area{grid-area:hero;min-height:0;position:relative}
+.coop-teammates-row{position:absolute;z-index:6;left:10px;top:10px;display:flex;flex-direction:column;gap:6px;max-width:150px}
+.coop-teammate-chip{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #5a3f20;border-radius:8px;background:#120806e8;box-shadow:0 4px 15px #000}
+.coop-teammate-chip img{width:30px;height:30px;flex:none;object-fit:cover;border:1px solid #6a4a24;border-radius:6px}
+.coop-teammate-chip>div{min-width:0;flex:1;display:grid;gap:2px}
+.coop-teammate-chip strong{font:700 .62rem Georgia,serif;color:#e8c983;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coop-teammate-chip i{display:block;height:5px;margin-top:1px;background:#240d0a;border-radius:5px;overflow:hidden}
+.coop-teammate-chip i b{display:block;height:100%;background:#5fae5a}
+.coop-teammate-chip small{font-size:.54rem;color:#b69a80}
+.coop-teammate-chip.active{border-color:#d7aa51;box-shadow:0 0 0 1px #d7aa51 inset,0 4px 15px #000}
+.coop-teammate-chip.fallen{opacity:.55}
+.coop-teammate-chip.fallen i b{background:#b74235}
+@media(max-width:1099px){.coop-teammates-row{flex-direction:row;flex-wrap:wrap;max-width:none;right:10px}}
 .combat-versus-area{grid-area:versus;min-height:0}
 .combat-enemy-area{grid-area:enemy;min-height:0}
 .combat-effects-area{grid-area:effects}
