@@ -4,7 +4,7 @@
     "nome": "Legionário do Pico de Ignaris",
     "vida": 18,
     "ataque": 4,
-    "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base e amedronta o inimigo (-1 em todas as rolagens dele nesta batalha).",
+    "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base e amedronta o inimigo (-1 em todas as rolagens dele), por até 3 turnos — e renova o sangramento ativo do inimigo.",
     "imagem": "assets/heroes/guerreiro-eldravar-v2.png",
     "arte": "assets/heroes/guerreiro-eldravar-v2.png",
     "raridade": "heroico"
@@ -24,7 +24,7 @@
     "nome": "Mago do Sol Negro",
     "vida": 13,
     "ataque": 6,
-    "habilidade": "Passivo: 50% de chance de melhorar ouro ou espólios. Ativo: +1 nos dados e +10% de Ataque e Defesa para todos os aliados.",
+    "habilidade": "Ativo: +1 nos dados e +10% de Ataque e Defesa para todos os aliados, por até 3 turnos.",
     "imagem": "assets/heroes/arcanista-conclave-v2.png",
     "arte": "assets/heroes/arcanista-conclave-v2.png",
     "raridade": "heroico"
@@ -44,7 +44,7 @@
     "nome": "Druida da Floresta de Abdendriel",
     "vida": 17,
     "ataque": 4,
-    "habilidade": "Passivo: 25% de chance de aplicar -1 ao próximo dado inimigo. Ativo: cura 30% da vida máxima do aliado mais ferido.",
+    "habilidade": "Passivo: 25% de chance de aplicar -1 ao próximo dado inimigo. Ativo: cura 30% da vida máxima do aliado mais ferido e remove seus efeitos de status negativos.",
     "imagem": "assets/heroes/druida-lunargenta.png",
     "arte": "assets/heroes/druida-lunargenta.png",
     "raridade": "heroico"
@@ -54,7 +54,7 @@
     "nome": "Caçador das Terras de Morvath",
     "vida": 16,
     "ataque": 5,
-    "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: amplia a faixa crítica do grupo para resultados 5 e 6.",
+    "habilidade": "Passivo: 20% de chance de desviar de ataques. Ativo: amplia a faixa crítica do grupo para resultados 5 e 6, por 2 turnos.",
     "imagem": "assets/heroes/cacador-terras-mortas.png",
     "arte": "assets/heroes/cacador-terras-mortas.png",
     "raridade": "heroico"
