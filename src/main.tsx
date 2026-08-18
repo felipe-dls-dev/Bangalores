@@ -518,6 +518,19 @@ function CombatScreen(){
  const attackerWeaponAnim=isCoop&&attackerUserId&&attackerUserId!==coop.userId?(coop.room?.shared_state?.memberVitals as Record<string,{weaponAnim?:AttackAnimType}>|undefined)?.[attackerUserId]?.weaponAnim:undefined
  const currentAttackType=attacker==='hero'?(attackerWeaponAnim??heroWeaponAnimationType(g.equipped.mao_direita)):attacker==='enemy'?enemyWeaponAnimationType(e):undefined
  const currentAttackCritical=g.combatRoll?.attackRoll===6
+ // No coop, o painel de dados usava só um resumo em texto (battle.lastRoll), nunca a animação
+ // rica de CombatDiceRoll/FleeDiceRoll que o modo solo tem — mesmo já existindo dados suficientes
+ // no estado compartilhado para isso. Aqui a gente prioriza a animação sempre que possível.
+ const coopDiceRoll=isCoop&&sharedRoll&&(sharedRoll.attacker==='hero'||sharedRoll.attacker==='enemy')?sharedRoll:undefined
+ const idleDice=<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque, defesa e fuga aparecerão aqui.</small></motion.div>
+ const diceNode=isCoop
+  ?(battle.fleeRoll?<FleeDiceRoll key={`coop-flee-${battle.turn}`} roll={battle.fleeRoll}/>
+    :coopDiceRoll?<CombatDiceRoll key={`coop-${battle.turn}-${coopDiceRoll.attacker}`} roll={coopDiceRoll}/>
+    :sharedRoll?<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>{sharedRoll.actor}: {sharedRoll.label??'ação de equipe'}</strong><small>{sharedRoll.effect??`Dano causado: ${sharedRoll.damage??0}`}</small></motion.div>
+    :idleDice)
+  :(g.fleeRoll&&g.animating?<FleeDiceRoll key={`flee-${g.combatTurn}-${g.fleeRoll.roll}`} roll={g.fleeRoll}/>
+    :g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>
+    :idleDice)
  return <div className="combat-page premium-combat combat-v033">
    <div className="combat-hero-area">
     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type}/>
@@ -552,7 +565,7 @@ function CombatScreen(){
    </Panel>
 
    <Panel title="Rolagem dos dados" className="combat-dice-panel combat-dice-area">
-    <AnimatePresence mode="wait">{sharedRoll?<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>{sharedRoll.actor}: ataque {sharedRoll.attackRoll} × defesa {sharedRoll.defenseRoll}</strong><small>Dano causado: {sharedRoll.damage}</small></motion.div>:g.fleeRoll&&g.animating?<FleeDiceRoll key={`flee-${g.combatTurn}-${g.fleeRoll.roll}`} roll={g.fleeRoll}/>:g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>:<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque, defesa e fuga aparecerão aqui.</small></motion.div>}</AnimatePresence>
+    <AnimatePresence mode="wait">{diceNode}</AnimatePresence>
    </Panel>
 
    <Panel className="combat-consumables-panel combat-consumables-area">

@@ -4,7 +4,7 @@
     "nome": "Legionário do Pico de Ignaris",
     "vida": 18,
     "ataque": 4,
-    "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base.",
+    "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base e amedronta o inimigo (-1 em todas as rolagens dele nesta batalha).",
     "imagem": "assets/heroes/guerreiro-eldravar-v2.png",
     "arte": "assets/heroes/guerreiro-eldravar-v2.png",
     "raridade": "heroico"
