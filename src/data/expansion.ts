@@ -2,13 +2,20 @@ export type DifficultyMode='aventura'|'veterano'|'lendario'
 export type Element='fisico'|'fogo'|'gelo'|'natureza'|'sombra'|'luz'|'arcano'
 export const DIFFICULTIES={aventura:{nome:'Aventura',enemy:.88,reward:1},veterano:{nome:'Veterano',enemy:1,reward:1.12},lendario:{nome:'Lendário',enemy:1.22,reward:1.32}} as const
 export const CLASS_IDENTITIES={guerreiro:{nome:'Mestre de Armas',texto:'Combos, contra-ataques e dano constante.',elemento:'fisico'},guardiao:{nome:'Bastião',texto:'Escudos, redução de dano e retaliação.',elemento:'luz'},cacadora:{nome:'Sombra Veloz',texto:'Críticos, veneno, esquiva e saque.',elemento:'natureza'},arcanista:{nome:'Tecelão Arcano',texto:'Elementos, controle e manipulação dos dados.',elemento:'arcano'}} as const
+// Elemento de ataque/resistência associado a cada classe, usado para marcar armas e
+// equipamentos de defesa gerados por classe (offhands, headgear, armorSets, legwear,
+// boots, newClassEquipment) com o novo sistema elemental sem precisar editar item a item.
+export const CLASS_ELEMENT:Record<'guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida'|'cacador',Element>={guerreiro:'fisico',guardiao:'luz',cacadora:'natureza',arcanista:'arcano',druida:'natureza',cacador:'sombra'}
 export const TALENTS=[
  {id:'vigor',nome:'Vigor do Aventureiro',texto:'+5 de vida máxima.',level:3},{id:'precisao',nome:'Precisão Mortal',texto:'+1 de ataque.',level:5},{id:'muralha',nome:'Muralha Interior',texto:'+1 de defesa.',level:7},
  {id:'alquimista',nome:'Alquimista de Campo',texto:'Consumíveis restauram ou concedem +1 adicional.',level:9},{id:'cacador',nome:'Caçador de Tiranos',texto:'+2 de dano contra chefes.',level:11},{id:'destino',nome:'Senhor do Destino',texto:'+1 na primeira rolagem de cada combate.',level:14}
 ] as const
 export const REGION_MATERIALS:Record<string,{id:string;nome:string;elemento:Element}>={campos_dourados:{id:'fibra_dourada',nome:'Fibra Dourada',elemento:'fisico'},floresta_lunargenta:{id:'seiva_lunar',nome:'Seiva Lunar',elemento:'natureza'},montanhas_cinzentas:{id:'minerio_cinzento',nome:'Minério Cinzento',elemento:'gelo'},pico_escarlate:{id:'escama_rubra',nome:'Escama Rubra',elemento:'fogo'},terras_mortas:{id:'essencia_sombria',nome:'Essência Sombria',elemento:'sombra'},khar_dur:{id:'runa_ana',nome:'Runa Anã',elemento:'luz'},coracao_eclipse:{id:'fragmento_eclipse',nome:'Fragmento do Sol Negro',elemento:'arcano'}}
 export const SET_BONUSES=[{key:'lua',nome:'Regalia de Abdendriel',two:'+1 defesa',four:'+4 vida'},{key:'cinza',nome:'Arsenal das Cinzas',two:'+1 ataque',four:'primeiro ataque causa +2 de dano'},{key:'kh ar|khar|runa|bronze',nome:'Legado de Kholgard',two:'+3 vida',four:'+3 escudo inicial'},{key:'eclipse|véu|vazio',nome:'Vestes do Sol Negro',two:'+1 ataque',four:'+1 em rolagens contra chefes'}]
-export const STATUS_INFO=[['veneno','Sofre dano ao fim do turno.'],['queimadura','Sofre dano de fogo por três turnos.'],['sangramento','Ataques físicos ampliam o dano.'],['atordoamento','Perde a próxima ação.'],['congelamento','Ataque reduzido temporariamente.'],['maldição','Rolagens recebem penalidade.'],['regeneração','Recupera vida por turno.']] as const
+// Cada condição é aplicada por acertos do elemento correspondente (natureza, fogo, físico,
+// gelo, sombra, arcano) e pode ser bloqueada por resistência a esse mesmo elemento no
+// equipamento de defesa.
+export const STATUS_INFO=[['Envenenado (natureza)','Sofre dano ao fim de cada turno por algumas rodadas.'],['Pegando fogo (fogo)','Sofre dano ao fim de cada turno por algumas rodadas.'],['Sangrando (físico)','Sofre dano ao fim de cada turno por algumas rodadas.'],['Congelado (gelo)','Penaliza todas as rolagens de ataque e defesa do afetado por algumas rodadas.'],['Agarrado (sombra)','Penaliza todas as rolagens de ataque e defesa do afetado por algumas rodadas.'],['Atordoado (arcano)','Cancela a próxima defesa do afetado ou faz com que perca a próxima ação — o que ocorrer primeiro.']] as const
 export const ELEMENTS:Element[]=['fisico','fogo','gelo','natureza','sombra','luz','arcano']
 export const FORGE_MATERIALS=[{id:'fragmento_fisico',nome:'Fragmento Físico',texto:'Metal, couro e madeira recuperados.'},{id:'essencia_magica',nome:'Essência Mágica',texto:'Energia extraída de itens encantados.'}] as const
 export const FORGE_GEMS=[
