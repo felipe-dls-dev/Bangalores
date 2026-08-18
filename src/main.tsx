@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane, CheckCircle2, XCircle } from 'lucide-react'
-import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, type AttackAnimType } from './store/game'
+import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, type AttackAnimType } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
@@ -467,6 +467,24 @@ function CombatScreen(){
  const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0;void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct);if(g.heroRollBonus)useGame.setState({heroRollBonus:0})}
  const performAttack=(targetMinionId?:string)=>{if(isCoop)performCoopAttack(targetMinionId);else g.attack(targetMinionId)}
  const performDefend=()=>{if(isCoop)void coop.coopDefend();else g.defend()}
+ // useConsumable (game.ts) só entende o turno solo (s.playerTurn) e dispara o turno do
+ // inimigo local via enemyAfterDelay — no coop isso nunca avança (playerTurn não é usado)
+ // e corromperia o estado compartilhado, então aqui replicamos o efeito localmente e
+ // avançamos o turno pelo mesmo canal das outras ações cooperativas (coopAbility).
+ const performUseConsumable=(id:string)=>{
+  if(!isCoop){g.useConsumable(id);return}
+  if(!myTurn)return
+  const it=CONSUMABLES.find(x=>x.id===id)
+  if(!it||(g.inventory[id]??0)<=0)return
+  const inv={...g.inventory,[id]:(g.inventory[id]??0)-1};if(inv[id]<=0)delete inv[id]
+  let description=`${it.nome} utilizado`
+  if(it.tipo==='cura'){const healed=Math.min(it.valor,maxHp(g)-g.hp);useGame.setState({inventory:inv,hp:g.hp+healed});description=`recuperou ${healed} de vida`}
+  else if(it.tipo==='escudo'){useGame.setState({inventory:inv,shield:g.shield+it.valor});description=`+${it.valor} de escudo`}
+  else if(it.tipo==='vida_max'){const success=Math.random()<(LIFE_CHANCE[id]??.35);if(success){const newMax=maxHp(g)+it.valor,newHp=id==='elixir_fenix'?newMax:Math.min(newMax,g.hp+it.valor);useGame.setState({inventory:inv,attr:{...g.attr,vida:g.attr.vida+it.valor},hp:newHp});description=`vida máxima aumentada permanentemente em ${it.valor}`}else{useGame.setState({inventory:inv});description='a tentativa falhou e a vida máxima não aumentou'}}
+  else if(it.tipo==='regen_boost'){useGame.setState({inventory:inv});description='cura acelerada ativada'}
+  else{useGame.setState({inventory:inv,pendingAttackBonus:g.pendingAttackBonus+Math.max(1,it.valor)});description=`+${it.valor} de ataque no próximo ataque`}
+  void coop.coopAbility(it.nome,0,description)
+ }
  const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0;void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct)}else g.useFervor()}
  const attacker=g.combatRoll?.attacker
  const currentAttackType=attacker==='hero'?heroWeaponAnimationType(g.equipped.mao_direita):attacker==='enemy'?enemyWeaponAnimationType(e):undefined
@@ -510,7 +528,7 @@ function CombatScreen(){
    <Panel className="combat-consumables-panel combat-consumables-area">
       <div className="consumables-head"><span>ITENS CONSUMÍVEIS</span><small>{consumables.length?`${consumables.length} tipos disponíveis`:'Nenhum item disponível'}</small></div>
       <div className="combat-consumables">
-       {consumables.length?consumables.map(({item,qty})=><article key={item.id} className={`combat-consumable rarity-${cardRarity(item,'Consumível')}`} title={item.descricao}><span className="consumable-qty">{qty}</span><div className="combat-consumable-art"><ArtPreview image={cardArt(item)} name={item.nome} text={item.descricao} stats={`${item.tipo} • Valor ${item.valor} • Quantidade ${qty}`}/></div><strong>{item.nome}</strong><small>{item.descricao}</small><button disabled={disabled} onClick={()=>g.useConsumable(item.id)}>USAR</button></article>):<div className="consumables-empty"><FlaskConical/><span>Seus consumíveis aparecerão aqui durante o combate.</span></div>}
+       {consumables.length?consumables.map(({item,qty})=><article key={item.id} className={`combat-consumable rarity-${cardRarity(item,'Consumível')}`} title={item.descricao}><span className="consumable-qty">{qty}</span><div className="combat-consumable-art"><ArtPreview image={cardArt(item)} name={item.nome} text={item.descricao} stats={`${item.tipo} • Valor ${item.valor} • Quantidade ${qty}`}/></div><strong>{item.nome}</strong><small>{item.descricao}</small><button disabled={disabled} onClick={()=>performUseConsumable(item.id)}>USAR</button></article>):<div className="consumables-empty"><FlaskConical/><span>Seus consumíveis aparecerão aqui durante o combate.</span></div>}
       </div>
    </Panel>
 
