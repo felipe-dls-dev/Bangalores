@@ -453,13 +453,17 @@ function CombatScreen(){
  const defeated=g.hp<=0,disabled=!myTurn||g.animating||defeated,sharedRoll=isCoop?battle.lastRoll:undefined
  const consumables=(Object.entries(g.inventory) as [string,number][]).filter(([,qty])=>qty>0).map(([id,qty])=>({item:CONSUMABLES.find(x=>x.id===id),qty})).filter(x=>x.item).slice(0,6) as {item:(typeof CONSUMABLES)[number],qty:number}[]
  const itemAbilities=(Object.values(g.equipped) as (string|undefined)[]).map(id=>EQUIPMENT.find(item=>item.id===id)).filter((item):item is (typeof EQUIPMENT)[number]=>Boolean(item?.habilidade&&item.slot!=='bolsa'))
- const useCoopHeroSkill=()=>{if(g.heroSkillUsed||!myTurn)return;
+ // No coop, cada jogador pode usar a habilidade do herói uma vez por integrante da sala
+ // (2 jogadores = 2 usos, 3 jogadores = 3 usos), em vez do limite único do modo solo.
+ const heroSkillLimit=isCoop?Math.max(1,coop.members.length):1
+ const heroSkillUses=g.heroSkillUses??0
+ const useCoopHeroSkill=()=>{if(heroSkillUses>=heroSkillLimit||!myTurn)return;
   // Coop combat math is driven entirely by the shared battle.playerBuffs/groupBuff/extraActions/tauntUserId
-  // (read in coopAttack/resolveEnemyTurn). Only heroSkillUsed needs to stay local (it just gates the button);
+  // (read in coopAttack/resolveEnemyTurn). Only heroSkillUses needs to stay local (it just gates the button);
   // mirroring solo's per-fight fields here too (combatAttackPct etc.) would double-apply the bonus once on
   // top of what coopAttack already adds from the shared state.
   const effect=g.heroId==='guardiao'?'GUARDIAN_TAUNT':g.heroId==='guerreiro'?'WARRIOR_BUFF':g.heroId==='cacadora'?'DOUBLE_ATTACK':g.heroId==='arcanista'?'ARCANE_GROUP_BUFF':g.heroId==='druida'?'DRUID_HEAL':'HUNTER_CRITICAL'
-  useGame.setState({heroSkillUsed:true})
+  useGame.setState({heroSkillUses:heroSkillUses+1})
   void coop.coopAbility(`Habilidade de ${h.nome}`,0,effect)}
  const useCoopItemSkill=()=>{if(g.itemSkillUsed||!myTurn)return;const item=itemAbilities[0];if(!item)return;const txt=item.habilidade.toLowerCase()
   if(txt.includes('escudo')){useGame.setState({shield:g.shield+3,itemSkillUsed:true});void coop.coopAbility(item.nome,0,'+3 de escudo');return}
@@ -531,7 +535,7 @@ function CombatScreen(){
       {defeated&&<p className="coop-defeated-notice">DERROTADO • Você não pode mais realizar ações nesta batalha. As penalidades serão aplicadas ao final.</p>}
       <div className="combat-actions-grid">
        <button className="attack-btn premium-action" disabled={disabled} onClick={()=>performAttack()}><Sword/>Atacar</button>
-       <button className="premium-action" disabled={disabled||g.heroSkillUsed} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}</button>
+       <button className="premium-action" disabled={disabled||heroSkillUses>=heroSkillLimit} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}{heroSkillLimit>1?` (${Math.min(heroSkillUses,heroSkillLimit)}/${heroSkillLimit})`:''}</button>
        <button className="premium-action" disabled={disabled||g.itemSkillUsed||!itemAbilities.length} onClick={()=>isCoop?useCoopItemSkill():g.itemSkill()}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={g.flee}><Footprints/>Tentar fugir</button>
        <button className="premium-action" disabled={disabled} title="Abre mão do ataque para reduzir o dano do próximo golpe do inimigo." onClick={performDefend}><ShieldHalf/>Postura defensiva</button>
