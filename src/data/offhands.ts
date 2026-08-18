@@ -1,9 +1,8 @@
 import type { Equipment, Rarity } from '../types'
-import { CLASS_ELEMENT } from './expansion'
 
 type ClassId='guerreiro'|'guardiao'|'cacadora'|'arcanista'
 type Entry=[string,string,number,number,number,string,string,Rarity]
-const make=(classe:ClassId,tipo:string,rows:Entry[]):Equipment[]=>rows.map(([id,nome,preco,vida,defesa,habilidade,file,raridade])=>({id,nome,slot:'mao_esquerda',preco,ataque:0,vida,defesa,habilidade,imagem:`assets/art/hd/offhands/${file}`,arte:`assets/art/hd/offhands/${file}`,raridade,classeExclusiva:classe,tipoEquipamento:tipo,resistencia:CLASS_ELEMENT[classe]}))
+const make=(classe:ClassId,tipo:string,rows:Entry[]):Equipment[]=>rows.map(([id,nome,preco,vida,defesa,habilidade,file,raridade])=>({id,nome,slot:'mao_esquerda',preco,ataque:0,vida,defesa,habilidade,imagem:`assets/art/hd/offhands/${file}`,arte:`assets/art/hd/offhands/${file}`,raridade,classeExclusiva:classe,tipoEquipamento:tipo}))
 
 export const CLASS_OFFHANDS:Equipment[]=[
  ...make('guerreiro','escudo_leve',[

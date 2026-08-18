@@ -10,8 +10,7 @@
     "habilidade": "Golpe Rápido: uma vez por combate, cause 2 de dano direto.",
     "imagem": "assets/cards/equipamentos/facas_gemeas.jpg",
     "arte": "assets/art/equipment/facas_gemeas.webp",
-    "raridade": "incomum",
-    "elemento": "fisico"
+    "raridade": "incomum"
   },
   {
     "id": "lamina_sentinela",
@@ -24,8 +23,7 @@
     "habilidade": "Impacto Arcano: uma vez por combate, some +2 ao dano do ataque.",
     "imagem": "assets/cards/equipamentos/lamina_sentinela.jpg",
     "arte": "assets/art/equipment/lamina_sentinela.webp",
-    "raridade": "epico",
-    "elemento": "arcano"
+    "raridade": "epico"
   },
   {
     "id": "foice_colheitas",
@@ -38,8 +36,7 @@
     "habilidade": "Colheita Arcana: ao causar 6 ou mais de dano, recupere 2 de vida.",
     "imagem": "assets/art/hd/equipment/orbe_colheitas-hd.webp",
     "arte": "assets/art/equipment/orbe_colheitas.webp",
-    "raridade": "raro",
-    "elemento": "sombra"
+    "raridade": "raro"
   },
   {
     "id": "armadura_couro",
@@ -52,8 +49,7 @@
     "habilidade": "Concede +1 de Vida máxima enquanto equipada.",
     "imagem": "assets/cards/catalogo/233_itens_004.jpg",
     "arte": "assets/art/equipment/armadura_couro.webp",
-    "raridade": "incomum",
-    "resistencia": "fisico"
+    "raridade": "incomum"
   },
   {
     "id": "manto_cinzas",
@@ -66,8 +62,7 @@
     "habilidade": "Escamas: reduz em 1 o dano recebido.",
     "imagem": "assets/cards/catalogo/235_itens_006.jpg",
     "arte": "assets/art/equipment/manto_cinzas.webp",
-    "raridade": "epico",
-    "resistencia": "fogo"
+    "raridade": "epico"
   },
   {
     "id": "runas_guardiao",
@@ -80,8 +75,7 @@
     "habilidade": "Guarda Antiga: uma vez por combate, ganhe 3 de escudo.",
     "imagem": "assets/cards/catalogo/232_itens_003.jpg",
     "arte": "assets/art/equipment/runas_guardiao.webp",
-    "raridade": "raro",
-    "resistencia": "luz"
+    "raridade": "raro"
   },
   {
     "id": "coracao_malgor",
@@ -94,8 +88,7 @@
     "habilidade": "Destino Partido: repita uma rolagem uma vez por combate.",
     "imagem": "assets/cards/catalogo/231_itens_002.jpg",
     "arte": "assets/art/equipment/coracao_malgor.webp",
-    "raridade": "lendario",
-    "resistencia": "sombra"
+    "raridade": "lendario"
   },
   {
     "id": "retrato_rainha",
@@ -108,8 +101,7 @@
     "habilidade": "Memória Real: uma vez por combate, cause 2 de dano direto.",
     "imagem": "assets/cards/equipamentos/retrato_rainha.jpg",
     "arte": "assets/art/equipment/retrato_rainha.webp",
-    "raridade": "raro",
-    "resistencia": "luz"
+    "raridade": "raro"
   },
   {
     "id": "pederneira_ancestrais",
@@ -122,8 +114,7 @@
     "habilidade": "Pode ser usada como escudo improvisado: +1 Defesa.",
     "imagem": "assets/cards/equipamentos/pederneira_ancestrais.jpg",
     "arte": "assets/art/equipment/pederneira_ancestrais.webp",
-    "raridade": "comum",
-    "resistencia": "fogo"
+    "raridade": "comum"
   },
   {
     "id": "frasco_sangue_troll",
@@ -136,8 +127,7 @@
     "habilidade": "Regeneração: uma vez por combate, recupere 4 de vida.",
     "imagem": "assets/cards/catalogo/230_itens_001.jpg",
     "arte": "assets/art/equipment/frasco_sangue_troll.webp",
-    "raridade": "incomum",
-    "resistencia": "natureza"
+    "raridade": "incomum"
   },
   {
     "id": "elmo_ferro",
@@ -150,8 +140,7 @@
     "habilidade": "Mente Protegida: +1 Vida e +1 Defesa.",
     "imagem": "assets/cards/equipamentos/elmo_ferro.jpg",
     "arte": "assets/art/equipment/elmo_ferro.webp",
-    "raridade": "incomum",
-    "resistencia": "gelo"
+    "raridade": "incomum"
   },
   {
     "id": "capuz_sombras",
@@ -164,8 +153,7 @@
     "habilidade": "Emboscada: a habilidade do item causa 3 de dano direto.",
     "imagem": "assets/cards/equipamentos/capuz_sombras.jpg",
     "arte": "assets/art/equipment/capuz_sombras.webp",
-    "raridade": "raro",
-    "resistencia": "sombra"
+    "raridade": "raro"
   },
   {
     "id": "calcas_batedor",
@@ -178,8 +166,7 @@
     "habilidade": "Passos Leves: +1 Ataque enquanto equipada.",
     "imagem": "assets/cards/equipamentos/calcas_batedor.jpg",
     "arte": "assets/art/equipment/calcas_batedor.webp",
-    "raridade": "incomum",
-    "resistencia": "gelo"
+    "raridade": "incomum"
   },
   {
     "id": "grevas_guardiao",
@@ -192,8 +179,7 @@
     "habilidade": "Postura Firme: +2 Vida e +1 Defesa.",
     "imagem": "assets/cards/equipamentos/grevas_guardiao.jpg",
     "arte": "assets/art/equipment/grevas_guardiao.webp",
-    "raridade": "raro",
-    "resistencia": "fisico"
+    "raridade": "raro"
   },
   {
     "id": "botas_viajante",
@@ -206,8 +192,7 @@
     "habilidade": "Fôlego Longo: +1 Vida máxima.",
     "imagem": "assets/cards/equipamentos/botas_viajante.jpg",
     "arte": "assets/art/equipment/botas_viajante.webp",
-    "raridade": "incomum",
-    "resistencia": "natureza"
+    "raridade": "incomum"
   },
   {
     "id": "botas_brasa",
@@ -220,8 +205,7 @@
     "habilidade": "Passo Flamejante: 2 de dano direto uma vez por combate.",
     "imagem": "assets/cards/equipamentos/botas_brasa.jpg",
     "arte": "assets/art/equipment/botas_brasa.webp",
-    "raridade": "raro",
-    "resistencia": "fogo"
+    "raridade": "raro"
   },
   {
     "id": "anel_luar",
@@ -234,8 +218,7 @@
     "habilidade": "Luz Fria: +1 Ataque e +1 Vida.",
     "imagem": "assets/cards/equipamentos/anel_luar.jpg",
     "arte": "assets/art/equipment/anel_luar.webp",
-    "raridade": "raro",
-    "resistencia": "gelo"
+    "raridade": "raro"
   },
   {
     "id": "escudo_carvalho",
@@ -248,8 +231,7 @@
     "habilidade": "Muralha Viva: ganhe 3 de escudo uma vez por combate.",
     "imagem": "assets/cards/equipamentos/escudo_carvalho.jpg",
     "arte": "assets/art/equipment/escudo_carvalho.webp",
-    "raridade": "raro",
-    "resistencia": "natureza"
+    "raridade": "raro"
   },
   {
     "id": "machado_cinzento",
@@ -262,8 +244,7 @@
     "habilidade": "Ruptura: cause 3 de dano direto uma vez por combate.",
     "imagem": "assets/cards/equipamentos/machado_cinzento.jpg",
     "arte": "assets/art/equipment/machado_cinzento.webp",
-    "raridade": "raro",
-    "elemento": "fogo"
+    "raridade": "raro"
   },
   {
     "id": "amuleto_orvalho",
@@ -276,7 +257,6 @@
     "habilidade": "Renovo: recupere 4 de vida uma vez por combate.",
     "imagem": "assets/cards/equipamentos/amuleto_orvalho.jpg",
     "arte": "assets/art/equipment/amuleto_orvalho.webp",
-    "raridade": "raro",
-    "resistencia": "natureza"
+    "raridade": "raro"
   }
 ]

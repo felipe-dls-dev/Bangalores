@@ -1,5 +1,4 @@
 import type { Equipment, Rarity } from '../types'
-import { CLASS_ELEMENT } from './expansion'
 
 type ClassId = 'guerreiro' | 'guardiao' | 'cacadora' | 'arcanista'
 type Row = [string, string, string]
@@ -28,7 +27,6 @@ const make = (classe: ClassId, tipo: string, rows: Row[]): Equipment[] => rows.m
     raridade: rarities[i],
     classeExclusiva: classe,
     tipoEquipamento: tipo,
-    resistencia: CLASS_ELEMENT[classe],
   }
 })
 
