@@ -316,17 +316,16 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
 }
 function RecipeCatalog(){
  const g=useGame(),mastery=forgeLevelInfo(g.forgeXp??0)
- const [category,setCategory]=React.useState<'todas'|ReturnType<typeof forgeCategory>>('todas')
+ const [category,setCategory]=React.useState<ReturnType<typeof forgeCategory>|undefined>(undefined)
  const entries=FORGE_RECIPES.map(recipe=>({recipe,item:EQUIPMENT.find(e=>e.id===recipe.equipmentId)})).filter(entry=>entry.item&&equipmentClassAllowed(entry.item,g.heroId)) as {recipe:typeof FORGE_RECIPES[number],item:Equipment}[]
  const counts=FORGE_CATEGORY_ORDER.reduce((acc,cat)=>({...acc,[cat]:entries.filter(e=>forgeCategory(e.item.slot)===cat).length}),{} as Record<string,number>)
- const shown=category==='todas'?entries:entries.filter(e=>forgeCategory(e.item.slot)===category)
+ const shown=category?entries.filter(e=>forgeCategory(e.item.slot)===category):[]
  return <section className="panel recipe-panel">
   <h2 className="panel-title">Catálogo de receitas</h2>
   <div className="forge-category-tabs">
-   <button className={category==='todas'?'active':''} onClick={()=>setCategory('todas')}>Todas<b>{entries.length}</b></button>
-   {FORGE_CATEGORY_ORDER.map(cat=><button key={cat} className={category===cat?'active':''} onClick={()=>setCategory(cat)}>{FORGE_CATEGORY_LABELS[cat]}<b>{counts[cat]??0}</b></button>)}
+   {FORGE_CATEGORY_ORDER.map(cat=><button key={cat} className={category===cat?'active':''} onClick={()=>setCategory(c=>c===cat?undefined:cat)}>{FORGE_CATEGORY_LABELS[cat]}<b>{counts[cat]??0}</b></button>)}
   </div>
-  <div className="recipe-grid">{shown.map(({recipe,item})=><RecipeCard key={recipe.id} recipe={recipe} item={item} g={g} mastery={mastery}/>)}</div>
+  {category?<div className="recipe-grid">{shown.map(({recipe,item})=><RecipeCard key={recipe.id} recipe={recipe} item={item} g={g} mastery={mastery}/>)}</div>:<p className="muted forge-category-hint">Selecione uma classe de item acima para ver as receitas disponíveis.</p>}
  </section>
 }
 function TalentPanel(){const g=useGame(),level=levelInfo(g.xp).lvl;return <Panel title="Árvore de talentos"><div className="system-list">{TALENTS.map(t=><button key={t.id} disabled={level<t.level||g.talents.includes(t.id)} onClick={()=>g.unlockTalent(t.id)}><strong>{g.talents.includes(t.id)?'✓ ':''}{t.nome}</strong><small>Nível {t.level} • {t.texto}</small></button>)}</div></Panel>}
