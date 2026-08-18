@@ -217,10 +217,10 @@ function CoopScreen(){const g=useGame(),[name,setName]=React.useState(()=>localS
 const TUTORIAL_CHAPTERS=[
  ['História de Havendown','Havendown é um reino dividido por guerras, monstros e antigas forças arcanas. Como aventureiro, você atravessa regiões cada vez mais perigosas, ajuda a Guilda e reúne poder para enfrentar os soberanos do Reino do Sol Negro.'],
  ['Primeiros passos e acessos','Use o menu superior para abrir Mapa, Ficha, Mochila, Equipamentos, Loja, Forja, Guilda, Crônicas, Coleção e este Tutorial. Passe o mouse sobre cada ícone para ver o nome da tela. A tecla Esc retorna ao mapa; durante uma batalha, ela abre a confirmação da tentativa de fuga.'],
- ['Heróis, classes e atributos','Guerreiro, Guardião, Ladino e Mago têm identidades e equipamentos preferidos. Vida determina sua resistência, Ataque influencia o dano e Defesa reduz os golpes recebidos. Subir de nível concede pontos para distribuir na Ficha.'],
+ ['Heróis, classes e atributos','Seis heróis estão disponíveis — Guerreiro, Guardião, Caçadora, Arcanista, Druida e Caçador —, cada um com identidade, passiva e equipamentos preferidos. Vida determina sua resistência, Ataque influencia o dano e Defesa reduz os golpes recebidos. Subir de nível concede pontos para distribuir na Ficha.'],
  ['Mapa, regiões e sub-regiões','As regiões estão ordenadas por dificuldade. O marcador grande abre a região; os marcadores menores acessam sub-regiões. Complete encontros para revelar o chefe local. Marcadores verdes indicam chefes já derrotados.'],
  ['Exploração e eventos','Durante a viagem surgem encontros com história, objetivo, recompensa e risco. Leia os efeitos antes de aceitar. Algumas abordagens especiais dependem da classe ou de características do herói.'],
- ['Combate e turnos','Em seu turno, ataque, use a habilidade do herói, ative uma habilidade de equipamento, consuma um item ou tente fugir. Chefes podem mudar de fase, convocar capangas e fazer cada capanga atacar em seu próprio turno.'],
+ ['Combate e turnos','Em seu turno, ataque, use a habilidade do herói, ative uma habilidade de equipamento, consuma um item, assuma a postura defensiva ou tente fugir. A postura defensiva concede +2 de Defesa contra qualquer golpe (incluindo capangas) e dura até o fim da batalha ou até ser desativada; a primeira ativação de cada batalha não consome o turno, então você ainda pode agir depois — reativá-la mais tarde já custa o turno normalmente. Rolagens 6 de ataque ou defesa acumulam Fervor; ao chegar a 3, o Fervor de Combate gasta o medidor em um ataque crítico garantido. Chefes podem mudar de fase, convocar capangas e fazer cada capanga atacar em seu próprio turno.'],
  ['Dados de ataque e defesa','O dado vermelho representa ataque e o azul representa defesa. No ataque: 1 causa falha crítica, 2 concede vantagem ao inimigo, 3–4 é normal, 5 fortalece e 6 causa crítico. Na defesa: 1 agrava, 2 adiciona dano, 3–4 é normal, 5 reduz 1 e 6 reduz o dano pela metade.'],
  ['Fuga e derrota','Na fuga, 5–6 permite escapar, 4 mantém sua ação e 1–3 perde o turno. Ao ser derrotado, você perde 30% do ouro e há 20% de chance de perder um equipamento. Se a bolsa for perdida, todos os equipamentos guardados nela também são destruídos; consumíveis permanecem.'],
  ['Espólios e progressão','Vitórias concedem ouro, experiência, materiais e chance de itens apropriados ao nível do inimigo. Monstros fortes oferecem melhores recompensas. Chefes liberam progresso regional e podem ser desafiados novamente pelo sistema de Vingança.'],
@@ -232,7 +232,8 @@ const TUTORIAL_CHAPTERS=[
  ['Guilda e ranking de aventureiro','A Guilda oferece contratos e organiza a campanha. Complete missões para ganhar reputação e avançar pelos ranks Ferro, Bronze, Prata, Ouro, Platina, Diamante e Campeão. Contratos melhores exigem ranks maiores.'],
  ['Missões da Guilda','Há missões para derrotar criaturas, caçar alvos específicos, vencer chefes e entregar equipamentos. Acompanhe a missão ativa no mapa e use a viagem rápida para alcançar a região indicada. Ao concluir uma missão, um desafio mais difícil ocupa seu lugar.'],
  ['Masmorras','Masmorras são sequências de combates com profundidade crescente. Quanto mais longe o aventureiro avança, maiores são o perigo e as recompensas. Você pode encerrar a expedição e preservar os espólios já conquistados.'],
- ['Talentos e habilidades','A Árvore de Talentos fica na Ficha. Talentos são liberados por nível e especializam o herói. Habilidades do herói e dos itens normalmente podem ser usadas uma vez por combate; observe quando os botões ficam disponíveis.'],
+ ['Talentos e habilidades','A Árvore de Talentos fica na Ficha. Talentos são liberados por nível e especializam o herói. No modo solo, a habilidade do herói e a habilidade de equipamento podem ser usadas uma vez por combate; observe quando os botões ficam disponíveis. No cooperativo, a habilidade do herói pode ser usada uma vez por jogador presente na sala, enquanto a habilidade de equipamento continua com um único uso por batalha, compartilhado entre todo o grupo.'],
+ ['Modo cooperativo','Na tela Coop, crie uma sala ou entre com um código, escolha seu herói e fique pronto. O anfitrião define o destino e todos precisam aceitar a viagem para a batalha começar. A ordem de ataque é sorteada entre o grupo e o inimigo; cada jogador age só no seu turno, mas todos acompanham o combate em tempo real, com miniaturas mostrando a vida atual dos colegas. Fugir com sucesso encerra a batalha para o grupo inteiro, não apenas para quem tentou. Ao vencer, ouro e experiência são divididos proporcionalmente à contribuição de cada jogador — dano causado somado à cura realizada —, não em partes iguais.'],
  ['Campanhas e salvamento','O progresso é salvo automaticamente no navegador. É possível criar campanhas com heróis diferentes, carregar uma campanha anterior ou excluí-la no menu inicial. O salvamento é local ao navegador e dispositivo utilizados.'],
  ['Coleção e leitura das cartas','A Coleção reúne as cartas descobertas de heróis, equipamentos, consumíveis, monstros, elites, chefes e eventos. Clique na arte para ampliar e consultar detalhes. Os ícones identificam classe, afinidade ou categoria do inimigo.']
 ] as const
@@ -477,15 +478,16 @@ function CombatScreen(){
   // em vez de um número fixo garantido.
   useGame.setState({itemSkillUsed:true})
   const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0
-  void coop.coopAttack(attackValue(g)+3,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,item.nome,undefined,false,critChancePct,critDamageBonusPct)
-  if(g.heroRollBonus)useGame.setState({heroRollBonus:0})}
+  const bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus
+  void coop.coopAttack(attackValue(g)+3+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,item.nome,undefined,false,critChancePct,critDamageBonusPct)
+  if(g.heroRollBonus||g.firstStrikeBonus)useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
  // Postura defensiva, Fervor de Combate e alvo em capangas existiam só no modo solo —
  // aqui espelham o mesmo botão/ação, mas via coopAttack/coopDefend (estado compartilhado).
  const activeMinions:{id:string;nome:string;hp:number;maxHp:number;ataque:number}[]=isCoop?((battle.combatMinions as any[])??[]):(g.combatMinions??[])
  const coopFervor=isCoop?Number(battle.playerBuffs?.[coop.userId]?.fervor??0):0
  const fervorLevel=isCoop?coopFervor:(g.fervor??0)
  const isBraced=isCoop?Boolean(battle.playerBuffs?.[coop.userId]?.braced):g.braced
- const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0;void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct);if(g.heroRollBonus)useGame.setState({heroRollBonus:0})}
+ const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=targetMinionId?0:(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct);if(g.heroRollBonus||(!targetMinionId&&g.firstStrikeBonus))useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
  const performAttack=(targetMinionId?:string)=>{if(isCoop)performCoopAttack(targetMinionId);else g.attack(targetMinionId)}
  const performDefend=()=>{if(isCoop)void coop.coopDefend();else g.defend()}
  // g.flee() (game.ts) só entende o turno solo (s.playerTurn), então no coop nunca fazia
@@ -502,15 +504,16 @@ function CombatScreen(){
   const it=CONSUMABLES.find(x=>x.id===id)
   if(!it||(g.inventory[id]??0)<=0)return
   const inv={...g.inventory,[id]:(g.inventory[id]??0)-1};if(inv[id]<=0)delete inv[id]
+  const value=it.valor+(g.talents.includes('alquimista')?1:0)
   let description=`${it.nome} utilizado`
-  if(it.tipo==='cura'){const healed=Math.min(it.valor,maxHp(g)-g.hp);useGame.setState({inventory:inv,hp:g.hp+healed});description=`recuperou ${healed} de vida`}
-  else if(it.tipo==='escudo'){useGame.setState({inventory:inv,shield:g.shield+it.valor});description=`+${it.valor} de escudo`}
-  else if(it.tipo==='vida_max'){const success=Math.random()<(LIFE_CHANCE[id]??.35);if(success){const newMax=maxHp(g)+it.valor,newHp=id==='elixir_fenix'?newMax:Math.min(newMax,g.hp+it.valor);useGame.setState({inventory:inv,attr:{...g.attr,vida:g.attr.vida+it.valor},hp:newHp});description=`vida máxima aumentada permanentemente em ${it.valor}`}else{useGame.setState({inventory:inv});description='a tentativa falhou e a vida máxima não aumentou'}}
+  if(it.tipo==='cura'){const healed=Math.min(value,maxHp(g)-g.hp);useGame.setState({inventory:inv,hp:g.hp+healed});description=`recuperou ${healed} de vida`}
+  else if(it.tipo==='escudo'){useGame.setState({inventory:inv,shield:g.shield+value});description=`+${value} de escudo`}
+  else if(it.tipo==='vida_max'){const success=Math.random()<(LIFE_CHANCE[id]??.35);if(success){const newMax=maxHp(g)+value,newHp=id==='elixir_fenix'?newMax:Math.min(newMax,g.hp+value);useGame.setState({inventory:inv,attr:{...g.attr,vida:g.attr.vida+value},hp:newHp});description=`vida máxima aumentada permanentemente em ${value}`}else{useGame.setState({inventory:inv});description='a tentativa falhou e a vida máxima não aumentou'}}
   else if(it.tipo==='regen_boost'){useGame.setState({inventory:inv});description='cura acelerada ativada'}
-  else{useGame.setState({inventory:inv,pendingAttackBonus:g.pendingAttackBonus+Math.max(1,it.valor)});description=`+${it.valor} de ataque no próximo ataque`}
+  else{useGame.setState({inventory:inv,pendingAttackBonus:g.pendingAttackBonus+Math.max(1,value)});description=`+${value} de ataque no próximo ataque`}
   void coop.coopAbility(it.nome,0,description)
  }
- const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0;void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct)}else g.useFervor()}
+ const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct);if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
  const attacker=g.combatRoll?.attacker
  // No coop, o dano de "hero" pode ter vindo de qualquer jogador do grupo — sem isso, a
  // animação de ataque sempre usava a arma equipada do jogador local, mesmo quando quem
