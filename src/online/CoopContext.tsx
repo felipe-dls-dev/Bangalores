@@ -87,14 +87,27 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    :`${actor}${tag?` usa ${tag}:`:':'} ataque ${attackRoll} contra defesa ${defenseRoll}; causou ${actual} de dano${target?` a ${foeName}${felled?' (derrotado)':''}`:''}.${phased?` ${enemy.nome} entra em nova fase e convoca reforços!`:''}${keepsTurn?' Ataque Duplo permite atacar novamente.':''}${attackRoll===2?' O inimigo recebe +1 na próxima rolagem.':''}${healTargetUserId?` A energia natural do equipamento cura ${healAmount}${healTargetName?` de ${healTargetName}`:''}.`:''}`
   return{...current.shared_state,battle:{...battle,...next,extraActions,playerBuffs,enemyRollBonus,enemy,enemyHp,combatMinions,damageByPlayer,healingByPlayer,fleeRoll:undefined,status:enemyHp<=0?'won':'playing',activeUserId:enemyHp<=0?null:next.activeUserId,turn:Number(battle.turn??1)+(keepsTurn?0:1),lastRoll:{attacker:'hero',attackerUserId:userId,naturalAttackRoll,attackRoll,attackBonus:totalRollBonus,attackBase:buffedAttack,defenseBase:target?0:defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),defenseRoll,damage:actual,actor,selfDamage,selfDamageUserId:selfDamage>0?userId:undefined,...(healTargetUserId?{healTargetUserId,healAmount}:{})},log:[...(battle.log??[]).slice(-15),message]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
+ // Postura defensiva agora é uma escolha persistente (dura até o fim da batalha ou até o
+ // jogador desativá-la), não uma ação de um único turno. Ativá-la pela primeira vez na batalha
+ // não consome o turno (activeUserId permanece o mesmo); desativar ou reativar depois consome
+ // normalmente, igual a qualquer outra ação.
  const coopDefend=async()=>{try{await updateState(current=>{
   const battle=current.shared_state.battle as any
   if(!battle||battle.status!=='playing'||battle.activeUserId!==userId)return current.shared_state
   const personal=battle.playerBuffs?.[userId]??{}
-  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:true}}
   const actor=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro'
+  if(personal.braced){
+   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:false}}
+   const next=nextInitiative(battle)
+   return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} desativou a postura defensiva.`]}}
+  }
+  if(!personal.braceBonusUsed){
+   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:true,braceBonusUsed:true}}
+   return{...current.shared_state,battle:{...battle,activeUserId:userId,playerBuffs,fleeRoll:undefined,log:[...(battle.log??[]).slice(-15),`${actor} assume postura defensiva: +2 de Defesa até o fim da batalha ou até desativar. Pode agir novamente neste turno.`]}}
+  }
+  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:true}}
   const next=nextInitiative(battle)
-  return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} assume postura defensiva, preparando-se para amortecer o próximo golpe do inimigo.`]}}
+  return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} reativou a postura defensiva: +2 de Defesa até o fim da batalha ou até desativar.`]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
  // Como a batalha é compartilhada por todo o grupo, uma fuga bem-sucedida encerra o combate
  // para todos de uma vez (em vez de só quem tentou fugir sumir do meio da luta).
@@ -152,7 +165,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    enemyHpNow=Math.max(0,enemyHpNow-resolved.selfDamage)
    workingVitals[target.user_id]={...targetVitals,hp:Math.max(0,Number(targetVitals.hp??1)-damage),shield:Math.max(0,Number(targetVitals.shield??0)-shieldBlocked)}
    const fervorGain=defenseRoll===6?Math.min(3,Number(targetBuffs.fervor??0)+1):Number(targetBuffs.fervor??0)
-   workingBuffs[target.user_id]={...targetBuffs,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),braced:false,fervor:fervorGain}
+   workingBuffs[target.user_id]={...targetBuffs,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),fervor:fervorGain}
    return{target,naturalAttackRoll,attackBonus:bonus,attackBase,defenseBase,attackRoll,defenseRoll,damage,shieldBlocked,selfDamage:resolved.selfDamage,rogueDodge,druidaLuck}
   }
   const mainStrike=strike(Number(battle.enemy?.ataque??1),enemyRollBonusStart)
@@ -167,9 +180,6 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    if(!result)continue
    minionRolls.push({minionName:minion.nome,targetUserId:result.target.user_id,damage:result.damage,shieldBlocked:result.shieldBlocked,rogueDodge:result.rogueDodge})
   }
-  // Postura defensiva protege contra o próximo turno inimigo mesmo se quem defendeu não for o
-  // alvo escolhido desta vez — mas expira ao fim do turno, igual ao modo solo (não deve "acumular").
-  for(const id of Object.keys(workingBuffs))if(workingBuffs[id]?.braced)workingBuffs[id]={...workingBuffs[id],braced:false}
   const wiped=membersRef.current.length>0&&membersRef.current.every(member=>(workingVitals[member.user_id]?.hp??1)<=0)
   const next=nextInitiative(battle)
   const blockedText=mainStrike.shieldBlocked?` (${mainStrike.shieldBlocked} bloqueado pelo escudo)`:''

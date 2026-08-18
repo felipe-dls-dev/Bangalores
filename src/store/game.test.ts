@@ -165,7 +165,7 @@ describe('druidHealProc', () => {
 const fakeEnemy = { id: 'x', nome: 'Inimigo de Teste', vida: 999, ataque: 3, dificuldade: 2, ouro: 5, habilidade: '' } as any
 
 describe('combate: postura defensiva e Fervor de Combate', () => {
-  it('defend() só age no turno do jogador, com inimigo vivo, e consome o turno na hora', () => {
+  it('defend() só age no turno do jogador e com inimigo vivo', () => {
     useGame.getState().newGame('guerreiro')
     useGame.setState({ enemy: undefined, playerTurn: true, animating: false, braced: false } as any)
     useGame.getState().defend()
@@ -174,12 +174,30 @@ describe('combate: postura defensiva e Fervor de Combate', () => {
     useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: false, animating: false, braced: false } as any)
     useGame.getState().defend()
     expect(useGame.getState().braced).toBe(false) // fora do turno, não faz nada
+  })
 
-    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, braced: false } as any)
+  it('primeira ativação da postura defensiva não consome o turno e dura até desativar', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, braced: false, braceBonusUsed: false, extraHeroAttacks: 0 } as any)
     useGame.getState().defend()
-    const s = useGame.getState()
-    expect(s.braced).toBe(true)
-    expect(s.playerTurn).toBe(false)
+    const s1 = useGame.getState()
+    expect(s1.braced).toBe(true)
+    expect(s1.braceBonusUsed).toBe(true)
+    expect(s1.playerTurn).toBe(true) // não perde o turno na primeira vez: pode agir mais uma vez
+
+    // Desativar consome o turno normalmente, igual a qualquer outra ação.
+    useGame.setState({ playerTurn: true, animating: false } as any)
+    useGame.getState().defend()
+    const s2 = useGame.getState()
+    expect(s2.braced).toBe(false)
+    expect(s2.playerTurn).toBe(false)
+
+    // Reativar depois do primeiro uso já consome o turno (o bônus só vale uma vez por batalha).
+    useGame.setState({ playerTurn: true, animating: false } as any)
+    useGame.getState().defend()
+    const s3 = useGame.getState()
+    expect(s3.braced).toBe(true)
+    expect(s3.playerTurn).toBe(false)
   })
 
   it('useFervor() é bloqueado abaixo do medidor cheio e consome o medidor imediatamente ao usar', () => {

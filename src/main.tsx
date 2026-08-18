@@ -484,6 +484,7 @@ function CombatScreen(){
  const activeMinions:{id:string;nome:string;hp:number;maxHp:number;ataque:number}[]=isCoop?((battle.combatMinions as any[])??[]):(g.combatMinions??[])
  const coopFervor=isCoop?Number(battle.playerBuffs?.[coop.userId]?.fervor??0):0
  const fervorLevel=isCoop?coopFervor:(g.fervor??0)
+ const isBraced=isCoop?Boolean(battle.playerBuffs?.[coop.userId]?.braced):g.braced
  const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0;void coop.coopAttack(attackValue(g),Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct);if(g.heroRollBonus)useGame.setState({heroRollBonus:0})}
  const performAttack=(targetMinionId?:string)=>{if(isCoop)performCoopAttack(targetMinionId);else g.attack(targetMinionId)}
  const performDefend=()=>{if(isCoop)void coop.coopDefend();else g.defend()}
@@ -559,7 +560,7 @@ function CombatScreen(){
        <button className="premium-action" disabled={disabled||heroSkillUses>=heroSkillLimit} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}{heroSkillLimit>1?` (${Math.min(heroSkillUses,heroSkillLimit)}/${heroSkillLimit})`:''}</button>
        <button className="premium-action" disabled={disabled||g.itemSkillUsed||!itemAbilities.length} onClick={()=>isCoop?useCoopItemSkill():g.itemSkill()}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={performFlee}><Footprints/>Tentar fugir</button>
-       <button className="premium-action" disabled={disabled} title="Abre mão do ataque para reduzir o dano do próximo golpe do inimigo." onClick={performDefend}><ShieldHalf/>Postura defensiva</button>
+       <button className={`premium-action${isBraced?' active-toggle':''}`} disabled={disabled} title={isBraced?'Desativa a postura defensiva (+2 de Defesa).':'Ativa +2 de Defesa até o fim da batalha ou até você desativar. Na primeira vez, não consome o turno.'} onClick={performDefend}><ShieldHalf/>{isBraced?'Desativar postura defensiva':'Postura defensiva'}</button>
        <button className="premium-action fervor-action" disabled={disabled||fervorLevel<3} title="Acerta uma rolagem de ataque cheia com um crítico garantido." onClick={performFervor}><Zap/>Fervor de Combate ({Math.min(3,fervorLevel)}/3)</button>
       </div>
    </Panel>
