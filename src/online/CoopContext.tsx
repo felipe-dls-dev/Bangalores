@@ -1,10 +1,10 @@
 import React from 'react'
-import { attackEffect, applyElementalStatus, consumeStun, defenseEffect, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, STATUS_LABELS, type AttackAnimType, type StatusEffects } from '../store/game'
+import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type StatusEffects, type Summon, type SummonType } from '../store/game'
 import type { Element } from '../data/expansion'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
 type CoopDestinationKind='encounter'|'subregionBoss'|'regionBoss'
 type CoopVitals={hp:number;maxHp:number;level:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[]}
-type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;selectDestination:(regionId:string,subregionId:string,kind?:CoopDestinationKind)=>Promise<void>;confirmTravel:(enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
+type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;selectDestination:(regionId:string,subregionId:string,kind?:CoopDestinationKind)=>Promise<void>;confirmTravel:(enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
 const CoopContext=React.createContext<CoopContextValue|null>(null),ROOM_KEY='bangalores-coop-room-id'
 const shuffled=(values:string[])=>{const result=[...values];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}return result}
 const nextInitiative=(battle:any)=>{const order=Array.isArray(battle.initiativeOrder)?battle.initiativeOrder:[],nextIndex=(Number(battle.initiativeIndex??0)+1)%Math.max(1,order.length),round=nextIndex===0?Number(battle.round??1)+1:Number(battle.round??1);return{activeUserId:order[nextIndex],initiativeIndex:nextIndex,round}}
@@ -149,14 +149,36 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   // vez por rodada em resolveEnemyTurn. Reativar a habilidade RENOVA a duração em vez de somar
   // o bônus de novo (evita empilhar percentuais quando o mesmo herói usa a habilidade mais de
   // uma vez na mesma batalha).
-  playerBuffs=effect==='WARRIOR_BUFF'?{...(battle.playerBuffs??{}),[userId]:{...(battle.playerBuffs?.[userId]??{}),attackPct:.1,defensePct:.1,buffTurnsLeft:3}}:effect==='SUMMON_BOND'?{...(battle.playerBuffs??{}),[userId]:{...(battle.playerBuffs?.[userId]??{}),summonBonusDamage:3,buffTurnsLeft:3}}:(effect==='DRUID_HEAL'||effect==='PRIEST_REVIVE')&&healTarget?{...(battle.playerBuffs??{}),[healTarget.member.user_id]:(({bleed,burn,poison,frozen,grabbed,blinded,stunned,...rest})=>rest)(battle.playerBuffs?.[healTarget.member.user_id]??{})}:battle.playerBuffs,
+  playerBuffs=effect==='WARRIOR_BUFF'?{...(battle.playerBuffs??{}),[userId]:{...(battle.playerBuffs?.[userId]??{}),attackPct:.1,defensePct:.1,buffTurnsLeft:3}}:(effect==='DRUID_HEAL'||effect==='PRIEST_REVIVE')&&healTarget?{...(battle.playerBuffs??{}),[healTarget.member.user_id]:(({bleed,burn,poison,frozen,grabbed,blinded,stunned,...rest})=>rest)(battle.playerBuffs?.[healTarget.member.user_id]??{})}:battle.playerBuffs,
   enemyFearPenalty=effect==='WARRIOR_BUFF'?1:battle.enemyFearPenalty,fearTurnsLeft=effect==='WARRIOR_BUFF'?3:battle.fearTurnsLeft,
   enemyStatus=effect==='WARRIOR_BUFF'&&battle.enemyStatus?.bleed?{...battle.enemyStatus,bleed:{...battle.enemyStatus.bleed,turns:3}}:battle.enemyStatus,
   groupBuff=effect==='ARCANE_GROUP_BUFF'?{...(battle.groupBuff??{}),roll:1,attackPct:.1,defensePct:.1,arcaneTurnsLeft:3}:effect==='HUNTER_CRITICAL'?{...(battle.groupBuff??{}),critBoost:true,critTurnsLeft:2}:battle.groupBuff,
   extraActions=effect==='DOUBLE_ATTACK'?{...(battle.extraActions??{}),[userId]:1}:battle.extraActions,tauntUserId=effect==='GUARDIAN_TAUNT'?userId:battle.tauntUserId,
   // Brisa Revigorante (DRUID_HEAL) também conta para o rateio de recompensa, igual ao dano.
   healingByPlayer=healAmount>0?{...(battle.healingByPlayer??{}),[userId]:Number(battle.healingByPlayer?.[userId]??0)+healAmount}:battle.healingByPlayer,
-  description=effect==='GUARDIAN_TAUNT'?'inimigos priorizarão o Guardião':effect==='WARRIOR_BUFF'?`+10% de Ataque e Defesa base e Medo no inimigo (-1 em todas as rolagens dele), por até 3 turnos${battle.enemyStatus?.bleed?' — sangramento do inimigo renovado':''}`:effect==='DOUBLE_ATTACK'?'dois ataques liberados neste turno':effect==='ARCANE_GROUP_BUFF'?'+1 nos dados e +10% de Ataque e Defesa para todos, por até 3 turnos':effect==='DRUID_HEAL'?(healTarget&&healAmount>0?`curou ${healAmount} de vida de ${healTarget.member.display_name} e purificou seus efeitos negativos`:'não havia vida para recuperar'):effect==='HUNTER_CRITICAL'?'resultados 5 e 6 passam a causar ataques críticos para o grupo, por 2 turnos':effect==='PRIEST_REVIVE'?(downedMember&&healTarget?`reanimou ${healTarget.member.display_name} com ${healAmount} de vida`:healTarget&&healAmount>0?`curou ${healAmount} de vida de ${healTarget.member.display_name} (ninguém estava caído)`:'não havia ninguém para reanimar ou curar'):effect==='SUMMON_BOND'?'conjura uma fera espectral: +3 de dano bônus nos próximos ataques, por até 3 turnos':effect,message=`${actor} usou ${label}: ${description}${actual?` e causou ${actual} de dano`:''}.`;return{...current.shared_state,battle:{...battle,...next,playerBuffs,groupBuff,extraActions,tauntUserId,enemyFearPenalty,fearTurnsLeft,enemyStatus,enemyHp,damageByPlayer,healingByPlayer,fleeRoll:undefined,status:enemyHp<=0?'won':'playing',activeUserId:enemyHp<=0?null:next.activeUserId,turn:Number(battle.turn??1)+(keepsTurn?0:1),lastRoll:{attacker:'ability',damage:actual,actor,label,effect:description,effectType:effect,healTargetUserId:healTarget?.member.user_id,healAmount},log:[...(battle.log??[]).slice(-15),message]}}})}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível usar a habilidade cooperativa.')}}
+  description=effect==='GUARDIAN_TAUNT'?'inimigos priorizarão o Guardião':effect==='WARRIOR_BUFF'?`+10% de Ataque e Defesa base e Medo no inimigo (-1 em todas as rolagens dele), por até 3 turnos${battle.enemyStatus?.bleed?' — sangramento do inimigo renovado':''}`:effect==='DOUBLE_ATTACK'?'dois ataques liberados neste turno':effect==='ARCANE_GROUP_BUFF'?'+1 nos dados e +10% de Ataque e Defesa para todos, por até 3 turnos':effect==='DRUID_HEAL'?(healTarget&&healAmount>0?`curou ${healAmount} de vida de ${healTarget.member.display_name} e purificou seus efeitos negativos`:'não havia vida para recuperar'):effect==='HUNTER_CRITICAL'?'resultados 5 e 6 passam a causar ataques críticos para o grupo, por 2 turnos':effect==='PRIEST_REVIVE'?(downedMember&&healTarget?`reanimou ${healTarget.member.display_name} com ${healAmount} de vida`:healTarget&&healAmount>0?`curou ${healAmount} de vida de ${healTarget.member.display_name} (ninguém estava caído)`:'não havia ninguém para reanimar ou curar'):effect,message=`${actor} usou ${label}: ${description}${actual?` e causou ${actual} de dano`:''}.`;return{...current.shared_state,battle:{...battle,...next,playerBuffs,groupBuff,extraActions,tauntUserId,enemyFearPenalty,fearTurnsLeft,enemyStatus,enemyHp,damageByPlayer,healingByPlayer,fleeRoll:undefined,status:enemyHp<=0?'won':'playing',activeUserId:enemyHp<=0?null:next.activeUserId,turn:Number(battle.turn??1)+(keepsTurn?0:1),lastRoll:{attacker:'ability',damage:actual,actor,label,effect:description,effectType:effect,healTargetUserId:healTarget?.member.user_id,healAmount},log:[...(battle.log??[]).slice(-15),message]}}})}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível usar a habilidade cooperativa.')}}
+ // A fera espectral do Conjurador vive dentro de battle.playerBuffs[userId].summon (o mesmo
+ // objeto flat reaproveitado por tickStatus/consumeStun/applyElementalStatus em toda a batalha,
+ // que já preserva chaves desconhecidas) em vez de um dicionário separado — assim ela atravessa
+ // o tick de status/buffs de resolveEnemyTurn de graça, sem precisar de plumbing novo.
+ const coopSummon=async(tipo:SummonType)=>{try{await updateState(current=>{
+  const battle=current.shared_state.battle as any
+  if(!battle||battle.status!=='playing'||battle.activeUserId!==userId)return current.shared_state
+  const personal=battle.playerBuffs?.[userId]??{}
+  const actor=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro'
+  if(personal.stunned){
+   const next=nextInitiative(battle)
+   return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...personal,stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} está atordoado e perde a ação neste turno.`]}}
+  }
+  const vitals=(current.shared_state.memberVitals??{}) as Record<string,{level?:number}>
+  const level=Number(vitals[userId]?.level??1)
+  const summon=buildSummon(tipo,level)
+  const typeLabel=tipo==='atacante'?'ofensiva':tipo==='defensor'?'defensiva':'arcana'
+  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,summon,...(tipo==='arcano'?{attackPct:.1,defensePct:.1}:{})}}
+  const next=nextInitiative(battle)
+  const message=`${actor} usou Conjurar Fera Espectral (${typeLabel}): ${summon.nome} surge com ${summon.maxHp} de vida, ${summon.ataque} de ataque e ${summon.defesa} de defesa.`
+  return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),message]}}
+ })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível conjurar a fera espectral.')}}
  const resolveEnemyTurn=async()=>{if(roomRef.current?.host_id!==userId)return;try{await updateState(current=>{
   const battle=current.shared_state.battle as any
   if(!battle||battle.status!=='playing'||battle.activeUserId!=='enemy')return current.shared_state
@@ -173,13 +195,11 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    if(!vitals||vitals.hp<=0)continue
    const tick=tickStatus(workingBuffs[member.user_id])
    let nextBuffs:any=tick.status
-   // Ímpeto Marcial (WARRIOR_BUFF) e Conjurar Fera Espectral (SUMMON_BOND) têm duração máxima
-   // de turnos consecutivos, controlada por buffTurnsLeft — reaproveita o mesmo relógio
-   // por-rodada do tickStatus acima. Os dois nunca coexistem no mesmo jogador (classes
-   // diferentes), então é seguro limpar ambos os campos ao expirar.
+   // Ímpeto Marcial (WARRIOR_BUFF) tem duração máxima de turnos consecutivos, controlada por
+   // buffTurnsLeft — reaproveita o mesmo relógio por-rodada do tickStatus acima.
    if(Number(nextBuffs.buffTurnsLeft??0)>0){
     const turnsLeft=Number(nextBuffs.buffTurnsLeft)-1
-    if(turnsLeft<=0){const wasSummon=Boolean(nextBuffs.summonBonusDamage);const{attackPct,defensePct,summonBonusDamage,buffTurnsLeft,...rest}=nextBuffs;nextBuffs=rest;statusLogs.push(`${member.display_name}: ${wasSummon?'Conjurar Fera Espectral':'Ímpeto Marcial'} se dissipou.`)}
+    if(turnsLeft<=0){const{attackPct,defensePct,buffTurnsLeft,...rest}=nextBuffs;nextBuffs=rest;statusLogs.push(`${member.display_name}: Ímpeto Marcial se dissipou.`)}
     else nextBuffs={...nextBuffs,buffTurnsLeft:turnsLeft}
    }
    workingBuffs[member.user_id]=nextBuffs
@@ -207,6 +227,28 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const enemyStatusTick=tickStatus(battle.enemyStatus)
   let enemyHpNow=Math.max(0,Number(battle.enemyHp??0)-enemyStatusTick.damage)
   for(const m of enemyStatusTick.messages)statusLogs.push(`${battle.enemy?.nome}: ${m}`)
+  // Cada fera espectral viva de um Conjurador ataca o inimigo principal uma vez por rodada, com
+  // sua própria rolagem — espelha o gancho de resolveSummonAttack do solo (game.ts), mas aqui
+  // roda uma vez por membro dentro do turno host-autoritativo do inimigo.
+  if(enemyHpNow>0){
+   const summonDefenseBase=Math.max(0,Number(battle.enemy?.dificuldade??1)-2)
+   for(const member of membersRef.current){
+    const buffs=workingBuffs[member.user_id],summon=buffs?.summon as Summon|undefined
+    if(!summon||summon.hp<=0||enemyHpNow<=0)continue
+    const attackRoll=1+Math.floor(Math.random()*6),defenseRoll=1+Math.floor(Math.random()*6)
+    const resolved=resolveCombatRoll(summon.ataque,summonDefenseBase,attackRoll,defenseRoll)
+    if(resolved.selfDamage>0){
+     const hp=Math.max(0,summon.hp-resolved.selfDamage),died=hp<=0
+     workingBuffs[member.user_id]={...buffs,summon:died?undefined:{...summon,hp},...(died&&summon.tipo==='arcano'?{attackPct:0,defensePct:0}:{})}
+     statusLogs.push(`${summon.nome} (${member.display_name}) erra completamente e sofre ${resolved.selfDamage} de dano com o próprio golpe.${died?' Caiu em combate.':''}`)
+    }else if(resolved.damage>0){
+     enemyHpNow=Math.max(0,enemyHpNow-resolved.damage)
+     const memberVitals=workingVitals[member.user_id],healAmount=memberVitals?Math.max(0,Math.min(1,Number(memberVitals.maxHp??memberVitals.hp)-Number(memberVitals.hp))):0
+     if(healAmount>0)workingVitals[member.user_id]={...memberVitals,hp:Number(memberVitals.hp)+healAmount}
+     statusLogs.push(`${summon.nome} (${member.display_name}) ataca: dado ${attackRoll} contra defesa ${defenseRoll}. Causou ${resolved.damage} de dano a ${battle.enemy?.nome}.${healAmount>0?' O vínculo com a fera recupera 1 de vida.':''}`)
+    }
+   }
+  }
   if(enemyHpNow<=0)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,enemyHp:0,enemyStatus:enemyStatusTick.status,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,status:'won',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs]}}
   const wipedByStatus=membersRef.current.length>0&&membersRef.current.every(member=>(workingVitals[member.user_id]?.hp??1)<=0)
   if(wipedByStatus)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,enemyStatus:enemyStatusTick.status,status:'lost',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs,'A equipe foi derrotada.']}}
@@ -232,28 +274,37 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const targetVitals=workingVitals[target.user_id]??{}
    const targetBuffs=workingBuffs[target.user_id]??{}
    const targetStun=consumeStun(targetBuffs)
+   const targetSummon=targetBuffs.summon as Summon|undefined
+   const intercepting=Boolean(targetSummon)&&targetSummon!.hp>0&&Math.random()<SUMMON_INTERCEPT_CHANCE[targetSummon!.tipo]
    const naturalAttackRoll=1+Math.floor(Math.random()*6)
-   const druidaLuck=target.hero_id==='druida'&&Math.random()<.25
+   const druidaLuck=!intercepting&&target.hero_id==='druida'&&Math.random()<.25
    const attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+bonus-(druidaLuck?1:0)-enemyFear))
    const naturalDefenseRoll=1+Math.floor(Math.random()*6)
-   const critDefenseBoost=Boolean(targetVitals.critDefenseBoost)&&naturalDefenseRoll===5
-   const defenseRoll=targetStun.wasStunned?1:Math.max(1,Math.min(6,naturalDefenseRoll+Number(workingGroupBuff.roll??0)+Number(targetVitals.rollBonus??0)+(critDefenseBoost?1:0)-rollPenaltyFrom(targetStun.status)))
+   const critDefenseBoost=!intercepting&&Boolean(targetVitals.critDefenseBoost)&&naturalDefenseRoll===5
+   const defenseRoll=intercepting?Math.max(1,naturalDefenseRoll):targetStun.wasStunned?1:Math.max(1,Math.min(6,naturalDefenseRoll+Number(workingGroupBuff.roll??0)+Number(targetVitals.rollBonus??0)+(critDefenseBoost?1:0)-rollPenaltyFrom(targetStun.status)))
    const defensePct=Number(workingGroupBuff.defensePct??0)+Number(targetBuffs.defensePct??0)
-   const defenseBase=Math.ceil(Number(targetVitals.defense??0)*(1+defensePct))+(targetBuffs.braced?2:0)
-   const rogueDodge=((target.hero_id==='cacadora'||target.hero_id==='cacador')&&Math.random()<.2)||(Boolean(targetVitals.dodgeBoost)&&Math.random()<.05)
+   const defenseBase=intercepting?targetSummon!.defesa:Math.ceil(Number(targetVitals.defense??0)*(1+defensePct))+(targetBuffs.braced?2:0)
+   const rogueDodge=!intercepting&&(((target.hero_id==='cacadora'||target.hero_id==='cacador')&&Math.random()<.2)||(Boolean(targetVitals.dodgeBoost)&&Math.random()<.05))
    const resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
-   const enemyElement=(battle.enemy?.elemento??'fisico') as Element,resisted=(targetVitals.resistances??[]).includes(enemyElement)
+   const enemyElement=(battle.enemy?.elemento??'fisico') as Element,resisted=!intercepting&&(targetVitals.resistances??[]).includes(enemyElement)
    let rawDamage=rogueDodge?0:resolved.damage
    if(resisted&&rawDamage>0)rawDamage=Math.max(0,rawDamage-1)
-   const shieldBlocked=Math.min(Number(targetVitals.shield??0),rawDamage)
+   const shieldBlocked=intercepting?0:Math.min(Number(targetVitals.shield??0),rawDamage)
    const damage=rawDamage-shieldBlocked
    enemyHpNow=Math.max(0,enemyHpNow-resolved.selfDamage)
-   workingVitals[target.user_id]={...targetVitals,hp:Math.max(0,Number(targetVitals.hp??1)-damage),shield:Math.max(0,Number(targetVitals.shield??0)-shieldBlocked)}
-   const fervorGain=defenseRoll===6?Math.min(3,Number(targetBuffs.fervor??0)+1):Number(targetBuffs.fervor??0)
-   const statusApplied=canApplyStatus&&!rogueDodge&&!resolved.selfDamage&&damage>0&&!resisted?applyElementalStatus(targetStun.status,enemyElement,attackBase):{status:targetStun.status}
+   let summonDied=false
+   if(intercepting){
+    const summonHpAfter=Math.max(0,targetSummon!.hp-damage)
+    summonDied=summonHpAfter<=0
+   }else{
+    workingVitals[target.user_id]={...targetVitals,hp:Math.max(0,Number(targetVitals.hp??1)-damage),shield:Math.max(0,Number(targetVitals.shield??0)-shieldBlocked)}
+   }
+   const fervorGain=!intercepting&&defenseRoll===6?Math.min(3,Number(targetBuffs.fervor??0)+1):Number(targetBuffs.fervor??0)
+   const statusApplied=!intercepting&&canApplyStatus&&!rogueDodge&&!resolved.selfDamage&&damage>0&&!resisted?applyElementalStatus(targetStun.status,enemyElement,attackBase):{status:targetStun.status}
    if(statusApplied.appliedKind){appliedStatusKind=statusApplied.appliedKind;appliedStatusTargetName=target.display_name}
-   workingBuffs[target.user_id]={...statusApplied.status,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),fervor:fervorGain}
-   return{target,naturalAttackRoll,attackBonus:bonus,attackBase,defenseBase,attackRoll,defenseRoll,damage,shieldBlocked,selfDamage:resolved.selfDamage,rogueDodge,druidaLuck,resisted,wasStunned:targetStun.wasStunned}
+   const summonAfter=intercepting?(summonDied?undefined:{...targetSummon!,hp:Math.max(0,targetSummon!.hp-damage)}):targetSummon
+   workingBuffs[target.user_id]={...statusApplied.status,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),fervor:fervorGain,summon:summonAfter,...(summonDied&&targetSummon!.tipo==='arcano'?{attackPct:0,defensePct:0}:{})}
+   return{target,naturalAttackRoll,attackBonus:bonus,attackBase,defenseBase,attackRoll,defenseRoll,damage,shieldBlocked,selfDamage:resolved.selfDamage,rogueDodge,druidaLuck,resisted,wasStunned:targetStun.wasStunned,intercepting,summonName:targetSummon?.nome,summonDied}
   }
   const mainStrike=strike(Number(battle.enemy?.ataque??1),enemyRollBonusStart,true)
   if(!mainStrike)return current.shared_state
@@ -265,12 +316,14 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    if(minion.hp<=0)continue
    const result=strike(Number(minion.ataque),0,false)
    if(!result)continue
-   minionRolls.push({minionName:minion.nome,targetUserId:result.target.user_id,damage:result.damage,shieldBlocked:result.shieldBlocked,rogueDodge:result.rogueDodge})
+   minionRolls.push({minionName:minion.nome,targetUserId:result.target.user_id,damage:result.damage,shieldBlocked:result.shieldBlocked,rogueDodge:result.rogueDodge,intercepting:result.intercepting,summonName:result.summonName,summonDied:result.summonDied})
   }
   const wiped=membersRef.current.length>0&&membersRef.current.every(member=>(workingVitals[member.user_id]?.hp??1)<=0)
   const next=nextInitiative(battle)
   const blockedText=mainStrike.shieldBlocked?` (${mainStrike.shieldBlocked} bloqueado pelo escudo)`:''
-  const mainLog=mainStrike.rogueDodge
+  const mainLog=mainStrike.intercepting
+   ?`${battle.enemy?.nome}: ataque ${mainStrike.attackRoll} contra defesa ${mainStrike.defenseRoll}, mas ${mainStrike.summonName} intercepta o golpe destinado a ${mainStrike.target.display_name}! A fera sofre ${mainStrike.damage} de dano${mainStrike.summonDied?' e cai em combate!':'.'}`
+   :mainStrike.rogueDodge
    ?`${mainStrike.target.display_name} desviou completamente do ataque inimigo.`
    :mainStrike.selfDamage
     ?`${battle.enemy?.nome} errou catastroficamente e sofreu ${mainStrike.selfDamage} de dano com o próprio ataque.`
@@ -278,12 +331,13 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const minionLogs=minionRolls.map(r=>{
    const targetMember=membersRef.current.find(m=>m.user_id===r.targetUserId)
    const blocked=r.shieldBlocked?` (${r.shieldBlocked} bloqueado pelo escudo)`:''
+   if(r.intercepting)return`${r.summonName} intercepta o golpe de ${r.minionName} destinado a ${targetMember?.display_name}! A fera sofre ${r.damage} de dano${r.summonDied?' e cai em combate!':'.'}`
    return r.rogueDodge?`${targetMember?.display_name} desviou do golpe de ${r.minionName}.`:`${r.minionName} atacou ${targetMember?.display_name} e causou ${r.damage} de dano${blocked}.`
   })
   return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,enemyHp:enemyHpNow,enemyStatus:enemyStun.status,enemyRollBonus:0,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,fleeRoll:undefined,turn:Number(battle.turn??1)+1,status:wiped?'lost':'playing',activeUserId:wiped?null:next.activeUserId,lastRoll:{attacker:'enemy',naturalAttackRoll:mainStrike.naturalAttackRoll,attackBonus:mainStrike.attackBonus,attackBase:mainStrike.attackBase,defenseBase:mainStrike.defenseBase,attackEffect:attackEffect(mainStrike.attackRoll),defenseEffect:defenseEffect(mainStrike.defenseRoll),attackRoll:mainStrike.attackRoll,defenseRoll:mainStrike.defenseRoll,damage:mainStrike.damage,selfDamage:mainStrike.selfDamage,shieldBlocked:mainStrike.shieldBlocked||undefined,targetUserId:mainStrike.target.user_id,actor:battle.enemy?.nome},minionRolls,log:[...(battle.log??[]).slice(-15),...statusLogs,mainLog,...minionLogs,...(wiped?['A equipe foi derrotada.']:[])]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar o turno inimigo.')}}
  const completeBattle=async()=>{try{await updateState(current=>({...current.shared_state,travelAcceptedBy:[],battle:{...(current.shared_state.battle as any),status:'completed',completedAt:new Date().toISOString()}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível encerrar a batalha cooperativa.')}}
  const safeConfirmTravel=async(enemy?:Record<string,unknown>)=>{const accepted=(roomRef.current?.shared_state?.travelAcceptedBy??[]) as string[];if(accepted.includes(userId)){await updateState(current=>({...current.shared_state,travelAcceptedBy:((current.shared_state.travelAcceptedBy??[]) as string[]).filter(id=>id!==userId)}));return}const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId];if(zero){setNotice(`${zero.display_name} está sem vida e precisa se recuperar antes da caçada.`);return}if(mine&&mine.hp<mine.maxHp*.5){const proceed=await new Promise<boolean>(resolve=>{const overlay=document.createElement('div');overlay.className='coop-risk-overlay';overlay.innerHTML=`<section role="dialog"><small>PREPARAÇÃO DA CAÇADA</small><h2>Caçada arriscada</h2><p>Seu herói possui <b>${mine.hp}/${mine.maxHp}</b> de vida, menos de 50% do total. Deseja continuar?</p><div><button data-action="cancel">Preparar-se primeiro</button><button class="primary" data-action="continue">Continuar mesmo assim</button></div></section>`;overlay.onclick=event=>{const action=(event.target as HTMLElement).closest('button')?.dataset.action;if(!action)return;overlay.remove();resolve(action==='continue')};document.body.appendChild(overlay)});if(!proceed)return}await confirmTravel(enemy)}
- return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,publishProgress,selectDestination,confirmTravel:safeConfirmTravel,coopAttack,coopAbility,coopDefend,coopFlee,resolveEnemyTurn,completeBattle}}>{children}</CoopContext.Provider>
+ return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,publishProgress,selectDestination,confirmTravel:safeConfirmTravel,coopAttack,coopAbility,coopSummon,coopDefend,coopFlee,resolveEnemyTurn,completeBattle}}>{children}</CoopContext.Provider>
 }
 export function useCoop(){const value=React.useContext(CoopContext);if(!value)throw new Error('CoopProvider não encontrado.');return value}

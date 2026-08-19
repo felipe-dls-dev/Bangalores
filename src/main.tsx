@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane, CheckCircle2, XCircle } from 'lucide-react'
-import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, type AttackAnimType } from './store/game'
+import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, type AttackAnimType, type SummonType } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
@@ -456,10 +456,7 @@ function FleeDiceRoll({roll}:{roll:{roll:number;outcome:'failed'|'neutral'|'succ
 // Combina a cura de druida (druidHealProc) com o proc independente de "cura_forjada" e o
 // multiplicador de "cura_bonus" em um único par chance/quantia, já que coopAttack só aceita
 // uma rolagem de cura por ataque (ao contrário do solo, que rola as duas separadamente).
-function coopHealProc(g:any,summonBondActive=false){
- // Vínculo com a fera (Conjurador): enquanto o bônus de dano da invocação estiver ativo, cada
- // acerto recupera 1 de vida garantido — sobrepõe qualquer outra fonte de cura no mesmo golpe.
- if(summonBondActive)return{chance:1,amount:1}
+function coopHealProc(g:any){
  const druid=druidHealProc(g)
  const forgedChance=hasCraftedEffect(g,'cura_forjada')?.05:0
  const forgedAmount=Math.max(2,Math.round(attackValue(g)*.25))
@@ -492,8 +489,9 @@ function CombatScreen(){
   // Golpe Flamejante (Monge) é um ataque de verdade (rola dado, causa dano), então passa por
   // coopAttack — igual ao Fervor de Combate — em vez de coopAbility, que só cobre efeitos sem
   // rolagem (buffs, cura, provocar).
+  if(g.heroId==='conjurador')return
   if(g.heroId==='monge'){
-   const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus+summonBonus
+   const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus
    useGame.setState({heroSkillUses:heroSkillUses+1})
    void coop.coopAttack(attackValue(g)+2+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Golpe Flamejante',undefined,false,0,critDamageBonusPct,'fogo',true)
    if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})
@@ -504,9 +502,10 @@ function CombatScreen(){
   // precisa ficar local (ele só trava o botão); espelhar os campos de batalha do solo aqui
   // (combatAttackPct etc.) duplicaria o bônus em cima do que coopAttack já soma do estado
   // compartilhado.
-  const effect=g.heroId==='guardiao'?'GUARDIAN_TAUNT':g.heroId==='guerreiro'?'WARRIOR_BUFF':g.heroId==='cacadora'?'DOUBLE_ATTACK':g.heroId==='arcanista'?'ARCANE_GROUP_BUFF':g.heroId==='druida'?'DRUID_HEAL':g.heroId==='cacador'?'HUNTER_CRITICAL':g.heroId==='sacerdotisa'?'PRIEST_REVIVE':'SUMMON_BOND'
+  const effect=g.heroId==='guardiao'?'GUARDIAN_TAUNT':g.heroId==='guerreiro'?'WARRIOR_BUFF':g.heroId==='cacadora'?'DOUBLE_ATTACK':g.heroId==='arcanista'?'ARCANE_GROUP_BUFF':g.heroId==='druida'?'DRUID_HEAL':g.heroId==='cacador'?'HUNTER_CRITICAL':'PRIEST_REVIVE'
   useGame.setState({heroSkillUses:heroSkillUses+1})
   void coop.coopAbility(`Habilidade de ${h.nome}`,0,effect)}
+ const performSummon=(tipo:SummonType)=>{if(isCoop){if(heroSkillUses>=heroSkillLimit||!myTurn)return;useGame.setState({heroSkillUses:heroSkillUses+1});void coop.coopSummon(tipo)}else g.summonMonster(tipo)}
  const useCoopItemSkill=()=>{if(g.itemSkillUsed||!myTurn)return;const item=itemAbilities[0];if(!item)return;const txt=item.habilidade.toLowerCase()
   if(txt.includes('escudo')){useGame.setState({shield:g.shield+3,itemSkillUsed:true});void coop.coopAbility(item.nome,0,'+3 de escudo');return}
   if(txt.includes('recupere')){const healed=Math.min(4,maxHp(g)-g.hp);useGame.setState({hp:Math.min(maxHp(g),g.hp+4),itemSkillUsed:true});void coop.coopAbility(item.nome,0,`recuperou ${healed} de vida`);return}
@@ -524,14 +523,14 @@ function CombatScreen(){
  const coopFervor=isCoop?Number(battle.playerBuffs?.[coop.userId]?.fervor??0):0
  const fervorLevel=isCoop?coopFervor:(g.fervor??0)
  const isBraced=isCoop?Boolean(battle.playerBuffs?.[coop.userId]?.braced):g.braced
- // Conjurar Fera Espectral (Conjurador) vive só no estado compartilhado no coop, igual à
- // postura defensiva acima — nunca no g.summonBonusDamage local, que fica de fato exclusivo
- // ao modo solo.
- const summonBonus=isCoop?Number(battle.playerBuffs?.[coop.userId]?.summonBonusDamage??0):(g.summonBonusDamage??0)
+ // A fera espectral do Conjurador vive no estado compartilhado (battle.playerBuffs[userId].summon)
+ // no coop, ou em g.summon no solo — em ambos os casos ela ataca e intercepta sozinha, sem
+ // precisar de nenhum bônus lido aqui pela tela de combate.
+ const currentSummon=isCoop?battle.playerBuffs?.[coop.userId]?.summon:g.summon
  const statusKindsOf=(status:any)=>(['bleed','burn','poison','frozen','grabbed','blinded','stunned'] as const).filter(k=>status?.[k])
  const heroStatusKinds=isCoop?statusKindsOf(battle.playerBuffs?.[coop.userId]):statusKindsOf(g.heroStatus)
  const enemyStatusKinds=isCoop?statusKindsOf(battle.enemyStatus):statusKindsOf(g.enemyStatus)
- const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g,summonBonus>0),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(targetMinionId?0:(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus)+summonBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct,heroWeaponElement(g));if(g.heroRollBonus||(!targetMinionId&&g.firstStrikeBonus))useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
+ const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=targetMinionId?0:(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct,heroWeaponElement(g));if(g.heroRollBonus||(!targetMinionId&&g.firstStrikeBonus))useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
  const performAttack=(targetMinionId?:string)=>{if(isCoop)performCoopAttack(targetMinionId);else g.attack(targetMinionId)}
  const performDefend=()=>{if(isCoop)void coop.coopDefend();else g.defend()}
  // g.flee() (game.ts) só entende o turno solo (s.playerTurn), então no coop nunca fazia
@@ -557,7 +556,7 @@ function CombatScreen(){
   else{useGame.setState({inventory:inv,pendingAttackBonus:g.pendingAttackBonus+Math.max(1,value)});description=`+${value} de ataque no próximo ataque`}
   void coop.coopAbility(it.nome,0,description)
  }
- const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g,summonBonus>0),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus+summonBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g));if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
+ const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g));if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
  const attacker=g.combatRoll?.attacker
  // No coop, o dano de "hero" pode ter vindo de qualquer jogador do grupo — sem isso, a
  // animação de ataque sempre usava a arma equipada do jogador local, mesmo quando quem
@@ -583,6 +582,7 @@ function CombatScreen(){
    <div className="combat-hero-area">
     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds}/>
     {isCoop&&<CoopTeammatesRow coop={coop} battle={battle}/>}
+    {Boolean(currentSummon&&currentSummon.hp>0)&&<div className="summon-row"><article><Sparkles/><span><strong>{currentSummon.nome}</strong><small>ATQ {currentSummon.ataque} • DEF {currentSummon.defesa} • VIDA {currentSummon.hp}/{currentSummon.maxHp}</small><i><b style={{width:`${currentSummon.hp/currentSummon.maxHp*100}%`}}/></i></span></article></div>}
    </div>
    <div className="combat-enemy-area">
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} attackCritical={currentAttackCritical} statusKinds={enemyStatusKinds}/>
@@ -604,7 +604,13 @@ function CombatScreen(){
       {defeated&&<p className="coop-defeated-notice">DERROTADO • Você não pode mais realizar ações nesta batalha. As penalidades serão aplicadas ao final.</p>}
       <div className="combat-actions-grid">
        <button className="attack-btn premium-action" disabled={disabled} onClick={()=>performAttack()}><Sword/>Atacar</button>
-       <button className="premium-action" disabled={disabled||heroSkillUses>=heroSkillLimit} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}{heroSkillLimit>1?` (${Math.min(heroSkillUses,heroSkillLimit)}/${heroSkillLimit})`:''}</button>
+       {g.heroId==='conjurador'&&heroSkillUses<heroSkillLimit&&!currentSummon
+        ?<div className="summon-choice-row">
+          <button className="premium-action" disabled={disabled} title="Fera ofensiva: mais ataque, ataca a cada turno com dado próprio." onClick={()=>performSummon('atacante')}><Sword/>Fera ofensiva</button>
+          <button className="premium-action" disabled={disabled} title="Fera defensiva: mais vida e defesa, alta chance de interceptar ataques por você." onClick={()=>performSummon('defensor')}><Shield/>Fera defensiva</button>
+          <button className="premium-action" disabled={disabled} title="Fera arcana: concede +10% de Ataque e Defesa a você enquanto viva." onClick={()=>performSummon('arcano')}><Sparkles/>Fera arcana</button>
+         </div>
+        :<button className="premium-action" disabled={disabled||g.heroId==='conjurador'||heroSkillUses>=heroSkillLimit} title={g.heroId==='conjurador'?(currentSummon?`${currentSummon.nome} já foi conjurada nesta batalha.`:'Habilidade já utilizada nesta batalha.'):undefined} onClick={()=>isCoop?useCoopHeroSkill():g.heroSkill()}><Sparkles/>{heroSkillNames[g.heroId??'']??'Habilidade do herói'}{heroSkillLimit>1?` (${Math.min(heroSkillUses,heroSkillLimit)}/${heroSkillLimit})`:''}</button>}
        <button className="premium-action" disabled={disabled||g.itemSkillUsed||!itemAbilities.length} onClick={()=>isCoop?useCoopItemSkill():g.itemSkill()}><Shield/>Habilidade do item</button>
        <button className="premium-action" disabled={disabled} onClick={performFlee}><Footprints/>Tentar fugir</button>
        <button className={`premium-action${isBraced?' active-toggle':''}`} disabled={disabled} title={isBraced?'Desativa a postura defensiva (+2 de Defesa).':'Ativa +2 de Defesa até o fim da batalha ou até você desativar. Na primeira vez, não consome o turno.'} onClick={performDefend}><ShieldHalf/>{isBraced?'Desativar postura defensiva':'Postura defensiva'}</button>

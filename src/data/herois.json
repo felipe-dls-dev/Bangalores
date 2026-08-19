@@ -93,7 +93,7 @@
     "vida": 20,
     "ataque": 4,
     "defesa": 1,
-    "habilidade": "Passivo: recupera 1 de vida sempre que o dano bônus da fera invocada é aplicado. Ativo: Conjurar Fera Espectral — por 3 turnos, seus ataques causam +3 de dano bônus enquanto a fera luta ao seu lado.",
+    "habilidade": "Passivo: recupera 1 de vida sempre que a fera espectral invocada acerta um ataque. Ativo: Conjurar Fera Espectral — escolha uma fera ofensiva, defensiva ou arcana para lutar ao seu lado, com vida, ataque e defesa próprios que evoluem com seu nível. Ela ataca com sua própria rolagem a cada turno, pode interceptar ataques inimigos no seu lugar, e permanece em campo até ser derrotada ou a batalha terminar.",
     "imagem": "assets/heroes/conjurador-soltnegro-v2.png",
     "arte": "assets/heroes/conjurador-soltnegro-v2.png",
     "raridade": "heroico"
