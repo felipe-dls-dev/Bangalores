@@ -2,7 +2,7 @@ import type { Element } from './data/expansion'
 export type Slot = 'amuleto'|'capacete'|'bolsa'|'anel_1'|'peitoral'|'anel_2'|'calcas'|'mao_esquerda'|'mao_direita'|'botas'
 export type Screen = 'menu'|'select'|'map'|'guild'|'chronicle'|'forge'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'tutorial'|'coop'|'combat'|'bossIntro'|'loot'|'cardCreator'
 export type Rarity = 'comum'|'incomum'|'raro'|'epico'|'lendario'|'mitico'|'heroico'
-export interface Hero { id:string; nome:string; vida:number; ataque:number; habilidade:string; imagem:string; arte?:string; raridade?:Rarity }
+export interface Hero { id:string; nome:string; vida:number; ataque:number; defesa?:number; habilidade:string; imagem:string; arte?:string; raridade?:Rarity }
 // classeExclusiva aceita uma classe só (uso tradicional) ou uma lista de classes — usado pelos
 // conjuntos compartilhados entre duas ou três classes aparentadas (ex: Sacerdotisa+Druida).
 // statsByClass permite uma variação sutil de atributos por classe no MESMO item compartilhado
