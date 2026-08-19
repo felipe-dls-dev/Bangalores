@@ -112,15 +112,25 @@ const bossByDifficulty: Record<number,Enemy> = {
 export const BOSSES = Object.fromEntries(Object.entries(bossByDifficulty).map(([difficulty,boss])=>{const arte=BOSS_ART[boss.nome]??boss.arte;return[difficulty,{...boss,imagem:arte,arte}]})) as Record<number,Enemy>
 
 const xpCosts=[10,14,19,25,33,43,56,72,92,116,145,180,220,265,315,370,430,495]
+// Do nível 19 em diante a curva deixa de multiplicar geometricamente por 1,2 a cada nível (isso
+// levava o nível 100 a ~7,7 bilhões de XP acumulado, matematicamente inatingível) e passa a
+// crescer por um polinômio mais suave, mantendo o nível 100 como uma meta de endgame real: cerca
+// de 650 mil XP acumulado, uma jornada longa (dezenas de horas), mas alcançável — em linha com a
+// escala de nível 1-100 dos equipamentos (EQUIPMENT_LEVELS).
 function costForLevel(level:number){
-  while(xpCosts.length < level){ xpCosts.push(Math.ceil(xpCosts[xpCosts.length-1]*1.2)) }
+  while(xpCosts.length < level){ const lvl=xpCosts.length+1; xpCosts.push(Math.max(1,Math.round(495+20*Math.pow(lvl-18,1.55)))) }
   return xpCosts[level-1] ?? 10
 }
 export function deriveLevel(totalXp:number){ let lvl=1, spent=0; while(totalXp >= spent+costForLevel(lvl)){spent+=costForLevel(lvl);lvl++} return {lvl,progress:totalXp-spent,next:costForLevel(lvl)} }
 function eqById(id?:string){ return EQUIPMENT.find(e=>e.id===id) }
 export type WeaponAffinity='guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida'|'cacador'|'monge'|'sacerdotisa'|'conjurador'
-const EQUIPMENT_LEVELS=[1,3,5,7,9,11,14,17]
-const LEVEL_RARITY:Rarity[]=['comum','incomum','raro','raro','epico','epico','lendario','lendario']
+// Escala de progressão 1-100: 12 tiers (em vez dos 8 antigos, que paravam no nível 17) para dar
+// aos ~570 itens do acervo atual um caminho de conquista mais longo — raro só começa a partir do
+// nível 17, épico exige nível 47+ e lendário só a partir do nível 78, perto do teto de 100. Grupos
+// pequenos continuam limitados a um prefixo desta lista (ver Math.min abaixo em balanceEquipment),
+// então um grupo de 2-3 itens nunca pula direto para o topo da escala.
+export const EQUIPMENT_LEVELS=[1,5,10,17,26,36,47,58,68,78,89,100]
+const LEVEL_RARITY:Rarity[]=['comum','incomum','incomum','raro','raro','raro','epico','epico','epico','lendario','lendario','lendario']
 const FREE_EQUIPMENT=new Set(['lamina_vento','leve_estrada','armor_leao_valoria','machado_bronze','pesado_bronze','armor_pesada_khardur','orbe_veu','grimorio_lua','veste_estrelas','facas_predador','broquel_raposa','traje_raposa','pederneira_ancestrais','armadura_couro','botas_viajante','calcas_batedor','druida_arma_broto_de_abdendriel','druida_mao_esquerda_broto_de_abdendriel','druida_peitoral_broto_de_abdendriel','cacador_arma_vigia_das_cinzas','cacador_mao_esquerda_vigia_das_cinzas','cacador_peitoral_vigia_das_cinzas','sacola_4'])
 function equipmentPower(e:Equipment){return e.ataque*2+e.defesa*2+e.vida*.5}
 function balanceEquipment(items:Equipment[]){
@@ -129,7 +139,7 @@ function balanceEquipment(items:Equipment[]){
  const balanced=new Map<string,Equipment>()
  for(const group of groups.values()){
   const sorted=[...group].sort((a,b)=>equipmentPower(a)-equipmentPower(b)||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'))
-  const priced=sorted.map((item,index)=>{const tier=sorted.length===1?0:Math.round(index*Math.min(7,sorted.length-1)/(sorted.length-1));const free=FREE_EQUIPMENT.has(item.id);const level=free?1:EQUIPMENT_LEVELS[tier];return{item,level,rarity:free?item.raridade:LEVEL_RARITY[tier],preco:Math.max(item.preco,8+level*3)}})
+  const priced=sorted.map((item,index)=>{const tier=sorted.length===1?0:Math.round(index*Math.min(EQUIPMENT_LEVELS.length-1,sorted.length-1)/(sorted.length-1));const free=FREE_EQUIPMENT.has(item.id);const level=free?1:EQUIPMENT_LEVELS[tier];return{item,level,rarity:free?item.raridade:LEVEL_RARITY[tier],preco:Math.max(item.preco,8+level*3)}})
   // Um preço-base mais alto do que o piso do seu tier só é mantido (nunca reduzido) até aqui, então um item
   // mais fraco cujo preço original veio inflado (ex.: por causa de uma habilidade especial) podia acabar
   // custando mais do que um item estritamente melhor no mesmo grupo (mesmo dentro do mesmo tier, já que o

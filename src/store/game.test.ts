@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -71,7 +71,11 @@ describe('EQUIPMENT balancing (balanceEquipment)', () => {
 
   it('small equipment groups do not get stretched across the full rarity range', () => {
     // Regression guard: groups with only a few items used to always span comum..lendário
-    // and level 1..17 regardless of size, wildly over-pricing the strongest of e.g. 3 items.
+    // and the full level range regardless of size, wildly over-pricing the strongest of e.g.
+    // 3 items. A group of N items may only reach the (N-1)th rung of EQUIPMENT_LEVELS, never
+    // jump straight to the top tier — mirrors the Math.min(EQUIPMENT_LEVELS.length-1, N-1)
+    // clamp in balanceEquipment itself, so this stays correct regardless of how the scale
+    // is tuned (e.g. levels 1-17 vs. the current 1-100).
     const groups = new Map<string, typeof EQUIPMENT>()
     for (const item of EQUIPMENT) {
       if (item.slot === 'bolsa') continue
@@ -81,7 +85,8 @@ describe('EQUIPMENT balancing (balanceEquipment)', () => {
     for (const items of groups.values()) {
       if (items.length > 4) continue
       const levels = items.map(i => i.nivelMinimo ?? 1)
-      expect(Math.max(...levels)).toBeLessThanOrEqual(items.length * 2)
+      const maxAllowed = EQUIPMENT_LEVELS[Math.min(EQUIPMENT_LEVELS.length - 1, items.length - 1)]
+      expect(Math.max(...levels)).toBeLessThanOrEqual(maxAllowed)
     }
   })
 })
