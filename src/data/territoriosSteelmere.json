@@ -1,9 +1,9 @@
 [
-  {"id":"frostgard","nome":"Cumes de Frostgard","x":0.24,"y":0.17,"dificuldade":1,"nivelMin":20,"nivelMax":24,"descricao":"Picos glaciais minerados por torres de perfuração a vapor, num extremo gélido de Steelmere."},
-  {"id":"engrenverde","nome":"Bosque de Engrenverde","x":0.18,"y":0.47,"dificuldade":2,"nivelMin":22,"nivelMax":27,"descricao":"Uma floresta densa entrelaçada por tubulações de cobre e vilarejos suspensos entre as copas."},
-  {"id":"trilhouro","nome":"Campos de Trilhouro","x":0.80,"y":0.46,"dificuldade":3,"nivelMin":25,"nivelMax":30,"descricao":"Plantações douradas cortadas por ferrovias a vapor e silos de latão."},
-  {"id":"vulcannis","nome":"Caldeira de Vulcannis","x":0.70,"y":0.17,"dificuldade":4,"nivelMin":28,"nivelMax":34,"descricao":"Um vulcão domado como fornalha industrial, alimentando fundições e chaminés incessantes."},
-  {"id":"ferrujal","nome":"Charco de Ferrujal","x":0.38,"y":0.74,"dificuldade":5,"nivelMin":30,"nivelMax":36,"descricao":"Um ferro-velho tóxico de autômatos quebrados e fábricas abandonadas."},
-  {"id":"coroferro","nome":"Cidade de Coroferro","x":0.68,"y":0.76,"dificuldade":6,"nivelMin":33,"nivelMax":40,"descricao":"A grande metrópole vitoriana de Steelmere, coroada por sua torre de relógio central."},
-  {"id":"aetherium","nome":"Núcleo de Aetherium","x":0.50,"y":0.40,"dificuldade":7,"nivelMin":38,"nivelMax":50,"descricao":"O reator arcano que energiza todo o continente, pulsando luz ciano no coração de Steelmere."}
+  {"id":"frostgard","nome":"Cumes de Frostgard","x":0.24,"y":0.17,"dificuldade":1,"nivelMin":40,"nivelMax":48,"descricao":"Picos glaciais minerados por torres de perfuração a vapor, num extremo gélido de Steelmere."},
+  {"id":"engrenverde","nome":"Bosque de Engrenverde","x":0.18,"y":0.47,"dificuldade":2,"nivelMin":44,"nivelMax":54,"descricao":"Uma floresta densa entrelaçada por tubulações de cobre e vilarejos suspensos entre as copas."},
+  {"id":"trilhouro","nome":"Campos de Trilhouro","x":0.80,"y":0.46,"dificuldade":3,"nivelMin":50,"nivelMax":60,"descricao":"Plantações douradas cortadas por ferrovias a vapor e silos de latão."},
+  {"id":"vulcannis","nome":"Caldeira de Vulcannis","x":0.70,"y":0.17,"dificuldade":4,"nivelMin":56,"nivelMax":68,"descricao":"Um vulcão domado como fornalha industrial, alimentando fundições e chaminés incessantes."},
+  {"id":"ferrujal","nome":"Charco de Ferrujal","x":0.38,"y":0.74,"dificuldade":5,"nivelMin":60,"nivelMax":72,"descricao":"Um ferro-velho tóxico de autômatos quebrados e fábricas abandonadas."},
+  {"id":"coroferro","nome":"Cidade de Coroferro","x":0.68,"y":0.76,"dificuldade":6,"nivelMin":66,"nivelMax":80,"descricao":"A grande metrópole vitoriana de Steelmere, coroada por sua torre de relógio central."},
+  {"id":"aetherium","nome":"Núcleo de Aetherium","x":0.50,"y":0.40,"dificuldade":7,"nivelMin":76,"nivelMax":100,"descricao":"O reator arcano que energiza todo o continente, pulsando luz ciano no coração de Steelmere."}
 ]

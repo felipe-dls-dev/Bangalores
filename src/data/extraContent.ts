@@ -1,22 +1,22 @@
 import type { Equipment, GameEvent, SubregionEnemy } from '../types'
 
 export const EXTRA_SUBREGION_ENEMIES:Record<string,SubregionEnemy[]> = {
-  campos_estrada:[{nome:'Bandoleiro da Estrada Velha',ataque:3,vida:12,ouro:4,habilidade:'Emboscada entre as carroças',arte:'assets/art/pilot/grumnak-hd-v2.webp'}],
-  campos_ponte:[{nome:'Cobrador Corrompido de Eldrimar',ataque:4,vida:15,ouro:5,habilidade:'Pedágio sangrento',arte:'assets/art/pilot/grumnak-hd-v2.webp'}],
-  lunar_bosque:[{nome:'Cervo de Chifres Lunares',ataque:5,vida:18,ouro:6,habilidade:'Investida iluminada',arte:'assets/art/hd/monsters/guardia-seiva-hd.webp'}],
-  lunar_goblins:[{nome:'Xamã Goblin das Brasas',ataque:6,vida:17,ouro:7,habilidade:'Maldição da fogueira verde',arte:'assets/art/hd/monsters/fanatico-orgulho-hd.webp'}],
-  lunar_monolito:[{nome:'Vigia Rúnico Desperto',ataque:7,vida:24,ouro:8,habilidade:'Pulso do monólito',arte:'assets/art/pilot/sentinela-runas-hd-v2.webp'}],
-  lunar_aranhas:[{nome:'Tecelã de Veneno Prateado',ataque:8,vida:25,ouro:9,habilidade:'Teia envenenada',arte:'assets/art/hd/monsters/cabra-malgor-hd.webp'}],
-  montanhas_passagem:[{nome:'Saqueador dos Picos',ataque:8,vida:30,ouro:9,habilidade:'Machado da avalanche',arte:'assets/art/pilot/grumnak-hd-v2.webp'}],
-  montanhas_mina:[{nome:'Mineiro Ossificado',ataque:9,vida:32,ouro:10,habilidade:'Picareta espectral',arte:'assets/art/hd/monsters/espectro-rainha-hd.webp'}],
-  montanhas_gelo:[{nome:'Troll da Geada Profunda',ataque:10,vida:38,ouro:12,habilidade:'Sopro congelante',arte:'assets/art/pilot/troll-anciao-hd-v2.webp'}],
-  pico_encosta:[{nome:'Salamandra de Magma',ataque:12,vida:42,ouro:14,habilidade:'Sangue incandescente',arte:'assets/art/hd/monsters/cabra-malgor-hd.webp'}],
-  pico_ninho_dragao:[{nome:'Draconato da Guarda Rubra',ataque:15,vida:55,ouro:19,habilidade:'Escamas de fogo ancestral',arte:'assets/art/hd/monsters/fanatico-orgulho-hd.webp'}],
-  mortas_campos:[{nome:'Ceifador dos Campos Mortos',ataque:11,vida:40,ouro:13,habilidade:'Foice do desespero',arte:'assets/art/hd/monsters/espectro-rainha-hd.webp'}],
-  mortas_catacumbas:[{nome:'Cavaleiro sem Sepultura',ataque:14,vida:52,ouro:17,habilidade:'Juramento além da morte',arte:'assets/art/pilot/sentinela-runas-hd-v2.webp'}],
-  khar_galerias:[{nome:'Autômato de Bronze Anão',ataque:9,vida:36,ouro:11,habilidade:'Engrenagens blindadas',arte:'assets/art/pilot/sentinela-runas-hd-v2.webp'}],
-  khar_labirinto:[{nome:'Minotauro Exilado',ataque:12,vida:46,ouro:15,habilidade:'Fúria do labirinto',arte:'assets/art/pilot/troll-anciao-hd-v2.webp'}],
-  khar_templo_minotauro:[{nome:'Oráculo dos Chifres Negros',ataque:14,vida:49,ouro:18,habilidade:'Visão do golpe futuro',arte:'assets/art/hd/monsters/ilusionista-areias-hd.webp'}]
+  campos_estrada:[{nome:'Bandoleiro da Estrada Velha',ataque:6,vida:24,ouro:8,habilidade:'Emboscada entre as carroças',arte:'assets/art/pilot/grumnak-hd-v2.webp'}],
+  campos_ponte:[{nome:'Cobrador Corrompido de Eldrimar',ataque:8,vida:30,ouro:10,habilidade:'Pedágio sangrento',arte:'assets/art/pilot/grumnak-hd-v2.webp'}],
+  lunar_bosque:[{nome:'Cervo de Chifres Lunares',ataque:10,vida:36,ouro:12,habilidade:'Investida iluminada',arte:'assets/art/hd/monsters/guardia-seiva-hd.webp'}],
+  lunar_goblins:[{nome:'Xamã Goblin das Brasas',ataque:12,vida:34,ouro:14,habilidade:'Maldição da fogueira verde',arte:'assets/art/hd/monsters/fanatico-orgulho-hd.webp'}],
+  lunar_monolito:[{nome:'Vigia Rúnico Desperto',ataque:14,vida:48,ouro:16,habilidade:'Pulso do monólito',arte:'assets/art/pilot/sentinela-runas-hd-v2.webp'}],
+  lunar_aranhas:[{nome:'Tecelã de Veneno Prateado',ataque:16,vida:50,ouro:18,habilidade:'Teia envenenada',arte:'assets/art/hd/monsters/cabra-malgor-hd.webp'}],
+  montanhas_passagem:[{nome:'Saqueador dos Picos',ataque:16,vida:60,ouro:18,habilidade:'Machado da avalanche',arte:'assets/art/pilot/grumnak-hd-v2.webp'}],
+  montanhas_mina:[{nome:'Mineiro Ossificado',ataque:18,vida:64,ouro:20,habilidade:'Picareta espectral',arte:'assets/art/hd/monsters/espectro-rainha-hd.webp'}],
+  montanhas_gelo:[{nome:'Troll da Geada Profunda',ataque:20,vida:76,ouro:24,habilidade:'Sopro congelante',arte:'assets/art/pilot/troll-anciao-hd-v2.webp'}],
+  pico_encosta:[{nome:'Salamandra de Magma',ataque:24,vida:84,ouro:28,habilidade:'Sangue incandescente',arte:'assets/art/hd/monsters/cabra-malgor-hd.webp'}],
+  pico_ninho_dragao:[{nome:'Draconato da Guarda Rubra',ataque:30,vida:110,ouro:38,habilidade:'Escamas de fogo ancestral',arte:'assets/art/hd/monsters/fanatico-orgulho-hd.webp'}],
+  mortas_campos:[{nome:'Ceifador dos Campos Mortos',ataque:22,vida:80,ouro:26,habilidade:'Foice do desespero',arte:'assets/art/hd/monsters/espectro-rainha-hd.webp'}],
+  mortas_catacumbas:[{nome:'Cavaleiro sem Sepultura',ataque:28,vida:104,ouro:34,habilidade:'Juramento além da morte',arte:'assets/art/pilot/sentinela-runas-hd-v2.webp'}],
+  khar_galerias:[{nome:'Autômato de Bronze Anão',ataque:18,vida:72,ouro:22,habilidade:'Engrenagens blindadas',arte:'assets/art/pilot/sentinela-runas-hd-v2.webp'}],
+  khar_labirinto:[{nome:'Minotauro Exilado',ataque:24,vida:92,ouro:30,habilidade:'Fúria do labirinto',arte:'assets/art/pilot/troll-anciao-hd-v2.webp'}],
+  khar_templo_minotauro:[{nome:'Oráculo dos Chifres Negros',ataque:28,vida:98,ouro:36,habilidade:'Visão do golpe futuro',arte:'assets/art/hd/monsters/ilusionista-areias-hd.webp'}]
 }
 
 const eq=(id:string,nome:string,slot:Equipment['slot'],preco:number,ataque:number,vida:number,defesa:number,habilidade:string,arte:string,raridade:Equipment['raridade']):Equipment=>({id,nome,slot,preco,ataque,vida,defesa,habilidade,arte,imagem:arte,raridade})
