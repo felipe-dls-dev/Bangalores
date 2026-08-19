@@ -159,7 +159,11 @@ export function equipmentLevelAllowed(e:Equipment,xp:number){return deriveLevel(
 const CONSUMABLE_LOOT_LEVEL:Record<Rarity,number>={comum:1,incomum:4,raro:8,epico:12,lendario:16,mitico:20,heroico:20}
 function monsterLootLevel(enemy:Enemy){const level=Math.max(1,enemy.nivel??enemy.dificuldade);return level+(enemy.boss?2:enemy.elite?1:0)}
 function monsterDropChance(enemy:Enemy){const level=Math.max(1,enemy.nivel??enemy.dificuldade);return enemy.boss?1:enemy.elite?Math.min(.82,.58+level*.012):Math.min(.58,.30+level*.012)}
-function equipmentLootPool(enemy:Enemy,heroId:string|undefined,heroLevel:number){const cap=Math.min(heroLevel,monsterLootLevel(enemy));return EQUIPMENT.filter(e=>!FREE_EQUIPMENT.has(e.id)&&equipmentRequiredLevel(e)<=cap&&equipmentClassAllowed(e,heroId))}
+function equipmentTierIndex(level:number){return EQUIPMENT_LEVELS.reduce((idx,lvl,i)=>lvl<=level?i:idx,0)}
+// Drop pode "vislumbrar" até 2 tiers acima do nível atual do herói — o item cai na bolsa mesmo que
+// ele ainda não possa equipar (equipmentLevelAllowed continua bloqueando o equip), virando uma meta
+// visível de conquista em vez de um teto que nunca surpreende.
+function equipmentLootPool(enemy:Enemy,heroId:string|undefined,heroLevel:number){const reachLevel=EQUIPMENT_LEVELS[Math.min(EQUIPMENT_LEVELS.length-1,equipmentTierIndex(heroLevel)+2)];const cap=Math.min(reachLevel,monsterLootLevel(enemy));return EQUIPMENT.filter(e=>!FREE_EQUIPMENT.has(e.id)&&equipmentRequiredLevel(e)<=cap&&equipmentClassAllowed(e,heroId))}
 function consumableLootPool(enemy:Enemy){const cap=monsterLootLevel(enemy);return CONSUMABLES.filter(item=>(CONSUMABLE_LOOT_LEVEL[item.raridade??'comum']??1)<=cap)}
 // Épico e lendário continuam podendo cair de inimigos/baús/missões, mas com chance muito menor —
 // o caminho confiável para essas raridades é a Forja (loja bloqueia a compra direta delas).
