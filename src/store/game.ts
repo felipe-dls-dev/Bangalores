@@ -17,7 +17,7 @@ import { CLASS_BOOTS } from '../data/boots'
 import { BACKPACKS } from '../data/backpacks'
 import { NEW_CLASS_EQUIPMENT } from '../data/newClassEquipment'
 import { NEW_HEROES_WEAPONS } from '../data/newHeroesWeapons'
-import { SHARED_EQUIPMENT } from '../data/sharedEquipment'
+import { SHARED_EQUIPMENT, SHARED_CLASS_PROGRESSION } from '../data/sharedEquipment'
 import { EXPANDED_SUBREGIONS } from '../data/expandedSubregions'
 import { STEELMERE_SUBREGIONS } from '../data/subregioesSteelmere'
 import monsterArt from '../data/monsterArt.json'
@@ -64,7 +64,7 @@ export const HEROES = heroes as Hero[]
 const RAW_EQUIPMENT = [...(equipments as Equipment[]).map(equipment=>({
   ...equipment,
   arte:EQUIPMENT_HD_OVERRIDES[equipment.id]??hdCollectionArt(equipment.arte,'equipment')
-})),...EXTRA_EQUIPMENT,...CLASS_OFFHANDS,...CLASS_HEADGEAR,...CLASS_ARMOR,...CLASS_LEGWEAR,...CLASS_BOOTS,...NEW_CLASS_EQUIPMENT,...NEW_HEROES_WEAPONS,...SHARED_EQUIPMENT,...BACKPACKS]
+})),...EXTRA_EQUIPMENT,...CLASS_OFFHANDS,...CLASS_HEADGEAR,...CLASS_ARMOR,...CLASS_LEGWEAR,...CLASS_BOOTS,...NEW_CLASS_EQUIPMENT,...NEW_HEROES_WEAPONS,...SHARED_EQUIPMENT,...SHARED_CLASS_PROGRESSION,...BACKPACKS]
 // Economia da loja: mantém o balanceamento-base anterior (1,6×) e aplica
 // o novo encarecimento global de 10× a equipamentos e consumíveis.
 const ITEM_PRICE_MULTIPLIER=16

@@ -1,12 +1,12 @@
-import type { Equipment } from '../types'
+import type { Equipment, Rarity, Slot } from '../types'
 
 // Conjuntos exclusivos compartilhados entre duas ou três classes aparentadas — em vez de
 // duplicar arte/conteúdo para cada classe nova, o mesmo item serve para o grupo inteiro,
 // com uma variação sutil de atributos por classe (statsByClass) para manter identidade mesmo
 // em peças compartilhadas. A arma (mão direita) continua exclusiva de cada classe — ver
 // newHeroesWeapons.ts — só a armadura é compartilhada.
-// Cada linha aqui é o primeiro tier (nível 1) de um conjunto de progressão; os tiers
-// seguintes podem ser adicionados depois seguindo o mesmo padrão de armorSets.ts.
+// Cada linha aqui é o tier 1 (o item base) de uma progressão de 8 tiers — os outros 7 tiers,
+// mais os slots de capacete/calças/botas, estão gerados logo abaixo a partir do mesmo tema.
 export const SHARED_EQUIPMENT: Equipment[] = [
  {
   id: 'manto_ordem_vida', nome: 'Manto da Ordem da Vida', slot: 'peitoral', preco: 18, ataque: 0, vida: 2, defesa: 1,
@@ -30,3 +30,72 @@ export const SHARED_EQUIPMENT: Equipment[] = [
   statsByClass: { monge: { ataque: 1 }, cacadora: { vida: 1 }, cacador: { defesa: 1 } }
  }
 ]
+
+interface SharedGroup {
+ id: string; classes: string[]; tipo: string
+ slotLabel: Partial<Record<Slot, string>>
+ // 8 nomes temáticos, um por tier — o índice 0 só nomeia capacete/calças/botas do tier 1
+ // (o peitoral do tier 1 já existe acima, com nome próprio).
+ themes: string[]
+ ability: (theme: string) => string
+ statsByClass: (bonus: number) => Record<string, { ataque?: number; vida?: number; defesa?: number }>
+}
+
+const GROUPS: SharedGroup[] = [
+ {
+  id: 'ordem_vida', classes: ['sacerdotisa', 'druida'], tipo: 'veste_vital',
+  slotLabel: { capacete: 'Véu', peitoral: 'Manto', calcas: 'Saia', botas: 'Sandálias' },
+  themes: ['Ordem da Vida', 'Amanhecer Bento', 'Comunhão Sagrada', 'Véu da Piedade', 'Luz Radiante de Khar-Dur', 'Bênção Ancestral', 'Coração Eterno', 'Vida Suprema'],
+  ability: theme => `Bênção de ${theme}: protege quem cuida dos outros, moldada de forma diferente pela Sacerdotisa e pela Druida.`,
+  statsByClass: bonus => ({ sacerdotisa: { vida: bonus }, druida: { defesa: bonus } })
+ },
+ {
+  id: 'circulo_arcano', classes: ['arcanista', 'conjurador'], tipo: 'veste_arcana',
+  slotLabel: { capacete: 'Capuz', peitoral: 'Veste', calcas: 'Calças', botas: 'Botas' },
+  themes: ['Círculo Arcano', 'Véu do Sol Negro', 'Sigilo dos Conjuradores', 'Eclipse Absoluto', 'Estrelas Mortas', 'Vazio Arcano', 'Regência do Sol Negro', 'Última Sombra'],
+  ability: theme => `Poder de ${theme}: canaliza a energia do Sol Negro, amplificada de forma diferente pela Arcanista e pelo Conjurador.`,
+  statsByClass: bonus => ({ arcanista: { ataque: bonus }, conjurador: { vida: bonus } })
+ },
+ {
+  id: 'andarilhos', classes: ['monge', 'cacadora', 'cacador'], tipo: 'traje_leve',
+  slotLabel: { capacete: 'Capuz', peitoral: 'Traje', calcas: 'Calças', botas: 'Botas' },
+  themes: ['Andarilhos', 'Trilha dos Ventos', 'Passo Silencioso', 'Caminho dos Foragidos', 'Sombra Errante', 'Última Trilha', 'Andarilho Lendário', 'Peregrino Eterno'],
+  ability: theme => `Preparo de ${theme}: favorece agilidade e reflexos, ajustado ao estilo do Monge, da Caçadora e do Caçador.`,
+  statsByClass: bonus => ({ monge: { ataque: bonus }, cacadora: { vida: bonus }, cacador: { defesa: bonus } })
+ }
+]
+
+const ART_FOLDER: Record<string, string> = { capacete: 'shared-headgear', peitoral: 'shared-armor', calcas: 'shared-legwear', botas: 'shared-boots' }
+// Vida/defesa por slot e índice de tier (0-7), no mesmo padrão de newClassEquipment.ts.
+const slotStats = (slot: Slot, i: number) => {
+ const high = Math.floor(i / 2)
+ if (slot === 'peitoral') return { vida: 3 + high, defesa: 1 + i }
+ if (slot === 'capacete') return { vida: 1 + Math.floor(i / 3), defesa: 1 + i }
+ if (slot === 'calcas') return { vida: 1 + Math.floor(i / 4), defesa: i }
+ return { vida: Math.floor(i / 4), defesa: i }
+}
+const armorLine = (group: SharedGroup, slot: Slot, tiers: number[]): Equipment[] => tiers.map(i => {
+ const stat = slotStats(slot, i), bonus = 1 + Math.floor(i / 4), label = group.slotLabel[slot]!, theme = group.themes[i]
+ const id = `${group.id}_${slot}_t${i}`
+ return {
+  id, nome: `${label} de ${theme}`, slot, preco: 14 + i * 3, ataque: 0, vida: stat.vida, defesa: stat.defesa,
+  habilidade: group.ability(theme),
+  imagem: `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`, arte: `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`,
+  classeExclusiva: group.classes, tipoEquipamento: group.tipo,
+  statsByClass: group.statsByClass(bonus)
+ } as Equipment
+})
+
+// 7 tiers novos de peitoral (o tier 1 já existe em SHARED_EQUIPMENT acima) + 8 tiers completos
+// de capacete/calças/botas por grupo — 93 peças no total. Mão esquerda ficou de fora de
+// propósito: Druida e Caçador já têm linha própria de pergaminho/aljava exclusiva
+// (newClassEquipment.ts), e a Caçadora costuma lutar com facas, que bloqueiam esse slot.
+// Nível mínimo, raridade e preço final de cada peça são recalculados automaticamente por
+// balanceEquipment (game.ts) a partir do poder relativo dentro do mesmo grupo classe+slot —
+// por isso não são definidos aqui, só a progressão relativa de atributos entre os tiers.
+export const SHARED_CLASS_PROGRESSION: Equipment[] = GROUPS.flatMap(group => [
+ ...armorLine(group, 'capacete', [0, 1, 2, 3, 4, 5, 6, 7]),
+ ...armorLine(group, 'peitoral', [1, 2, 3, 4, 5, 6, 7]),
+ ...armorLine(group, 'calcas', [0, 1, 2, 3, 4, 5, 6, 7]),
+ ...armorLine(group, 'botas', [0, 1, 2, 3, 4, 5, 6, 7])
+])
