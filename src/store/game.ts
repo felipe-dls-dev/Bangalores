@@ -132,6 +132,13 @@ export type WeaponAffinity='guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida
 export const EQUIPMENT_LEVELS=[1,5,10,17,26,36,47,58,68,78,89,100]
 const LEVEL_RARITY:Rarity[]=['comum','incomum','incomum','raro','raro','raro','epico','epico','epico','lendario','lendario','lendario']
 const FREE_EQUIPMENT=new Set(['lamina_vento','leve_estrada','armor_leao_valoria','machado_bronze','pesado_bronze','armor_pesada_khardur','orbe_veu','grimorio_lua','veste_estrelas','facas_predador','broquel_raposa','traje_raposa','pederneira_ancestrais','armadura_couro','botas_viajante','calcas_batedor','druida_arma_broto_de_abdendriel','druida_mao_esquerda_broto_de_abdendriel','druida_peitoral_broto_de_abdendriel','cacador_arma_vigia_das_cinzas','cacador_mao_esquerda_vigia_das_cinzas','cacador_peitoral_vigia_das_cinzas','sacola_4'])
+// Só comum/incomum/raro (tiers 0-5) chegam a ser comprados na loja de verdade (épico/lendário são
+// bloqueados em buyEquipment, só saem via Forja) — então o desconto de "início de jogo" se
+// concentra nesses tiers e converge para preço cheio a partir do raro avançado (tier 4+), sem
+// mexer no valor de venda/forja dos itens de ponta. Com ouro inicial de 10-20 e as primeiras
+// vitórias rendendo poucas moedas, o preço cheio (Math.max(item.preco,floor)*MULTIPLIER) deixava
+// literalmente nenhum equipamento comprável no começo da jornada.
+const TIER_PRICE_FACTOR=[.1,.25,.4,.6,.8,1,1,1,1,1,1,1]
 function equipmentPower(e:Equipment){return e.ataque*2+e.defesa*2+e.vida*.5}
 function balanceEquipment(items:Equipment[]){
  const groups=new Map<string,Equipment[]>()
@@ -139,7 +146,7 @@ function balanceEquipment(items:Equipment[]){
  const balanced=new Map<string,Equipment>()
  for(const group of groups.values()){
   const sorted=[...group].sort((a,b)=>equipmentPower(a)-equipmentPower(b)||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'))
-  const priced=sorted.map((item,index)=>{const tier=sorted.length===1?0:Math.round(index*Math.min(EQUIPMENT_LEVELS.length-1,sorted.length-1)/(sorted.length-1));const free=FREE_EQUIPMENT.has(item.id);const level=free?1:EQUIPMENT_LEVELS[tier];return{item,level,rarity:free?item.raridade:LEVEL_RARITY[tier],preco:Math.max(item.preco,8+level*3)}})
+  const priced=sorted.map((item,index)=>{const tier=sorted.length===1?0:Math.round(index*Math.min(EQUIPMENT_LEVELS.length-1,sorted.length-1)/(sorted.length-1));const free=FREE_EQUIPMENT.has(item.id);const level=free?1:EQUIPMENT_LEVELS[tier];return{item,level,rarity:free?item.raridade:LEVEL_RARITY[tier],preco:Math.max(item.preco,8+level*3)*TIER_PRICE_FACTOR[free?0:tier]}})
   // Um preço-base mais alto do que o piso do seu tier só é mantido (nunca reduzido) até aqui, então um item
   // mais fraco cujo preço original veio inflado (ex.: por causa de uma habilidade especial) podia acabar
   // custando mais do que um item estritamente melhor no mesmo grupo (mesmo dentro do mesmo tier, já que o
