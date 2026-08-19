@@ -89,7 +89,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   // jeito que dano causado — quem manteve o grupo de pé também ajudou a vencer a batalha.
   const healingByPlayer=healTargetUserId?{...(battle.healingByPlayer??{}),[userId]:Number(battle.healingByPlayer?.[userId]??0)+healAmount}:battle.healingByPlayer
   const tag=label&&label!=='Ataque'?label:undefined
-  const statusResult=!target&&actual>0&&!selfDamage?applyElementalStatus(enemyStun.status,weaponElement,buffedAttack,forceStatus):{status:enemyStun.status,appliedKind:undefined as string|undefined}
+  const statusResult=!target&&actual>0&&!selfDamage&&(forceStatus||naturalAttackRoll===6)?applyElementalStatus(enemyStun.status,weaponElement,buffedAttack,forceStatus):{status:enemyStun.status,appliedKind:undefined as string|undefined}
   const message=selfDamage
    ?`${actor}${tag?` usa ${tag} e`:' ataca, mas'} falha catastroficamente (dado ${attackRoll}) e sofre ${selfDamage} de dano do próprio golpe.`
    :`${actor}${tag?` usa ${tag}:`:':'} ataque ${attackRoll} contra defesa ${defenseRoll}; causou ${actual} de dano${target?` a ${foeName}${felled?' (derrotado)':''}`:''}.${phased?` ${enemy.nome} entra em nova fase e convoca reforços!`:''}${keepsTurn?' Ataque Duplo permite atacar novamente.':''}${attackRoll===2?' O inimigo recebe +1 na próxima rolagem.':''}${healTargetUserId?` A energia natural do equipamento cura ${healAmount}${healTargetName?` de ${healTargetName}`:''}.`:''}${enemyStun.wasStunned?` ${foeName} estava atordoado e não conseguiu se defender.`:''}${statusResult.appliedKind?` ${foeName} fica ${STATUS_LABELS[statusResult.appliedKind]}.`:''}`
@@ -300,7 +300,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
     workingVitals[target.user_id]={...targetVitals,hp:Math.max(0,Number(targetVitals.hp??1)-damage),shield:Math.max(0,Number(targetVitals.shield??0)-shieldBlocked)}
    }
    const fervorGain=!intercepting&&defenseRoll===6?Math.min(3,Number(targetBuffs.fervor??0)+1):Number(targetBuffs.fervor??0)
-   const statusApplied=!intercepting&&canApplyStatus&&!rogueDodge&&!resolved.selfDamage&&damage>0&&!resisted?applyElementalStatus(targetStun.status,enemyElement,attackBase):{status:targetStun.status}
+   const statusApplied=!intercepting&&canApplyStatus&&!rogueDodge&&!resolved.selfDamage&&damage>0&&!resisted&&naturalAttackRoll===6?applyElementalStatus(targetStun.status,enemyElement,attackBase):{status:targetStun.status}
    if(statusApplied.appliedKind){appliedStatusKind=statusApplied.appliedKind;appliedStatusTargetName=target.display_name}
    const summonAfter=intercepting?(summonDied?undefined:{...targetSummon!,hp:Math.max(0,targetSummon!.hp-damage)}):targetSummon
    workingBuffs[target.user_id]={...statusApplied.status,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),fervor:fervorGain,summon:summonAfter,...(summonDied&&targetSummon!.tipo==='arcano'?{attackPct:0,defensePct:0}:{})}

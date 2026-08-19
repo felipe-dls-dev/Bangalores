@@ -560,7 +560,10 @@ export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRol
 export type StatusEffects={bleed?:{turns:number;amount:number};burn?:{turns:number;amount:number};poison?:{turns:number;amount:number};frozen?:number;grabbed?:number;blinded?:number;stunned?:boolean}
 const ELEMENT_STATUS:Partial<Record<Element,'bleed'|'burn'|'poison'|'frozen'|'grabbed'|'blinded'|'stunned'>>={fisico:'bleed',fogo:'burn',natureza:'poison',gelo:'frozen',sombra:'grabbed',luz:'blinded',arcano:'stunned'}
 export const STATUS_LABELS:Record<string,string>={bleed:'Sangrando',burn:'Pegando fogo',poison:'Envenenado',frozen:'Congelado',grabbed:'Agarrado',blinded:'Cego',stunned:'Atordoado'}
-const STATUS_PROC_CHANCE=.3
+// Efeito elemental só é testado num acerto crítico (rolagem natural 6) — os call-sites de
+// applyElementalStatus checam isso antes de chamar a função. Quando testado, 50% de chance de
+// aplicar, e a condição dura só até o próximo turno do alvo.
+const STATUS_PROC_CHANCE=.5
 // Elemento/resistência não são propriedades fixas do catálogo (a loja só vende equipamento
 // "normal"): são concedidos por instância de equipamento — ao forjar com sucesso ou ao
 // receber um item ao derrotar um chefe — e guardados em equipmentElements/equipmentResistances
@@ -573,10 +576,10 @@ export function applyElementalStatus(status:StatusEffects|undefined,element:Elem
  const kind=ELEMENT_STATUS[element],current=status??{}
  if(!kind||(!force&&Math.random()>=STATUS_PROC_CHANCE))return{status:current}
  if(kind==='stunned')return{status:{...current,stunned:true},appliedKind:kind}
- if(kind==='frozen')return{status:{...current,frozen:2},appliedKind:kind}
- if(kind==='grabbed')return{status:{...current,grabbed:2},appliedKind:kind}
- if(kind==='blinded')return{status:{...current,blinded:2},appliedKind:kind}
- return{status:{...current,[kind]:{turns:3,amount:Math.max(1,Math.round(attackPower*.25))}},appliedKind:kind}
+ if(kind==='frozen')return{status:{...current,frozen:1},appliedKind:kind}
+ if(kind==='grabbed')return{status:{...current,grabbed:1},appliedKind:kind}
+ if(kind==='blinded')return{status:{...current,blinded:1},appliedKind:kind}
+ return{status:{...current,[kind]:{turns:1,amount:Math.max(1,Math.round(attackPower*.25))}},appliedKind:kind}
 }
 export function tickStatus(status?:StatusEffects):{status:StatusEffects;damage:number;messages:string[]}{
  const current:StatusEffects={...(status??{})},messages:string[]=[]
@@ -657,7 +660,7 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const healProc=druidHealProc(s),healed=Math.random()<healProc.chance,forgedHeal=hasCraftedEffect(s,'cura_forjada')&&Math.random()<.05,curaBonusMult=1+(hasCraftedEffect(s,'cura_bonus')?.1:0),rawHeal=((healed?healProc.amount:0)+(forgedHeal?Math.max(2,Math.round(attackBase*.25)):0))*curaBonusMult,healAmount=rawHeal>0?Math.max(0,Math.min(Math.round(rawHeal),maxHp(s)-s.hp)):0
  const monkFervorProc=s.heroId==='monge'&&attackRoll===5&&Math.random()<.25
  const fervor=forceCrit?0:attackRoll===6||monkFervorProc?Math.min(3,(s.fervor??0)+1):(s.fervor??0)
- const statusResult=!target&&damage>0&&!selfDamage?applyElementalStatus(enemyStun.status,forceStatusElement??heroWeaponElement(s),attackBase,Boolean(forceStatusElement)):{status:enemyStun.status,appliedKind:undefined as string|undefined}
+ const statusResult=!target&&damage>0&&!selfDamage&&(Boolean(forceStatusElement)||naturalAttackRoll===6)?applyElementalStatus(enemyStun.status,forceStatusElement??heroWeaponElement(s),attackBase,Boolean(forceStatusElement)):{status:enemyStun.status,appliedKind:undefined as string|undefined}
  set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,firstStrikeBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus,enemyStatus:statusResult.status,hp:healAmount>0?s.hp+healAmount:s.hp,fervor})
  if(healAmount>0)triggerSupportFx(set,get,'cura')
  const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=`${heroApproachPhrase(s.heroId,weaponName)}, ${attackTierPhrase(attackRoll)}`
@@ -746,7 +749,7 @@ function enemyAttack(set:any,get:any){
  const enemyElement=enemy.elemento??'fisico',resisted=!intercepting&&heroHasResistance(s,enemyElement)
  if(resisted&&raw>0)raw=Math.max(0,raw-1)
  const blocked=intercepting?0:Math.min(shield,raw),enemyName=enemy.nome,enemyApproach=enemyApproachPhrase(enemy),heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'Você';raw-=blocked;if(!intercepting)shield-=blocked
- const statusResult=!intercepting&&!dodged&&!resolved.selfDamage&&raw>0&&!resisted?applyElementalStatus(s.heroStatus,enemyElement,attackBase):{status:s.heroStatus??{},appliedKind:undefined as string|undefined}
+ const statusResult=!intercepting&&!dodged&&!resolved.selfDamage&&raw>0&&!resisted&&naturalAttackRoll===6?applyElementalStatus(s.heroStatus,enemyElement,attackBase):{status:s.heroStatus??{},appliedKind:undefined as string|undefined}
  const priestDefenseHeal=!intercepting&&!resolved.selfDamage&&s.heroId==='sacerdotisa'&&defenseRoll>=5&&Math.random()<.2?1:0
  const summonDamage=intercepting?raw:0,summonHpAfter=intercepting?Math.max(0,summon!.hp-summonDamage):0,summonDied=intercepting&&summonHpAfter<=0
  const hp=intercepting?s.hp:Math.min(maxHp(s),Math.max(0,s.hp-raw)+priestDefenseHeal),enemyHp=Math.max(0,s.enemyHp-resolved.selfDamage)
