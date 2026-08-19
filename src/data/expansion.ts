@@ -7,7 +7,9 @@ export const CLASS_IDENTITIES={guerreiro:{nome:'Mestre de Armas',texto:'Combos, 
 // boots, newClassEquipment) com o novo sistema elemental sem precisar editar item a item.
 // Caçadora usa sombra (identidade "Sombra Veloz") em vez de natureza, para não duplicar o
 // mesmo elemento/condição da Druida; Caçador usa gelo para não colidir com a Caçadora.
-export const CLASS_ELEMENT:Record<'guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida'|'cacador',Element>={guerreiro:'fisico',guardiao:'luz',cacadora:'sombra',arcanista:'arcano',druida:'natureza',cacador:'gelo'}
+// Com 9 classes para 7 elementos, alguns pares dividem elemento de propósito — Guardião e
+// Sacerdotisa (luz, ambos "protetores") e Arcanista e Conjurador (arcano, ambos conjuradores).
+export const CLASS_ELEMENT:Record<'guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida'|'cacador'|'monge'|'sacerdotisa'|'conjurador',Element>={guerreiro:'fisico',guardiao:'luz',cacadora:'sombra',arcanista:'arcano',druida:'natureza',cacador:'gelo',monge:'fogo',sacerdotisa:'luz',conjurador:'arcano'}
 export const TALENTS=[
  {id:'vigor',nome:'Vigor do Aventureiro',texto:'+5 de vida máxima.',level:3},{id:'precisao',nome:'Precisão Mortal',texto:'+1 de ataque.',level:5},{id:'muralha',nome:'Muralha Interior',texto:'+1 de defesa.',level:7},
  {id:'alquimista',nome:'Alquimista de Campo',texto:'Consumíveis restauram ou concedem +1 adicional.',level:9},{id:'cacador',nome:'Caçador de Tiranos',texto:'+2 de dano contra chefes.',level:11},{id:'destino',nome:'Senhor do Destino',texto:'+1 na primeira rolagem de cada combate.',level:14}

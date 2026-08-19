@@ -58,5 +58,35 @@
     "imagem": "assets/heroes/cacador-terras-mortas.png",
     "arte": "assets/heroes/cacador-terras-mortas.png",
     "raridade": "heroico"
+  },
+  {
+    "id": "monge",
+    "nome": "Monge do Pico de Ignaris",
+    "vida": 16,
+    "ataque": 5,
+    "habilidade": "Passivo: 25% de chance de golpes fortes (rolagem 5) também gerarem Fervor de Combate. Ativo: Golpe Flamejante — ataca imediatamente com +2 de dano e aplica Pegando Fogo garantido no inimigo, uma vez por batalha.",
+    "imagem": "assets/heroes/monge-ignaris-v2.png",
+    "arte": "assets/heroes/monge-ignaris-v2.png",
+    "raridade": "heroico"
+  },
+  {
+    "id": "sacerdotisa",
+    "nome": "Sacerdotisa de Khar-Dur",
+    "vida": 16,
+    "ataque": 3,
+    "habilidade": "Passivo: 20% de chance de recuperar 1 de vida ao se defender com sucesso. Ativo: Bênção da Vida — reanima um aliado caído com 30% da vida máxima (cooperativo) ou, no modo solo, protege você de ser derrotada uma vez por batalha, sobrevivendo com 30% da vida máxima.",
+    "imagem": "assets/heroes/sacerdotisa-khardur-v2.png",
+    "arte": "assets/heroes/sacerdotisa-khardur-v2.png",
+    "raridade": "heroico"
+  },
+  {
+    "id": "conjurador",
+    "nome": "Conjurador do Sol Negro",
+    "vida": 15,
+    "ataque": 3,
+    "habilidade": "Passivo: recupera 1 de vida sempre que o dano bônus da fera invocada é aplicado. Ativo: Conjurar Fera Espectral — por 3 turnos, seus ataques causam +3 de dano bônus enquanto a fera luta ao seu lado.",
+    "imagem": "assets/heroes/conjurador-soltnegro-v2.png",
+    "arte": "assets/heroes/conjurador-soltnegro-v2.png",
+    "raridade": "heroico"
   }
 ]
