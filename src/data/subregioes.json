@@ -1,6 +1,6 @@
 [
   {
-    "id":"campos_estrada","regionId":"campos_dourados","nome":"Estrada das Planícies de Alvora","descricao":"Rotas de caravanas, pequenas fazendas e os primeiros perigos de Havendown.","nivelMin":2,"nivelMax":4,"encontrosNecessarios":3,"icone":"🌾","temaLoot":"Couro, poções e armas simples","desafios":["Caravana atacada","Pedágio improvisado","Baú abandonado"],
+    "id":"campos_estrada","regionId":"campos_dourados","nome":"Estrada das Planícies de Alvora","descricao":"Rotas de caravanas, pequenas fazendas e os primeiros perigos de Havendown.","nivelMin":1,"nivelMax":3,"encontrosNecessarios":3,"icone":"🌾","temaLoot":"Couro, poções e armas simples","desafios":["Caravana atacada","Pedágio improvisado","Baú abandonado"],
     "inimigos":[
       {"nome":"Bandido da Estrada","ataque":4,"vida":14,"ouro":4,"habilidade":"Golpe oportunista","arte":"assets/art/monsters/grumnak.webp"},
       {"nome":"Lobo dos Campos","ataque":4,"vida":16,"ouro":4,"habilidade":"Mordida veloz","arte":"assets/art/monsters/cabra_malgor.webp"},

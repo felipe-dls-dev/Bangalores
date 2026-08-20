@@ -1,5 +1,5 @@
 [
-  {"id":"campos_dourados","nome":"Planícies de Alvora","x":0.22,"y":0.40,"dificuldade":1,"nivelMin":2,"nivelMax":8,"descricao":"Planícies, estradas e a fronteira civilizada de Havendown."},
+  {"id":"campos_dourados","nome":"Planícies de Alvora","x":0.22,"y":0.40,"dificuldade":1,"nivelMin":1,"nivelMax":8,"descricao":"Planícies, estradas e a fronteira civilizada de Havendown."},
   {"id":"floresta_lunargenta","nome":"Floresta de Abdendriel","x":0.78,"y":0.47,"dificuldade":2,"nivelMin":6,"nivelMax":16,"descricao":"Bosques encantados, goblins, espíritos e criaturas venenosas."},
   {"id":"montanhas_cinzentas","nome":"Serra de Kaldrum","x":0.25,"y":0.20,"dificuldade":3,"nivelMin":12,"nivelMax":22,"descricao":"Passagens perigosas, minas abandonadas e cavernas congeladas."},
   {"id":"pico_escarlate","nome":"Pico de Ignaris","x":0.73,"y":0.22,"dificuldade":4,"nivelMin":18,"nivelMax":36,"descricao":"Terras vulcânicas e o temido Ninho do Dragão Vermelho."},
