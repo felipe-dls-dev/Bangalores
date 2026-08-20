@@ -93,16 +93,17 @@ export const EVENTS = [...(events as GameEvent[]).map(event=>({...event,arte:EVE
 const slotOrder: Slot[] = ['amuleto','capacete','bolsa','mao_direita','peitoral','mao_esquerda','anel_1','calcas','anel_2','botas']
 export const SLOT_ORDER = slotOrder
 
+const STARTER_GOLD=100
 const starter: Record<string,{equipped:Partial<Record<Slot,string>>, items:Record<string,number>, gold:number}> = {
-  guerreiro: { equipped:{mao_direita:'lamina_vento',mao_esquerda:'leve_estrada',peitoral:'armor_leao_valoria',bolsa:'sacola_4'}, items:{pocao_cura:1}, gold:15 },
-  guardiao: { equipped:{mao_direita:'machado_bronze',mao_esquerda:'pesado_bronze',peitoral:'armor_pesada_khardur',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:10 },
-  arcanista: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas',bolsa:'sacola_4'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:20 },
-  cacadora: { equipped:{mao_direita:'facas_predador',peitoral:'traje_raposa',bolsa:'sacola_4'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:18 }
-  ,druida: { equipped:{mao_direita:'druida_arma_broto_de_abdendriel',mao_esquerda:'druida_mao_esquerda_broto_de_abdendriel',peitoral:'druida_peitoral_broto_de_abdendriel',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:16 }
-  ,cacador: { equipped:{mao_direita:'cacador_arma_vigia_das_cinzas',mao_esquerda:'cacador_mao_esquerda_vigia_das_cinzas',peitoral:'cacador_peitoral_vigia_das_cinzas',bolsa:'sacola_4'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:17 }
-  ,monge: { equipped:{mao_direita:'manoplas_brasa',peitoral:'traje_andarilhos',bolsa:'sacola_4'}, items:{pocao_cura:1}, gold:16 }
-  ,sacerdotisa: { equipped:{mao_direita:'cetro_alvorada',peitoral:'manto_ordem_vida',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:14 }
-  ,conjurador: { equipped:{mao_direita:'totem_eco',peitoral:'veste_circulo_arcano',bolsa:'sacola_4'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:16 }
+  guerreiro: { equipped:{mao_direita:'lamina_vento',mao_esquerda:'leve_estrada',peitoral:'armor_leao_valoria',bolsa:'sacola_4'}, items:{pocao_cura:1}, gold:STARTER_GOLD },
+  guardiao: { equipped:{mao_direita:'machado_bronze',mao_esquerda:'pesado_bronze',peitoral:'armor_pesada_khardur',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:STARTER_GOLD },
+  arcanista: { equipped:{mao_direita:'orbe_veu',mao_esquerda:'grimorio_lua',peitoral:'veste_estrelas',bolsa:'sacola_4'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:STARTER_GOLD },
+  cacadora: { equipped:{mao_direita:'facas_predador',peitoral:'traje_raposa',bolsa:'sacola_4'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:STARTER_GOLD }
+  ,druida: { equipped:{mao_direita:'druida_arma_broto_de_abdendriel',mao_esquerda:'druida_mao_esquerda_broto_de_abdendriel',peitoral:'druida_peitoral_broto_de_abdendriel',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:STARTER_GOLD }
+  ,cacador: { equipped:{mao_direita:'cacador_arma_vigia_das_cinzas',mao_esquerda:'cacador_mao_esquerda_vigia_das_cinzas',peitoral:'cacador_peitoral_vigia_das_cinzas',bolsa:'sacola_4'}, items:{pocao_cura:1,bomba_fumaca:1}, gold:STARTER_GOLD }
+  ,monge: { equipped:{mao_direita:'manoplas_brasa',peitoral:'traje_andarilhos',bolsa:'sacola_4'}, items:{pocao_cura:1}, gold:STARTER_GOLD }
+  ,sacerdotisa: { equipped:{mao_direita:'cetro_alvorada',peitoral:'manto_ordem_vida',bolsa:'sacola_4'}, items:{pocao_cura:2}, gold:STARTER_GOLD }
+  ,conjurador: { equipped:{mao_direita:'totem_eco',peitoral:'veste_circulo_arcano',bolsa:'sacola_4'}, items:{pocao_cura:1,elixir_reflexo:1}, gold:STARTER_GOLD }
 }
 
 // Mantidos para a Galeria e compatibilidade com saves antigos.
