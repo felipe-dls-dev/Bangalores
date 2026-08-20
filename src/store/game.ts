@@ -307,6 +307,14 @@ export function itemSkillEffectText(item:{habilidade:string}){const txt=item.hab
 export function equipmentSetCounts(s:GameState){const names=Object.values(s.equipped).map(id=>eqById(id)?.nome.toLocaleLowerCase('pt-BR')??'');return{lua:names.filter(n=>/lua|lunar|lunargenta|abdendriel/.test(n)).length,cinzas:names.filter(n=>/cinza|dragão|escarlate/.test(n)).length,khar:names.filter(n=>/khar|runa|bronze|kholgard/.test(n)).length,eclipse:names.filter(n=>/eclipse|sombr|malgor/.test(n)).length}}
 export function hasCraftedEffect(s:GameState,effect:ForgeEffect){return Object.values(s.equipped).some(id=>Boolean(id)&&s.craftedEffects?.[id!]===effect)}
 const RARITY_TIER:Record<Rarity,number>={comum:0,incomum:1,raro:2,epico:3,lendario:4,mitico:5,heroico:6}
+export const RARITY_LABEL:Record<Rarity,string>={comum:'Comum',incomum:'Incomum',raro:'Raro',epico:'Épico',lendario:'Lendário',mitico:'Mítico',heroico:'Heroico'}
+// Forjar sem bônus um item comum continua só custando os materiais de sempre. A partir de
+// incomum, a peça também exige "sacrificar" peças prontas de uma raridade abaixo -- sobem
+// no forno e viram a peça de cima, então cada tier fica mais raro por depender do anterior.
+// Só cobre até lendário porque nenhum equipamento mítico/heroico existe hoje; o padrão de 3
+// peças do tier anterior é reaproveitado como extensão natural caso isso mude.
+export const FORGE_SACRIFICE:Partial<Record<Rarity,{rarity:Rarity,qty:number}>>={incomum:{rarity:'comum',qty:1},raro:{rarity:'incomum',qty:2},epico:{rarity:'raro',qty:3},lendario:{rarity:'epico',qty:3},mitico:{rarity:'lendario',qty:3},heroico:{rarity:'mitico',qty:3}}
+export function forgeSacrificeOwned(s:{equipmentBag:string[]},rarity:Rarity){return s.equipmentBag.filter(id=>(eqById(id)?.raridade??'comum')===rarity).length}
 export function druidHealProc(s:GameState){
  if(s.heroId!=='druida')return{chance:0,amount:0}
  const items=[eqById(s.equipped.mao_direita),eqById(s.equipped.mao_esquerda)].filter((e):e is Equipment=>Boolean(e&&(e.tipoEquipamento==='cajado_natureza'||e.tipoEquipamento==='pergaminho')))
@@ -484,23 +492,38 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    // fabricação sem bônus continua igual a antes.
    const hasUnbonusedCopy=!!item&&(s.equipmentBag.includes(item.id)||Object.values(s.equipped).includes(item.id))&&!s.craftedEffects[item.id]&&!s.forgedGemLocked?.[item.id]
    if(gem&&!hasUnbonusedCopy)return
+   // Forjar sem bônus uma peça acima de comum também "sacrifica" peças prontas de uma
+   // raridade abaixo (ex.: um item raro pede 2 incomuns), além dos materiais normais -- só
+   // vale pra fabricação nova (gem indefinido é a fabricação; refino de bônus não sacrifica).
+   const sacrifice=!choice?FORGE_SACRIFICE[item?.raridade??'comum']:undefined
+   const sacrificeOwned=sacrifice?forgeSacrificeOwned(s,sacrifice.rarity):0
+   if(sacrifice&&sacrificeOwned<sacrifice.qty)return
    const cost=gem?{...recipe!.materials,[gem.id]:(recipe!.materials[gem.id]??0)+1}:recipe?.materials
-   if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||deriveLevel(s.xp).lvl<requiredPlayerLevel||(!gem&&s.equipmentBag.length>=equipmentBagCapacity(s))||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
+   if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||deriveLevel(s.xp).lvl<requiredPlayerLevel||(!gem&&!sacrifice&&s.equipmentBag.length>=equipmentBagCapacity(s))||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
    const materials={...s.materials},success=Math.random()<forgeSuccessChance(recipe.id,forgeXp),xpGain=success?18+required*7:8+required*3
    for(const [id,qty] of Object.entries(cost))materials[id]-=success?qty:Math.max(1,Math.ceil(qty/2))
+   // Sacrifício some mesmo em falha (metade, igual aos materiais) -- só a peça nova em si
+   // depende do sucesso. Removidas de trás pra frente pra não bagunçar índices ao dar splice.
+   const bag=[...s.equipmentBag]
+   if(sacrifice){
+    let toConsume=success?sacrifice.qty:Math.max(1,Math.ceil(sacrifice.qty/2))
+    for(let i=bag.length-1;i>=0&&toConsume>0;i--){if((eqById(bag[i])?.raridade??'comum')===sacrifice.rarity){bag.splice(i,1);toConsume--}}
+   }
+   if(success&&!gem)bag.push(item.id)
    const bonusEffect=!isAttribute&&choice?choice as ForgeBonus:undefined
    // Elemento (arma) ou resistência (qualquer outro slot) só existem em itens forjados com
    // sucesso ou obtidos de chefes — a loja nunca vende equipamento com essas propriedades.
    const forgedElement=CLASS_ELEMENT[(s.heroId as keyof typeof CLASS_ELEMENT)]??'fisico'
-   const message=success?(gem?`Refinamento bem-sucedido: ${recipe.nome} — ${isAttribute?gem.texto:FORGE_BONUS_LABELS[choice as ForgeBonus]} aplicado permanentemente à peça que você já possuía. +${xpGain} XP de Forja.`:`Forja bem-sucedida: ${recipe.nome}. O item ganhou ${item.slot==='mao_direita'?`elemento ${forgedElement}`:`resistência a ${forgedElement}`}. +${xpGain} XP de Forja.`):(gem?`O refinamento de ${recipe.nome} falhou. A peça continua sem o bônus e metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`)
+   const sacrificeText=sacrifice?` (consumindo ${sacrifice.qty} peça${sacrifice.qty===1?'':'s'} ${RARITY_LABEL[sacrifice.rarity]})`:''
+   const message=success?(gem?`Refinamento bem-sucedido: ${recipe.nome} — ${isAttribute?gem.texto:FORGE_BONUS_LABELS[choice as ForgeBonus]} aplicado permanentemente à peça que você já possuía. +${xpGain} XP de Forja.`:`Forja bem-sucedida: ${recipe.nome}${sacrificeText}. O item ganhou ${item.slot==='mao_direita'?`elemento ${forgedElement}`:`resistência a ${forgedElement}`}. +${xpGain} XP de Forja.`):(gem?`O refinamento de ${recipe.nome} falhou. A peça continua sem o bônus e metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou${sacrifice?' e parte das peças sacrificadas se perdeu':''}. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`)
    const resultId=Date.now()
    set({
     materials,
+    equipmentBag:bag,
     forgeXp:forgeXp+xpGain,
     forgeAttempts:(s.forgeAttempts??0)+1,
     forgeSuccesses:(s.forgeSuccesses??0)+(success?1:0),
     ...(success?{
-     ...(gem?{}:{equipmentBag:[...s.equipmentBag,item.id]}),
      craftedEffects:bonusEffect?{...s.craftedEffects,[item.id]:bonusEffect}:recipe.effect?{...s.craftedEffects,[item.id]:recipe.effect}:s.craftedEffects,
      ...(isAttribute&&gem?{equipmentGems:{...s.equipmentGems,[item.id]:[gem.id]},forgedGemLocked:{...s.forgedGemLocked,[item.id]:true}}:{}),
      ...(item.slot==='mao_direita'?{equipmentElements:{...s.equipmentElements,[item.id]:forgedElement}}:{equipmentResistances:{...s.equipmentResistances,[item.id]:forgedElement}})

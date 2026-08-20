@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane, CheckCircle2, XCircle } from 'lucide-react'
-import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, type AttackAnimType, type SummonType } from './store/game'
+import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, type AttackAnimType, type SummonType } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
@@ -365,7 +365,12 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
  // por isso não consome espaço da mochila (a peça que sai já existia).
  const hasUnbonusedCopy=(g.equipmentBag.includes(item.id)||Object.values(g.equipped).includes(item.id))&&!g.craftedEffects[item.id]&&!g.forgedGemLocked?.[item.id]
  const needsBaseCopy=!!gem&&!hasUnbonusedCopy
- const canCraft=!locked&&!missing.length&&!needsBaseCopy&&(!!gem||g.equipmentBag.length<equipmentBagCapacity(g))
+ // Fabricar sem bônus uma peça acima de comum também sacrifica peças prontas de uma
+ // raridade abaixo (ex.: raro pede 2 incomuns), além dos materiais normais.
+ const sacrifice=!choice?FORGE_SACRIFICE[item.raridade??'comum']:undefined
+ const sacrificeOwned=sacrifice?forgeSacrificeOwned(g,sacrifice.rarity):0
+ const needsSacrifice=!!sacrifice&&sacrificeOwned<sacrifice.qty
+ const canCraft=!locked&&!missing.length&&!needsBaseCopy&&!needsSacrifice&&(!!gem||!!sacrifice||g.equipmentBag.length<equipmentBagCapacity(g))
  // Resumo do que sai da forja: os atributos base do item continuam os mesmos de sempre, o
  // bônus escolhido (se houver) é permanente e fica preso a ESTA peça (mesma regra de
  // socketGem/removeGem — não dá pra tirar e reaproveitar em outro item depois). Forjar um
@@ -376,7 +381,9 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
   ?`A peça que você já possui sairá refinada com ${gem.texto} permanente, fixado nela (não pode ser removido para outro item sem perdê-lo).`
   :choice&&gem
   ?`A peça que você já possui sairá refinada com o efeito especial "${FORGE_BONUS_LABELS[choice as ForgeBonus]}" permanente.`
-  :'Sem bônus selecionado: sai uma peça nova apenas com os atributos base ao lado, sem nenhum encaixe ocupado.'
+  :sacrifice
+  ?`Sem bônus selecionado: a fabricação consome ${sacrifice.qty} peça${sacrifice.qty===1?'':'s'} ${RARITY_LABEL[sacrifice.rarity]} (você tem ${sacrificeOwned}) além dos materiais ao lado.`
+  :'Sem bônus selecionado: a peça sairá apenas com os atributos base ao lado, sem nenhum encaixe ocupado.'
  return <article className={canCraft?'ready':locked?'forge-locked':''}>
   <ArtPreview className="forge-item-art" image={cardArt(item)} name={recipe.nome} text={recipe.effectText??item.habilidade}/>
   <div>
@@ -392,8 +399,11 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
    </div>}
    <p className="forge-choice-summary">{summary}</p>
   </div>
-  <ul>{Object.entries(cost).map(([id,qty])=>{const source=[...FORGE_MATERIALS,...FORGE_GEMS].find(m=>m.id===id),owned=g.materials[id]??0;return <li className={owned>=qty?'met':'missing'} key={id}>{source?.nome??id}: {owned}/{qty}</li>})}</ul>
-  <button className={canCraft?'primary':''} disabled={!canCraft} onClick={()=>g.craftEquipment(recipe.id,choice)}>{masteryLocked&&playerLocked?`Requer Forjador nível ${required} e jogador nível ${requiredPlayerLevel}`:masteryLocked?`Requer Forjador nível ${required}`:playerLocked?`Requer nível de jogador ${requiredPlayerLevel}`:needsBaseCopy?'Requer a peça sem bônus':canCraft?(gem?'Refinar bônus':'Tentar forjar'):missing.length?`Faltam ${missing.length} materiais`:'Mochila cheia'}</button>
+  <ul>
+   {sacrifice&&<li className={sacrificeOwned>=sacrifice.qty?'met':'missing'}>Peça {RARITY_LABEL[sacrifice.rarity]}: {sacrificeOwned}/{sacrifice.qty}</li>}
+   {Object.entries(cost).map(([id,qty])=>{const source=[...FORGE_MATERIALS,...FORGE_GEMS].find(m=>m.id===id),owned=g.materials[id]??0;return <li className={owned>=qty?'met':'missing'} key={id}>{source?.nome??id}: {owned}/{qty}</li>})}
+  </ul>
+  <button className={canCraft?'primary':''} disabled={!canCraft} onClick={()=>g.craftEquipment(recipe.id,choice)}>{masteryLocked&&playerLocked?`Requer Forjador nível ${required} e jogador nível ${requiredPlayerLevel}`:masteryLocked?`Requer Forjador nível ${required}`:playerLocked?`Requer nível de jogador ${requiredPlayerLevel}`:needsBaseCopy?'Requer a peça sem bônus':needsSacrifice?`Faltam peças ${RARITY_LABEL[sacrifice!.rarity]}`:canCraft?(gem?'Refinar bônus':'Tentar forjar'):missing.length?`Faltam ${missing.length} materiais`:'Mochila cheia'}</button>
  </article>
 }
 function RecipeCatalog(){
