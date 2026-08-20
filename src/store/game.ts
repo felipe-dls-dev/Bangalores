@@ -339,6 +339,12 @@ export function equipmentGemBonus(itemId:string|undefined,s:GameState){let atk=0
 // Agora a maestria vai até FORGE_MASTERY_MAX e a receita exige um nível de forjador
 // proporcional ao nível mínimo real do item (equipmentRequiredLevel, 1–100), com um
 // acréscimo pela raridade -- então itens de fim de jogo exigem forja de fim de jogo.
+// Além do nível de forjador, forjar também passou a exigir o nível do PERSONAGEM: o mesmo
+// nível mínimo do item (equipmentRequiredLevel) que já era exigido pra equipá-lo, agora
+// também é exigido pra forjá-lo -- sem isso o jogador podia forjar e guardar na mochila um
+// item de nível 100 muito antes de conseguir usá-lo. Os itens mais fortes do jogo (nível
+// mínimo 100) por coincidência batem exatamente em forjador nível 20 (o teto), o que já
+// deixa "nível de forja 20 + nível de jogador 100" andando juntos nas peças de ponta.
 export const FORGE_MASTERY_MAX=20
 export function forgeLevelInfo(xp:number){let level=1,spent=0,next=40;while(level<FORGE_MASTERY_MAX&&xp>=spent+next){spent+=next;level++;next=40+level*25}return{level,progress:xp-spent,next,max:level>=FORGE_MASTERY_MAX}}
 export function forgeRecipeLevel(recipeId:string){const recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&EQUIPMENT.find(e=>e.id===recipe.equipmentId);if(!item)return FORGE_MASTERY_MAX;const itemLevel=equipmentRequiredLevel(item),tier=RARITY_TIER[item.raridade??'comum'];return Math.min(FORGE_MASTERY_MAX,Math.max(1,Math.ceil(itemLevel/5)+Math.floor(tier/2)))}
@@ -467,12 +473,12 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   ,setDifficulty:(difficultyMode:DifficultyMode)=>set({difficultyMode})
   ,unlockTalent:(id:string)=>{const s=get(),talent=TALENTS.find(t=>t.id===id),level=deriveLevel(s.xp).lvl;if(!talent||level<talent.level||s.talents.includes(id))return;set({talents:[...s.talents,id]})}
   ,craftEquipment:(recipeId?:string,choice?:ForgeChoice)=>{
-   const s=get(),recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&eqById(recipe.equipmentId),required=recipe?forgeRecipeLevel(recipe.id):99,forgeXp=s.forgeXp??0
+   const s=get(),recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&eqById(recipe.equipmentId),required=recipe?forgeRecipeLevel(recipe.id):99,requiredPlayerLevel=item?equipmentRequiredLevel(item):999,forgeXp=s.forgeXp??0
    const isAttribute=choice==='ataque'||choice==='defesa'||choice==='vida'
    const gem=choice&&recipe?.attributeChoice?(isAttribute?FORGE_GEMS.find(g=>g.stat===choice):FORGE_GEMS.find(g=>g.id===FORGE_BONUS_MATERIAL[choice as ForgeBonus])):undefined
    if(choice&&!gem)return
    const cost=gem?{...recipe!.materials,[gem.id]:(recipe!.materials[gem.id]??0)+1}:recipe?.materials
-   if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||s.equipmentBag.length>=equipmentBagCapacity(s)||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
+   if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||deriveLevel(s.xp).lvl<requiredPlayerLevel||s.equipmentBag.length>=equipmentBagCapacity(s)||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
    const materials={...s.materials},success=Math.random()<forgeSuccessChance(recipe.id,forgeXp),xpGain=success?18+required*7:8+required*3
    for(const [id,qty] of Object.entries(cost))materials[id]-=success?qty:Math.max(1,Math.ceil(qty/2))
    const bonusEffect=!isAttribute&&choice?choice as ForgeBonus:undefined

@@ -354,7 +354,12 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
  const gem=choice?(isAttribute?FORGE_GEMS.find(x=>x.stat===choice):FORGE_GEMS.find(x=>x.id===FORGE_BONUS_MATERIAL[choice as ForgeBonus])):undefined
  const cost=gem?{...recipe.materials,[gem.id]:(recipe.materials[gem.id]??0)+1}:recipe.materials
  const missing=Object.entries(cost).filter(([id,qty])=>(g.materials[id]??0)<qty)
- const required=forgeRecipeLevel(recipe.id),locked=mastery.level<required,chance=Math.round(forgeSuccessChance(recipe.id,g.forgeXp??0)*100)
+ // Além do nível de forjador, forjar agora também exige o nível do personagem -- o mesmo
+ // nível mínimo que já era exigido pra equipar o item (equipmentRequiredLevel), pra evitar
+ // que o jogador forje e guarde peças de fim de jogo muito antes de poder sequer usá-las.
+ const required=forgeRecipeLevel(recipe.id),requiredPlayerLevel=equipmentRequiredLevel(item),playerLevel=levelInfo(g.xp).lvl
+ const masteryLocked=mastery.level<required,playerLocked=playerLevel<requiredPlayerLevel,locked=masteryLocked||playerLocked
+ const chance=Math.round(forgeSuccessChance(recipe.id,g.forgeXp??0)*100)
  const canCraft=!locked&&!missing.length&&g.equipmentBag.length<equipmentBagCapacity(g)
  // Resumo do que sai da forja: os atributos base do item continuam os mesmos de sempre, o
  // bônus escolhido (se houver) é permanente e fica preso a ESTA peça (mesma regra de
@@ -367,7 +372,7 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
  return <article className={canCraft?'ready':locked?'forge-locked':''}>
   <ArtPreview className="forge-item-art" image={cardArt(item)} name={recipe.nome} text={recipe.effectText??item.habilidade}/>
   <div>
-   <small>{recipe.raridade} • FORJADOR NÍVEL {required}</small>
+   <small>{recipe.raridade} • FORJADOR NÍVEL {required} • JOGADOR NÍVEL {requiredPlayerLevel}</small>
    <strong>{recipe.nome}</strong>
    <span className="forge-base-stats">Ataque +{item.ataque} • Defesa +{item.defesa} • Vida +{item.vida} • {equipmentSocketCount(item)} encaixe{equipmentSocketCount(item)===1?'':'s'}</span>
    <span className="forge-chance">Chance de sucesso: {chance}%</span>
@@ -380,7 +385,7 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
    <p className="forge-choice-summary">{summary}</p>
   </div>
   <ul>{Object.entries(cost).map(([id,qty])=>{const source=[...FORGE_MATERIALS,...FORGE_GEMS].find(m=>m.id===id),owned=g.materials[id]??0;return <li className={owned>=qty?'met':'missing'} key={id}>{source?.nome??id}: {owned}/{qty}</li>})}</ul>
-  <button className={canCraft?'primary':''} disabled={!canCraft} onClick={()=>g.craftEquipment(recipe.id,choice)}>{locked?`Requer Forjador nível ${required}`:canCraft?'Tentar forjar':missing.length?`Faltam ${missing.length} materiais`:'Mochila cheia'}</button>
+  <button className={canCraft?'primary':''} disabled={!canCraft} onClick={()=>g.craftEquipment(recipe.id,choice)}>{masteryLocked&&playerLocked?`Requer Forjador nível ${required} e jogador nível ${requiredPlayerLevel}`:masteryLocked?`Requer Forjador nível ${required}`:playerLocked?`Requer nível de jogador ${requiredPlayerLevel}`:canCraft?'Tentar forjar':missing.length?`Faltam ${missing.length} materiais`:'Mochila cheia'}</button>
  </article>
 }
 function RecipeCatalog(){
