@@ -7,7 +7,7 @@
     "preco": 0.75,
     "descricao": "Recupera até 8 pontos de vida.",
     "imagem": "assets/cards/consumiveis/pocao_cura.jpg",
-    "arte": "assets/art/consumables/pocao_cura.webp",
+    "arte": "assets/art/hd/consumables/pocao_cura-hd.webp",
     "raridade": "comum"
   },
   {
@@ -18,7 +18,7 @@
     "preco": 5,
     "descricao": "Recupera até 15 pontos de vida.",
     "imagem": "assets/cards/consumiveis/pocao_cura_maior.jpg",
-    "arte": "assets/art/consumables/pocao_cura_maior.webp",
+    "arte": "assets/art/hd/consumables/pocao_cura_maior-hd.webp",
     "raridade": "comum"
   },
   {
@@ -29,7 +29,7 @@
     "preco": 0.25,
     "descricao": "Concede +2 de ataque durante o próximo combate.",
     "imagem": "assets/cards/consumiveis/elixir_forca.jpg",
-    "arte": "assets/art/consumables/elixir_forca.webp",
+    "arte": "assets/art/hd/consumables/elixir_forca-hd.webp",
     "raridade": "comum"
   },
   {
@@ -40,7 +40,7 @@
     "preco": 0.25,
     "descricao": "Reduz em 2 o dano de cada ataque inimigo no próximo combate.",
     "imagem": "assets/cards/consumiveis/tonico_guardiao.jpg",
-    "arte": "assets/art/consumables/tonico_guardiao.webp",
+    "arte": "assets/art/hd/consumables/tonico_guardiao-hd.webp",
     "raridade": "comum"
   },
   {
@@ -51,7 +51,7 @@
     "preco": 28,
     "descricao": "Aumenta permanentemente a vida máxima em 2 e cura 2 pontos.",
     "imagem": "assets/cards/consumiveis/essencia_vital.jpg",
-    "arte": "assets/art/consumables/essencia_vital.webp",
+    "arte": "assets/art/hd/consumables/essencia_vital-hd.webp",
     "raridade": "incomum"
   },
   {
@@ -62,7 +62,7 @@
     "preco": 0.75,
     "descricao": "Concede +4 de escudo no próximo combate.",
     "imagem": "assets/cards/consumiveis/bomba_fumaca.jpg",
-    "arte": "assets/art/consumables/bomba_fumaca.webp",
+    "arte": "assets/art/hd/consumables/bomba_fumaca-hd.webp",
     "raridade": "comum"
   },
   {
@@ -73,7 +73,7 @@
     "preco": 15,
     "descricao": "Concede +3 de ataque durante o próximo combate.",
     "imagem": "assets/cards/consumiveis/oleo_encantado.jpg",
-    "arte": "assets/art/consumables/oleo_encantado.webp",
+    "arte": "assets/art/hd/consumables/oleo_encantado-hd.webp",
     "raridade": "incomum"
   },
   {
@@ -84,7 +84,7 @@
     "preco": 0.5,
     "descricao": "Recupera até 5 pontos de vida.",
     "imagem": "assets/cards/consumiveis/antidoto.jpg",
-    "arte": "assets/art/consumables/antidoto.webp",
+    "arte": "assets/art/hd/consumables/antidoto-hd.webp",
     "raridade": "comum"
   },
   {
@@ -95,7 +95,7 @@
     "preco": 40,
     "descricao": "Aumenta permanentemente a vida máxima em 1 e recupera toda a vida.",
     "imagem": "assets/cards/catalogo/216_pocoes_001.jpg",
-    "arte": "assets/art/consumables/elixir_fenix.webp",
+    "arte": "assets/art/hd/consumables/elixir_fenix-hd.webp",
     "raridade": "epico"
   },
   {
@@ -106,7 +106,7 @@
     "preco": 18,
     "descricao": "Concede +4 de ataque no próximo combate.",
     "imagem": "assets/cards/catalogo/218_pocoes_003.jpg",
-    "arte": "assets/art/consumables/destilado_destino.webp",
+    "arte": "assets/art/hd/consumables/destilado_destino-hd.webp",
     "raridade": "incomum"
   },
   {
@@ -117,7 +117,7 @@
     "preco": 14,
     "descricao": "Concede +3 de ataque no próximo combate.",
     "imagem": "assets/cards/catalogo/219_pocoes_004.jpg",
-    "arte": "assets/art/consumables/oleo_fogo_ancestral.webp",
+    "arte": "assets/art/hd/consumables/oleo_fogo_ancestral-hd.webp",
     "raridade": "incomum"
   },
   {
@@ -128,7 +128,7 @@
     "preco": 16,
     "descricao": "Concede +4 de escudo no próximo combate.",
     "imagem": "assets/cards/catalogo/221_pocoes_006.jpg",
-    "arte": "assets/art/consumables/pocao_pele_pedra.webp",
+    "arte": "assets/art/hd/consumables/pocao_pele_pedra-hd.webp",
     "raridade": "incomum"
   },
   {
@@ -139,7 +139,7 @@
     "preco": 4,
     "descricao": "Recupera até 12 pontos de vida.",
     "imagem": "assets/cards/catalogo/222_pocoes_007.jpg",
-    "arte": "assets/art/consumables/lagrima_rainha.webp",
+    "arte": "assets/art/hd/consumables/lagrima_rainha-hd.webp",
     "raridade": "incomum"
   },
   {
@@ -150,7 +150,7 @@
     "preco": 20,
     "descricao": "Concede +5 de escudo no próximo combate.",
     "imagem": "assets/cards/catalogo/223_pocoes_008.jpg",
-    "arte": "assets/art/consumables/elixir_reflexo.webp",
+    "arte": "assets/art/hd/consumables/elixir_reflexo-hd.webp",
     "raridade": "incomum"
   },
   {
@@ -161,7 +161,7 @@
     "preco": 0.25,
     "descricao": "Recupera até 3 pontos de vida.",
     "imagem": "assets/cards/catalogo/226_pocoes_011.jpg",
-    "arte": "assets/art/consumables/pocao_vigor.webp",
+    "arte": "assets/art/hd/consumables/pocao_vigor-hd.webp",
     "raridade": "comum"
   },
   {
@@ -172,7 +172,7 @@
     "preco": 0.5,
     "descricao": "Concede +3 de escudo no próximo combate.",
     "imagem": "assets/cards/catalogo/227_pocoes_012.jpg",
-    "arte": "assets/art/consumables/po_nevoa.webp",
+    "arte": "assets/art/hd/consumables/po_nevoa-hd.webp",
     "raridade": "comum"
   },
   {
@@ -183,7 +183,7 @@
     "preco": 24,
     "descricao": "Concede +5 de ataque no próximo combate.",
     "imagem": "assets/cards/catalogo/229_pocoes_014.jpg",
-    "arte": "assets/art/consumables/elixir_fera.webp",
+    "arte": "assets/art/hd/consumables/elixir_fera-hd.webp",
     "raridade": "raro"
   }
 ]
