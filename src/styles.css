@@ -652,8 +652,12 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .attack-die{background:linear-gradient(145deg,#f0a08f,#9f2f29);border-color:#ffc0ae;color:#2d0907;box-shadow:inset 0 0 0 2px rgba(74,9,6,.38),0 3px 9px #000,0 0 12px rgba(190,48,38,.28)}
 .flee-dice-roll{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;border:1px solid #8c692d;border-radius:10px;background:radial-gradient(circle,rgba(78,54,16,.45),rgba(10,7,5,.88))}.flee-dice-roll>small{color:#d9aa49;font-size:.62rem;font-weight:900;letter-spacing:.14em}.flee-die{width:58px;height:58px;background:linear-gradient(145deg,#ffe69a,#c58b1d);border-color:#fff0b0;color:#322006;box-shadow:inset 0 0 0 2px rgba(93,58,5,.32),0 4px 12px #000,0 0 18px rgba(225,171,54,.32)}.flee-dice-roll>strong{font:700 1.05rem Georgia,serif;color:#edc776}.flee-dice-roll.success>strong{color:#8fcd75}.flee-dice-roll.failed>strong{color:#ee8170}.flee-dice-roll>span{color:#9e8d72;font-size:.62rem}
 
-/* v0.4.3 — batalha em três faixas com área fixa para os dados. */
-.combat-v033{grid-template-columns:minmax(300px,30%) minmax(400px,34%) minmax(410px,36%);grid-template-rows:minmax(160px,23vh) minmax(300px,43vh) minmax(205px,auto) 18px;grid-template-areas:"hero actions enemy" "hero dice enemy" "effects log consumables" "tip tip tip";align-content:start}
+/* v0.4.3 — batalha em três faixas com área fixa para os dados.
+   No desktop, Ações (linha 1) tinha só 23vh contra 43vh de Rolagem dos dados (linha 2) --
+   igual ao problema do celular, isso deixava até 6 botões de ação (ex: Provocar do Guardião)
+   espremidos com rolagem interna, enquanto o painel de dados sobrava vazio à toa quando
+   ocioso. Ações ganha a fatia maior agora; dados, a menor. */
+.combat-v033{grid-template-columns:minmax(300px,30%) minmax(400px,34%) minmax(410px,36%);grid-template-rows:minmax(280px,36vh) minmax(170px,22vh) minmax(205px,auto) 18px;grid-template-areas:"hero actions enemy" "hero dice enemy" "effects log consumables" "tip tip tip";align-content:start}
 .combat-v033 .combat-dice-area{grid-area:dice;min-height:0;overflow:hidden}
 .combat-v033 .combat-dice-panel{display:flex;flex-direction:column}
 .combat-v033 .combat-dice-panel>.panel-title{flex:0 0 auto}
