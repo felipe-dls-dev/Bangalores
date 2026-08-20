@@ -91,7 +91,13 @@ function artStats(card:any,kind?:string){
  if(kind==='Herói')return `Ataque ${card.ataque??0} • Defesa ${card.defesa??0} • Vida ${card.vida??0}`
  return `Ataque ${card.ataque??0} • Vida ${card.vida??0}${card.ouro!==undefined?` • Recompensa ${card.ouro} ouro`:''}`
 }
-function assetUrl(path:string){return /^(data:|blob:|https?:)/.test(path)?path:'./'+path}
+const ASSET_REVISION='20260820-hd'
+function assetUrl(path:string){
+ if(/^(data:|blob:|https?:)/.test(path))return path
+ const normalized=path.replace(/^(\.\/|\/)+/,'')
+ const url=`${import.meta.env.BASE_URL}${normalized}`
+ return `${url}${url.includes('?')?'&':'?'}v=${ASSET_REVISION}`
+}
 function EquipmentComparison({item,current,heroId}:{item:(typeof EQUIPMENT)[number];current?:typeof item;heroId?:string}){const values=(equipment:typeof item)=>({attack:equipmentAttackForHero(equipment,heroId),defense:equipment.defesa,life:equipment.vida,capacity:equipment.capacidade});const candidate=values(item),equipped=current?values(current):undefined;const metric=(label:string,value:number,currentValue?:number)=>{const delta=currentValue===undefined?0:value-currentValue;return <span><small>{label}</small><b>{value>=0?'+':''}{value}</b>{currentValue!==undefined&&delta!==0&&<em className={delta>0?'better':'worse'}>{delta>0?'+':''}{delta}</em>}</span>};return <section className="equipment-compare"><h3>Comparação de equipamentos</h3><div><article className="compare-candidate"><small>ITEM SELECIONADO</small><strong>{item.nome}</strong><div className="compare-stats">{item.slot==='bolsa'?metric('Espaços',candidate.capacity??8,equipped?.capacity):<>{metric('Ataque',candidate.attack,equipped?.attack)}{metric('Defesa',candidate.defense,equipped?.defense)}{metric('Vida',candidate.life,equipped?.life)}</>}</div><p><b>Habilidade</b>{item.habilidade}</p></article>{current?<article className="compare-equipped"><small>EQUIPADO AGORA</small><strong>{current.nome}</strong><div className="compare-stats">{current.slot==='bolsa'?metric('Espaços',equipped?.capacity??8):<>{metric('Ataque',equipped?.attack??0)}{metric('Defesa',equipped?.defense??0)}{metric('Vida',equipped?.life??0)}</>}</div><p><b>Habilidade</b>{current.habilidade}</p></article>:<article className="compare-empty"><small>EQUIPADO AGORA</small><strong>Slot vazio</strong><p>Nenhum item será substituído.</p></article>}</div></section>}
 function ArtPreview({image,name,text,stats,className,imgStyle,compareEquipment=false,allowEquip=false}:{image:string;name:string;text?:string;stats?:string;className?:string;imgStyle?:React.CSSProperties;compareEquipment?:boolean;allowEquip?:boolean}){
  const [open,setOpen]=React.useState(false)
@@ -110,7 +116,7 @@ function ArtPreview({image,name,text,stats,className,imgStyle,compareEquipment=f
  const src=assetUrl(image)
  return <span className={`art-preview-trigger ${className??''}`} onClick={event=>{event.stopPropagation();setOpen(true)}} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();setOpen(true)}}} role="button" tabIndex={0} aria-haspopup="dialog" aria-label={`Ampliar arte de ${name}`}>
   <img src={src} alt={name} style={imgStyle}/>
-  {emblem&&<img className="slot-class-emblem" src={'./'+emblem} alt={classOwnerLabel(owner)} aria-hidden="true"/>}
+  {emblem&&<img className="slot-class-emblem" src={assetUrl(emblem)} alt={classOwnerLabel(owner)} aria-hidden="true"/>}
   {open&&createPortal(<span className="art-preview-overlay" role="dialog" aria-modal="true" aria-label={`Arte completa de ${name}`} onClick={()=>setOpen(false)}><span className={`art-preview-card${equipment&&!ownSlot?' equipment-comparison-preview':''}`} onClick={event=>event.stopPropagation()}><img src={src} alt={name}/><span className="art-preview-copy"><button className="art-preview-close" onClick={()=>setOpen(false)} aria-label="Fechar visualização">×</button><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}{equipment&&!ownSlot&&<EquipmentComparison item={equipment} current={currentEquipment} heroId={heroId}/>} {equipment&&equipmentBag.includes(equipment.id)&&<button className="primary preview-equip-action" disabled={!classAllowed||!levelAllowed||!bagFits} title={!classAllowed?'Este item não pode ser usado por esta classe.':!levelAllowed?`Disponível no nível ${equipmentRequiredLevel(equipment)}`:!bagFits?'Há equipamentos demais para esta bolsa.':undefined} onClick={()=>{equip(equipment.id);setOpen(false)}}>{equipLabel}</button>}<em>Clique fora da janela ou pressione Esc para fechar</em></span></span></span>,document.body)}
  </span>
 }
@@ -152,9 +158,9 @@ function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supp
  const nameLength=String(card.nome??'').length,nameSize=nameLength>32?'name-xlong':nameLength>23?'name-long':nameLength>16?'name-medium':'name-short',effectLength=String(effect).length,effectSize=effectLength>92?'effect-xlong':effectLength>66?'effect-long':effectLength>42?'effect-medium':'effect-short'
  return <article className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize} ${frameTheme?`frame-theme-${frameTheme}`:''}`}>
   <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/></div>
-  <img className="ornate-frame" src={'./'+cardSystemRoot+(frameTheme?`frame-${frameTheme}.png`:'frame-overlay.png')} alt="" aria-hidden="true"/>
+  <img className="ornate-frame" src={assetUrl(cardSystemRoot+(frameTheme?`frame-${frameTheme}.png`:'frame-overlay.png'))} alt="" aria-hidden="true"/>
   <h2 className="ornate-name">{card.nome}</h2>
-  <img className="ornate-emblem" src={'./'+cardEmblem(card,kind)} alt={enemy?`Categoria ${cardBadge(card,kind,rarity)}`:`Compatibilidade de ${kind}`}/>
+  <img className="ornate-emblem" src={assetUrl(cardEmblem(card,kind))} alt={enemy?`Categoria ${cardBadge(card,kind,rarity)}`:`Compatibilidade de ${kind}`}/>
   <strong className="ornate-badge">{cardBadge(card,kind,rarity)}</strong>
   <span className="ornate-stat ornate-attack">{enemy?attack:`+${attack}`}</span>
   <span className="ornate-stat ornate-defense">{enemy?defense:`+${defense}`}</span>
