@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -31,6 +31,40 @@ describe('resolveCombatRoll', () => {
   it('damage is never negative and always at least 1 on a real hit', () => {
     const r = resolveCombatRoll(1, 50, 3, 3)
     expect(r.damage).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('sistemas de build aprofundados', () => {
+  it('todo equipamento não-bolsa possui efeito ativo estruturado', () => {
+    for (const item of EQUIPMENT.filter(e => e.slot !== 'bolsa')) {
+      expect(item.activeEffect).toBeDefined()
+      expect(itemSkillEffectText(item)).toContain(item.activeEffect!.description)
+    }
+  })
+
+  it('conjuntos são contados pelo setId explícito', () => {
+    const pieces = EQUIPMENT.filter(e => e.setId === 'lua').slice(0, 2)
+    expect(pieces).toHaveLength(2)
+    const equipped = Object.fromEntries(pieces.map((e, index) => [index ? 'capacete' : 'peitoral', e.id]))
+    expect(equipmentSetCounts({ equipped } as any).lua).toBe(2)
+  })
+
+  it('intenções inimigas são previsíveis e chefes convocam reforços', () => {
+    const boss = { ...fakeEnemy, boss: true, fase: 2 }
+    expect(enemyIntentFor(boss, 4).type).toBe('summon')
+    expect(enemyIntentFor(fakeEnemy, 1).label.length).toBeGreaterThan(0)
+  })
+
+  it('elementos de dano possuem durações distintas', () => {
+    const fire = applyElementalStatus({}, 'fogo', 10, true).status
+    const poison = applyElementalStatus({}, 'natureza', 10, true).status
+    expect(fire.burn?.turns).toBe(1)
+    expect(poison.poison?.turns).toBe(3)
+    expect(tickStatus(poison).damage).toBeGreaterThan(0)
+  })
+
+  it('coleção concede marcos permanentes de domínio', () => {
+    expect(collectionMastery({ discoveredCards: Array(100).fill('carta') } as any)).toMatchObject({ life: 5, attack: 1 })
   })
 })
 
