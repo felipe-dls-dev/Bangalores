@@ -762,9 +762,9 @@ function CombatScreen(){
     {Boolean(currentSummon&&currentSummon.hp>0)&&<div className="summon-row"><article><Sparkles/><span><strong>{currentSummon.nome}</strong><small>ATQ {currentSummon.ataque} • DEF {currentSummon.defesa} • VIDA {currentSummon.hp}/{currentSummon.maxHp}</small><i><b style={{width:`${currentSummon.hp/currentSummon.maxHp*100}%`}}/></i></span></article></div>}
    </div>
    <div className="combat-enemy-area">
-    <div className={`enemy-intent intent-${intent.type}`}><small>PRÓXIMA AÇÃO</small><strong>{intent.label}</strong><span>{intent.description}</span></div>
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={Math.max(0,(e.dificuldade??1)-2)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} attackCritical={currentAttackCritical} statusKinds={enemyStatusKinds}/>
     {Boolean(activeMinions.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{activeMinions.filter(minion=>minion.hp>0).map(minion=><article key={minion.id} className="targetable" role="button" tabIndex={disabled?-1:0} aria-disabled={disabled} title={`Atacar ${minion.nome} em vez do alvo principal`} onClick={()=>{if(!disabled)performAttack(minion.id)}} onKeyDown={event=>{if(!disabled&&(event.key==='Enter'||event.key===' ')){event.preventDefault();performAttack(minion.id)}}}><Shield/><span><strong>{minion.nome}</strong><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i><small>ATQ {minion.ataque} • Vida {minion.hp}/{minion.maxHp}</small></span></article>)}</div>}
+    <div className={`enemy-intent intent-${intent.type}`}><small>PRÓXIMA AÇÃO</small><strong>{intent.label}</strong><span>{intent.description}</span></div>
    </div>
 
    <Panel title="Habilidades dos itens" className="effects-panel combat-effects-area">
