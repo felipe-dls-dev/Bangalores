@@ -477,15 +477,22 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    const isAttribute=choice==='ataque'||choice==='defesa'||choice==='vida'
    const gem=choice&&recipe?.attributeChoice?(isAttribute?FORGE_GEMS.find(g=>g.stat===choice):FORGE_GEMS.find(g=>g.id===FORGE_BONUS_MATERIAL[choice as ForgeBonus])):undefined
    if(choice&&!gem)return
+   // Forjar um bônus (atributo ou efeito especial) não cria mais uma peça do zero: ela
+   // refina uma cópia SEM BÔNUS que o jogador já possui (na mochila ou equipada), lapidando
+   // a peça existente em vez de duplicá-la. Por isso a mochila não precisa ter espaço livre
+   // aqui, e o sucesso não empurra um novo item pra bag -- só marca a que já existe. A
+   // fabricação sem bônus continua igual a antes.
+   const hasUnbonusedCopy=!!item&&(s.equipmentBag.includes(item.id)||Object.values(s.equipped).includes(item.id))&&!s.craftedEffects[item.id]&&!s.forgedGemLocked?.[item.id]
+   if(gem&&!hasUnbonusedCopy)return
    const cost=gem?{...recipe!.materials,[gem.id]:(recipe!.materials[gem.id]??0)+1}:recipe?.materials
-   if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||deriveLevel(s.xp).lvl<requiredPlayerLevel||s.equipmentBag.length>=equipmentBagCapacity(s)||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
+   if(!recipe||!item||!cost||forgeLevelInfo(forgeXp).level<required||deriveLevel(s.xp).lvl<requiredPlayerLevel||(!gem&&s.equipmentBag.length>=equipmentBagCapacity(s))||!equipmentClassAllowed(item,s.heroId)||Object.entries(cost).some(([id,qty])=>(s.materials[id]??0)<qty))return
    const materials={...s.materials},success=Math.random()<forgeSuccessChance(recipe.id,forgeXp),xpGain=success?18+required*7:8+required*3
    for(const [id,qty] of Object.entries(cost))materials[id]-=success?qty:Math.max(1,Math.ceil(qty/2))
    const bonusEffect=!isAttribute&&choice?choice as ForgeBonus:undefined
    // Elemento (arma) ou resistência (qualquer outro slot) só existem em itens forjados com
    // sucesso ou obtidos de chefes — a loja nunca vende equipamento com essas propriedades.
    const forgedElement=CLASS_ELEMENT[(s.heroId as keyof typeof CLASS_ELEMENT)]??'fisico'
-   const message=success?`Forja bem-sucedida: ${recipe.nome}${gem?` — ${isAttribute?gem.texto:FORGE_BONUS_LABELS[choice as ForgeBonus]} aplicado ao item`:''}. O item ganhou ${item.slot==='mao_direita'?`elemento ${forgedElement}`:`resistência a ${forgedElement}`}. +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`
+   const message=success?(gem?`Refinamento bem-sucedido: ${recipe.nome} — ${isAttribute?gem.texto:FORGE_BONUS_LABELS[choice as ForgeBonus]} aplicado permanentemente à peça que você já possuía. +${xpGain} XP de Forja.`:`Forja bem-sucedida: ${recipe.nome}. O item ganhou ${item.slot==='mao_direita'?`elemento ${forgedElement}`:`resistência a ${forgedElement}`}. +${xpGain} XP de Forja.`):(gem?`O refinamento de ${recipe.nome} falhou. A peça continua sem o bônus e metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`:`A fabricação de ${recipe.nome} falhou. Metade dos materiais foi perdida, mas você ganhou +${xpGain} XP de Forja.`)
    const resultId=Date.now()
    set({
     materials,
@@ -493,7 +500,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     forgeAttempts:(s.forgeAttempts??0)+1,
     forgeSuccesses:(s.forgeSuccesses??0)+(success?1:0),
     ...(success?{
-     equipmentBag:[...s.equipmentBag,item.id],
+     ...(gem?{}:{equipmentBag:[...s.equipmentBag,item.id]}),
      craftedEffects:bonusEffect?{...s.craftedEffects,[item.id]:bonusEffect}:recipe.effect?{...s.craftedEffects,[item.id]:recipe.effect}:s.craftedEffects,
      ...(isAttribute&&gem?{equipmentGems:{...s.equipmentGems,[item.id]:[gem.id]},forgedGemLocked:{...s.forgedGemLocked,[item.id]:true}}:{}),
      ...(item.slot==='mao_direita'?{equipmentElements:{...s.equipmentElements,[item.id]:forgedElement}}:{equipmentResistances:{...s.equipmentResistances,[item.id]:forgedElement}})

@@ -360,15 +360,23 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
  const required=forgeRecipeLevel(recipe.id),requiredPlayerLevel=equipmentRequiredLevel(item),playerLevel=levelInfo(g.xp).lvl
  const masteryLocked=mastery.level<required,playerLocked=playerLevel<requiredPlayerLevel,locked=masteryLocked||playerLocked
  const chance=Math.round(forgeSuccessChance(recipe.id,g.forgeXp??0)*100)
- const canCraft=!locked&&!missing.length&&g.equipmentBag.length<equipmentBagCapacity(g)
+ // Forjar com bônus não fabrica uma peça nova: refina uma cópia SEM BÔNUS que o jogador já
+ // tem (na mochila ou equipada). Sem essa cópia base, a forja bloqueia o bônus escolhido —
+ // por isso não consome espaço da mochila (a peça que sai já existia).
+ const hasUnbonusedCopy=(g.equipmentBag.includes(item.id)||Object.values(g.equipped).includes(item.id))&&!g.craftedEffects[item.id]&&!g.forgedGemLocked?.[item.id]
+ const needsBaseCopy=!!gem&&!hasUnbonusedCopy
+ const canCraft=!locked&&!missing.length&&!needsBaseCopy&&(!!gem||g.equipmentBag.length<equipmentBagCapacity(g))
  // Resumo do que sai da forja: os atributos base do item continuam os mesmos de sempre, o
  // bônus escolhido (se houver) é permanente e fica preso a ESTA peça (mesma regra de
- // socketGem/removeGem — não dá pra tirar e reaproveitar em outro item depois).
- const summary=isAttribute&&gem
-  ?`Esta peça sairá com ${gem.texto} permanente, fixado nela (não pode ser removido para outro item sem perdê-lo).`
+ // socketGem/removeGem — não dá pra tirar e reaproveitar em outro item depois). Forjar um
+ // bônus não cria uma peça nova: refina a cópia sem bônus que o jogador já possui.
+ const summary=needsBaseCopy
+  ?`Você precisa ter ${recipe.nome} SEM BÔNUS (na mochila ou equipada) antes de refinar esse bônus nela.`
+  :isAttribute&&gem
+  ?`A peça que você já possui sairá refinada com ${gem.texto} permanente, fixado nela (não pode ser removido para outro item sem perdê-lo).`
   :choice&&gem
-  ?`Esta peça sairá com o efeito especial "${FORGE_BONUS_LABELS[choice as ForgeBonus]}" permanente.`
-  :'Sem bônus selecionado: a peça sairá apenas com os atributos base ao lado, sem nenhum encaixe ocupado.'
+  ?`A peça que você já possui sairá refinada com o efeito especial "${FORGE_BONUS_LABELS[choice as ForgeBonus]}" permanente.`
+  :'Sem bônus selecionado: sai uma peça nova apenas com os atributos base ao lado, sem nenhum encaixe ocupado.'
  return <article className={canCraft?'ready':locked?'forge-locked':''}>
   <ArtPreview className="forge-item-art" image={cardArt(item)} name={recipe.nome} text={recipe.effectText??item.habilidade}/>
   <div>
@@ -385,7 +393,7 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
    <p className="forge-choice-summary">{summary}</p>
   </div>
   <ul>{Object.entries(cost).map(([id,qty])=>{const source=[...FORGE_MATERIALS,...FORGE_GEMS].find(m=>m.id===id),owned=g.materials[id]??0;return <li className={owned>=qty?'met':'missing'} key={id}>{source?.nome??id}: {owned}/{qty}</li>})}</ul>
-  <button className={canCraft?'primary':''} disabled={!canCraft} onClick={()=>g.craftEquipment(recipe.id,choice)}>{masteryLocked&&playerLocked?`Requer Forjador nível ${required} e jogador nível ${requiredPlayerLevel}`:masteryLocked?`Requer Forjador nível ${required}`:playerLocked?`Requer nível de jogador ${requiredPlayerLevel}`:canCraft?'Tentar forjar':missing.length?`Faltam ${missing.length} materiais`:'Mochila cheia'}</button>
+  <button className={canCraft?'primary':''} disabled={!canCraft} onClick={()=>g.craftEquipment(recipe.id,choice)}>{masteryLocked&&playerLocked?`Requer Forjador nível ${required} e jogador nível ${requiredPlayerLevel}`:masteryLocked?`Requer Forjador nível ${required}`:playerLocked?`Requer nível de jogador ${requiredPlayerLevel}`:needsBaseCopy?'Requer a peça sem bônus':canCraft?(gem?'Refinar bônus':'Tentar forjar'):missing.length?`Faltam ${missing.length} materiais`:'Mochila cheia'}</button>
  </article>
 }
 function RecipeCatalog(){
