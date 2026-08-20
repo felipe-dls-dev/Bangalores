@@ -10,9 +10,14 @@ export const CLASS_IDENTITIES={guerreiro:{nome:'Mestre de Armas',texto:'Combos, 
 // Com 9 classes para 7 elementos, alguns pares dividem elemento de propósito — Guardião e
 // Sacerdotisa (luz, ambos "protetores") e Arcanista e Conjurador (arcano, ambos conjuradores).
 export const CLASS_ELEMENT:Record<'guerreiro'|'guardiao'|'cacadora'|'arcanista'|'druida'|'cacador'|'monge'|'sacerdotisa'|'conjurador',Element>={guerreiro:'fisico',guardiao:'luz',cacadora:'sombra',arcanista:'arcano',druida:'natureza',cacador:'gelo',monge:'fogo',sacerdotisa:'luz',conjurador:'arcano'}
+// Escala junto com EQUIPMENT_LEVELS (game.ts) — 1 a 100 — em vez de parar no nível 14: os
+// 6 talentos originais cobriam só os primeiros ~15 níveis de uma jornada de 100, deixando o
+// resto da progressão sem nenhum talento novo pra desbloquear.
 export const TALENTS=[
  {id:'vigor',nome:'Vigor do Aventureiro',texto:'+5 de vida máxima.',level:3},{id:'precisao',nome:'Precisão Mortal',texto:'+1 de ataque.',level:5},{id:'muralha',nome:'Muralha Interior',texto:'+1 de defesa.',level:7},
- {id:'alquimista',nome:'Alquimista de Campo',texto:'Consumíveis restauram ou concedem +1 adicional.',level:9},{id:'cacador',nome:'Caçador de Tiranos',texto:'+2 de dano contra chefes.',level:11},{id:'destino',nome:'Senhor do Destino',texto:'+1 na primeira rolagem de cada combate.',level:14}
+ {id:'alquimista',nome:'Alquimista de Campo',texto:'Consumíveis restauram ou concedem +1 adicional.',level:9},{id:'cacador',nome:'Caçador de Tiranos',texto:'+2 de dano contra chefes.',level:11},{id:'destino',nome:'Senhor do Destino',texto:'+1 na primeira rolagem de cada combate.',level:14},
+ {id:'reflexos',nome:'Reflexos Aguçados',texto:'+1 de defesa.',level:20},{id:'poder_interior',nome:'Poder Interior',texto:'+1 de ataque.',level:30},{id:'resiliencia',nome:'Resiliência de Veterano',texto:'+8 de vida máxima.',level:45},
+ {id:'instinto_predador',nome:'Instinto Predador',texto:'+2 de ataque.',level:60},{id:'guarda_ancestral',nome:'Guarda Ancestral',texto:'+2 de defesa.',level:75},{id:'apice_heroico',nome:'Ápice Heroico',texto:'+15 de vida máxima.',level:90}
 ] as const
 export const REGION_MATERIALS:Record<string,{id:string;nome:string;elemento:Element}>={campos_dourados:{id:'fibra_dourada',nome:'Fibra Dourada',elemento:'fisico'},floresta_lunargenta:{id:'seiva_lunar',nome:'Seiva Lunar',elemento:'natureza'},montanhas_cinzentas:{id:'minerio_cinzento',nome:'Minério Cinzento',elemento:'gelo'},pico_escarlate:{id:'escama_rubra',nome:'Escama Rubra',elemento:'fogo'},terras_mortas:{id:'essencia_sombria',nome:'Essência Sombria',elemento:'sombra'},khar_dur:{id:'runa_ana',nome:'Runa Anã',elemento:'luz'},coracao_eclipse:{id:'fragmento_eclipse',nome:'Fragmento do Sol Negro',elemento:'arcano'}}
 export const SET_BONUSES=[{key:'lua',nome:'Regalia de Abdendriel',two:'+1 defesa',four:'+4 vida'},{key:'cinza',nome:'Arsenal das Cinzas',two:'+1 ataque',four:'primeiro ataque causa +2 de dano'},{key:'kh ar|khar|runa|bronze',nome:'Legado de Kholgard',two:'+3 vida',four:'+3 escudo inicial'},{key:'eclipse|véu|vazio',nome:'Vestes do Sol Negro',two:'+1 ataque',four:'+1 em rolagens contra chefes'}]

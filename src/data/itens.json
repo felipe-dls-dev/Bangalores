@@ -15,7 +15,7 @@
     "nome": "Poção de Cura Maior",
     "tipo": "cura",
     "valor": 15,
-    "preco": 1,
+    "preco": 5,
     "descricao": "Recupera até 15 pontos de vida.",
     "imagem": "assets/cards/consumiveis/pocao_cura_maior.jpg",
     "arte": "assets/art/consumables/pocao_cura_maior.webp",
