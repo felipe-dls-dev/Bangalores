@@ -7,7 +7,7 @@
 
 .gallery-card{min-height:0}.gallery-card .game-card{max-height:72vh}.gallery .badge.rarity-comum,.mini-rarity.rarity-comum{color:#c9a87b}.gallery .badge.rarity-incomum,.mini-rarity.rarity-incomum{color:#91ba89}.gallery .badge.rarity-raro,.mini-rarity.rarity-raro{color:#7bb5e2}.gallery .badge.rarity-epico,.mini-rarity.rarity-epico{color:#c291e8}.gallery .badge.rarity-lendario,.mini-rarity.rarity-lendario{color:#f0c25f}.gallery .badge.rarity-mitico,.mini-rarity.rarity-mitico{color:#7fd3df}.gallery .badge.rarity-heroico,.mini-rarity.rarity-heroico{color:#e5be6b}
 
-.item-card{grid-template-columns:112px 1fr;min-height:118px;position:relative}.item-art-wrap{width:112px;min-height:118px;overflow:hidden;background:radial-gradient(circle,#2b2018,#080605);border-right:1px solid #4d3a27}.item-art-wrap img{width:100%;height:100%;min-height:118px;object-fit:cover}.item-title-row{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.mini-rarity{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;padding:2px 5px;border:1px solid currentColor;border-radius:999px;opacity:.9}.item-copy small{line-height:1.3}.item-rarity-incomum{border-color:#4f694d}.item-rarity-raro{border-color:#466d8c}.item-rarity-epico{border-color:#694b7f}.item-rarity-lendario{border-color:#8c692b}.item-rarity-mitico{border-color:#3f7d86}
+.item-card{grid-template-columns:112px 1fr;min-height:118px;position:relative}.item-art-wrap{width:112px;min-height:118px;overflow:hidden;background:radial-gradient(circle,#2b2018,#080605);border-right:1px solid #4d3a27}.item-art-wrap img{width:100%;height:100%;min-height:118px;object-fit:cover}.item-card-contain .item-art-wrap img{object-fit:contain}.item-title-row{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.mini-rarity{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;padding:2px 5px;border:1px solid currentColor;border-radius:999px;opacity:.9}.item-copy small{line-height:1.3}.item-rarity-incomum{border-color:#4f694d}.item-rarity-raro{border-color:#466d8c}.item-rarity-epico{border-color:#694b7f}.item-rarity-lendario{border-color:#8c692b}.item-rarity-mitico{border-color:#3f7d86}
 .item-art-wrap{position:relative}.item-art-wrap>.item-class-emblem{position:absolute;z-index:5;top:5px;right:5px;width:34px!important;height:34px!important;min-height:0!important;object-fit:contain!important;border:0!important;border-radius:50%!important;background:rgba(7,5,4,.78)!important;box-shadow:0 2px 8px #000,0 0 0 1px rgba(225,176,82,.7)!important;pointer-events:none}
 .hud-level{display:flex;align-items:center;gap:5px;margin-left:3px;padding:5px 9px;border:1px solid #654820;border-radius:999px;background:linear-gradient(#26190e,#120c08);color:#e6b95f;white-space:nowrap}.hud-level svg{flex:none}.hud-level small{font-size:.58rem;letter-spacing:.08em;color:#a99572}.hud-level strong{font-size:.86rem;color:#f0ca78}
 
@@ -225,8 +225,8 @@ body:has(.combat-v033){overflow:hidden}
 .combat-v033 .premium-log p{margin:.42rem 0!important;font-size:.78rem;line-height:1.34}
 
 /* Actions receive a dedicated, taller block immediately below the log. */
-.combat-v033 .combat-actions-panel{display:flex;flex-direction:column;justify-content:flex-start}
-.combat-v033 .combat-actions-grid{grid-template-columns:1fr 1fr;grid-auto-rows:minmax(48px,1fr);gap:10px;flex:1}
+.combat-v033 .combat-actions-panel{display:flex;flex-direction:column;justify-content:flex-start;min-height:0}
+.combat-v033 .combat-actions-grid{grid-template-columns:1fr 1fr;grid-auto-rows:minmax(48px,auto);gap:10px;flex:1;min-height:0;overflow-y:auto;padding-right:2px;scrollbar-width:thin;scrollbar-color:#704b25 transparent}
 .combat-v033 .premium-action{min-height:48px;padding:.55rem .65rem;font-size:.88rem}
 
 /* Right lower column: readable, horizontal consumable rows. */
@@ -254,7 +254,7 @@ body:has(.combat-v033){overflow:hidden}
  .combat-v033 .combat-log-panel .panel-title{padding-right:66px}
  .combat-v033 .combat-initiative{padding-right:64px}
  .combat-v033 .premium-log p{font-size:.69rem;margin:.3rem 0!important}
- .combat-v033 .combat-actions-grid{grid-auto-rows:minmax(42px,1fr);gap:7px}
+ .combat-v033 .combat-actions-grid{grid-auto-rows:minmax(42px,auto);gap:7px}
  .combat-v033 .premium-action{min-height:42px;padding:.35rem .45rem;font-size:.8rem}
  .combat-v033 .combat-consumable{min-height:76px;grid-template-columns:80px minmax(0,1fr) 88px;gap:2px 8px;padding:5px 6px}
  .combat-v033 .combat-consumable-art{width:80px;height:62px}
@@ -586,7 +586,13 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 
 .event-copy:has(.event-warning:not(.risk)) .event-actions button:nth-child(2){display:none}.event-copy:has(.event-warning:not(.risk)) .event-actions{grid-template-columns:1.2fr 1fr}.event-actions button{display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:auto;min-height:62px}.event-actions button:after{font:400 .61rem/1.25 Inter,sans-serif;color:#a99a84;letter-spacing:0;text-transform:none}.event-actions button:first-child:after{content:'Aceita o desafio e realiza a rolagem normal.'}.event-copy:has(.event-warning:not(.risk)) .event-actions button:first-child:after{content:'Aceita a missão e aplica diretamente a recompensa e o risco descritos.'}.event-actions button:nth-child(2):after{content:'Usa a experiência da sua classe para somar +1 ao resultado do dado.'}.event-actions button:last-child:after{content:'Recusa o encontro sem receber a recompensa nem sofrer o risco.'}
 
-.combat-enemy-area{position:relative}.boss-minion-row{position:absolute;z-index:6;left:10px;right:10px;bottom:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.boss-minion-row article{display:flex;align-items:center;gap:6px;padding:7px;border:1px solid #8b482b;border-radius:7px;background:#120806e8;box-shadow:0 4px 15px #000}.boss-minion-row svg{width:16px;color:#d66b4c}.boss-minion-row span{min-width:0;display:grid;flex:1}.boss-minion-row strong{font:700 .65rem Georgia,serif;color:#efb984;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.boss-minion-row small{font-size:.52rem;color:#b69a80}.boss-minion-row i{height:4px;margin-top:3px;background:#240d0a;border-radius:5px;overflow:hidden}.boss-minion-row i b{display:block;height:100%;background:#b74235}
+.combat-enemy-area{position:relative}
+/* Antes .boss-minion-row era position:absolute ancorada em bottom:12px do combat-enemy-area --
+   quase o mesmo ponto onde a barra de vida do chefe (.premium-fighter .hp-track) renderiza no
+   fim do card, então os capangas sobrepunham a vida do chefe em vez de ficar ao lado dela.
+   Segue o mesmo formato compacto de chip usado em .coop-teammate-chip, mas em fluxo normal
+   (abaixo do card do chefe) em vez de sobrepor qualquer coisa. */
+.boss-minion-row{position:static;margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.boss-minion-row article{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #8b482b;border-radius:8px;background:#120806e8;box-shadow:0 4px 15px #000}.boss-minion-row svg{width:18px;height:18px;flex:none;color:#d66b4c}.boss-minion-row span{min-width:0;flex:1;display:grid;gap:2px}.boss-minion-row strong{font:700 .62rem Georgia,serif;color:#efb984;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.boss-minion-row small{font-size:.54rem;color:#b69a80}.boss-minion-row i{display:block;height:5px;margin-top:1px;background:#240d0a;border-radius:5px;overflow:hidden}.boss-minion-row i b{display:block;height:100%;background:#b74235}
 
 .summon-row{position:absolute;z-index:6;left:10px;right:10px;bottom:12px}.summon-row article{display:flex;align-items:center;gap:6px;padding:7px;border:1px solid #3f6f8b;border-radius:7px;background:#0a161ae8;box-shadow:0 4px 15px #000}.summon-row svg{width:16px;color:#7ecbe0}.summon-row span{min-width:0;display:grid;flex:1}.summon-row strong{font:700 .65rem Georgia,serif;color:#a7dff0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.summon-row small{font-size:.52rem;color:#8db3c2}.summon-row i{height:4px;margin-top:3px;background:#0a1c22;border-radius:5px;overflow:hidden}.summon-row i b{display:block;height:100%;background:#4fa8c9}
 .summon-choice-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.summon-choice-row .premium-action{font-size:.72rem;padding:.35rem .4rem}
@@ -639,6 +645,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .combat-v033 .combat-dice-idle{height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#887861;text-align:center;border:1px dashed #4f381f;border-radius:9px;background:rgba(10,7,5,.45)}
 .combat-v033 .combat-dice-idle svg{width:38px;height:38px;color:#7e6238}.combat-v033 .combat-dice-idle strong{color:#c4a66e;font:700 .9rem Georgia,serif}.combat-v033 .combat-dice-idle small{font-size:.66rem}
 .combat-v033 .combat-item-abilities{min-height:0;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:#704b25 transparent}.combat-v033 .combat-item-abilities .active-effect.passive{margin-top:0}
+.item-ability-row{align-items:center}.item-ability-row>div{flex:1;min-width:0}.item-ability-use{flex:none;padding:6px 11px;font-size:.66rem;white-space:nowrap}
 .combat-v033 .combat-log-panel{min-height:0}.combat-v033 .combat-actions-panel{min-height:0}
 @media(max-width:1099px){.combat-v033{display:grid;height:auto;grid-template-columns:1fr 1fr;grid-template-rows:auto;grid-template-areas:"hero enemy" "actions dice" "effects log" "consumables consumables" "tip tip"}.combat-v033 .combat-dice-panel,.combat-v033 .combat-actions-panel{min-height:240px}}
 @media(max-width:760px){.combat-v033{display:grid;grid-template-columns:1fr;grid-template-areas:"hero" "actions" "dice" "enemy" "effects" "log" "consumables" "tip"}.combat-v033>*{margin-bottom:0}}
