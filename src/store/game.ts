@@ -332,8 +332,16 @@ export function equipmentUpgradeCost(e:Equipment,currentLevel:number){const item
 // é usado pra exibir o valor "de fato equipado" nas telas de Equipamento/Mochila, não só no
 // cálculo de combate.
 export function equipmentGemBonus(itemId:string|undefined,s:GameState){let atk=0,def=0,life=0,roll=0;for(const gemId of (itemId&&s.equipmentGems?.[itemId])??[]){const gem=FORGE_GEMS.find(g=>g.id===gemId);if(gem?.stat==='ataque')atk+=gem.value;if(gem?.stat==='defesa')def+=gem.value;if(gem?.stat==='vida')life+=gem.value;if(gem?.stat==='rolagem')roll+=gem.value}return{atk,def,life,roll}}
-export function forgeLevelInfo(xp:number){let level=1,spent=0,next=40;while(level<10&&xp>=spent+next){spent+=next;level++;next=40+level*25}return{level,progress:xp-spent,next,max:level>=10}}
-export function forgeRecipeLevel(recipeId:string){const index=FORGE_RECIPES.findIndex(r=>r.id===recipeId);if(index<0)return 6;return Math.min(10,Math.max(1,Math.ceil((index+1)*10/FORGE_RECIPES.length)))}
+// Antes o forjador maxava no nível 10 e a receita exigida vinha só da posição do item na
+// lista ordenada por raridade/preço -- com os heróis agora evoluindo até o nível 100
+// (EQUIPMENT_LEVELS), qualquer peça lendária ficava liberada cedo demais, bastando bater o
+// teto de maestria sem relação nenhuma com o quão avançado o personagem realmente estava.
+// Agora a maestria vai até FORGE_MASTERY_MAX e a receita exige um nível de forjador
+// proporcional ao nível mínimo real do item (equipmentRequiredLevel, 1–100), com um
+// acréscimo pela raridade -- então itens de fim de jogo exigem forja de fim de jogo.
+export const FORGE_MASTERY_MAX=20
+export function forgeLevelInfo(xp:number){let level=1,spent=0,next=40;while(level<FORGE_MASTERY_MAX&&xp>=spent+next){spent+=next;level++;next=40+level*25}return{level,progress:xp-spent,next,max:level>=FORGE_MASTERY_MAX}}
+export function forgeRecipeLevel(recipeId:string){const recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&EQUIPMENT.find(e=>e.id===recipe.equipmentId);if(!item)return FORGE_MASTERY_MAX;const itemLevel=equipmentRequiredLevel(item),tier=RARITY_TIER[item.raridade??'comum'];return Math.min(FORGE_MASTERY_MAX,Math.max(1,Math.ceil(itemLevel/5)+Math.floor(tier/2)))}
 export function forgeSuccessChance(recipeId:string,forgeXp:number){const mastery=forgeLevelInfo(forgeXp).level,required=forgeRecipeLevel(recipeId);return Math.max(.15,Math.min(.75,.45+(mastery-required)*.06))}
 export function storyRequirementProgress(s:GameState){const chapter=STORY_CHAPTERS.find(c=>c.id===s.storyChapterId),req=chapter?.requirement;if(!req)return{current:1,required:1,complete:true};let current=0;if(req.type==='victories')current=req.target?SUBREGIONS.filter(sub=>sub.regionId===req.target).reduce((sum,sub)=>sum+(s.subregionVictories[sub.id]??0),0):Object.values(s.victories).reduce((a,b)=>a+b,0);if(req.type==='bosses')current=s.subregionBossesDefeated.length;if(req.type==='material')current=s.materials[req.target??'']??0;if(req.type==='upgrade')current=Object.values(s.equipmentUpgrades).filter(v=>v>0).length;if(req.type==='region')current=SUBREGIONS.filter(sub=>sub.regionId===req.target&&s.subregionBossesDefeated.includes(sub.id)).length;return{current:Math.min(current,req.amount),required:req.amount,complete:current>=req.amount}}
 
