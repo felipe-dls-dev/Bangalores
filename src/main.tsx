@@ -389,7 +389,7 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
   <div>
    <small>{recipe.raridade} • FORJADOR NÍVEL {required} • JOGADOR NÍVEL {requiredPlayerLevel}</small>
    <strong>{recipe.nome}</strong>
-   <span className="forge-base-stats">Ataque +{item.ataque} • Defesa +{item.defesa} • Vida +{item.vida} • {equipmentSocketCount(item)} encaixe{equipmentSocketCount(item)===1?'':'s'}</span>
+   <span className="forge-base-stats">{item.slot==='bolsa'?`Capacidade: ${item.capacidade} espaços`:`Ataque +${item.ataque} • Defesa +${item.defesa} • Vida +${item.vida}`} • {equipmentSocketCount(item)} encaixe{equipmentSocketCount(item)===1?'':'s'}</span>
    <span className="forge-chance">Chance de sucesso: {chance}%</span>
    {recipe.effectText&&<em>{recipe.effectText}</em>}
    {recipe.attributeChoice&&<div className="forge-attribute-picker">

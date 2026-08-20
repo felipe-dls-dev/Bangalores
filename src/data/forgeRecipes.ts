@@ -1,7 +1,7 @@
 import type { Equipment, Rarity, Slot } from '../types'
 import { CURATED_FORGE_RECIPES, type ForgeRecipe } from './expansion'
 
-export const FORGE_CATEGORY_ORDER = ['mao_direita', 'capacete', 'peitoral', 'calcas', 'botas', 'mao_esquerda', 'acessorio'] as const
+export const FORGE_CATEGORY_ORDER = ['mao_direita', 'capacete', 'peitoral', 'calcas', 'botas', 'mao_esquerda', 'acessorio', 'bolsa'] as const
 export type ForgeCategory = typeof FORGE_CATEGORY_ORDER[number]
 export const FORGE_CATEGORY_LABELS: Record<ForgeCategory, string> = {
  mao_direita: 'Armas',
@@ -10,7 +10,8 @@ export const FORGE_CATEGORY_LABELS: Record<ForgeCategory, string> = {
  calcas: 'Calças',
  botas: 'Botas',
  mao_esquerda: 'Escudos e Fetiches',
- acessorio: 'Acessórios'
+ acessorio: 'Acessórios',
+ bolsa: 'Bolsas e Mochilas'
 }
 export function forgeCategory(slot: Slot): ForgeCategory {
  return slot === 'amuleto' || slot === 'anel_1' || slot === 'anel_2' ? 'acessorio' : slot as ForgeCategory
@@ -37,7 +38,7 @@ function buildRecipeFor(item: Equipment): ForgeRecipe {
 
 export function buildForgeRecipes(equipment: Equipment[]): ForgeRecipe[] {
  const curatedIds = new Set(CURATED_FORGE_RECIPES.map(r => r.equipmentId))
- const generated = equipment.filter(e => e.slot !== 'bolsa' && !curatedIds.has(e.id)).map(buildRecipeFor)
+ const generated = equipment.filter(e => !curatedIds.has(e.id)).map(buildRecipeFor)
  const byId = new Map(equipment.map(e => [e.id, e]))
  return [...CURATED_FORGE_RECIPES, ...generated].sort((a, b) => {
   const ea = byId.get(a.equipmentId), eb = byId.get(b.equipmentId)
