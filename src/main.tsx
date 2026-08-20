@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane, CheckCircle2, XCircle } from 'lucide-react'
-import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, type AttackAnimType, type SummonType } from './store/game'
+import { useGame, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, type AttackAnimType, type SummonType } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment } from './types'
 import { CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
@@ -191,7 +191,37 @@ function App(){
     </motion.main>
    </AnimatePresence>
    {fleeConfirm&&<div className="escape-confirm-overlay" role="presentation" onClick={()=>setFleeConfirm(false)}><section className="escape-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="escape-flee-title" onClick={event=>event.stopPropagation()}><Footprints/><small>ATALHO ESC DURANTE O COMBATE</small><h2 id="escape-flee-title">Tentar fugir?</h2><p>Um dado amarelo será rolado: <b>5–6</b> permite escapar, <b>4</b> mantém sua ação e <b>1–3</b> encerra seu turno.</p>{(!g.playerTurn||g.animating)&&<span>Aguarde o seu turno para tentar fugir.</span>}<div><button onClick={()=>setFleeConfirm(false)}>Continuar combate</button><button className="primary" disabled={!g.playerTurn||g.animating} onClick={()=>{setFleeConfirm(false);g.flee()}}><Footprints/>Rolar dado de fuga</button></div></section></div>}
+   <TourOverlay/>
    {hero&&g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='cardCreator'&&<footer className="footer-tip">Bangalore's • Auto-save ativo • A aventura continua no próximo acesso.</footer>}
+ </div>
+}
+
+// Tour de boas-vindas: navega de verdade pelas telas do menu superior (TOUR_STEPS, em
+// store/game.ts) enquanto mostra um cartão flutuante explicando cada uma. Não bloqueia a
+// tela por trás -- o jogador pode clicar em qualquer lugar enquanto o cartão flutua por cima.
+function TourOverlay(){
+ const g=useGame()
+ React.useEffect(()=>{const close=(event:KeyboardEvent)=>{if(event.key==='Escape')g.endTour()};if(g.tourStep!=null)document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[g.tourStep,g.endTour])
+ // Se o jogador navegar manualmente para fora do roteiro do tour (ex: clicar num nav e cair
+ // em combate), o cartão fecha sozinho em vez de continuar flutuando sobre uma tela que já
+ // não bate com o passo atual.
+ React.useEffect(()=>{if(g.tourStep!=null&&!TOUR_STEPS.some(t=>t.screen===g.screen))g.endTour()},[g.screen,g.tourStep,g.endTour])
+ if(g.tourStep==null)return null
+ const step=TOUR_STEPS[g.tourStep]
+ if(!step)return null
+ const Icon=nav.find(([id])=>id===step.screen)?.[2]??Sparkles
+ const isFirst=g.tourStep===0,isLast=g.tourStep===TOUR_STEPS.length-1
+ return <div className="tour-overlay" role="dialog" aria-modal="false" aria-label="Tour de boas-vindas">
+  <div className="tour-card">
+   <button className="tour-skip" onClick={g.endTour} aria-label="Pular tour">Pular<XCircle size={14}/></button>
+   <div className="tour-card-head"><span className="tour-icon"><Icon size={20}/></span><div><small>PASSO {g.tourStep+1} DE {TOUR_STEPS.length}</small><h3>{step.title}</h3></div></div>
+   <p>{step.text}</p>
+   <div className="tour-dots">{TOUR_STEPS.map((_,i)=><span key={i} className={i===g.tourStep?'active':''}/>)}</div>
+   <div className="tour-actions">
+    <button disabled={isFirst} onClick={g.prevTourStep}>Voltar</button>
+    <button className="primary" onClick={isLast?g.endTour:g.nextTourStep}>{isLast?'Concluir tour':'Próximo'}</button>
+   </div>
+  </div>
  </div>
 }
 
@@ -272,7 +302,7 @@ const TUTORIAL_CHAPTERS=[
  ['Campanhas e salvamento','O progresso é salvo automaticamente no navegador. É possível criar campanhas com heróis diferentes, carregar uma campanha anterior ou excluí-la no menu inicial. O salvamento é local ao navegador e dispositivo utilizados.'],
  ['Coleção e leitura das cartas','A Coleção reúne as cartas descobertas de heróis, equipamentos, consumíveis, monstros, elites, chefes e eventos. Clique na arte para ampliar e consultar detalhes. Os ícones identificam classe, afinidade ou categoria do inimigo.']
 ] as const
-function TutorialScreen(){const [open,setOpen]=React.useState<number[]>([0,1]);const toggle=(index:number)=>setOpen(current=>current.includes(index)?current.filter(i=>i!==index):[...current,index]);return <div className="tutorial-page"><header className="tutorial-hero"><BookOpen/><div><span className="eyebrow">MANUAL DO AVENTUREIRO</span><h1>Tutorial de Bangalore's</h1><p>Consulte as regras, sistemas e caminhos de Havendown. Clique em um capítulo para abrir ou fechar seu conteúdo.</p></div></header><div className="tutorial-tools"><button onClick={()=>setOpen(TUTORIAL_CHAPTERS.map((_,i)=>i))}>Abrir todos</button><button onClick={()=>setOpen([])}>Recolher todos</button><span>{TUTORIAL_CHAPTERS.length} capítulos</span></div><section className="tutorial-chapters">{TUTORIAL_CHAPTERS.map(([title,text],index)=>{const expanded=open.includes(index);return <article className={expanded?'open':''} key={title}><button aria-expanded={expanded} onClick={()=>toggle(index)}><span>{String(index+1).padStart(2,'0')}</span><strong>{title}</strong><ChevronDown/></button>{expanded&&<motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}}><p>{text}</p></motion.div>}</article>})}</section></div>}
+function TutorialScreen(){const g=useGame();const [open,setOpen]=React.useState<number[]>([0,1]);const toggle=(index:number)=>setOpen(current=>current.includes(index)?current.filter(i=>i!==index):[...current,index]);return <div className="tutorial-page"><header className="tutorial-hero"><BookOpen/><div><span className="eyebrow">MANUAL DO AVENTUREIRO</span><h1>Tutorial de Bangalore's</h1><p>Consulte as regras, sistemas e caminhos de Havendown. Clique em um capítulo para abrir ou fechar seu conteúdo.</p></div></header><div className="tutorial-tools"><button className="primary" onClick={g.startTour} title="Refazer o passeio guiado pelas telas do jogo"><Sparkles size={15}/>Refazer o tour</button><button onClick={()=>setOpen(TUTORIAL_CHAPTERS.map((_,i)=>i))}>Abrir todos</button><button onClick={()=>setOpen([])}>Recolher todos</button><span>{TUTORIAL_CHAPTERS.length} capítulos</span></div><section className="tutorial-chapters">{TUTORIAL_CHAPTERS.map(([title,text],index)=>{const expanded=open.includes(index);return <article className={expanded?'open':''} key={title}><button aria-expanded={expanded} onClick={()=>toggle(index)}><span>{String(index+1).padStart(2,'0')}</span><strong>{title}</strong><ChevronDown/></button>{expanded&&<motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}}><p>{text}</p></motion.div>}</article>})}</section></div>}
 function AuthScreen(){
  const auth=useAuth()
  const [mode,setMode]=React.useState<'signin'|'signup'|'reset'>('signin')
