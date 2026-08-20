@@ -222,6 +222,8 @@ function TourOverlay(){
    <button className="tour-skip" onClick={g.endTour} aria-label="Pular tour">Pular<XCircle size={14}/></button>
    <div className="tour-card-head"><span className="tour-icon"><Icon size={20}/></span><div><small>PASSO {g.tourStep+1} DE {TOUR_STEPS.length}</small><h3>{step.title}</h3></div></div>
    <p>{step.text}</p>
+   <ul className="tour-highlights">{step.highlights.map(item=><li key={item}>{item}</li>)}</ul>
+   <aside className="tour-tip"><Sparkles size={14}/><span><b>Dica:</b> {step.tip}</span></aside>
    <div className="tour-dots">{TOUR_STEPS.map((_,i)=><span key={i} className={i===g.tourStep?'active':''}/>)}</div>
    <div className="tour-actions">
     <button disabled={isFirst} onClick={g.prevTourStep}>Voltar</button>
@@ -308,7 +310,33 @@ const TUTORIAL_CHAPTERS=[
  ['Campanhas e salvamento','O progresso é salvo automaticamente no navegador. É possível criar campanhas com heróis diferentes, carregar uma campanha anterior ou excluí-la no menu inicial. O salvamento é local ao navegador e dispositivo utilizados.'],
  ['Coleção e leitura das cartas','A Coleção reúne as cartas descobertas de heróis, equipamentos, consumíveis, monstros, elites, chefes e eventos. Clique na arte para ampliar e consultar detalhes. Os ícones identificam classe, afinidade ou categoria do inimigo.']
 ] as const
-function TutorialScreen(){const g=useGame();const [open,setOpen]=React.useState<number[]>([0,1]);const toggle=(index:number)=>setOpen(current=>current.includes(index)?current.filter(i=>i!==index):[...current,index]);return <div className="tutorial-page"><header className="tutorial-hero"><BookOpen/><div><span className="eyebrow">MANUAL DO AVENTUREIRO</span><h1>Tutorial de Bangalore's</h1><p>Consulte as regras, sistemas e caminhos de Havendown. Clique em um capítulo para abrir ou fechar seu conteúdo.</p></div></header><div className="tutorial-tools"><button className="primary" onClick={g.startTour} title="Refazer o passeio guiado pelas telas do jogo"><Sparkles size={15}/>Refazer o tour</button><button onClick={()=>setOpen(TUTORIAL_CHAPTERS.map((_,i)=>i))}>Abrir todos</button><button onClick={()=>setOpen([])}>Recolher todos</button><span>{TUTORIAL_CHAPTERS.length} capítulos</span></div><section className="tutorial-chapters">{TUTORIAL_CHAPTERS.map(([title,text],index)=>{const expanded=open.includes(index);return <article className={expanded?'open':''} key={title}><button aria-expanded={expanded} onClick={()=>toggle(index)}><span>{String(index+1).padStart(2,'0')}</span><strong>{title}</strong><ChevronDown/></button>{expanded&&<motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}}><p>{text}</p></motion.div>}</article>})}</section></div>}
+const TUTORIAL_ADVANCED=[
+ {title:'Especializações e identidade da build',text:'Além dos atributos e 12 talentos, cada herói toma decisões de especialização nos níveis 10, 25, 50 e 75. Cada escolha favorece um estilo diferente e pode ser redefinida mediante custo.',bullets:['Confira passiva, habilidade ativa e afinidades da classe.','Use o resumo de build nas Crônicas para conferir conjuntos, elemento, resistências e bônus ativos.']},
+ {title:'Intenções, chefes e capangas',text:'O inimigo anuncia a intenção da próxima ação: ataque, golpe pesado, guarda, condição, convocação ou recuperação. Use essa informação para decidir entre atacar, defender ou consumir um recurso.',bullets:['Chefes mudam de fase e podem recuperar vida ou convocar capangas.','Capangas têm alvo próprio; eliminar a ameaça certa pode ser melhor que atacar o chefe.']},
+ {title:'Bestiário e domínio da coleção',text:'Vencer a mesma criatura desbloqueia marcos no bestiário: primeiro suas estatísticas, depois afinidades e, por fim, bônus de dano. Descobertas na Coleção também concedem recompensas permanentes.',bullets:['Bestiário: 1 vitória revela atributos, 3 revelam afinidade e 5 concedem +1 de dano.','Coleção: 25 descobertas dão +5 de Vida, 100 dão +1 de Ataque e 250 dão +1 de Defesa.']},
+ {title:'Sintonia elemental e combinações avançadas',text:'A Forja permite sintonizar equipamentos com elementos e resistências. Combine isso com pedras, aprimoramentos, efeitos forjados e conjuntos para preparar respostas específicas a cada região.',bullets:['Resistência reduz o dano elemental e bloqueia sua condição.','Leia o resumo da build e a ficha do inimigo antes de trocar uma peça.']},
+] as const
+
+const QUICK_START=[
+ ['1','Escolha um destino','No Mapa, procure uma sub-região do seu nível.'],
+ ['2','Prepare-se','Equipe as melhores peças e leve itens de cura.'],
+ ['3','Leia o inimigo','Durante a luta, observe intenção, elemento e condições.'],
+ ['4','Evolua','Distribua atributos, escolha talentos e aceite contratos.'],
+ ['5','Crie sua build','Use conjuntos, Forja, especializações e resistências.'],
+] as const
+
+function TutorialScreen(){
+ const g=useGame()
+ const chapters=[...TUTORIAL_CHAPTERS.map(([title,text])=>({title,text,bullets:[] as readonly string[]})),...TUTORIAL_ADVANCED]
+ const [open,setOpen]=React.useState<number[]>([0,1,5])
+ const toggle=(index:number)=>setOpen(current=>current.includes(index)?current.filter(i=>i!==index):[...current,index])
+ return <div className="tutorial-page">
+  <header className="tutorial-hero"><BookOpen/><div><span className="eyebrow">MANUAL DO AVENTUREIRO</span><h1>Aprenda Bangalore's</h1><p>Dos primeiros passos às builds avançadas: consulte uma regra ou refaça o passeio guiado pelas telas.</p></div></header>
+  <section className="tutorial-start"><div className="tutorial-start-head"><div><span className="eyebrow">ROTA RECOMENDADA</span><h2>Seu início em 5 passos</h2></div><button className="primary" onClick={g.startTour}><Sparkles size={15}/>Iniciar tour guiado</button></div><div className="tutorial-start-grid">{QUICK_START.map(([number,title,text])=><article key={number}><b>{number}</b><div><strong>{title}</strong><p>{text}</p></div></article>)}</div></section>
+  <div className="tutorial-tools"><button onClick={()=>setOpen(chapters.map((_,i)=>i))}>Abrir todos</button><button onClick={()=>setOpen([])}>Recolher todos</button><span>{chapters.length} capítulos · progresso salvo automaticamente</span></div>
+  <section className="tutorial-chapters">{chapters.map(({title,text,bullets},index)=>{const expanded=open.includes(index);return <article className={expanded?'open':''} key={title}><button aria-expanded={expanded} onClick={()=>toggle(index)}><span>{String(index+1).padStart(2,'0')}</span><strong>{title}</strong><ChevronDown/></button>{expanded&&<motion.div className="tutorial-chapter-body" initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}}><p>{text}</p>{bullets.length>0&&<ul>{bullets.map(item=><li key={item}>{item}</li>)}</ul>}</motion.div>}</article>})}</section>
+ </div>
+}
 function AuthScreen(){
  const auth=useAuth()
  const [mode,setMode]=React.useState<'signin'|'signup'|'reset'>('signin')
