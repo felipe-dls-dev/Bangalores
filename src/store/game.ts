@@ -53,7 +53,9 @@ const hdCollectionArt=(path:string|undefined,collection:string)=>{
   if(!path)return path
   const filename=path.split('/').pop()
   const stem=filename?.replace(/\.[^.]+$/,'')
-  return stem?`assets/art/hd/${collection}/${stem}-hd.webp`:path
+  if(!stem)return path
+  const hdStem=stem.endsWith('-hd')?stem:`${stem}-hd`
+  return `assets/art/hd/${collection}/${hdStem}.webp`
 }
 
 const EQUIPMENT_HD_OVERRIDES:Record<string,string> = {
