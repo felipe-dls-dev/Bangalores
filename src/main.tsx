@@ -333,7 +333,27 @@ function RecipeCatalog(){
  </section>
 }
 function TalentPanel(){const g=useGame(),level=levelInfo(g.xp).lvl;return <Panel title="Árvore de talentos"><div className="system-list">{TALENTS.map(t=><button key={t.id} disabled={level<t.level||g.talents.includes(t.id)} onClick={()=>g.unlockTalent(t.id)}><strong>{g.talents.includes(t.id)?'✓ ':''}{t.nome}</strong><small>Nível {t.level} • {t.texto}</small></button>)}</div></Panel>}
-function DungeonPanel(){const g=useGame();return <Panel title="Masmorras"><p>Sequências crescentes de ameaças, com chefe a cada cinco salas e recompensas progressivas.</p><button className="primary" onClick={g.startDungeon}>Entrar na masmorra • Profundidade {g.dungeonDepth+1}</button></Panel>}
+function DungeonPanel(){
+ const g=useGame(),lvl=levelInfo(g.xp).lvl
+ const world=g.world??'havendown'
+ const regions=[...TERRITORIES].filter(t=>(t.mundo??'havendown')===world).sort((a,b)=>a.dificuldade-b.dificuldade)
+ const worldSubregions=SUBREGIONS.filter(sub=>regions.some(r=>r.id===sub.regionId))
+ const activeId=g.dungeonSubregionId??g.subregionId
+ const active=worldSubregions.find(sub=>sub.id===activeId)??worldSubregions.find(sub=>sub.regionId===g.regionId)??worldSubregions[0]
+ return <Panel title="Masmorras">
+  <p>Sequências crescentes de ameaças, com chefe a cada cinco salas e recompensas progressivas. Escolha a região que servirá de base para a expedição.</p>
+  {g.dungeonActive&&<p className="dungeon-warning">Expedição em andamento em {active?.nome}. Trocar de região encerra o progresso atual (profundidade {g.dungeonDepth}).</p>}
+  <div className="dungeon-picker">{regions.map(region=>{
+   const subs=worldSubregions.filter(sub=>sub.regionId===region.id).sort((a,b)=>a.nivelMin-b.nivelMin)
+   if(!subs.length)return null
+   return <div className="dungeon-region-group" key={region.id}><strong>{region.nome}</strong><div className="dungeon-sub-row">{subs.map(sub=>{
+    const isActive=sub.id===active?.id,danger=dangerFor(lvl,sub.nivelMin,sub.nivelMax)
+    return <button key={sub.id} className={`dungeon-sub-button danger-${danger.cls}${isActive?' active':''}`} onClick={()=>g.selectDungeon(sub.id)}><span>{sub.nome}</span><small>Nível {sub.nivelMin}–{sub.nivelMax}</small></button>
+   })}</div></div>
+  })}</div>
+  <button className="primary" disabled={!active} onClick={g.startDungeon}>Entrar na masmorra{active?` • ${active.nome}`:''} • Profundidade {g.dungeonDepth+1}</button>
+ </Panel>
+}
 function EquipmentRulesPanel(){return <Panel title="Conjuntos, elementos e condições"><p><b>Conjuntos:</b> {SET_BONUSES.map(s=>`${s.nome} (${s.two}; ${s.four})`).join(' • ')}</p><p><b>Elementos:</b> {ELEMENTS.join(' • ')}</p><p><b>Condições:</b> {STATUS_INFO.map(s=>`${s[0]}: ${s[1]}`).join(' • ')}</p></Panel>}
 function RegionRevengePanel(){const g=useGame(),subs=SUBREGIONS.filter(s=>s.regionId===g.regionId&&g.subregionBossesDefeated.includes(s.id));if(!subs.length)return null;return <div className="moved-systems"><Panel title="Salão da Vingança"><p>Chefes já derrotados nesta região podem ser enfrentados novamente, mais fortes e valiosos.</p><div className="system-list">{subs.map(sub=><button key={sub.id} onClick={()=>g.startRevenge(sub.id)}><strong>{sub.chefe.nome}</strong><small>{sub.nome} • Vinganças vencidas: {g.revengeWins[sub.id]??0}</small></button>)}</div></Panel></div>}
 function ForgeResultBanner(){const g=useGame(),result=g.forgeResult;return <AnimatePresence>{result&&<motion.div key={result.id} className={`forge-result-banner ${result.success?'success':'failure'}`} initial={{opacity:0,y:-10,scale:.96}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-10,scale:.96}} transition={{duration:.3}} role="status" aria-live="assertive">{result.success?<CheckCircle2/>:<XCircle/>}<div><strong>{result.success?'Forja bem-sucedida!':'Fabricação falhou'}</strong><span>{result.message}</span></div></motion.div>}</AnimatePresence>}
