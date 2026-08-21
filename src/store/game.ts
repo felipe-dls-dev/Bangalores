@@ -484,7 +484,16 @@ export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode){const r
 // pra sempre. O poder de combate (power) continua crescendo sem teto de propósito (isso já
 // desestimula naturalmente repetir demais), mas a recompensa agora estabiliza depois de 10
 // vitórias (multiplicador máximo 2.5×).
-export function buildRevengeBoss(sub:Subregion,wins:number):Enemy{const base=buildBoss(sub),power=1.35+wins*.18,level=(base.nivel??base.dificuldade)+wins*3,rewardMult=1+Math.min(wins,10)*.15;return balanceEnemyByLevel({...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),ouro:Math.round((base.ouro??1)*rewardMult),xpReward:Math.round((base.xpReward??1)*rewardMult),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true,nivel:level,dificuldade:level})}
+//
+// Bug relatado por jogadores: a defesa do chefe de vingança nunca aumentava -- na prática ela
+// ficava travada no valor do chefe original (nivelMax-2), porque `{...base, ...}` já trazia um
+// `defesa` numérico definido, e enemyDefenseValue() só recalcula quando o campo está indefinido.
+// Ataque e vida escalavam via `power`, mas defesa não escalava com nada, então a cada vingança
+// ele parecia relativamente mais fraco na defesa (nunca mais forte, como era a intenção). A
+// função também nunca recebia o nível do jogador, então um herói de nível alto revisitando uma
+// sub-região antiga enfrentava sempre o mesmo chefe fraco. Agora o nível efetivo cresce com wins
+// E com o nível do jogador (o maior dos dois), e a defesa é recalculada a partir desse nível.
+export function buildRevengeBoss(sub:Subregion,wins:number,playerLevel=0):Enemy{const base=buildBoss(sub),power=1.35+wins*.18,level=Math.max((base.nivel??base.dificuldade)+wins*3,playerLevel),rewardMult=1+Math.min(wins,10)*.15;return balanceEnemyByLevel({...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),defesa:Math.max(1,level-2),ouro:Math.round((base.ouro??1)*rewardMult),xpReward:Math.round((base.xpReward??1)*rewardMult),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true,nivel:level,dificuldade:level})}
 
 function campaignSnapshot(source:any):CampaignSave{const snapshot:any={savedAt:Date.now()};for(const [key,value] of Object.entries(source)){if(typeof value!=='function'&&key!=='campaigns'&&key!=='activeCampaignId'&&key!=='customCards')snapshot[key]=value}return snapshot}
 function saveActiveCampaign(state:GameState){if(!state.activeCampaignId||!state.heroId||state.screen==='menu'||state.screen==='select'||state.screen==='cardCreator')return state.campaigns;return{...state.campaigns,[state.activeCampaignId]:campaignSnapshot(state)}}
@@ -691,7 +700,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   // ao trocar de região no meio de uma masmorra.
   ,selectDungeon:(subregionId:string)=>{const s=get();if(!SUBREGIONS.some(x=>x.id===subregionId)||subregionId===s.dungeonSubregionId)return;const abandoning=s.dungeonActive&&s.dungeonSubregionId&&s.dungeonSubregionId!==subregionId;set({dungeonSubregionId:subregionId,...(abandoning?{dungeonActive:false,dungeonDepth:0}:{})})}
   ,leaveDungeon:()=>set({screen:'map',subregionId:undefined,dungeonActive:false,dungeonDepth:0,loot:undefined,explorationNote:'Expedição encerrada. Os espólios conquistados foram preservados.'})
-  ,startRevenge:(subregionId:string)=>{const s=get(),sub=SUBREGIONS.find(x=>x.id===subregionId);if(!sub||!s.subregionBossesDefeated.includes(subregionId))return;set({subregionId,regionId:sub.regionId,territory:sub.nome,screen:'bossIntro',enemy:difficultyEnemy(buildRevengeBoss(sub,s.revengeWins[subregionId]??0),s.difficultyMode)})}
+  ,startRevenge:(subregionId:string)=>{const s=get(),sub=SUBREGIONS.find(x=>x.id===subregionId);if(!sub||!s.subregionBossesDefeated.includes(subregionId))return;set({subregionId,regionId:sub.regionId,territory:sub.nome,screen:'bossIntro',enemy:difficultyEnemy(buildRevengeBoss(sub,s.revengeWins[subregionId]??0,deriveLevel(s.xp).lvl),s.difficultyMode)})}
   ,chooseStory:(choiceId:string)=>{const s=get(),chapter=STORY_CHAPTERS.find(c=>c.id===s.storyChapterId),choice=chapter?.choices.find(c=>c.id===choiceId),progress=storyRequirementProgress(s);if(!chapter||!choice||!progress.complete)return;const materials={...s.materials};if(choice.material)materials[choice.material]=(materials[choice.material]??0)+1;set({storyChapterId:choice.next,storyChoices:{...s.storyChoices,[chapter.id]:choice.id},storyFlags:s.storyFlags.includes(`historia:${choice.id}`)?s.storyFlags:[...s.storyFlags,`historia:${choice.id}`],gold:s.gold+(choice.gold??0),materials,storyNotice:choice.consequence})}
   ,startTour:()=>set({tourStep:0,screen:TOUR_STEPS[0].screen})
   ,nextTourStep:()=>{const step=(get().tourStep??0)+1;if(step>=TOUR_STEPS.length){set({tourStep:undefined});return}set({tourStep:step,screen:TOUR_STEPS[step].screen})}
