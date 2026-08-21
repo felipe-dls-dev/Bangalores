@@ -417,6 +417,39 @@ export function balanceEnemyByLevel<T extends Enemy>(enemy:T,allowance=1):T{
  return{...enemy,vida,ataque,defesa}
 }
 
+// Recompensas de xp e ouro eram a MESMA coisa (victory() usava en.xpReward??gold, e a maioria
+// dos inimigos nunca definia xpReward) — ou seja, ouro (ajustado pra economia/loja) e xp
+// (deveria acompanhar o custo de subir de nível) estavam amarrados sem nenhuma relação com
+// deriveLevel/costForLevel. Isso é o que deixava um único chefe (ex.: Astrônomo Devorado)
+// entregar 800+ de xp: o valor de ouro daquela sub-região nunca foi pensado como xp. Agora as
+// duas são calculadas separadamente e todo caminho de combate (buildEnemy/buildBoss/
+// buildRevengeBoss/masmorra/coop) define xpReward explicitamente, sem fallback pro ouro.
+const REWARD_VARIANT_MULT:Record<string,number>={Campeão:2.2,Elite:1.6,Veterano:1.25,Comum:1}
+function rewardVariantMult(variant?:string){return REWARD_VARIANT_MULT[variant??'Comum']??1}
+function rewardBossMult(maxFases?:number){return 2.4+Math.min(4,maxFases??1)*.3}
+// Quantos xp "vale" cada nível, dividido pela dificuldade da sub-região (encontrosNecessarios)
+// e por este fator: cada faixa de nível costuma ter ~3 sub-regiões cobrindo-a em paralelo (o
+// jogador não depende de uma só pra progredir), então uma sub-região sozinha não deve entregar
+// o custo de nível inteiro em poucos encontros.
+const SUBREGION_OVERLAP_FACTOR=3
+function subregionXpBudget(sub:Pick<Subregion,'nivelMin'|'nivelMax'>){let total=0;for(let l=sub.nivelMin;l<=sub.nivelMax;l++)total+=costForLevel(l);return total}
+export function xpRewardForLevel(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number;sub?:Pick<Subregion,'nivelMin'|'nivelMax'|'encontrosNecessarios'>}={}):number{
+ const lvl=Math.max(1,Math.round(level))
+ const base=opts.sub?subregionXpBudget(opts.sub)/Math.max(1,opts.sub.encontrosNecessarios)/SUBREGION_OVERLAP_FACTOR:costForLevel(lvl)/SUBREGION_OVERLAP_FACTOR
+ const mult=opts.boss?rewardBossMult(opts.maxFases):rewardVariantMult(opts.variant)
+ return Math.max(1,Math.round(base*mult))
+}
+const GOLD_BASE=4,GOLD_PER_LEVEL=1.5
+function goldRewardRange(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number}={}){
+ const lvl=Math.max(1,Math.round(level)),mult=opts.boss?rewardBossMult(opts.maxFases):rewardVariantMult(opts.variant),base=(GOLD_BASE+lvl*GOLD_PER_LEVEL)*mult
+ const min=Math.max(1,Math.round(base*.65)),max=Math.max(min+1,Math.round(base*1.45))
+ return{min,max}
+}
+// Ouro deixou de ser um valor único derivado do inimigo: sorteia dentro de uma faixa
+// min/max própria (independente do xp), então o mesmo tipo de encontro paga um pouco
+// diferente a cada vitória em vez de um número fixo e previsível.
+export function rollGoldReward(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number}={}):number{const{min,max}=goldRewardRange(level,opts);return min+Math.floor(Math.random()*(max-min+1))}
+
 export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const base=sub.inimigos[Math.floor(Math.random()*sub.inimigos.length)]
   const startingRegion=sub.regionId==='campos_dourados'
@@ -426,7 +459,6 @@ export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const variant=startingRegion?(r<.015?'Campeão':r<.065?'Elite':r<.22?'Veterano':'Comum'):(r<.06?'Campeão':r<.21?'Elite':r<.48?'Veterano':'Comum')
   const hpMult=variant==='Campeão'?2.05:variant==='Elite'?1.55:variant==='Veterano'?1.22:1
   const atkMult=variant==='Campeão'?1.42:variant==='Elite'?1.24:variant==='Veterano'?1.1:1
-  const goldMult=variant==='Campeão'?2.3:variant==='Elite'?1.7:variant==='Veterano'?1.28:1
   const levelDelta=Math.max(0,effectiveLevel-sub.nivelMin)
   const scaledHp=Math.ceil(base.vida*(1+levelDelta*.12)*hpMult*(startingRegion?.45:1))
   const scaledAtk=Math.ceil(base.ataque*(1+levelDelta*.07)*atkMult*(startingRegion?.55:1))
@@ -434,20 +466,25 @@ export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const extra=variant==='Campeão'?' • Aura de campeão':variant==='Elite'?' • Técnica de elite':variant==='Veterano'?' • Experiência de combate':''
   return balanceEnemyByLevel({
     id:`${sub.id}_${base.nome.toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${Date.now()}`,
-    nome:prefix+base.nome, ataque:scaledAtk, vida:scaledHp, ouro:Math.ceil(base.ouro*(1+levelDelta*.08)*goldMult), dificuldade:effectiveLevel,
+    nome:prefix+base.nome, ataque:scaledAtk, vida:scaledHp, ouro:rollGoldReward(effectiveLevel,{variant}), xpReward:xpRewardForLevel(effectiveLevel,{variant,sub}), dificuldade:effectiveLevel,
     habilidade:base.habilidade+extra, imagem:base.arte, arte:base.arte, raridade:rarityForVariant(variant), elite:variant==='Elite'||variant==='Campeão', nivel:effectiveLevel, variante:variant, elemento:REGION_MATERIALS[sub.regionId]?.elemento
   })
 }
 export function buildBoss(sub:Subregion):Enemy{
   const b=sub.chefe
   const startingRegion=sub.regionId==='campos_dourados'
-  return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*(startingRegion?.58:1))),vida:Math.max(1,Math.ceil(b.vida*(startingRegion?.55:1))),ouro:b.ouro,dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento})
+  return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*(startingRegion?.58:1))),vida:Math.max(1,Math.ceil(b.vida*(startingRegion?.55:1))),ouro:rollGoldReward(sub.nivelMax,{boss:true,maxFases:b.maxFases}),xpReward:xpRewardForLevel(sub.nivelMax,{boss:true,maxFases:b.maxFases,sub}),dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento})
 }
-function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return balanceEnemyByLevel({...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward)},multiplier)}
+function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return balanceEnemyByLevel({...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward),xpReward:enemy.xpReward!=null?Math.round(enemy.xpReward*DIFFICULTIES[mode].reward):enemy.xpReward},multiplier)}
 export function buildCoopEnemy(subregionId:string,playerLevel:number,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildEnemy(sub,playerLevel),mode):undefined}
 export function buildCoopSubregionBoss(subregionId:string,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildBoss(sub),mode):undefined}
-export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode){const region=TERRITORIES.find(item=>item.id===regionId),base=region&&BOSSES[region.dificuldade];return region&&base?difficultyEnemy({...base,id:`coop_region_boss_${region.id}`,nome:`${base.nome} • Soberano de ${region.nome}`},mode):undefined}
-export function buildRevengeBoss(sub:Subregion,wins:number):Enemy{const base=buildBoss(sub),power=1.35+wins*.18,level=(base.nivel??base.dificuldade)+wins*3;return balanceEnemyByLevel({...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),ouro:Math.ceil(base.ouro*(1.5+wins*.25)),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true,nivel:level,dificuldade:level})}
+export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode){const region=TERRITORIES.find(item=>item.id===regionId),base=region&&BOSSES[region.dificuldade];return region&&base?difficultyEnemy({...base,id:`coop_region_boss_${region.id}`,nome:`${base.nome} • Soberano de ${region.nome}`,ouro:rollGoldReward(region.nivelMax,{boss:true,maxFases:base.maxFases}),xpReward:xpRewardForLevel(region.nivelMax,{boss:true,maxFases:base.maxFases})},mode):undefined}
+// A recompensa por vingança repetida crescia sem limite (1.5+wins*.25, nunca travava) --
+// dava pra farmar o mesmo chefe dezenas de vezes e cada vitória valer mais que a anterior
+// pra sempre. O poder de combate (power) continua crescendo sem teto de propósito (isso já
+// desestimula naturalmente repetir demais), mas a recompensa agora estabiliza depois de 10
+// vitórias (multiplicador máximo 2.5×).
+export function buildRevengeBoss(sub:Subregion,wins:number):Enemy{const base=buildBoss(sub),power=1.35+wins*.18,level=(base.nivel??base.dificuldade)+wins*3,rewardMult=1+Math.min(wins,10)*.15;return balanceEnemyByLevel({...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),ouro:Math.round((base.ouro??1)*rewardMult),xpReward:Math.round((base.xpReward??1)*rewardMult),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true,nivel:level,dificuldade:level})}
 
 function campaignSnapshot(source:any):CampaignSave{const snapshot:any={savedAt:Date.now()};for(const [key,value] of Object.entries(source)){if(typeof value!=='function'&&key!=='campaigns'&&key!=='activeCampaignId'&&key!=='customCards')snapshot[key]=value}return snapshot}
 function saveActiveCampaign(state:GameState){if(!state.activeCampaignId||!state.heroId||state.screen==='menu'||state.screen==='select'||state.screen==='cardCreator')return state.campaigns;return{...state.campaigns,[state.activeCampaignId]:campaignSnapshot(state)}}
@@ -637,9 +674,12 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     // Determinístico em vez de copiar o ouro (que tem variante/nível sorteados por buildEnemy
     // e por isso oscilava sem relação clara com o andar): cresce com a profundidade e é
     // proporcional ao nível do inimigo enfrentado, igual ao pedido de XP crescente e
-    // proporcional à dificuldade.
-    const xpReward=Math.round((enemyLevel*4+depth*6)*(isBoss?1.6:1))
-    const dungeonLevel=enemyLevel+depth
+    // proporcional à dificuldade. Usa scalingDepth (com teto), não depth cru: a dificuldade
+    // real (vida/ataque) já satura em DUNGEON_SCALING_DEPTH andares, então o xp precisa saturar
+    // junto -- senão andares profundos viram "seguros" (dificuldade travada) com xp crescendo
+    // pra sempre, o que é exatamente o tipo de exploit que motivou este rebalanceamento.
+    const xpReward=Math.round((enemyLevel*4+scalingDepth*6)*(isBoss?1.6:1))
+    const dungeonLevel=enemyLevel+scalingDepth
     const dungeonEnemy=balanceEnemyByLevel({...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*(1+scalingDepth*.12)),ouro:Math.ceil(enemy.ouro*(1+scalingDepth*.18)),xpReward,dungeon:true,nivel:dungeonLevel,dificuldade:dungeonLevel})
     beginCombat(set,get,dungeonEnemy)
     set({dungeonDepth:depth,dungeonActive:true,dungeonSubregionId:sub.id})
@@ -1018,7 +1058,7 @@ function enemyAttack(set:any,get:any){
   if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get),900);return}resolveMinionAttacks(set,get,()=>{const latest=get() as GameState;if(latest.screen==='combat')set({animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:true,combatTurn:latest.combatTurn+1})})
  },COMBAT_ROLL_DISPLAY_MS)
 }
-function victory(set:any,get:any){const s=get() as GameState,en=s.enemy!;const gold=en.ouro;const before=deriveLevel(s.xp).lvl;const xp=s.xp+(en.xpReward??gold);const after=deriveLevel(xp).lvl;const points=s.attributePoints+Math.max(0,after-before);const key=s.subregionId??s.territory;const victories={...s.victories,[s.territory]:(s.victories[s.territory]??0)+1};const subregionVictories={...s.subregionVictories,[key]:(s.subregionVictories[key]??0)+1};let bosses=[...s.bossesDefeated],subBosses=[...s.subregionBossesDefeated];if(en.boss){if(!bosses.includes(String(en.dificuldade)))bosses.push(String(en.dificuldade));if(s.subregionId&&!subBosses.includes(s.subregionId))subBosses.push(s.subregionId)}const enemyName=en.nome.toLocaleLowerCase('pt-BR'),regionDifficulty=TERRITORIES.find(t=>t.id===s.regionId)?.dificuldade??0,guildProgress={...s.guildProgress};for(const id of s.guildAccepted){if(s.guildClaimed.includes(id))continue;const mission=guildMissionById(id);if(!mission)continue;const matches=mission.tipo==='any'||(mission.tipo==='boss'&&Boolean(en.boss)&&(!mission.alvo||enemyName.includes(mission.alvo))&&(!mission.regiaoMinima||regionDifficulty>=mission.regiaoMinima))||(mission.tipo==='specific'&&Boolean(mission.alvo)&&enemyName.includes(mission.alvo!));if(matches)guildProgress[id]=Math.min(mission.quantidade,(guildProgress[id]??0)+1)}let equipmentBag=[...s.equipmentBag],inventory={...s.inventory};let equipmentId:string|undefined,equipmentRef:string|undefined,itemId:string|undefined,missedEquipmentId:string|undefined
+function victory(set:any,get:any){const s=get() as GameState,en=s.enemy!;const gold=en.ouro;const before=deriveLevel(s.xp).lvl;const xp=s.xp+(en.xpReward??0);const after=deriveLevel(xp).lvl;const points=s.attributePoints+Math.max(0,after-before);const key=s.subregionId??s.territory;const victories={...s.victories,[s.territory]:(s.victories[s.territory]??0)+1};const subregionVictories={...s.subregionVictories,[key]:(s.subregionVictories[key]??0)+1};let bosses=[...s.bossesDefeated],subBosses=[...s.subregionBossesDefeated];if(en.boss){if(!bosses.includes(String(en.dificuldade)))bosses.push(String(en.dificuldade));if(s.subregionId&&!subBosses.includes(s.subregionId))subBosses.push(s.subregionId)}const enemyName=en.nome.toLocaleLowerCase('pt-BR'),regionDifficulty=TERRITORIES.find(t=>t.id===s.regionId)?.dificuldade??0,guildProgress={...s.guildProgress};for(const id of s.guildAccepted){if(s.guildClaimed.includes(id))continue;const mission=guildMissionById(id);if(!mission)continue;const matches=mission.tipo==='any'||(mission.tipo==='boss'&&Boolean(en.boss)&&(!mission.alvo||enemyName.includes(mission.alvo))&&(!mission.regiaoMinima||regionDifficulty>=mission.regiaoMinima))||(mission.tipo==='specific'&&Boolean(mission.alvo)&&enemyName.includes(mission.alvo!));if(matches)guildProgress[id]=Math.min(mission.quantidade,(guildProgress[id]??0)+1)}let equipmentBag=[...s.equipmentBag],inventory={...s.inventory};let equipmentId:string|undefined,equipmentRef:string|undefined,itemId:string|undefined,missedEquipmentId:string|undefined
 // O tipo do espólio (equipamento OU consumível) é sorteado antes de checar se a bolsa tem
 // espaço -- antes, bolsa cheia trocava silenciosamente um sorteio de equipamento por um
 // consumível qualquer, então o jogador nunca sabia que "ganhou" um item e o perdeu por falta
@@ -1031,4 +1071,4 @@ const discoveredCards=[...(s.discoveredCards??[])];if(equipmentId&&!discoveredCa
 // elites comuns nunca soltam equipamento com essas propriedades.
 let equipmentElements=s.equipmentElements,equipmentResistances=s.equipmentResistances
 if(equipmentRef&&en.boss&&Math.random()<.5){const dropped=eqById(equipmentRef);if(dropped)if(dropped.slot==='mao_direita')equipmentElements={...s.equipmentElements,[equipmentRef]:material.elemento};else equipmentResistances={...s.equipmentResistances,[equipmentRef]:material.elemento}}
-set({gold:s.gold+gold,xp,attributePoints:points,victories,subregionVictories,bossesDefeated:bosses,subregionBossesDefeated:subBosses,guildProgress,equipmentBag,inventory,materials,revengeWins,discoveredCards,equipmentElements,equipmentResistances,bestiary:{...s.bestiary,[baseName]:{...record,vitorias:record.vitorias+1}},screen:'loot',enemy:undefined,enemyHp:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,pendingAttackBonus:0,shield:0,activePotionIds:[],loot:{gold,xp:en.xpReward??gold,itemId,equipmentId,missedEquipmentId,title:en.revenge?'VINGANÇA CONCLUÍDA':en.boss?'CHEFE DERROTADO':en.variante==='Campeão'?'CAMPEÃO DERROTADO':'VITÓRIA'}})}
+set({gold:s.gold+gold,xp,attributePoints:points,victories,subregionVictories,bossesDefeated:bosses,subregionBossesDefeated:subBosses,guildProgress,equipmentBag,inventory,materials,revengeWins,discoveredCards,equipmentElements,equipmentResistances,bestiary:{...s.bestiary,[baseName]:{...record,vitorias:record.vitorias+1}},screen:'loot',enemy:undefined,enemyHp:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,pendingAttackBonus:0,shield:0,activePotionIds:[],loot:{gold,xp:en.xpReward??0,itemId,equipmentId,missedEquipmentId,title:en.revenge?'VINGANÇA CONCLUÍDA':en.boss?'CHEFE DERROTADO':en.variante==='Campeão'?'CAMPEÃO DERROTADO':'VITÓRIA'}})}
