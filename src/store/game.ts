@@ -79,6 +79,12 @@ const ITEM_PRICE_MULTIPLIER=16
 // satura em sub.nivelMax+2 bem antes disso -- sem esse teto, vida/ouro continuavam subindo
 // pra sempre com a profundidade mesmo depois do nível parar de subir.
 const DUNGEON_SCALING_DEPTH=25
+// Garante que a masmorra nunca fique mais fácil (ou pare de recompensar melhor) de um andar
+// pro seguinte: a dificuldade tem que crescer pelo menos esse tanto (em enemyPointCost) a cada
+// andar; recompensa (xp/ouro) sobe entre o mínimo e o máximo abaixo -- nunca cai, nunca dispara.
+const DUNGEON_MIN_DIFFICULTY_GROWTH=.04
+const DUNGEON_REWARD_MIN_GROWTH=.02
+const DUNGEON_REWARD_MAX_GROWTH=.12
 export const LIFE_CHANCE:Record<string,number>={essencia_vital:.35,elixir_fenix:.5}
 export const CONSUMABLES = [...(consumables as Consumable[]).map(consumable=>({...consumable,preco:Math.ceil(consumable.preco*ITEM_PRICE_MULTIPLIER),descricao:consumable.tipo==='vida_max'?`${Math.round((LIFE_CHANCE[consumable.id]??.35)*100)}% de chance de aumentar permanentemente a vida máxima em ${consumable.valor}.${consumable.id==='elixir_fenix'?' Recupera toda a vida em caso de sucesso.':` Cura ${consumable.valor} em caso de sucesso.`}`:consumable.descricao,arte:hdCollectionArt(consumable.arte,'consumables')})),{id:'tonico_regeneracao',nome:'Tônico da Regeneração Acelerada',tipo:'regen_boost',valor:1,preco:960,descricao:'Durante 1 hora, recupera 1 ponto de vida a cada 30 segundos fora de combate.',imagem:'assets/art/consumables/pocao_cura.webp',arte:'assets/art/hd/consumables/pocao_cura-hd.webp',raridade:'raro' as Rarity}]
 const ALL_SUBREGIONS=[...(subregions as Subregion[]),...EXPANDED_SUBREGIONS,...STEELMERE_SUBREGIONS]
@@ -307,7 +313,7 @@ interface GameState {
  enemy?:Enemy; enemyHp:number; enemyIntent?:EnemyIntent; combatMinions?:CombatMinion[]; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; combatRoll?:CombatRoll; fleeRoll?:FleeRoll; heroRollBonus:number; enemyRollBonus:number; enemyFearPenalty:number; heroSkillUses:number; itemSkillUsed:boolean; shield:number; combatAttackPct:number; combatDefensePct:number; classRollBonus:number; classBuffTurns:number; summon?:Summon; summonAttackFx?:{types:AttackAnimType[];nonce:number}; lifeWardActive:boolean; extraHeroAttacks:number; guardianTaunt:boolean; groupCriticalBoost:boolean; braced:boolean; braceBonusUsed:boolean; fervor:number; firstStrikeBonus:number; heroStatus?:StatusEffects; enemyStatus?:StatusEffects; supportFx?:{type:'fortificacao'|'cura'|'cura-item'};
  summons?:Summon[];
  loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; activePotionIds:string[]; regenBoostUntil?:number; lastPassiveHealAt?:number; customCards:CustomCard[]; campaigns:Record<string,CampaignSave>; activeCampaignId?:string; guildAccepted:string[]; guildProgress:Record<string,number>; guildClaimed:string[]; guildNotice?:string;
- difficultyMode:DifficultyMode;talents:string[];specializations:Record<string,string>;materials:Record<string,number>;equipmentUpgrades:Record<string,number>;equipmentGems:Record<string,string[]>;forgedGemLocked:Record<string,boolean>;craftedEffects:Record<string,ForgeEffect>;equipmentElements:Record<string,Element>;equipmentResistances:Record<string,Element>;forgeXp?:number;forgeAttempts?:number;forgeSuccesses?:number;forgeResult?:{success:boolean;message:string;id:number};bestiary:Record<string,{encontros:number;vitorias:number}>;discoveredCards:string[];revengeWins:Record<string,number>;dungeonDepth:number;dungeonActive:boolean;dungeonSubregionId?:string;storyFlags:string[];storyChapterId:string;storyChoices:Record<string,string>;storyNotice?:string;coopBattlesCompleted:string[];tourStep?:number;
+ difficultyMode:DifficultyMode;talents:string[];specializations:Record<string,string>;materials:Record<string,number>;equipmentUpgrades:Record<string,number>;equipmentGems:Record<string,string[]>;forgedGemLocked:Record<string,boolean>;craftedEffects:Record<string,ForgeEffect>;equipmentElements:Record<string,Element>;equipmentResistances:Record<string,Element>;forgeXp?:number;forgeAttempts?:number;forgeSuccesses?:number;forgeResult?:{success:boolean;message:string;id:number};bestiary:Record<string,{encontros:number;vitorias:number}>;discoveredCards:string[];revengeWins:Record<string,number>;dungeonDepth:number;dungeonActive:boolean;dungeonSubregionId?:string;dungeonLastCost?:number;dungeonLastXpReward?:number;dungeonLastGoldReward?:number;storyFlags:string[];storyChapterId:string;storyChoices:Record<string,string>;storyNotice?:string;coopBattlesCompleted:string[];tourStep?:number;
  newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; travelWorld:(world:string)=>void; startCoopCombat:(enemy:Enemy,subregionId:string)=>void; syncCoopEnemyHp:(hp:number)=>void; completeCoopVictory:(battleId:string,subregionId:string,enemy:Enemy,rewardShare:number)=>void; receiveCoopEnemyAttack:(damage:number,roll:any)=>void; receiveCoopHeroAction:(damage:number,roll:any)=>void; receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>void; receiveCoopHeal:(amount:number)=>void; completeCoopDefeat:(battleId:string)=>void; completeCoopFlee:(battleId:string)=>void; continueGame:()=>void; loadCampaign:(id:string)=>void; deleteCampaign:(id:string)=>void; acceptGuildMission:(id:string)=>void; claimGuildMission:(id:string)=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void;
  startTour:()=>void; nextTourStep:()=>void; prevTourStep:()=>void; endTour:()=>void;
  attack:(targetMinionId?:string)=>void; heroSkill:()=>void; summonMonster:(tipo:SummonType)=>void; itemSkill:(equipmentId?:string)=>void; useConsumable:(id:string)=>void; flee:()=>void; defend:()=>void; useFervor:()=>void;
@@ -446,6 +452,18 @@ function goldRewardRange(level:number,opts:{boss?:boolean;variant?:string;maxFas
 // min/max própria (independente do xp), então o mesmo tipo de encontro paga um pouco
 // diferente a cada vitória em vez de um número fixo e previsível.
 export function rollGoldReward(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number}={}):number{const{min,max}=goldRewardRange(level,opts);return min+Math.floor(Math.random()*(max-min+1))}
+function clamp(value:number,min:number,max:number){return Math.max(min,Math.min(max,value))}
+// Usado só na masmorra pra GARANTIR que um andar nunca fique mais fraco que o anterior: o
+// monstro/variante sorteado (buildEnemy/buildBoss) pode, por puro acaso, sair mais fraco que o
+// da sala de trás. Se o custo (enemyPointCost) já vier maior que o mínimo exigido, o inimigo
+// fica como está (mantém a variedade do sorteio); só quando fica abaixo é que é reescalado pra
+// cima -- nunca pra baixo.
+function scaleEnemyToAtLeastCost(enemy:Enemy,minCost:number):Enemy{
+ const defesaBase=enemyDefenseValue(enemy),cost=enemy.vida/2+enemy.ataque+defesaBase
+ if(cost>=minCost||cost<=0)return{...enemy,defesa:defesaBase}
+ const scale=minCost/cost
+ return{...enemy,vida:Math.max(1,Math.ceil(enemy.vida*scale)),ataque:Math.max(1,Math.ceil(enemy.ataque*scale)),defesa:Math.max(0,Math.ceil(defesaBase*scale))}
+}
 
 export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const base=sub.inimigos[Math.floor(Math.random()*sub.inimigos.length)]
@@ -669,7 +687,8 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   // destrói a pedra, e só o encaixe fica livre para uma pedra nova.
   ,removeGem:(equipmentId:string,index:number)=>{const s=get(),installed=[...(s.equipmentGems[equipmentId]??[])],gemId=installed[index],gem=FORGE_GEMS.find(g=>g.id===gemId);if(!gemId||(index===0&&s.forgedGemLocked?.[equipmentId]))return;installed.splice(index,1);set({equipmentGems:{...s.equipmentGems,[equipmentId]:installed},explorationNote:`${gem?.nome??'A pedra'} foi perdida ao ser removida. Pedras instaladas ficam fixas no item.`})}
   ,startDungeon:()=>{
-    const s=get(),sub=SUBREGIONS.find(x=>x.id===s.dungeonSubregionId)??SUBREGIONS.find(x=>x.id===s.subregionId)??SUBREGIONS.find(x=>x.regionId===s.regionId)??SUBREGIONS[0],depth=(s.dungeonActive?s.dungeonDepth:0)+1
+    const s=get(),sub=SUBREGIONS.find(x=>x.id===s.dungeonSubregionId)??SUBREGIONS.find(x=>x.id===s.subregionId)??SUBREGIONS.find(x=>x.regionId===s.regionId)??SUBREGIONS[0]
+    const freshRun=!s.dungeonActive,depth=(s.dungeonActive?s.dungeonDepth:0)+1
     // Cada sala da masmorra é um combate completo. Ao avançar, consome os bônus de poção
     // limitados ao "próximo combate" antes de montar o inimigo seguinte. Efeitos com duração
     // própria (como regenBoostUntil) e melhorias permanentes não são alterados aqui.
@@ -677,26 +696,40 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     const enemy=difficultyEnemy(isBoss?buildBoss(sub):buildEnemy(sub,deriveLevel(s.xp).lvl+depth),s.difficultyMode)
     const scalingDepth=Math.min(depth,DUNGEON_SCALING_DEPTH)
     const enemyLevel=enemy.nivel??enemy.dificuldade??1
-    // Determinístico em vez de copiar o ouro (que tem variante/nível sorteados por buildEnemy
-    // e por isso oscilava sem relação clara com o andar): cresce com a profundidade e é
-    // proporcional ao nível do inimigo enfrentado, igual ao pedido de XP crescente e
-    // proporcional à dificuldade. Usa scalingDepth (com teto), não depth cru: a dificuldade
-    // real (vida/ataque) já satura em DUNGEON_SCALING_DEPTH andares, então o xp precisa saturar
-    // junto -- senão andares profundos viram "seguros" (dificuldade travada) com xp crescendo
-    // pra sempre, o que é exatamente o tipo de exploit que motivou este rebalanceamento.
-    const xpReward=Math.round((enemyLevel*4+scalingDepth*6)*(isBoss?1.6:1))
     const dungeonLevel=enemyLevel+scalingDepth
-    const dungeonEnemy=balanceEnemyByLevel({...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*(1+scalingDepth*.12)),ouro:Math.ceil(enemy.ouro*(1+scalingDepth*.18)),xpReward,dungeon:true,nivel:dungeonLevel,dificuldade:dungeonLevel})
+    let dungeonEnemy:Enemy=balanceEnemyByLevel({...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*(1+scalingDepth*.12)),dungeon:true,nivel:dungeonLevel,dificuldade:dungeonLevel})
+
+    // Cada andar precisa ser sempre mais desafiador que o anterior -- o sorteio de monstro/
+    // variante (buildEnemy) sozinho não garantia isso, dava pra cair num andar mais fraco que o
+    // de trás por puro acaso. Exige um crescimento mínimo de custo de combate em relação ao
+    // último andar desta descida; se o sorteio natural já for mais forte que isso, fica como
+    // está (preserva a variedade dos monstros/variantes).
+    if(!freshRun&&s.dungeonLastCost!=null){
+      const minCost=s.dungeonLastCost*(1+DUNGEON_MIN_DIFFICULTY_GROWTH)
+      if(enemyPointCost(dungeonEnemy)<minCost)dungeonEnemy=scaleEnemyToAtLeastCost(dungeonEnemy,minCost)
+    }
+    const currentCost=enemyPointCost(dungeonEnemy)
+
+    // Recompensa também sobe a cada andar, mas nunca "demais": fica sempre entre
+    // DUNGEON_REWARD_MIN_GROWTH e DUNGEON_REWARD_MAX_GROWTH em relação ao andar anterior desta
+    // descida (nunca cai, nunca dispara). Continua usando scalingDepth (com teto) como base
+    // "natural", igual ao rebalanceamento anterior desse mesmo bug.
+    const naturalXp=Math.round((enemyLevel*4+scalingDepth*6)*(isBoss?1.6:1))
+    const naturalGold=Math.ceil(enemy.ouro*(1+scalingDepth*.18))
+    const xpReward=freshRun||s.dungeonLastXpReward==null?naturalXp:Math.round(clamp(naturalXp,s.dungeonLastXpReward*(1+DUNGEON_REWARD_MIN_GROWTH),s.dungeonLastXpReward*(1+DUNGEON_REWARD_MAX_GROWTH)))
+    const goldReward=freshRun||s.dungeonLastGoldReward==null?naturalGold:Math.round(clamp(naturalGold,s.dungeonLastGoldReward*(1+DUNGEON_REWARD_MIN_GROWTH),s.dungeonLastGoldReward*(1+DUNGEON_REWARD_MAX_GROWTH)))
+    dungeonEnemy={...dungeonEnemy,xpReward,ouro:goldReward}
+
     beginCombat(set,get,dungeonEnemy)
-    set({dungeonDepth:depth,dungeonActive:true,dungeonSubregionId:sub.id})
+    set({dungeonDepth:depth,dungeonActive:true,dungeonSubregionId:sub.id,dungeonLastCost:currentCost,dungeonLastXpReward:xpReward,dungeonLastGoldReward:goldReward})
   }
   // Escolha explícita do alvo da masmorra (Painel de Masmorras): antes o alvo vinha implícito
   // da sub-região explorada no mapa (s.subregionId), então não dava pra escolher uma masmorra
   // sem primeiro navegar até lá. Trocar de alvo com uma expedição em andamento encerra a
   // expedição atual (mesma regra de leaveDungeon) -- profundidade e escala não fazem sentido
   // ao trocar de região no meio de uma masmorra.
-  ,selectDungeon:(subregionId:string)=>{const s=get();if(!SUBREGIONS.some(x=>x.id===subregionId)||subregionId===s.dungeonSubregionId)return;const abandoning=s.dungeonActive&&s.dungeonSubregionId&&s.dungeonSubregionId!==subregionId;set({dungeonSubregionId:subregionId,...(abandoning?{dungeonActive:false,dungeonDepth:0}:{})})}
-  ,leaveDungeon:()=>set({screen:'map',subregionId:undefined,dungeonActive:false,dungeonDepth:0,loot:undefined,explorationNote:'Expedição encerrada. Os espólios conquistados foram preservados.'})
+  ,selectDungeon:(subregionId:string)=>{const s=get();if(!SUBREGIONS.some(x=>x.id===subregionId)||subregionId===s.dungeonSubregionId)return;const abandoning=s.dungeonActive&&s.dungeonSubregionId&&s.dungeonSubregionId!==subregionId;set({dungeonSubregionId:subregionId,...(abandoning?{dungeonActive:false,dungeonDepth:0,dungeonLastCost:undefined,dungeonLastXpReward:undefined,dungeonLastGoldReward:undefined}:{})})}
+  ,leaveDungeon:()=>set({screen:'map',subregionId:undefined,dungeonActive:false,dungeonDepth:0,dungeonLastCost:undefined,dungeonLastXpReward:undefined,dungeonLastGoldReward:undefined,loot:undefined,explorationNote:'Expedição encerrada. Os espólios conquistados foram preservados.'})
   ,startRevenge:(subregionId:string)=>{const s=get(),sub=SUBREGIONS.find(x=>x.id===subregionId);if(!sub||!s.subregionBossesDefeated.includes(subregionId))return;set({subregionId,regionId:sub.regionId,territory:sub.nome,screen:'bossIntro',enemy:difficultyEnemy(buildRevengeBoss(sub,s.revengeWins[subregionId]??0,deriveLevel(s.xp).lvl),s.difficultyMode)})}
   ,chooseStory:(choiceId:string)=>{const s=get(),chapter=STORY_CHAPTERS.find(c=>c.id===s.storyChapterId),choice=chapter?.choices.find(c=>c.id===choiceId),progress=storyRequirementProgress(s);if(!chapter||!choice||!progress.complete)return;const materials={...s.materials};if(choice.material)materials[choice.material]=(materials[choice.material]??0)+1;set({storyChapterId:choice.next,storyChoices:{...s.storyChoices,[chapter.id]:choice.id},storyFlags:s.storyFlags.includes(`historia:${choice.id}`)?s.storyFlags:[...s.storyFlags,`historia:${choice.id}`],gold:s.gold+(choice.gold??0),materials,storyNotice:choice.consequence})}
   ,startTour:()=>set({tourStep:0,screen:TOUR_STEPS[0].screen})

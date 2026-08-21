@@ -838,12 +838,41 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
   {Boolean(statusKinds?.length)&&<div className="status-badges">{statusKinds!.map(k=><span key={k} className={`status-badge status-${k}`} title={STATUS_DURATION_NOTE[k]??''}>{STATUS_LABELS[k]}</span>)}</div>}
  </motion.article>
 }
-function LootScreen(){const g=useGame(),coop=useCoop();const l=g.loot,defeat=l?.title==='EQUIPE DERROTADA';const e=l?.equipmentId?EQUIPMENT.find(x=>x.id===l.equipmentId):undefined;const i=l?.itemId?CONSUMABLES.find(x=>x.id===l.itemId):undefined;const missed=l?.missedEquipmentId?EQUIPMENT.find(x=>x.id===l.missedEquipmentId):undefined;return <div className="loot-page"><Panel>{defeat?<Skull className="trophy"/>:<Trophy className="trophy"/>}<h1>{l?.title??'Vitória'}</h1>{g.dungeonActive&&<p className="muted">Profundidade concluída: {g.dungeonDepth}. A próxima sala será mais perigosa e valiosa.</p>}<div className="loot-stats"><Stat label="Ouro recebido" value={`+${l?.gold??0}`}/><Stat label="Experiência recebida" value={`+${l?.xp??0}`}/>{e&&<ItemCard image={cardArt(e)} rarity={cardRarity(e,'Equipamento')} name={e.nome} subtitle="Equipamento obtido"/>}{i&&<ItemCard image={cardArt(i)} rarity={cardRarity(i,'Consumível')} name={i.nome} subtitle="Consumível obtido"/>}{!e&&!i&&!missed&&<p className="muted">Nenhum item adicional foi encontrado.</p>}</div><LootPreparation/>{missed&&<p className="loot-missed"><Package/> Você encontrou <b>{missed.nome}</b>, mas sua bolsa de equipamentos estava cheia e o item foi perdido. Libere espaço na Mochila para não perder o próximo.</p>}{g.dungeonActive?<div className="loot-actions"><button className="primary" onClick={g.startDungeon}>Avançar para a sala {g.dungeonDepth+1}</button><button onClick={g.leaveDungeon}>Encerrar expedição</button></div>:<button className="primary" onClick={async()=>{if(coop.room){await coop.completeBattle();g.finishLoot();g.setScreen('coop')}else g.finishLoot()}}>{coop.room?'Voltar à sala Coop':'Voltar ao mapa'}</button>}</Panel></div>}
+function LootScreen(){const g=useGame(),coop=useCoop();const l=g.loot,defeat=l?.title==='EQUIPE DERROTADA';const e=l?.equipmentId?EQUIPMENT.find(x=>x.id===l.equipmentId):undefined;const i=l?.itemId?CONSUMABLES.find(x=>x.id===l.itemId):undefined;const missed=l?.missedEquipmentId?EQUIPMENT.find(x=>x.id===l.missedEquipmentId):undefined;return <div className="loot-page"><Panel>{defeat?<Skull className="trophy"/>:<Trophy className="trophy"/>}<h1>{l?.title??'Vitória'}</h1>{g.dungeonActive&&<p className="muted">Profundidade concluída: {g.dungeonDepth}. A próxima sala será mais perigosa e valiosa.</p>}<div className="loot-stats"><Stat label="Ouro recebido" value={`+${l?.gold??0}`}/><Stat label="Experiência recebida" value={`+${l?.xp??0}`}/>{e&&<ItemCard image={cardArt(e)} rarity={cardRarity(e,'Equipamento')} name={e.nome} subtitle="Equipamento obtido"/>}{i&&<ItemCard image={cardArt(i)} rarity={cardRarity(i,'Consumível')} name={i.nome} subtitle="Consumível obtido"/>}{!e&&!i&&!missed&&<p className="muted">Nenhum item adicional foi encontrado.</p>}</div><LootPreparation/><LootEquipmentPanel/>{missed&&<p className="loot-missed"><Package/> Você encontrou <b>{missed.nome}</b>, mas sua bolsa de equipamentos estava cheia e o item foi perdido. Libere espaço na Mochila para não perder o próximo.</p>}{g.dungeonActive?<div className="loot-actions"><button className="primary" onClick={g.startDungeon}>Avançar para a sala {g.dungeonDepth+1}</button><button onClick={g.leaveDungeon}>Encerrar expedição</button></div>:<button className="primary" onClick={async()=>{if(coop.room){await coop.completeBattle();g.finishLoot();g.setScreen('coop')}else g.finishLoot()}}>{coop.room?'Voltar à sala Coop':'Voltar ao mapa'}</button>}</Panel></div>}
 function LootPreparation(){
  const g=useGame(),[notice,setNotice]=React.useState('')
  const entries=(Object.entries(g.inventory) as [string,number][]).filter(([,qty])=>qty>0).map(([id,qty])=>({item:CONSUMABLES.find(item=>item.id===id),qty})).filter(entry=>entry.item) as {item:(typeof CONSUMABLES)[number];qty:number}[]
  const useItem=(id:string)=>{g.useConsumable(id);setNotice(useGame.getState().explorationNote??'Consumível utilizado.')}
  return <section className="loot-preparation"><header><div><FlaskConical/><span><strong>Preparação para a próxima batalha</strong><small>Use consumíveis agora. Curas são imediatas; escudo e ataque ficam reservados para o próximo combate.</small></span></div><b>{g.hp}/{maxHp(g)} VIDA</b></header>{notice&&<p className="loot-preparation-notice"><Sparkles/>{notice}</p>}{entries.length?<div className="loot-consumables">{entries.map(({item,qty})=>{const active=consumableBonusActive(item,g),fullHealth=item.tipo==='cura'&&g.hp>=maxHp(g),disabled=active||fullHealth;return <article key={item.id}><img src={assetUrl(cardArt(item))} alt=""/><span><strong>{item.nome}</strong><small>{consumableDescription(item,g)}</small><em>{qty} disponível{qty===1?'':'is'}</em></span><button disabled={disabled} title={active?'Uma unidade desta poção já está ativa.':fullHealth?'Sua vida já está completa.':undefined} onClick={()=>useItem(item.id)}>{active?'Ativa':fullHealth?'Vida cheia':'Usar'}</button></article>})}</div>:<p className="muted">Nenhum consumível disponível para preparação.</p>}</section>
+}
+// Bloco pedido pelos jogadores: antes, trocar de equipamento ou desmontar/vender um item da
+// mochila exigia sair do resumo de batalha e navegar até as telas de Equipamentos/Forja/Loja --
+// no meio de uma masmorra isso quebrava o ritmo (e cada saída de tela reseta o combate). Reusa
+// exatamente as mesmas ações da store (equip/dismantleEquipment/sellEquipment) e o mesmo padrão
+// visual do ItemCard/ForgeSalvagePanel, só que direto no resumo da batalha.
+function LootEquipmentPanel(){
+ const g=useGame(),capacity=equipmentBagCapacity(g)
+ if(!g.equipmentBag.length)return <section className="loot-equipment"><header><div><Backpack/><span><strong>Mochila</strong><small>Sua mochila de equipamentos está vazia.</small></span></div></header></section>
+ return <section className="loot-equipment">
+  <header><div><Backpack/><span><strong>Mochila</strong><small>Troque seu equipamento, desmonte por materiais ou venda por ouro antes de seguir viagem.</small></span></div><b>{g.equipmentBag.length}/{capacity}</b></header>
+  <div className="item-grid compact">{g.equipmentBag.map((id,idx)=>{
+   const e=equipmentByRef(id); if(!e)return null
+   const effective=equipmentAttackForHero(e,g.heroId),gems=equipmentGemBonus(id,g)
+   const allowed=equipmentClassAllowed(e,g.heroId),levelAllowed=equipmentLevelAllowed(e,g.xp),required=equipmentRequiredLevel(e)
+   const fits=e.slot!=='bolsa'||g.equipmentBag.length<=(e.capacidade??8)
+   const dualLocked=e.slot==='mao_esquerda'&&equipmentWeaponClass(equipmentByRef(g.equipped.mao_direita))==='facas'
+   const equipLabel=!allowed?'Impossível equipar':!levelAllowed?`Requer nível ${required}`:!fits?`Reduza para ${e.capacidade} itens`:dualLocked?'Facas ocupam as duas mãos':'Equipar'
+   const stats=e.slot==='bolsa'?`Capacidade ${e.capacidade??8} espaços`:`Ataque +${effective+gems.atk}${effective!==e.ataque||gems.atk?` (base +${e.ataque})`:''} • Defesa +${e.defesa+gems.def} • Vida +${e.vida+gems.life}`
+   const preview=dismantlePreview(e),sellPrice=Math.max(1,Math.floor(e.preco/2))
+   return <ItemCard key={id+idx} image={cardArt(e)} rarity={cardRarity(e,'Equipamento')} name={e.nome} subtitle={e.slot==='bolsa'?`${e.capacidade} espaços`:slotNames[e.slot]} footer={`${e.habilidade} • ${compatibilityLabel(e,g.heroId)}${elementalNote(g,id)}${gemNote(id,g)}`} previewStats={stats}>
+    <div className="loot-item-actions">
+     <button className={!allowed||!fits||dualLocked?'equip-impossible':!levelAllowed?'equip-level-locked':''} disabled={!allowed||!levelAllowed||!fits||dualLocked} title={!allowed?compatibilityLabel(e,g.heroId):!levelAllowed?`Disponível no nível ${required}`:!fits?'Há equipamentos demais para esta bolsa':dualLocked?'Combate com facas exige as duas mãos livres':undefined} onClick={()=>g.equip(id)}>{equipLabel}</button>
+     <button className="danger-action" title={`Rende ${preview.physical} físico • ${preview.magical} mágico • ${Math.round(preview.gemChance*100)}% de pedra`} onClick={()=>g.dismantleEquipment(id)}>Desmontar</button>
+     <button onClick={()=>g.sellEquipment(id)}>Vender • {sellPrice}<Coins size={12}/></button>
+    </div>
+   </ItemCard>
+  })}</div>
+ </section>
 }
 
 type DraftKind='Herói'|'Equipamento'|'Consumível'|'Monstro'|'Elite'|'Chefe'|'Evento'
