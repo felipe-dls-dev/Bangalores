@@ -615,6 +615,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 
 .summon-row{position:absolute;z-index:6;left:10px;right:10px;bottom:12px}.summon-row article{display:flex;align-items:center;gap:6px;padding:7px;border:1px solid #3f6f8b;border-radius:7px;background:#0a161ae8;box-shadow:0 4px 15px #000}.summon-row svg{width:16px;color:#7ecbe0}.summon-row span{min-width:0;display:grid;flex:1}.summon-row strong{font:700 .65rem Georgia,serif;color:#a7dff0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.summon-row small{font-size:.52rem;color:#8db3c2}.summon-row i{height:4px;margin-top:3px;background:#0a1c22;border-radius:5px;overflow:hidden}.summon-row i b{display:block;height:100%;background:#4fa8c9}
 .summon-choice-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.summon-choice-row .premium-action{font-size:.72rem;padding:.35rem .4rem}
+.summon-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.summon-row article{min-width:0}@media(max-width:520px){.summon-row{grid-template-columns:1fr}}
 
 .guild-reset-rank{color:#ca8378;border-color:#65352e;background:#1b0e0c;font-size:.66rem;white-space:nowrap}.guild-head>.guild-reset-rank{grid-column:2;justify-self:end;padding:.45rem .65rem;margin-top:-10px}
 

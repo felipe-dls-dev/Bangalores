@@ -299,3 +299,26 @@ describe('limite de poções temporárias', () => {
     expect(useGame.getState().pendingAttackBonus).toBe(5)
   })
 })
+
+describe('Conjurador com duas feras espectrais', () => {
+  it('mantém duas invocações simultâneas e bloqueia uma terceira', () => {
+    vi.useFakeTimers()
+    try {
+      useGame.getState().newGame('conjurador')
+      useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, heroSkillUses: 0, summon: undefined, summons: [] } as any)
+      useGame.getState().summonMonster('atacante')
+      useGame.setState({ playerTurn: true, animating: false } as any)
+      useGame.getState().summonMonster('defensor')
+      useGame.setState({ playerTurn: true, animating: false } as any)
+      useGame.getState().summonMonster('arcano')
+
+      const state = useGame.getState()
+      expect(state.summons).toHaveLength(2)
+      expect(state.summons?.map(summon => summon.tipo)).toEqual(['atacante', 'defensor'])
+      expect(state.heroSkillUses).toBe(2)
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
+})

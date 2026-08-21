@@ -173,10 +173,13 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const vitals=(current.shared_state.memberVitals??{}) as Record<string,{level?:number}>
   const level=Number(vitals[userId]?.level??1)
   const summon=buildSummon(tipo,level)
+  const existing:Summon[]=Array.isArray(personal.summons)?personal.summons.filter((fera:Summon)=>fera.hp>0).slice(0,2):(personal.summon?[personal.summon]:[])
+  if(existing.length>=2)return current.shared_state
+  const summons=[...existing,summon]
   const typeLabel=tipo==='atacante'?'ofensiva':tipo==='defensor'?'defensiva':'arcana'
-  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,summon,...(tipo==='arcano'?{attackPct:.1,defensePct:.1}:{})}}
+  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,summons,summon:summons[0],...(summons.some(fera=>fera.tipo==='arcano')?{attackPct:.1,defensePct:.1}:{})}}
   const next=nextInitiative(battle)
-  const message=`${actor} usou Conjurar Fera Espectral (${typeLabel}): ${summon.nome} surge com ${summon.maxHp} de vida, ${summon.ataque} de ataque e ${summon.defesa} de defesa.`
+  const message=`${actor} usou Conjurar Fera Espectral (${typeLabel}) • ${summons.length}/2: ${summon.nome} surge com ${summon.maxHp} de vida, ${summon.ataque} de ataque e ${summon.defesa} de defesa.`
   return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),message]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível conjurar a fera espectral.')}}
  const resolveEnemyTurn=async()=>{if(roomRef.current?.host_id!==userId)return;try{await updateState(current=>{
@@ -233,20 +236,12 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   if(enemyHpNow>0){
    const summonDefenseBase=Math.max(0,Number(battle.enemy?.dificuldade??1)-2)
    for(const member of membersRef.current){
-    const buffs=workingBuffs[member.user_id],summon=buffs?.summon as Summon|undefined
-    if(!summon||summon.hp<=0||enemyHpNow<=0)continue
-    const attackRoll=1+Math.floor(Math.random()*6),defenseRoll=1+Math.floor(Math.random()*6)
-    const resolved=resolveCombatRoll(summon.ataque,summonDefenseBase,attackRoll,defenseRoll)
-    if(resolved.selfDamage>0){
-     const hp=Math.max(0,summon.hp-resolved.selfDamage),died=hp<=0
-     workingBuffs[member.user_id]={...buffs,summon:died?undefined:{...summon,hp},...(died&&summon.tipo==='arcano'?{attackPct:0,defensePct:0}:{})}
-     statusLogs.push(`${summon.nome} (${member.display_name}) erra completamente e sofre ${resolved.selfDamage} de dano com o próprio golpe.${died?' Caiu em combate.':''}`)
-    }else if(resolved.damage>0){
-     enemyHpNow=Math.max(0,enemyHpNow-resolved.damage)
-     const memberVitals=workingVitals[member.user_id],healAmount=memberVitals?Math.max(0,Math.min(1,Number(memberVitals.maxHp??memberVitals.hp)-Number(memberVitals.hp))):0
-     if(healAmount>0)workingVitals[member.user_id]={...memberVitals,hp:Number(memberVitals.hp)+healAmount}
-     statusLogs.push(`${summon.nome} (${member.display_name}) ataca: dado ${attackRoll} contra defesa ${defenseRoll}. Causou ${resolved.damage} de dano a ${battle.enemy?.nome}.${healAmount>0?' O vínculo com a fera recupera 1 de vida.':''}`)
+    const buffs=workingBuffs[member.user_id],summons:Summon[]=(Array.isArray(buffs?.summons)?buffs.summons:(buffs?.summon?[buffs.summon]:[])).filter((fera:Summon)=>fera.hp>0).slice(0,2),after=[...summons]
+    for(let index=0;index<after.length&&enemyHpNow>0;index++){const summon=after[index],attackRoll=1+Math.floor(Math.random()*6),defenseRoll=1+Math.floor(Math.random()*6),resolved=resolveCombatRoll(summon.ataque,summonDefenseBase,attackRoll,defenseRoll)
+     if(resolved.selfDamage>0){const hp=Math.max(0,summon.hp-resolved.selfDamage),died=hp<=0;after[index]={...summon,hp};statusLogs.push(`${summon.nome} (${member.display_name}) erra completamente e sofre ${resolved.selfDamage} de dano com o próprio golpe.${died?' Caiu em combate.':''}`)}
+     else if(resolved.damage>0){enemyHpNow=Math.max(0,enemyHpNow-resolved.damage);const memberVitals=workingVitals[member.user_id],healAmount=memberVitals?Math.max(0,Math.min(1,Number(memberVitals.maxHp??memberVitals.hp)-Number(memberVitals.hp))):0;if(healAmount>0)workingVitals[member.user_id]={...memberVitals,hp:Number(memberVitals.hp)+healAmount};statusLogs.push(`${summon.nome} (${member.display_name}) ataca: dado ${attackRoll} contra defesa ${defenseRoll}. Causou ${resolved.damage} de dano a ${battle.enemy?.nome}.${healAmount>0?' O vínculo com a fera recupera 1 de vida.':''}`)}
     }
+    const survivors=after.filter(fera=>fera.hp>0);workingBuffs[member.user_id]={...buffs,summons:survivors,summon:survivors[0],...(!survivors.some(fera=>fera.tipo==='arcano')?{attackPct:0,defensePct:0}:{})}
    }
   }
   if(enemyHpNow<=0)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,enemyHp:0,enemyStatus:enemyStatusTick.status,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,status:'won',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs]}}
@@ -274,8 +269,9 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const targetVitals=workingVitals[target.user_id]??{}
    const targetBuffs=workingBuffs[target.user_id]??{}
    const targetStun=consumeStun(targetBuffs)
-   const targetSummon=targetBuffs.summon as Summon|undefined
-   const intercepting=Boolean(targetSummon)&&targetSummon!.hp>0&&Math.random()<SUMMON_INTERCEPT_CHANCE[targetSummon!.tipo]
+   const targetSummons:Summon[]=(Array.isArray(targetBuffs.summons)?targetBuffs.summons:(targetBuffs.summon?[targetBuffs.summon]:[])).filter((fera:Summon)=>fera.hp>0).slice(0,2)
+   const targetSummon=[...targetSummons].sort((a,b)=>SUMMON_INTERCEPT_CHANCE[b.tipo]-SUMMON_INTERCEPT_CHANCE[a.tipo]).find(fera=>Math.random()<SUMMON_INTERCEPT_CHANCE[fera.tipo])
+   const intercepting=Boolean(targetSummon)
    const naturalAttackRoll=1+Math.floor(Math.random()*6)
    const druidaLuck=!intercepting&&target.hero_id==='druida'&&Math.random()<.25
    const attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+bonus-(druidaLuck?1:0)-enemyFear))
@@ -302,8 +298,8 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const fervorGain=!intercepting&&defenseRoll===6?Math.min(3,Number(targetBuffs.fervor??0)+1):Number(targetBuffs.fervor??0)
    const statusApplied=!intercepting&&canApplyStatus&&!rogueDodge&&!resolved.selfDamage&&damage>0&&!resisted&&naturalAttackRoll===6?applyElementalStatus(targetStun.status,enemyElement,attackBase):{status:targetStun.status}
    if(statusApplied.appliedKind){appliedStatusKind=statusApplied.appliedKind;appliedStatusTargetName=target.display_name}
-   const summonAfter=intercepting?(summonDied?undefined:{...targetSummon!,hp:Math.max(0,targetSummon!.hp-damage)}):targetSummon
-   workingBuffs[target.user_id]={...statusApplied.status,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),fervor:fervorGain,summon:summonAfter,...(summonDied&&targetSummon!.tipo==='arcano'?{attackPct:0,defensePct:0}:{})}
+   const summonsAfter=intercepting?targetSummons.map(fera=>fera===targetSummon?{...fera,hp:Math.max(0,fera.hp-damage)}:fera).filter(fera=>fera.hp>0):targetSummons
+   workingBuffs[target.user_id]={...statusApplied.status,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),fervor:fervorGain,summons:summonsAfter,summon:summonsAfter[0],...(!summonsAfter.some(fera=>fera.tipo==='arcano')?{attackPct:0,defensePct:0}:{})}
    return{target,naturalAttackRoll,attackBonus:bonus,attackBase,defenseBase,attackRoll,defenseRoll,damage,shieldBlocked,selfDamage:resolved.selfDamage,rogueDodge,druidaLuck,resisted,wasStunned:targetStun.wasStunned,intercepting,summonName:targetSummon?.nome,summonDied}
   }
   const mainStrike=strike(Number(battle.enemy?.ataque??1),enemyRollBonusStart,true)
