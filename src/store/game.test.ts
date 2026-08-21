@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, attackValue, maxHp } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -297,6 +297,94 @@ describe('limite de poções temporárias', () => {
     useGame.getState().useConsumable('oleo_encantado')
     expect(useGame.getState().inventory.oleo_encantado).toBeUndefined()
     expect(useGame.getState().pendingAttackBonus).toBe(5)
+  })
+
+  it('consome bônus do combate ao avançar ou sair de uma masmorra', () => {
+    vi.useFakeTimers()
+    try {
+      useGame.getState().newGame('guerreiro')
+      const regenBoostUntil = Date.now() + 3_600_000
+      useGame.setState({
+        dungeonActive: true,
+        dungeonDepth: 1,
+        pendingAttackBonus: 5,
+        shield: 7,
+        activePotionIds: ['elixir_forca', 'elixir_reflexo_prateado'],
+        regenBoostUntil,
+      } as any)
+
+      useGame.getState().startDungeon()
+      let state = useGame.getState()
+      expect(state.dungeonDepth).toBe(2)
+      expect(state.pendingAttackBonus).toBe(0)
+      expect(state.shield).toBe(0)
+      expect(state.activePotionIds).toEqual([])
+      expect(state.regenBoostUntil).toBe(regenBoostUntil)
+
+      useGame.setState({ pendingAttackBonus: 3, shield: 4, activePotionIds: ['oleo_encantado'] } as any)
+      useGame.getState().leaveDungeon()
+      state = useGame.getState()
+      expect(state.pendingAttackBonus).toBe(0)
+      expect(state.shield).toBe(0)
+      expect(state.activePotionIds).toEqual([])
+      expect(state.regenBoostUntil).toBe(regenBoostUntil)
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
+
+  it('mantém poções e buffs corretos durante 100 transições de salas', () => {
+    vi.useFakeTimers()
+    try {
+      useGame.getState().newGame('guerreiro')
+      const attackPotions = CONSUMABLES.filter(item => item.tipo === 'ataque')
+      const shieldPotions = CONSUMABLES.filter(item => item.tipo === 'escudo')
+      const regenBoostUntil = Date.now() + 3_600_000
+      useGame.setState({ attr: { vida: 4, ataque: 0, defesa: 0 }, regenBoostUntil } as any)
+      const permanentMaxHp = maxHp(useGame.getState())
+      useGame.getState().startDungeon()
+
+      // Simula cem vitórias seguidas: aplica um buff de cada categoria na tela de espólio e
+      // avança para o próximo combate, alternando todas as poções existentes dessas categorias.
+      for (let cycle = 0; cycle < 100; cycle++) {
+        const attackPotion = attackPotions[cycle % attackPotions.length]
+        const shieldPotion = shieldPotions[cycle % shieldPotions.length]
+        const attackBeforePotion = attackValue(useGame.getState())
+        useGame.setState({
+          screen: 'loot',
+          inventory: { [attackPotion.id]: 2, [shieldPotion.id]: 2 },
+          pendingAttackBonus: 0,
+          shield: 0,
+          activePotionIds: [],
+        } as any)
+
+        useGame.getState().useConsumable(attackPotion.id)
+        useGame.getState().useConsumable(attackPotion.id)
+        useGame.getState().useConsumable(shieldPotion.id)
+        useGame.getState().useConsumable(shieldPotion.id)
+        let state = useGame.getState()
+
+        expect(attackValue(state), `ataque no ciclo ${cycle + 1}`).toBe(attackBeforePotion + attackPotion.valor)
+        expect(state.shield, `escudo no ciclo ${cycle + 1}`).toBe(shieldPotion.valor)
+        expect(state.inventory[attackPotion.id], `limite de ataque no ciclo ${cycle + 1}`).toBe(1)
+        expect(state.inventory[shieldPotion.id], `limite de escudo no ciclo ${cycle + 1}`).toBe(1)
+        expect(state.activePotionIds, `IDs ativos no ciclo ${cycle + 1}`).toEqual([attackPotion.id, shieldPotion.id])
+
+        useGame.getState().startDungeon()
+        state = useGame.getState()
+        expect(state.dungeonDepth, `profundidade no ciclo ${cycle + 1}`).toBe(cycle + 2)
+        expect(state.pendingAttackBonus, `expiração do ataque no ciclo ${cycle + 1}`).toBe(0)
+        expect(state.shield, `expiração do escudo no ciclo ${cycle + 1}`).toBe(0)
+        expect(state.activePotionIds, `liberação das poções no ciclo ${cycle + 1}`).toEqual([])
+        expect(state.regenBoostUntil, `regeneração no ciclo ${cycle + 1}`).toBe(regenBoostUntil)
+        expect(state.attr.vida, `atributo permanente no ciclo ${cycle + 1}`).toBe(4)
+        expect(maxHp(state), `vida total no ciclo ${cycle + 1}`).toBeGreaterThanOrEqual(permanentMaxHp)
+      }
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
   })
 })
 

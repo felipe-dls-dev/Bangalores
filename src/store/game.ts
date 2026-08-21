@@ -581,6 +581,10 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   ,removeGem:(equipmentId:string,index:number)=>{const s=get(),installed=[...(s.equipmentGems[equipmentId]??[])],gemId=installed[index],gem=FORGE_GEMS.find(g=>g.id===gemId);if(!gemId||(index===0&&s.forgedGemLocked?.[equipmentId]))return;installed.splice(index,1);set({equipmentGems:{...s.equipmentGems,[equipmentId]:installed},explorationNote:`${gem?.nome??'A pedra'} foi perdida ao ser removida. Pedras instaladas ficam fixas no item.`})}
   ,startDungeon:()=>{
     const s=get(),sub=SUBREGIONS.find(x=>x.id===s.dungeonSubregionId)??SUBREGIONS.find(x=>x.id===s.subregionId)??SUBREGIONS.find(x=>x.regionId===s.regionId)??SUBREGIONS[0],depth=(s.dungeonActive?s.dungeonDepth:0)+1
+    // Cada sala da masmorra é um combate completo. Ao avançar, consome os bônus de poção
+    // limitados ao "próximo combate" antes de montar o inimigo seguinte. Efeitos com duração
+    // própria (como regenBoostUntil) e melhorias permanentes não são alterados aqui.
+    if(s.dungeonActive)set({pendingAttackBonus:0,shield:0,activePotionIds:[]})
     const isBoss=depth%5===0
     const enemy=difficultyEnemy(isBoss?buildBoss(sub):buildEnemy(sub,deriveLevel(s.xp).lvl+depth),s.difficultyMode)
     const scalingDepth=Math.min(depth,DUNGEON_SCALING_DEPTH)
@@ -599,7 +603,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   // expedição atual (mesma regra de leaveDungeon) -- profundidade e escala não fazem sentido
   // ao trocar de região no meio de uma masmorra.
   ,selectDungeon:(subregionId:string)=>{const s=get();if(!SUBREGIONS.some(x=>x.id===subregionId)||subregionId===s.dungeonSubregionId)return;const abandoning=s.dungeonActive&&s.dungeonSubregionId&&s.dungeonSubregionId!==subregionId;set({dungeonSubregionId:subregionId,...(abandoning?{dungeonActive:false,dungeonDepth:0}:{})})}
-  ,leaveDungeon:()=>set({screen:'map',subregionId:undefined,dungeonActive:false,dungeonDepth:0,loot:undefined,explorationNote:'Expedição encerrada. Os espólios conquistados foram preservados.'})
+  ,leaveDungeon:()=>set({screen:'map',subregionId:undefined,dungeonActive:false,dungeonDepth:0,loot:undefined,pendingAttackBonus:0,shield:0,activePotionIds:[],explorationNote:'Expedição encerrada. Os espólios conquistados foram preservados.'})
   ,startRevenge:(subregionId:string)=>{const s=get(),sub=SUBREGIONS.find(x=>x.id===subregionId);if(!sub||!s.subregionBossesDefeated.includes(subregionId))return;set({subregionId,regionId:sub.regionId,territory:sub.nome,screen:'bossIntro',enemy:difficultyEnemy(buildRevengeBoss(sub,s.revengeWins[subregionId]??0),s.difficultyMode)})}
   ,chooseStory:(choiceId:string)=>{const s=get(),chapter=STORY_CHAPTERS.find(c=>c.id===s.storyChapterId),choice=chapter?.choices.find(c=>c.id===choiceId),progress=storyRequirementProgress(s);if(!chapter||!choice||!progress.complete)return;const materials={...s.materials};if(choice.material)materials[choice.material]=(materials[choice.material]??0)+1;set({storyChapterId:choice.next,storyChoices:{...s.storyChoices,[chapter.id]:choice.id},storyFlags:s.storyFlags.includes(`historia:${choice.id}`)?s.storyFlags:[...s.storyFlags,`historia:${choice.id}`],gold:s.gold+(choice.gold??0),materials,storyNotice:choice.consequence})}
   ,startTour:()=>set({tourStep:0,screen:TOUR_STEPS[0].screen})
