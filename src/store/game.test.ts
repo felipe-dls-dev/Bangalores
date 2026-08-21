@@ -283,3 +283,19 @@ describe('combate: atacar um capanga específico', () => {
     }
   })
 })
+
+describe('limite de poções temporárias', () => {
+  it('bloqueia uma segunda unidade da mesma poção e permite combinar poções diferentes', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ screen: 'inventory', inventory: { elixir_forca: 2, oleo_encantado: 1 }, pendingAttackBonus: 0, activePotionIds: [] } as any)
+
+    useGame.getState().useConsumable('elixir_forca')
+    useGame.getState().useConsumable('elixir_forca')
+    expect(useGame.getState().inventory.elixir_forca).toBe(1)
+    expect(useGame.getState().pendingAttackBonus).toBe(2)
+
+    useGame.getState().useConsumable('oleo_encantado')
+    expect(useGame.getState().inventory.oleo_encantado).toBeUndefined()
+    expect(useGame.getState().pendingAttackBonus).toBe(5)
+  })
+})
