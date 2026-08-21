@@ -289,27 +289,29 @@ describe('cópias independentes na desmontagem da forja', () => {
     const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
     try {
       useGame.getState().newGame('guerreiro')
+      const enhancedBoots = 'botas_viajante@@enhanced'
+      const plainBoots = 'botas_viajante@@plain'
       useGame.setState({
-        equipmentBag: ['botas_viajante'],
-        equipped: { ...useGame.getState().equipped, botas: 'botas_viajante' },
+        equipmentBag: [plainBoots],
+        equipped: { ...useGame.getState().equipped, botas: enhancedBoots },
         materials: { rubi_forja: 0 },
-        equipmentGems: { botas_viajante: ['rubi_forja'] },
-        forgedGemLocked: { botas_viajante: true },
-        craftedEffects: { botas_viajante: 'critico_forjado' },
-        equipmentResistances: { botas_viajante: 'fogo' },
-        equipmentUpgrades: { botas_viajante: 2 },
+        equipmentGems: { [enhancedBoots]: ['rubi_forja'] },
+        forgedGemLocked: { [enhancedBoots]: true },
+        craftedEffects: { [enhancedBoots]: 'critico_forjado' },
+        equipmentResistances: { [enhancedBoots]: 'fogo' },
+        equipmentUpgrades: { [enhancedBoots]: 2 },
       } as any)
 
-      useGame.getState().dismantleEquipment('botas_viajante')
+      useGame.getState().dismantleEquipment(plainBoots)
       const state = useGame.getState()
 
       expect(state.equipmentBag).toEqual([])
-      expect(state.equipped.botas).toBe('botas_viajante')
-      expect(state.equipmentGems.botas_viajante).toEqual(['rubi_forja'])
-      expect(state.forgedGemLocked.botas_viajante).toBe(true)
-      expect(state.craftedEffects.botas_viajante).toBe('critico_forjado')
-      expect(state.equipmentResistances.botas_viajante).toBe('fogo')
-      expect(state.equipmentUpgrades.botas_viajante).toBe(2)
+      expect(state.equipped.botas).toBe(enhancedBoots)
+      expect(state.equipmentGems[enhancedBoots]).toEqual(['rubi_forja'])
+      expect(state.forgedGemLocked[enhancedBoots]).toBe(true)
+      expect(state.craftedEffects[enhancedBoots]).toBe('critico_forjado')
+      expect(state.equipmentResistances[enhancedBoots]).toBe('fogo')
+      expect(state.equipmentUpgrades[enhancedBoots]).toBe(2)
       expect(state.materials.rubi_forja).toBe(0)
     } finally {
       randomSpy.mockRestore()
@@ -320,29 +322,51 @@ describe('cópias independentes na desmontagem da forja', () => {
     const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
     try {
       useGame.getState().newGame('guerreiro')
+      const enhancedBoots = 'botas_viajante@@last-copy'
       useGame.setState({
-        equipmentBag: ['botas_viajante'],
+        equipmentBag: [enhancedBoots],
         equipped: { ...useGame.getState().equipped, botas: undefined },
         materials: { rubi_forja: 0 },
-        equipmentGems: { botas_viajante: ['rubi_forja'] },
-        forgedGemLocked: { botas_viajante: true },
-        craftedEffects: { botas_viajante: 'critico_forjado' },
-        equipmentResistances: { botas_viajante: 'fogo' },
-        equipmentUpgrades: { botas_viajante: 2 },
+        equipmentGems: { [enhancedBoots]: ['rubi_forja'] },
+        forgedGemLocked: { [enhancedBoots]: true },
+        craftedEffects: { [enhancedBoots]: 'critico_forjado' },
+        equipmentResistances: { [enhancedBoots]: 'fogo' },
+        equipmentUpgrades: { [enhancedBoots]: 2 },
       } as any)
 
-      useGame.getState().dismantleEquipment('botas_viajante')
+      useGame.getState().dismantleEquipment(enhancedBoots)
       const state = useGame.getState()
 
-      expect(state.equipmentGems.botas_viajante).toBeUndefined()
-      expect(state.forgedGemLocked.botas_viajante).toBeUndefined()
-      expect(state.craftedEffects.botas_viajante).toBeUndefined()
-      expect(state.equipmentResistances.botas_viajante).toBeUndefined()
-      expect(state.equipmentUpgrades.botas_viajante).toBeUndefined()
+      expect(state.equipmentGems[enhancedBoots]).toBeUndefined()
+      expect(state.forgedGemLocked[enhancedBoots]).toBeUndefined()
+      expect(state.craftedEffects[enhancedBoots]).toBeUndefined()
+      expect(state.equipmentResistances[enhancedBoots]).toBeUndefined()
+      expect(state.equipmentUpgrades[enhancedBoots]).toBeUndefined()
       expect(state.materials.rubi_forja).toBe(1)
     } finally {
       randomSpy.mockRestore()
     }
+  })
+
+  it('vender a peça bonificada remove apenas os registros daquela instância', () => {
+    useGame.getState().newGame('guerreiro')
+    const enhancedBoots = 'botas_viajante@@sold-enhanced'
+    const plainBoots = 'botas_viajante@@kept-plain'
+    useGame.setState({
+      equipmentBag: [enhancedBoots, plainBoots],
+      equipmentGems: { [enhancedBoots]: ['rubi_forja'] },
+      equipmentUpgrades: { [enhancedBoots]: 2 },
+      equipmentResistances: { [enhancedBoots]: 'fogo' },
+    } as any)
+
+    useGame.getState().sellEquipment(enhancedBoots)
+    const state = useGame.getState()
+
+    expect(state.equipmentBag).toEqual([plainBoots])
+    expect(state.equipmentGems[enhancedBoots]).toBeUndefined()
+    expect(state.equipmentUpgrades[enhancedBoots]).toBeUndefined()
+    expect(state.equipmentResistances[enhancedBoots]).toBeUndefined()
+    expect(state.equipmentGems[plainBoots]).toBeUndefined()
   })
 })
 
