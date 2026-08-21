@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, attackValue, maxHp } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -508,6 +508,34 @@ describe('balanceamento da região inicial', () => {
       expect(boss.ataque).toBeLessThanOrEqual(6)
       expect(boss.vida).toBeLessThanOrEqual(31)
       expect(boss.ouro).toBeGreaterThanOrEqual(36)
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+})
+
+describe('orçamento de pontos dos inimigos', () => {
+  it('reduz um inimigo de nível 49 com 3000 de vida ao teto do nível', () => {
+    const enemy = balanceEnemyByLevel({ id: 'extremo', nome: 'Extremo', ataque: 80, vida: 3000, ouro: 1, dificuldade: 49, nivel: 49, habilidade: '', imagem: '' })
+    expect(enemy.vida).toBeLessThan(3000)
+    expect(enemyPointCost(enemy)).toBeLessThanOrEqual(enemyPointBudget(enemy))
+  })
+
+  it('mantém comuns, chefes e vinganças de todas as regiões dentro do orçamento', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(.01)
+    try {
+      for (const subregion of SUBREGIONS) {
+        const enemies = [
+          buildEnemy(subregion, subregion.nivelMax),
+          buildBoss(subregion),
+          buildRevengeBoss(subregion, 10),
+        ]
+        for (const enemy of enemies) {
+          expect(enemyPointCost(enemy), `${subregion.id}: ${enemy.nome}`).toBeLessThanOrEqual(enemyPointBudget(enemy))
+          expect(enemy.vida, `${subregion.id}: vida positiva`).toBeGreaterThan(0)
+          expect(enemy.ataque, `${subregion.id}: ataque positivo`).toBeGreaterThan(0)
+        }
+      }
     } finally {
       randomSpy.mockRestore()
     }

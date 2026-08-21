@@ -389,7 +389,26 @@ export function storyRequirementProgress(s:GameState){const chapter=STORY_CHAPTE
 function currentSubregion(s:GameState){ return SUBREGIONS.find(x=>x.id===s.subregionId) }
 function rarityForVariant(v:string):Rarity{ return v==='Campeão'?'epico':v==='Elite'?'raro':v==='Veterano'?'incomum':'comum' }
 
-function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
+// Orçamento equivalente ao de um herói: 4 de Vida custam 1 ponto e 1 de Ataque custa 2.
+// Inimigos podem ficar abaixo do teto para preservar encontros iniciais, mas nunca acima dele.
+export function enemyPointCost(enemy:Pick<Enemy,'vida'|'ataque'>){return enemy.vida/4+enemy.ataque*2}
+export function enemyPointBudget(enemy:Pick<Enemy,'nivel'|'dificuldade'|'boss'|'maxFases'|'variante'>,allowance=1){
+ const level=Math.max(1,enemy.nivel??enemy.dificuldade??1)
+ const variant=enemy.variante==='Campeão'?1.6:enemy.variante==='Elite'?1.35:enemy.variante==='Veterano'?1.15:1
+ const boss=enemy.boss?1.6+Math.min(4,enemy.maxFases??1)*.2:1
+ return (10+level*2)*variant*boss*allowance
+}
+export function balanceEnemyByLevel<T extends Enemy>(enemy:T,allowance=1):T{
+ const budget=enemyPointBudget(enemy,allowance),cost=enemyPointCost(enemy)
+ if(cost<=budget)return enemy
+ const scale=budget/cost
+ let vida=Math.max(1,Math.floor(enemy.vida*scale)),ataque=Math.max(1,Math.floor(enemy.ataque*scale))
+ while(vida/4+ataque*2>budget&&vida>1)vida--
+ while(vida/4+ataque*2>budget&&ataque>1)ataque--
+ return{...enemy,vida,ataque}
+}
+
+export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const base=sub.inimigos[Math.floor(Math.random()*sub.inimigos.length)]
   const startingRegion=sub.regionId==='campos_dourados'
   const targetLevel=Math.max(sub.nivelMin,Math.min(sub.nivelMax+1,Math.round((sub.nivelMin+sub.nivelMax)/2 + (Math.random()-.5)*2)))
@@ -404,22 +423,22 @@ function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const scaledAtk=Math.ceil(base.ataque*(1+levelDelta*.07)*atkMult*(startingRegion?.55:1))
   const prefix=variant==='Comum'?'':`${variant}: `
   const extra=variant==='Campeão'?' • Aura de campeão':variant==='Elite'?' • Técnica de elite':variant==='Veterano'?' • Experiência de combate':''
-  return {
+  return balanceEnemyByLevel({
     id:`${sub.id}_${base.nome.toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${Date.now()}`,
     nome:prefix+base.nome, ataque:scaledAtk, vida:scaledHp, ouro:Math.ceil(base.ouro*(1+levelDelta*.08)*goldMult), dificuldade:effectiveLevel,
     habilidade:base.habilidade+extra, imagem:base.arte, arte:base.arte, raridade:rarityForVariant(variant), elite:variant==='Elite'||variant==='Campeão', nivel:effectiveLevel, variante:variant, elemento:REGION_MATERIALS[sub.regionId]?.elemento
-  }
+  })
 }
-function buildBoss(sub:Subregion):Enemy{
+export function buildBoss(sub:Subregion):Enemy{
   const b=sub.chefe
   const startingRegion=sub.regionId==='campos_dourados'
-  return {id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*(startingRegion?.58:1))),vida:Math.max(1,Math.ceil(b.vida*(startingRegion?.55:1))),ouro:b.ouro,dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento}
+  return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*(startingRegion?.58:1))),vida:Math.max(1,Math.ceil(b.vida*(startingRegion?.55:1))),ouro:b.ouro,dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento})
 }
-function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return{...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward)}}
+function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return balanceEnemyByLevel({...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward)},multiplier)}
 export function buildCoopEnemy(subregionId:string,playerLevel:number,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildEnemy(sub,playerLevel),mode):undefined}
 export function buildCoopSubregionBoss(subregionId:string,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildBoss(sub),mode):undefined}
 export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode){const region=TERRITORIES.find(item=>item.id===regionId),base=region&&BOSSES[region.dificuldade];return region&&base?difficultyEnemy({...base,id:`coop_region_boss_${region.id}`,nome:`${base.nome} • Soberano de ${region.nome}`},mode):undefined}
-function buildRevengeBoss(sub:Subregion,wins:number):Enemy{const base=buildBoss(sub),power=1.35+wins*.18;return{...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),ouro:Math.ceil(base.ouro*(1.5+wins*.25)),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true}}
+export function buildRevengeBoss(sub:Subregion,wins:number):Enemy{const base=buildBoss(sub),power=1.35+wins*.18,level=(base.nivel??base.dificuldade)+wins*3;return balanceEnemyByLevel({...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),ouro:Math.ceil(base.ouro*(1.5+wins*.25)),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true,nivel:level,dificuldade:level})}
 
 function campaignSnapshot(source:any):CampaignSave{const snapshot:any={savedAt:Date.now()};for(const [key,value] of Object.entries(source)){if(typeof value!=='function'&&key!=='campaigns'&&key!=='activeCampaignId'&&key!=='customCards')snapshot[key]=value}return snapshot}
 function saveActiveCampaign(state:GameState){if(!state.activeCampaignId||!state.heroId||state.screen==='menu'||state.screen==='select'||state.screen==='cardCreator')return state.campaigns;return{...state.campaigns,[state.activeCampaignId]:campaignSnapshot(state)}}
@@ -612,7 +631,9 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     // proporcional ao nível do inimigo enfrentado, igual ao pedido de XP crescente e
     // proporcional à dificuldade.
     const xpReward=Math.round((enemyLevel*4+depth*6)*(isBoss?1.6:1))
-    beginCombat(set,get,{...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*(1+scalingDepth*.12)),ouro:Math.ceil(enemy.ouro*(1+scalingDepth*.18)),xpReward,dungeon:true})
+    const dungeonLevel=enemyLevel+depth
+    const dungeonEnemy=balanceEnemyByLevel({...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*(1+scalingDepth*.12)),ouro:Math.ceil(enemy.ouro*(1+scalingDepth*.18)),xpReward,dungeon:true,nivel:dungeonLevel,dificuldade:dungeonLevel})
+    beginCombat(set,get,dungeonEnemy)
     set({dungeonDepth:depth,dungeonActive:true,dungeonSubregionId:sub.id})
   }
   // Escolha explícita do alvo da masmorra (Painel de Masmorras): antes o alvo vinha implícito
