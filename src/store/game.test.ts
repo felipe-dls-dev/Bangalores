@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -541,6 +541,35 @@ describe('Conjurador com duas feras espectrais', () => {
     } finally {
       vi.clearAllTimers()
       vi.useRealTimers()
+    }
+  })
+
+  it('escala os atributos das três invocações até o nível 100', () => {
+    const levels = [1, 10, 25, 50, 75, 100]
+    let previous = { atacante: buildSummon('atacante', 1), defensor: buildSummon('defensor', 1), arcano: buildSummon('arcano', 1) }
+
+    for (const level of levels.slice(1)) {
+      const current = { atacante: buildSummon('atacante', level), defensor: buildSummon('defensor', level), arcano: buildSummon('arcano', level) }
+      for (const type of ['atacante', 'defensor', 'arcano'] as const) {
+        expect(current[type].maxHp).toBeGreaterThan(previous[type].maxHp)
+        expect(current[type].ataque).toBeGreaterThanOrEqual(previous[type].ataque)
+        expect(current[type].defesa).toBeGreaterThanOrEqual(previous[type].defesa)
+      }
+      expect(current.defensor.maxHp).toBeGreaterThan(current.atacante.maxHp)
+      expect(current.defensor.defesa).toBeGreaterThan(current.atacante.defesa)
+      expect(current.atacante.ataque).toBeGreaterThan(current.defensor.ataque)
+      previous = current
+    }
+  })
+
+  it('não deixa as invocações morrerem no primeiro ataque comum compatível', () => {
+    for (const level of [1, 10, 25, 50, 75, 100]) {
+      const enemy = balanceEnemyByLevel({ id: `enemy-${level}`, nome: 'Inimigo compatível', ataque: 4 + level, defesa: Math.max(0, level - 2), vida: 20 + level * 3, ouro: 1, dificuldade: level, nivel: level, habilidade: '', imagem: '' })
+      for (const type of ['atacante', 'defensor', 'arcano'] as const) {
+        const summon = buildSummon(type, level)
+        const hit = resolveCombatRoll(enemy.ataque, summon.defesa, 3, 3)
+        expect(hit.damage, `${type} no nível ${level}`).toBeLessThan(summon.maxHp)
+      }
     }
   })
 })

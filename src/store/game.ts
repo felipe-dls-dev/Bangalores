@@ -711,15 +711,18 @@ function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'c
 function addLog(set:any,msg:string){set((s:GameState)=>({combatLog:[...s.combatLog.slice(-12),msg]}))}
 function triggerSupportFx(set:any,get:any,type:'fortificacao'|'cura'|'cura-item'){set({supportFx:{type}});setTimeout(()=>{if((get() as GameState).supportFx?.type===type)set({supportFx:undefined})},1600)}
 export function summonBossMinions(enemy:Enemy,phase:number):CombatMinion[]{const count=Math.min(2,phase),level=enemy.nivel??enemy.dificuldade??1,hp=Math.max(4,Math.ceil(enemy.vida*.14)),attack=Math.max(2,Math.ceil(enemy.ataque*.45));return Array.from({length:count},(_,index)=>({id:`minion_${phase}_${index}_${Date.now()}`,nome:index?'Capanga veterano':'Capanga do chefe',hp,maxHp:hp,ataque:attack+Math.floor(level/8)}))}
-// Ficha da fera espectral do Conjurador: 5 níveis de poder (a cada 4 níveis do herói), com
-// crescimento que para no nível 17+ — mecanismo de balanceamento para a invocação nunca ficar
-// tão forte quanto o próprio herói, mesmo em campanhas avançadas.
-const SUMMON_TIERS=[{hp:3,atk:1,def:1},{hp:4,atk:2,def:1},{hp:5,atk:2,def:2},{hp:6,atk:3,def:2},{hp:7,atk:3,def:3}]
+// As feras acompanham o Conjurador até o nível 100. Antes, o crescimento parava no nível 17
+// e deixava todas as invocações com apenas 7–10 de vida no restante da campanha.
 const SUMMON_NAMES:Record<SummonType,string>={atacante:'Fera Espectral Feroz',defensor:'Guardião Espectral',arcano:'Sombra Arcana'}
 export const SUMMON_INTERCEPT_CHANCE:Record<SummonType,number>={atacante:.15,defensor:.8,arcano:.35}
 export function buildSummon(tipo:SummonType,level:number):Summon{
- const t=SUMMON_TIERS[Math.min(4,Math.floor(Math.max(0,level-1)/4))]
- const stats=tipo==='atacante'?{hp:t.hp,atk:t.atk+2,def:Math.max(1,t.def-1)}:tipo==='defensor'?{hp:t.hp+3,atk:Math.max(1,t.atk-1),def:t.def+2}:{hp:Math.max(2,t.hp-1),atk:Math.max(1,t.atk-1),def:t.def}
+ const lvl=Math.max(1,Math.min(100,Math.floor(level)))
+ const base={hp:10+Math.round(lvl*.75),atk:3+Math.round(lvl*.42),def:2+Math.round(lvl*.38)}
+ const stats=tipo==='atacante'
+  ?{hp:base.hp,atk:base.atk+3+Math.floor(lvl*.08),def:Math.max(1,base.def-3)}
+  :tipo==='defensor'
+   ?{hp:base.hp+6+Math.floor(lvl*.18),atk:Math.max(1,base.atk-2),def:base.def+5+Math.floor(lvl*.08)}
+   :{hp:Math.max(8,base.hp-2),atk:Math.max(2,base.atk-1),def:base.def}
  return{tipo,nome:SUMMON_NAMES[tipo],hp:stats.hp,maxHp:stats.hp,ataque:stats.atk,defesa:stats.def}
 }
 const COMBAT_ROLL_DISPLAY_MS=2500
