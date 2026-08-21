@@ -385,7 +385,7 @@ describe('limite de poções temporárias', () => {
     expect(useGame.getState().pendingAttackBonus).toBe(5)
   })
 
-  it('consome bônus do combate ao avançar ou sair de uma masmorra', () => {
+  it('preserva na próxima batalha os bônus usados no resumo da masmorra', () => {
     vi.useFakeTimers()
     try {
       useGame.getState().newGame('guerreiro')
@@ -402,19 +402,51 @@ describe('limite de poções temporárias', () => {
       useGame.getState().startDungeon()
       let state = useGame.getState()
       expect(state.dungeonDepth).toBe(2)
-      expect(state.pendingAttackBonus).toBe(0)
-      expect(state.shield).toBe(0)
-      expect(state.activePotionIds).toEqual([])
+      expect(state.pendingAttackBonus).toBe(5)
+      expect(state.shield).toBe(7)
+      expect(state.activePotionIds).toEqual(['elixir_forca', 'elixir_reflexo_prateado'])
       expect(state.regenBoostUntil).toBe(regenBoostUntil)
 
       useGame.setState({ pendingAttackBonus: 3, shield: 4, activePotionIds: ['oleo_encantado'] } as any)
       useGame.getState().leaveDungeon()
       state = useGame.getState()
+      expect(state.pendingAttackBonus).toBe(3)
+      expect(state.shield).toBe(4)
+      expect(state.activePotionIds).toEqual(['oleo_encantado'])
+      expect(state.regenBoostUntil).toBe(regenBoostUntil)
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
+
+  it('preserva os bônus do resumo ao voltar ao mapa ou ao modo cooperativo', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ screen: 'loot', dungeonActive: false, pendingAttackBonus: 3, shield: 4, activePotionIds: ['oleo_encantado'] } as any)
+
+    useGame.getState().finishLoot()
+    const state = useGame.getState()
+    expect(state.pendingAttackBonus).toBe(3)
+    expect(state.shield).toBe(4)
+    expect(state.activePotionIds).toEqual(['oleo_encantado'])
+  })
+
+  it('limpa os bônus usados antes de abrir o resumo da batalha vencida', () => {
+    vi.useFakeTimers()
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(.99)
+    try {
+      useGame.getState().newGame('guerreiro')
+      useGame.setState({ screen: 'combat', enemy: { ...fakeEnemy, vida: 1 }, enemyHp: 1, playerTurn: true, animating: false, pendingAttackBonus: 5, shield: 7, activePotionIds: ['elixir_forca', 'tonico_guardiao'] } as any)
+      useGame.getState().attack()
+      vi.advanceTimersByTime(4_000)
+
+      const state = useGame.getState()
+      expect(state.screen).toBe('loot')
       expect(state.pendingAttackBonus).toBe(0)
       expect(state.shield).toBe(0)
       expect(state.activePotionIds).toEqual([])
-      expect(state.regenBoostUntil).toBe(regenBoostUntil)
     } finally {
+      randomSpy.mockRestore()
       vi.clearAllTimers()
       vi.useRealTimers()
     }
@@ -452,7 +484,6 @@ describe('limite de poções temporárias', () => {
       for (let cycle = 0; cycle < 100; cycle++) {
         const attackPotion = attackPotions[cycle % attackPotions.length]
         const shieldPotion = shieldPotions[cycle % shieldPotions.length]
-        const attackBeforePotion = attackValue(useGame.getState())
         useGame.setState({
           screen: 'loot',
           inventory: { [attackPotion.id]: 2, [shieldPotion.id]: 2 },
@@ -460,6 +491,7 @@ describe('limite de poções temporárias', () => {
           shield: 0,
           activePotionIds: [],
         } as any)
+        const attackBeforePotion = attackValue(useGame.getState())
 
         useGame.getState().useConsumable(attackPotion.id)
         useGame.getState().useConsumable(attackPotion.id)
@@ -476,9 +508,9 @@ describe('limite de poções temporárias', () => {
         useGame.getState().startDungeon()
         state = useGame.getState()
         expect(state.dungeonDepth, `profundidade no ciclo ${cycle + 1}`).toBe(cycle + 2)
-        expect(state.pendingAttackBonus, `expiração do ataque no ciclo ${cycle + 1}`).toBe(0)
-        expect(state.shield, `expiração do escudo no ciclo ${cycle + 1}`).toBe(0)
-        expect(state.activePotionIds, `liberação das poções no ciclo ${cycle + 1}`).toEqual([])
+        expect(state.pendingAttackBonus, `preparação de ataque no ciclo ${cycle + 1}`).toBe(attackPotion.valor)
+        expect(state.shield, `preparação de escudo no ciclo ${cycle + 1}`).toBe(shieldPotion.valor)
+        expect(state.activePotionIds, `poções reservadas no ciclo ${cycle + 1}`).toEqual([attackPotion.id, shieldPotion.id])
         expect(state.regenBoostUntil, `regeneração no ciclo ${cycle + 1}`).toBe(regenBoostUntil)
         expect(state.attr.vida, `atributo permanente no ciclo ${cycle + 1}`).toBe(4)
         expect(maxHp(state), `vida total no ciclo ${cycle + 1}`).toBeGreaterThanOrEqual(permanentMaxHp)
