@@ -377,16 +377,17 @@ function rarityForVariant(v:string):Rarity{ return v==='Campeão'?'epico':v==='E
 
 function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const base=sub.inimigos[Math.floor(Math.random()*sub.inimigos.length)]
+  const startingRegion=sub.regionId==='campos_dourados'
   const targetLevel=Math.max(sub.nivelMin,Math.min(sub.nivelMax+1,Math.round((sub.nivelMin+sub.nivelMax)/2 + (Math.random()-.5)*2)))
   const effectiveLevel=Math.max(targetLevel,Math.min(sub.nivelMax+2,Math.round(targetLevel*.7+playerLevel*.3)))
   const r=Math.random()
-  const variant=r<.06?'Campeão':r<.21?'Elite':r<.48?'Veterano':'Comum'
+  const variant=startingRegion?(r<.015?'Campeão':r<.065?'Elite':r<.22?'Veterano':'Comum'):(r<.06?'Campeão':r<.21?'Elite':r<.48?'Veterano':'Comum')
   const hpMult=variant==='Campeão'?2.05:variant==='Elite'?1.55:variant==='Veterano'?1.22:1
   const atkMult=variant==='Campeão'?1.42:variant==='Elite'?1.24:variant==='Veterano'?1.1:1
   const goldMult=variant==='Campeão'?2.3:variant==='Elite'?1.7:variant==='Veterano'?1.28:1
   const levelDelta=Math.max(0,effectiveLevel-sub.nivelMin)
-  const scaledHp=Math.ceil(base.vida*(1+levelDelta*.12)*hpMult)
-  const scaledAtk=Math.ceil(base.ataque*(1+levelDelta*.07)*atkMult)
+  const scaledHp=Math.ceil(base.vida*(1+levelDelta*.12)*hpMult*(startingRegion?.45:1))
+  const scaledAtk=Math.ceil(base.ataque*(1+levelDelta*.07)*atkMult*(startingRegion?.55:1))
   const prefix=variant==='Comum'?'':`${variant}: `
   const extra=variant==='Campeão'?' • Aura de campeão':variant==='Elite'?' • Técnica de elite':variant==='Veterano'?' • Experiência de combate':''
   return {
@@ -397,7 +398,8 @@ function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
 }
 function buildBoss(sub:Subregion):Enemy{
   const b=sub.chefe
-  return {id:`boss_${sub.id}`,nome:b.nome,ataque:b.ataque,vida:b.vida,ouro:b.ouro,dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento}
+  const startingRegion=sub.regionId==='campos_dourados'
+  return {id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*(startingRegion?.58:1))),vida:Math.max(1,Math.ceil(b.vida*(startingRegion?.55:1))),ouro:b.ouro,dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento}
 }
 function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return{...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward)}}
 export function buildCoopEnemy(subregionId:string,playerLevel:number,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildEnemy(sub,playerLevel),mode):undefined}

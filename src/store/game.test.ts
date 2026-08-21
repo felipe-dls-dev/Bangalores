@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -319,6 +319,23 @@ describe('Conjurador com duas feras espectrais', () => {
     } finally {
       vi.clearAllTimers()
       vi.useRealTimers()
+    }
+  })
+})
+
+describe('balanceamento da região inicial', () => {
+  it('mantém encontros comuns e o primeiro chefe adequados a heróis recém-criados', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(.9)
+    try {
+      const enemy = buildCoopEnemy('campos_estrada', 1, 'veterano')!
+      const boss = buildCoopSubregionBoss('campos_estrada', 'veterano')!
+      expect(enemy.ataque).toBeLessThanOrEqual(4)
+      expect(enemy.vida).toBeLessThanOrEqual(14)
+      expect(boss.ataque).toBeLessThanOrEqual(6)
+      expect(boss.vida).toBeLessThanOrEqual(31)
+      expect(boss.ouro).toBeGreaterThanOrEqual(36)
+    } finally {
+      randomSpy.mockRestore()
     }
   })
 })
