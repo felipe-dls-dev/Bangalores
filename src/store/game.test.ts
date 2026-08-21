@@ -284,6 +284,68 @@ describe('combate: atacar um capanga específico', () => {
   })
 })
 
+describe('cópias independentes na desmontagem da forja', () => {
+  it('preserva a pedra e os bônus da bota equipada ao desmontar outra cópia', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    try {
+      useGame.getState().newGame('guerreiro')
+      useGame.setState({
+        equipmentBag: ['botas_viajante'],
+        equipped: { ...useGame.getState().equipped, botas: 'botas_viajante' },
+        materials: { rubi_forja: 0 },
+        equipmentGems: { botas_viajante: ['rubi_forja'] },
+        forgedGemLocked: { botas_viajante: true },
+        craftedEffects: { botas_viajante: 'critico_forjado' },
+        equipmentResistances: { botas_viajante: 'fogo' },
+        equipmentUpgrades: { botas_viajante: 2 },
+      } as any)
+
+      useGame.getState().dismantleEquipment('botas_viajante')
+      const state = useGame.getState()
+
+      expect(state.equipmentBag).toEqual([])
+      expect(state.equipped.botas).toBe('botas_viajante')
+      expect(state.equipmentGems.botas_viajante).toEqual(['rubi_forja'])
+      expect(state.forgedGemLocked.botas_viajante).toBe(true)
+      expect(state.craftedEffects.botas_viajante).toBe('critico_forjado')
+      expect(state.equipmentResistances.botas_viajante).toBe('fogo')
+      expect(state.equipmentUpgrades.botas_viajante).toBe(2)
+      expect(state.materials.rubi_forja).toBe(0)
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
+  it('limpa os bônus somente ao desmontar a última cópia existente', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    try {
+      useGame.getState().newGame('guerreiro')
+      useGame.setState({
+        equipmentBag: ['botas_viajante'],
+        equipped: { ...useGame.getState().equipped, botas: undefined },
+        materials: { rubi_forja: 0 },
+        equipmentGems: { botas_viajante: ['rubi_forja'] },
+        forgedGemLocked: { botas_viajante: true },
+        craftedEffects: { botas_viajante: 'critico_forjado' },
+        equipmentResistances: { botas_viajante: 'fogo' },
+        equipmentUpgrades: { botas_viajante: 2 },
+      } as any)
+
+      useGame.getState().dismantleEquipment('botas_viajante')
+      const state = useGame.getState()
+
+      expect(state.equipmentGems.botas_viajante).toBeUndefined()
+      expect(state.forgedGemLocked.botas_viajante).toBeUndefined()
+      expect(state.craftedEffects.botas_viajante).toBeUndefined()
+      expect(state.equipmentResistances.botas_viajante).toBeUndefined()
+      expect(state.equipmentUpgrades.botas_viajante).toBeUndefined()
+      expect(state.materials.rubi_forja).toBe(1)
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+})
+
 describe('limite de poções temporárias', () => {
   it('bloqueia uma segunda unidade da mesma poção e permite combinar poções diferentes', () => {
     useGame.getState().newGame('guerreiro')
