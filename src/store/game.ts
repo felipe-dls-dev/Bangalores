@@ -140,18 +140,12 @@ const bossByDifficulty: Record<number,Enemy> = {
 }
 export const BOSSES = Object.fromEntries(Object.entries(bossByDifficulty).map(([difficulty,boss])=>{const arte=BOSS_ART[boss.nome]??boss.arte;return[difficulty,{...boss,imagem:arte,arte}]})) as Record<number,Enemy>
 
-const xpCosts=[10,14,19,25,33,43,56,72,92,116,145,180,220,265,315,370,430,495]
-// Do nível 19 em diante a curva deixa de multiplicar geometricamente por 1,2 a cada nível (isso
-// levava o nível 100 a ~7,7 bilhões de XP acumulado, matematicamente inatingível) e passa a
-// crescer por um polinômio (nível 1-18 continua intocado, pra não pesar no onboarding). O
-// expoente/coeficiente foram aumentados (20→30, 1.55→1.85) porque farmar xp estava rápido
-// demais -- o nível 100 (endgame com conteúdo/equipamentos hoje) passa a exigir ~3,1 milhões de
-// XP acumulado (~4,8× mais que antes), uma jornada longa mas alcançável. O nível 200 já é
-// matematicamente alcançável (~29,4 milhões de XP) como meta de longuíssimo prazo -- os
-// desafios de nível 101-200 ainda não têm conteúdo próprio; ficam para o próximo continente.
+// Curva única (sem tabela fixa nem quebra de fórmula) cobrindo 1-200: quadrática, "desafiadora
+// mas alcançável". Nível 100 (o endgame atual, com conteúdo/equipamentos) exige ~3,38 milhões de
+// XP acumulado; nível 200 (sem conteúdo próprio ainda -- fica pro próximo continente) ~26,9
+// milhões, como meta de longuíssimo prazo. Farmar xp antes disso estava rápido demais.
 function costForLevel(level:number){
-  while(xpCosts.length < level){ const lvl=xpCosts.length+1; xpCosts.push(Math.max(1,Math.round(495+30*Math.pow(lvl-18,1.85)))) }
-  return xpCosts[level-1] ?? 10
+  return Math.max(1,Math.round(10*Math.pow(level,2)))
 }
 export function deriveLevel(totalXp:number){ let lvl=1, spent=0; while(totalXp >= spent+costForLevel(lvl)){spent+=costForLevel(lvl);lvl++} return {lvl,progress:totalXp-spent,next:costForLevel(lvl)} }
 const EQUIPMENT_INSTANCE_SEPARATOR='@@'
