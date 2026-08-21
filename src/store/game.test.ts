@@ -420,6 +420,22 @@ describe('limite de poções temporárias', () => {
     }
   })
 
+  it('bloqueia a navegação enquanto o resumo da sala da masmorra está aberto', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ screen: 'loot', dungeonActive: true, dungeonDepth: 3 } as any)
+
+    useGame.getState().setScreen('map')
+    expect(useGame.getState().screen).toBe('loot')
+    expect(useGame.getState().dungeonActive).toBe(true)
+
+    useGame.getState().leaveDungeon()
+    expect(useGame.getState().screen).toBe('map')
+    expect(useGame.getState().dungeonActive).toBe(false)
+
+    useGame.getState().setScreen('inventory')
+    expect(useGame.getState().screen).toBe('inventory')
+  })
+
   it('mantém poções e buffs corretos durante 100 transições de salas', () => {
     vi.useFakeTimers()
     try {
