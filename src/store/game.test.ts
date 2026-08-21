@@ -540,4 +540,29 @@ describe('orçamento de pontos dos inimigos', () => {
       randomSpy.mockRestore()
     }
   })
+
+  it('valida 100 encontros distribuídos entre várias sub-regiões', () => {
+    const coveredSubregions = new Set<string>()
+    let checked = 0
+
+    for (let index = 0; index < 100; index++) {
+      const subregion = SUBREGIONS[index % SUBREGIONS.length]
+      const playerLevel = Math.max(1, subregion.nivelMin + index % Math.max(1, subregion.nivelMax - subregion.nivelMin + 1))
+      const enemy = index % 10 === 0
+        ? buildRevengeBoss(subregion, Math.floor(index / 10))
+        : index % 5 === 0
+          ? buildBoss(subregion)
+          : buildEnemy(subregion, playerLevel)
+
+      coveredSubregions.add(subregion.id)
+      checked++
+      expect(enemy.nivel ?? enemy.dificuldade, `nível do caso ${index + 1}`).toBeGreaterThan(0)
+      expect(enemy.vida, `vida do caso ${index + 1}: ${enemy.nome}`).toBeGreaterThan(0)
+      expect(enemy.ataque, `ataque do caso ${index + 1}: ${enemy.nome}`).toBeGreaterThan(0)
+      expect(enemyPointCost(enemy), `orçamento do caso ${index + 1}: ${enemy.nome}`).toBeLessThanOrEqual(enemyPointBudget(enemy))
+    }
+
+    expect(checked).toBe(100)
+    expect(coveredSubregions.size).toBe(Math.min(100, SUBREGIONS.length))
+  })
 })
