@@ -389,9 +389,10 @@ export function storyRequirementProgress(s:GameState){const chapter=STORY_CHAPTE
 function currentSubregion(s:GameState){ return SUBREGIONS.find(x=>x.id===s.subregionId) }
 function rarityForVariant(v:string):Rarity{ return v==='Campeão'?'epico':v==='Elite'?'raro':v==='Veterano'?'incomum':'comum' }
 
-// Orçamento equivalente ao de um herói: 4 de Vida custam 1 ponto e 1 de Ataque custa 2.
+// Orçamento equivalente ao de um herói: 2 de Vida custam 1 ponto; 1 de Ataque ou Defesa custa 1.
 // Inimigos podem ficar abaixo do teto para preservar encontros iniciais, mas nunca acima dele.
-export function enemyPointCost(enemy:Pick<Enemy,'vida'|'ataque'>){return enemy.vida/4+enemy.ataque*2}
+export function enemyDefenseValue(enemy:Pick<Enemy,'defesa'|'nivel'|'dificuldade'>){return Math.max(0,enemy.defesa??(enemy.nivel??enemy.dificuldade??1)-2)}
+export function enemyPointCost(enemy:Pick<Enemy,'vida'|'ataque'|'defesa'|'nivel'|'dificuldade'>){return enemy.vida/2+enemy.ataque+enemyDefenseValue(enemy)}
 export function enemyPointBudget(enemy:Pick<Enemy,'nivel'|'dificuldade'|'boss'|'maxFases'|'variante'>,allowance=1){
  const level=Math.max(1,enemy.nivel??enemy.dificuldade??1)
  const variant=enemy.variante==='Campeão'?1.6:enemy.variante==='Elite'?1.35:enemy.variante==='Veterano'?1.15:1
@@ -399,13 +400,14 @@ export function enemyPointBudget(enemy:Pick<Enemy,'nivel'|'dificuldade'|'boss'|'
  return (10+level*2)*variant*boss*allowance
 }
 export function balanceEnemyByLevel<T extends Enemy>(enemy:T,allowance=1):T{
- const budget=enemyPointBudget(enemy,allowance),cost=enemyPointCost(enemy)
- if(cost<=budget)return enemy
+ const defesaBase=enemyDefenseValue(enemy),withDefense={...enemy,defesa:defesaBase},budget=enemyPointBudget(withDefense,allowance),cost=enemyPointCost(withDefense)
+ if(cost<=budget)return withDefense
  const scale=budget/cost
- let vida=Math.max(1,Math.floor(enemy.vida*scale)),ataque=Math.max(1,Math.floor(enemy.ataque*scale))
- while(vida/4+ataque*2>budget&&vida>1)vida--
- while(vida/4+ataque*2>budget&&ataque>1)ataque--
- return{...enemy,vida,ataque}
+ let vida=Math.max(1,Math.floor(enemy.vida*scale)),ataque=Math.max(1,Math.floor(enemy.ataque*scale)),defesa=Math.max(0,Math.floor(defesaBase*scale))
+ while(vida/2+ataque+defesa>budget&&vida>1)vida--
+ while(vida/2+ataque+defesa>budget&&ataque>1)ataque--
+ while(vida/2+ataque+defesa>budget&&defesa>0)defesa--
+ return{...enemy,vida,ataque,defesa}
 }
 
 export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
@@ -894,7 +896,7 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const enemyStun=target?{status:s.enemyStatus??{},wasStunned:false}:consumeStun(s.enemyStatus)
  const intent=enemyIntentFor(s.enemy,s.combatTurn)
  const spec=specializationBonuses(s),specCrit=!forceCrit&&Math.random()<spec.crit
- const attackBase=attackValue(s)+bonus+s.firstStrikeBonus+(!target&&s.enemy.boss?spec.bossDamage:0)+(!target&&s.talents.includes('cacador')&&s.enemy.boss?2:0)+(!target?bestiaryDamageBonus(s,s.enemy):0),defenseBase=target?0:Math.max(0,(s.enemy.dificuldade??1)-2)+(intent.type==='guard'?2:0),naturalAttackRoll=forceCrit||forgedCrit||specCrit?6:Math.floor(Math.random()*6)+1,attackBonus=s.heroRollBonus+(s.classRollBonus??0)-rollPenaltyFrom(s.heroStatus),attackRoll=forceCrit||forgedCrit||specCrit?6:Math.max(1,Math.min(6,naturalAttackRoll+attackBonus+((hasCraftedEffect(s,'critico')||s.groupCriticalBoost)&&naturalAttackRoll===5?1:0))),defenseRoll=enemyStun.wasStunned?1:Math.max(1,Math.floor(Math.random()*6)+1-(s.enemyFearPenalty??0)-(target?0:rollPenaltyFrom(s.enemyStatus)))
+ const attackBase=attackValue(s)+bonus+s.firstStrikeBonus+(!target&&s.enemy.boss?spec.bossDamage:0)+(!target&&s.talents.includes('cacador')&&s.enemy.boss?2:0)+(!target?bestiaryDamageBonus(s,s.enemy):0),defenseBase=target?0:enemyDefenseValue(s.enemy)+(intent.type==='guard'?2:0),naturalAttackRoll=forceCrit||forgedCrit||specCrit?6:Math.floor(Math.random()*6)+1,attackBonus=s.heroRollBonus+(s.classRollBonus??0)-rollPenaltyFrom(s.heroStatus),attackRoll=forceCrit||forgedCrit||specCrit?6:Math.max(1,Math.min(6,naturalAttackRoll+attackBonus+((hasCraftedEffect(s,'critico')||s.groupCriticalBoost)&&naturalAttackRoll===5?1:0))),defenseRoll=enemyStun.wasStunned?1:Math.max(1,Math.floor(Math.random()*6)+1-(s.enemyFearPenalty??0)-(target?0:rollPenaltyFrom(s.enemyStatus)))
  const critBonusPct=hasCraftedEffect(s,'dano_critico_bonus')?.1:0
  const {damage,selfDamage}=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll,critBonusPct)
  const combatRoll:CombatRoll={attacker:'hero',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage}
@@ -932,7 +934,7 @@ function enemyAfterDelay(set:any,get:any){
  if(activeSummons.length&&s.enemy){
   const en=s.enemy,nextSummons=[...activeSummons];let enemyHp=s.enemyHp,heroHp=s.hp
   for(let index=0;index<nextSummons.length&&enemyHp>0;index++){
-   const summon=nextSummons[index],attackBase=summon.ataque,defenseBase=Math.max(0,(en.dificuldade??1)-2),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
+   const summon=nextSummons[index],attackBase=summon.ataque,defenseBase=enemyDefenseValue(en),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
    if(resolved.selfDamage>0){const hp=Math.max(0,summon.hp-resolved.selfDamage),died=hp<=0;nextSummons[index]={...summon,hp};addLog(set,`${summon.nome} ataca, mas erra completamente e sofre ${resolved.selfDamage} de dano.${died?` ${summon.nome} caiu em combate.`:''}`)}
    else if(resolved.damage>0){enemyHp=Math.max(0,enemyHp-resolved.damage);const healAmount=Math.max(0,Math.min(1,maxHp(s)-heroHp));heroHp+=healAmount;addLog(set,`${summon.nome} ataca: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). Causou ${resolved.damage} de dano a ${en.nome}.${healAmount>0?' O vínculo recupera 1 de vida.':''}`)}
   }

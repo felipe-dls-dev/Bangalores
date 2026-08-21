@@ -515,6 +515,11 @@ describe('balanceamento da região inicial', () => {
 })
 
 describe('orçamento de pontos dos inimigos', () => {
+  it('usa a equivalência 2 Vida = 1 ponto, 1 Ataque = 1 e 1 Defesa = 1', () => {
+    expect(enemyPointCost({ vida: 2, ataque: 1, defesa: 1, nivel: 1, dificuldade: 1 })).toBe(3)
+    expect(enemyPointCost({ vida: 20, ataque: 5, defesa: 4, nivel: 1, dificuldade: 1 })).toBe(19)
+  })
+
   it('reduz um inimigo de nível 49 com 3000 de vida ao teto do nível', () => {
     const enemy = balanceEnemyByLevel({ id: 'extremo', nome: 'Extremo', ataque: 80, vida: 3000, ouro: 1, dificuldade: 49, nivel: 49, habilidade: '', imagem: '' })
     expect(enemy.vida).toBeLessThan(3000)
