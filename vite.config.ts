@@ -5,7 +5,12 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   test: {
-    setupFiles: ['./src/test/setup.ts']
+    setupFiles: ['./src/test/setup.ts'],
+    // balance-sim.test.ts plays full campaigns for every hero class (minutes, not
+    // milliseconds) -- it's a standalone balance-tuning tool, not a regression test,
+    // so it's excluded from the default `npm test` run. Invoke it explicitly with
+    // `npm run test:balance` when tuning class/enemy numbers.
+    exclude: ['**/node_modules/**', '**/dist/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**', 'scripts/balance-sim.test.ts']
   },
   build: {
     rollupOptions: {
