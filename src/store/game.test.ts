@@ -696,6 +696,34 @@ describe('bugs corrigidos no sistema de forja', () => {
     }
   })
 
+  it('craftEquipment (refino de bônus especial) não é bloqueado por um encaixe de pedra já cheio', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    try {
+      useGame.getState().newGame('guerreiro')
+      const weaponRef = 'lamina_cinzas@@bonus-socket-test'
+      useGame.setState({
+        xp: 50_000_000,
+        forgeXp: 100000,
+        equipped: { ...useGame.getState().equipped, mao_direita: weaponRef },
+        equipmentBag: [],
+        materials: { fragmento_fisico: 50, essencia_magica: 50, rubi_forja: 10 },
+        // Lâmina das Cinzas Eternas é épica: 2 encaixes, já ambos preenchidos manualmente.
+        equipmentGems: { [weaponRef]: ['safira_guardia', 'rubi_forja'] },
+        forgedGemLocked: {},
+        craftedEffects: {},
+      } as any)
+      useGame.getState().craftEquipment('receita_lamina_cinzas', 'critico_forjado')
+      const s = useGame.getState()
+      // Bônus especial (%) não ocupa encaixe -- vai para craftedEffects, não equipmentGems --
+      // então um encaixe físico já cheio não deveria impedir esse refino. Antes da correção, a
+      // checagem de encaixe livre se aplicava também aqui e bloqueava o refino em silêncio.
+      expect(s.craftedEffects[weaponRef]).toBe('critico_forjado')
+      expect(s.equipmentGems[weaponRef]).toEqual(['safira_guardia', 'rubi_forja'])
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
   it('forgeLevelInfo trava o progresso em 100% ao atingir o nível máximo', () => {
     const maxed = forgeLevelInfo(999999)
     expect(maxed.max).toBe(true)

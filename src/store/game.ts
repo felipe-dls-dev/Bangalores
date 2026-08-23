@@ -677,10 +677,13 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    const targetRef=item&&ownedRefs.find(ref=>equipmentRefMatches(ref,item.id)&&!s.craftedEffects[ref]&&!s.forgedGemLocked?.[ref])
    const hasUnbonusedCopy=Boolean(targetRef)
    if(gem&&!hasUnbonusedCopy)return
-   // Refino de gema (atributo ou bônus) lapida a cópia existente, mas ela precisa ter um
-   // encaixe livre -- sem essa checagem, a gema forjada substituía (em vez de somar a) qualquer
-   // pedra já socketada manualmente na mesma peça, perdendo-a sem reembolso.
-   if(gem&&item&&targetRef&&(s.equipmentGems[targetRef]??[]).length>=equipmentSocketCount(item))return
+   // Refino de gema de ATRIBUTO lapida a cópia existente, mas ela precisa ter um encaixe
+   // livre -- sem essa checagem, a gema forjada substituía (em vez de somar a) qualquer pedra
+   // já socketada manualmente na mesma peça, perdendo-a sem reembolso. Bônus especiais
+   // (crítico/esquiva/cura) não ocupam encaixe nenhum (vão para craftedEffects, não
+   // equipmentGems), então não devem ser bloqueados por um encaixe físico já cheio -- isso
+   // fazia o refino de bônus falhar em silêncio numa peça que já tinha uma pedra de atributo.
+   if(isAttribute&&gem&&item&&targetRef&&(s.equipmentGems[targetRef]??[]).length>=equipmentSocketCount(item))return
    // Forjar sem bônus uma peça acima de comum também "sacrifica" peças prontas de uma
    // raridade abaixo (ex.: um item raro pede 2 incomuns), além dos materiais normais -- só
    // vale pra fabricação nova (gem indefinido é a fabricação; refino de bônus não sacrifica).

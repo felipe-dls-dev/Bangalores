@@ -425,8 +425,12 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
  // Forjar com bônus não fabrica uma peça nova: refina uma cópia SEM BÔNUS que o jogador já
  // tem (na mochila ou equipada). Sem essa cópia base, a forja bloqueia o bônus escolhido —
  // por isso não consome espaço da mochila (a peça que sai já existia).
- const hasUnbonusedCopy=[...g.equipmentBag,...Object.values(g.equipped)].some(ref=>ref&&equipmentBaseId(ref)===item.id&&!g.craftedEffects[ref]&&!g.forgedGemLocked?.[ref])
- const needsBaseCopy=!!gem&&!hasUnbonusedCopy
+ const targetRef=[...g.equipmentBag,...Object.values(g.equipped)].find((ref):ref is string=>Boolean(ref)&&equipmentBaseId(ref as string)===item.id&&!g.craftedEffects[ref as string]&&!g.forgedGemLocked?.[ref as string])
+ const hasUnbonusedCopy=!!targetRef
+ // Bônus especial (não-atributo) não ocupa encaixe -- só a gema de atributo compete com pedras
+ // já socketadas manualmente na mesma peça (mesma regra de craftEquipment em game.ts).
+ const socketFull=isAttribute&&!!targetRef&&(g.equipmentGems[targetRef]??[]).length>=equipmentSocketCount(item)
+ const needsBaseCopy=!!gem&&(!hasUnbonusedCopy||socketFull)
  // Fabricar sem bônus uma peça acima de comum também sacrifica peças prontas de uma
  // raridade abaixo (ex.: raro pede 2 incomuns), além dos materiais normais.
  const sacrifice=!choice?FORGE_SACRIFICE[item.raridade??'comum']:undefined
@@ -438,7 +442,7 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
  // socketGem/removeGem — não dá pra tirar e reaproveitar em outro item depois). Forjar um
  // bônus não cria uma peça nova: refina a cópia sem bônus que o jogador já possui.
  const summary=needsBaseCopy
-  ?`Você precisa ter ${recipe.nome} SEM BÔNUS (na mochila ou equipada) antes de refinar esse bônus nela.`
+  ?(socketFull?`Essa peça já tem uma pedra socketada e não sobrou encaixe livre — remova a pedra atual ou refine outra cópia sem bônus.`:`Você precisa ter ${recipe.nome} SEM BÔNUS (na mochila ou equipada) antes de refinar esse bônus nela.`)
   :isAttribute&&gem
   ?`A peça que você já possui sairá refinada com ${gem.texto} permanente, fixado nela (não pode ser removido para outro item sem perdê-lo).`
   :choice&&gem
