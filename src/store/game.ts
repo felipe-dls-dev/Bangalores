@@ -677,7 +677,11 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    // a peça existente em vez de duplicá-la. Por isso a mochila não precisa ter espaço livre
    // aqui, e o sucesso não empurra um novo item pra bag -- só marca a que já existe. A
    // fabricação sem bônus continua igual a antes.
-   const ownedRefs=[...s.equipmentBag,...Object.values(s.equipped).filter((ref):ref is string=>Boolean(ref))]
+   // Prioriza a cópia EQUIPADA sobre qualquer cópia avulsa na mochila -- antes, com duas cópias
+   // do mesmo item (uma equipada, uma sobrando na mochila), o bônus sempre ia pra primeira cópia
+   // encontrada na mochila (ordem antiga), deixando a peça equipada sem o bônus escolhido mesmo
+   // após um refino bem-sucedido, sem nenhum aviso de que a cópia errada foi lapidada.
+   const ownedRefs=[...Object.values(s.equipped).filter((ref):ref is string=>Boolean(ref)),...s.equipmentBag]
    const targetRef=item&&ownedRefs.find(ref=>equipmentRefMatches(ref,item.id)&&!s.craftedEffects[ref]&&!s.forgedGemLocked?.[ref])
    const hasUnbonusedCopy=Boolean(targetRef)
    if(gem&&!hasUnbonusedCopy)return
