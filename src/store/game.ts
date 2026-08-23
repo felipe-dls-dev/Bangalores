@@ -228,7 +228,12 @@ function monsterLootLevel(enemy:Enemy){const level=Math.max(1,enemy.nivel??enemy
 // jogadores relataram matar dezenas de inimigos nas Planícies e só receber poções -- o piso
 // de 30% de qualquer drop, combinado com o sorteio 50/50 entre equipamento e consumível,
 // deixava um equipamento a cada 6-7 vitórias em média nos primeiros níveis.
-function monsterDropChance(enemy:Enemy){const level=Math.max(1,enemy.nivel??enemy.dificuldade);return enemy.boss?1:enemy.elite?Math.min(.9,.68+level*.012):Math.min(.72,.42+level*.012)}
+// bonus soma as fontes de "mais chance de espólio" que existiam no jogo mas nunca eram lidas em
+// lugar nenhum: a escolha de história 'trofeu' (storyModifiers().drop), a especialização
+// 'tesouro' (specializationBonuses().loot) e o efeito forjado 'sorte' (hasCraftedEffect(s,'sorte'),
+// das receitas de Orbe das Colheitas/Relíquia do Explorador) -- o jogador pagava ou escolhia esses
+// bônus e eles nunca mudavam a chance real de um monstro largar algo.
+export function monsterDropChance(enemy:Enemy,bonus=0){const level=Math.max(1,enemy.nivel??enemy.dificuldade);const base=enemy.boss?1:enemy.elite?Math.min(.9,.68+level*.012):Math.min(.72,.42+level*.012);return Math.min(1,base+bonus)}
 function equipmentTierIndex(level:number){return EQUIPMENT_LEVELS.reduce((idx,lvl,i)=>lvl<=level?i:idx,0)}
 // Drop pode "vislumbrar" até 1 tier acima do nível atual do herói — o item cai na bolsa mesmo que
 // ele ainda não possa equipar (equipmentLevelAllowed continua bloqueando o equip), virando uma meta
@@ -238,9 +243,14 @@ function consumableLootPool(enemy:Enemy){const cap=monsterLootLevel(enemy);retur
 // Épico e lendário continuam podendo cair de inimigos/baús/missões, mas com chance muito menor —
 // o caminho confiável para essas raridades é a Forja (loja bloqueia a compra direta delas).
 const RARITY_LOOT_WEIGHT:Record<Rarity,number>={comum:100,incomum:60,raro:30,epico:6,lendario:2,mitico:2,heroico:2}
-function pickWeightedEquipment(pool:Equipment[]):Equipment|undefined{
+// Usada só quando o efeito forjado 'sorte' está ativo ("melhor qualidade de espólios") --
+// reduz o peso de comum/incomum e aumenta o de raro em diante, deslocando o sorteio pra cima
+// sem tornar épico/lendário tão comuns quanto os tiers baixos.
+const RARITY_LOOT_WEIGHT_BOOSTED:Record<Rarity,number>={comum:55,incomum:55,raro:45,epico:12,lendario:5,mitico:5,heroico:5}
+function pickWeightedEquipment(pool:Equipment[],boosted=false):Equipment|undefined{
  if(!pool.length)return undefined
- const weight=(e:Equipment)=>RARITY_LOOT_WEIGHT[e.raridade??'comum']??RARITY_LOOT_WEIGHT.comum
+ const table=boosted?RARITY_LOOT_WEIGHT_BOOSTED:RARITY_LOOT_WEIGHT
+ const weight=(e:Equipment)=>table[e.raridade??'comum']??table.comum
  let roll=Math.random()*pool.reduce((sum,e)=>sum+weight(e),0)
  for(const e of pool){roll-=weight(e);if(roll<=0)return e}
  return pool[pool.length-1]
@@ -1157,7 +1167,8 @@ function victory(set:any,get:any){const s=get() as GameState,en=s.enemy!;const g
 // consumível qualquer, então o jogador nunca sabia que "ganhou" um item e o perdeu por falta
 // de espaço. Agora, ao sortear equipamento com a bolsa cheia, nenhum consumível substituto é
 // dado: o loot registra qual equipamento foi perdido e por quê.
-if(Math.random()<monsterDropChance(en)){const equipmentPool=equipmentLootPool(en,s.heroId,after),consumablePool=consumableLootPool(en);const rollsEquipment=Math.random()<.62&&equipmentPool.length>0;if(rollsEquipment){const e=pickWeightedEquipment(equipmentPool)!;if(equipmentBag.length<equipmentBagCapacity(s)){equipmentRef=createEquipmentInstance(e.id);equipmentBag.push(equipmentRef);equipmentId=e.id}else missedEquipmentId=e.id}else if(consumablePool.length){const i=consumablePool[Math.floor(Math.random()*consumablePool.length)];inventory[i.id]=(inventory[i.id]??0)+1;itemId=i.id}}const baseName=en.nome.replace(/^Vingança \d+: /,'').replace(/^(Veterano|Elite|Campeão): /,'');const record=s.bestiary[baseName]??{encontros:1,vitorias:0},material=REGION_MATERIALS[s.regionId]??REGION_MATERIALS.campos_dourados,materialQty=en.boss?3:en.elite?2:1;const materials={...s.materials,[material.id]:(s.materials[material.id]??0)+materialQty};const revengeWins=en.revenge&&s.subregionId?{...s.revengeWins,[s.subregionId]:(s.revengeWins[s.subregionId]??0)+1}:s.revengeWins;
+const lootChanceBonus=storyModifiers(s).drop+specializationBonuses(s).loot+(hasCraftedEffect(s,'sorte')?.15:0),lootQualityBoost=hasCraftedEffect(s,'sorte')
+if(Math.random()<monsterDropChance(en,lootChanceBonus)){const equipmentPool=equipmentLootPool(en,s.heroId,after),consumablePool=consumableLootPool(en);const rollsEquipment=Math.random()<.62&&equipmentPool.length>0;if(rollsEquipment){const e=pickWeightedEquipment(equipmentPool,lootQualityBoost)!;if(equipmentBag.length<equipmentBagCapacity(s)){equipmentRef=createEquipmentInstance(e.id);equipmentBag.push(equipmentRef);equipmentId=e.id}else missedEquipmentId=e.id}else if(consumablePool.length){const i=consumablePool[Math.floor(Math.random()*consumablePool.length)];inventory[i.id]=(inventory[i.id]??0)+1;itemId=i.id}}const baseName=en.nome.replace(/^Vingança \d+: /,'').replace(/^(Veterano|Elite|Campeão): /,'');const record=s.bestiary[baseName]??{encontros:1,vitorias:0},material=REGION_MATERIALS[s.regionId]??REGION_MATERIALS.campos_dourados,materialQty=en.boss?3:en.elite?2:1;const materials={...s.materials,[material.id]:(s.materials[material.id]??0)+materialQty};const revengeWins=en.revenge&&s.subregionId?{...s.revengeWins,[s.subregionId]:(s.revengeWins[s.subregionId]??0)+1}:s.revengeWins;
 const discoveredCards=[...(s.discoveredCards??[])];if(equipmentId&&!discoveredCards.includes(`equipment:${equipmentId}`))discoveredCards.push(`equipment:${equipmentId}`);if(itemId&&!discoveredCards.includes(`consumable:${itemId}`))discoveredCards.push(`consumable:${itemId}`)
 // Elemento/resistência em espólio só podem acontecer quando um CHEFE derruba o item — mesmo
 // assim, metade dos drops de chefe continua "normal", igual ao que a loja vende. Monstros e

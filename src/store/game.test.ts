@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -700,5 +700,16 @@ describe('bugs corrigidos no sistema de forja', () => {
     const maxed = forgeLevelInfo(999999)
     expect(maxed.max).toBe(true)
     expect(maxed.progress).toBeLessThanOrEqual(maxed.next)
+  })
+
+  it('monsterDropChance soma o bônus de chance de espólio (história, especialização e o efeito forjado "sorte")', () => {
+    // storyModifiers().drop, specializationBonuses().loot e o efeito forjado 'sorte' (das
+    // receitas de Orbe das Colheitas/Relíquia do Explorador) eram todos calculados mas nunca
+    // somados à chance real de um monstro largar espólio -- o jogador via a promessa ("mais
+    // chance de espólio") sem nenhum efeito de fato.
+    const enemy = { nivel: 10, boss: false, elite: false } as any
+    const base = monsterDropChance(enemy)
+    expect(monsterDropChance(enemy, 0.15)).toBeCloseTo(Math.min(1, base + 0.15), 10)
+    expect(monsterDropChance({ ...enemy, boss: true }, 0.5)).toBe(1) // já era 100%; nunca passa de 1
   })
 })
