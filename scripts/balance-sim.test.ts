@@ -202,7 +202,7 @@ function clearSubregion(sub: any, heroId: string, counters: Counters, easySubId:
     if (s.subregionBossesDefeated.includes(sub.id)) return
     const progressMet = (s.subregionVictories[sub.id] ?? 0) >= sub.encontrosNecessarios
     if (progressMet && counters.retriesUsedForCurrentSub > 0 && counters.retriesUsedForCurrentSub % 5 === 0) {
-      grind(heroId, 6, counters, easySubId)
+      grind(heroId, 8, counters, easySubId)
       continue
     }
     if (progressMet) useGame.getState().startBoss()
@@ -210,7 +210,7 @@ function clearSubregion(sub: any, heroId: string, counters: Counters, easySubId:
     const outcome = resolveOutcome(heroId, counters)
     if (outcome === 'defeat') {
       counters.retriesUsedForCurrentSub++
-      if (counters.retriesUsedForCurrentSub > 40) { counters.bossesSkipped.push(sub.id); return }
+      if (counters.retriesUsedForCurrentSub > 70) { counters.bossesSkipped.push(sub.id); return }
       continue
     }
     counters.retriesUsedForCurrentSub = 0
@@ -260,15 +260,59 @@ function runHero(heroId: string) {
   }
 }
 
+const RUNS_PER_HERO = 3
+
+function mean(xs: number[]) { return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0 }
+
+function aggregateMilestones(runs: ReturnType<typeof runHero>[]) {
+  const out: Record<number, any> = {}
+  for (const m of MILESTONES) {
+    const reached = runs.map(r => (r.milestones as any)[m]).filter((v): v is NonNullable<typeof v> => v != null)
+    out[m] = reached.length ? {
+      reachedRuns: reached.length,
+      totalRuns: runs.length,
+      avgBattles: Math.round(mean(reached.map(v => v.battles))),
+      avgHeroActions: Math.round(mean(reached.map(v => v.heroActions)))
+    } : { reachedRuns: 0, totalRuns: runs.length }
+  }
+  return out
+}
+
+function aggregateBrackets(runs: ReturnType<typeof runHero>[]) {
+  const keys = ['1-10', '10-20', '20-40', '40-50'] as const
+  const out: Record<string, any> = {}
+  for (const k of keys) {
+    const vals = runs.map(r => (r.brackets as any)[k]).filter((v): v is NonNullable<typeof v> => v != null)
+    out[k] = vals.length ? { avgDamage: mean(vals.map(v => v.avgDamage)), sampleRuns: vals.length } : null
+  }
+  return out
+}
+
 describe('balance simulation', () => {
-  it('plays every hero class through a full campaign', () => {
+  it(`plays every hero class through ${RUNS_PER_HERO} full campaigns each, to the last Havendown boss`, () => {
     const results = HEROES.map(h => {
-      const r = runHero(h.id)
-      console.log(`[${h.id}] level ${r.finalLevel} | battles ${r.totalBattles} | actions ${r.totalHeroActions} | deaths ${r.deaths} | bosses ${r.bossesDefeated}/${r.totalBosses} | avgDmg ${r.avgDamageOverall.toFixed(2)}`)
-      return r
+      const runs = []
+      for (let i = 0; i < RUNS_PER_HERO; i++) {
+        const r = runHero(h.id)
+        console.log(`[${h.id} #${i + 1}] level ${r.finalLevel} | battles ${r.totalBattles} | actions ${r.totalHeroActions} | deaths ${r.deaths} | bosses ${r.bossesDefeated}/${r.totalBosses} | avgDmg ${r.avgDamageOverall.toFixed(2)} | skipped: ${r.bossesSkipped.join(', ') || 'none'}`)
+        runs.push(r)
+      }
+      const aggregate = {
+        finalLevel: mean(runs.map(r => r.finalLevel)),
+        totalBattles: mean(runs.map(r => r.totalBattles)),
+        totalHeroActions: mean(runs.map(r => r.totalHeroActions)),
+        deaths: mean(runs.map(r => r.deaths)),
+        bossesDefeated: mean(runs.map(r => r.bossesDefeated)),
+        totalBosses: runs[0].totalBosses,
+        allBossesDefeatedRuns: runs.filter(r => r.bossesDefeated === r.totalBosses).length,
+        avgDamageOverall: mean(runs.map(r => r.avgDamageOverall)),
+        milestones: aggregateMilestones(runs),
+        brackets: aggregateBrackets(runs)
+      }
+      return { heroId: h.id, aggregate, runs }
     })
     const outPath = path.resolve(__dirname, 'balance-sim-results.json')
     fs.writeFileSync(outPath, JSON.stringify(results, null, 2))
     console.log('RESULTS_WRITTEN:' + outPath)
-  }, 300000)
+  }, 1800000)
 })

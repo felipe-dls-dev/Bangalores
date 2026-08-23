@@ -7,6 +7,6 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   test: {
     setupFiles: ['./src/test/setup.ts'],
-    testTimeout: 600000
+    testTimeout: 2400000
   }
 })
