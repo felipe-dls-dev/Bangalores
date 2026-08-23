@@ -129,6 +129,13 @@ function ArtPreview({image,name,text,stats,className,imgStyle,compareEquipment=f
  const bagFits=equipment?equipment.slot!=='bolsa'||equipmentBag.length<=(equipment.capacidade??8):false
  const equipLabel=!classAllowed?'Impossível equipar':!levelAllowed?`Requer nível ${equipment?equipmentRequiredLevel(equipment):1}`:!bagFits?`Reduza para ${equipment?.capacidade??8} itens`:(currentEquipment?'Substituir item equipado':'Equipar item')
  const src=assetUrl(image)
+ // O botão "Equipar item" comparava equipmentBag (refs de instância, com sufixo '@@...') com
+ // equipment.id (id genérico do catálogo) -- nunca eram iguais, então o botão nunca aparecia
+ // pra nenhuma peça real da mochila, e mesmo que aparecesse chamaria equip(equipment.id), que
+ // falha em silêncio (equip() procura o id exato dentro de equipmentBag). bagRef usa a
+ // instância explícita repassada por quem já sabe qual cópia é essa (ItemCard) e confirma que
+ // ela está mesmo na mochila (não equipada -- aí o botão não faz sentido).
+ const bagRef=instanceRef&&equipmentBag.includes(instanceRef)?instanceRef:undefined
  // A janela de detalhes mostrava os bônus POSSÍVEIS da Forja (todas as pedras/efeitos que a
  // peça aceita), não os que ela de fato tem -- o jogador via uma lista genérica igual pra
  // qualquer cópia do item, mesmo numa peça já forjada. Agora resolve a referência de instância
@@ -143,7 +150,7 @@ function ArtPreview({image,name,text,stats,className,imgStyle,compareEquipment=f
  return <span className={`art-preview-trigger ${className??''}`} onClick={event=>{event.stopPropagation();setOpen(true)}} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();setOpen(true)}}} role="button" tabIndex={0} aria-haspopup="dialog" aria-label={`Ampliar arte de ${name}`}>
   <img src={src} alt={name} style={imgStyle}/>
   {emblem&&<img className="slot-class-emblem" src={assetUrl(emblem)} alt={classOwnerLabel(owner)} aria-hidden="true"/>}
-  {open&&createPortal(<span className="art-preview-overlay" role="dialog" aria-modal="true" aria-label={`Arte completa de ${name}`} onClick={()=>setOpen(false)}><span className={`art-preview-card${equipment&&!ownSlot?' equipment-comparison-preview':''}`} onClick={event=>event.stopPropagation()}><img src={src} alt={name}/><span className="art-preview-copy"><button className="art-preview-close" onClick={()=>setOpen(false)} aria-label="Fechar visualização">×</button><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}{equipment&&resolvedRef&&<div className="art-preview-forge-bonuses"><small className="forge-bonus-title">Bônus aplicados nesta peça</small>{appliedBonusEntries.length?<ul>{appliedBonusEntries.map((label,i)=><li key={i}>{label}</li>)}</ul>:<p>Nenhum bônus da Forja aplicado ainda.</p>}</div>}{equipment&&!ownSlot&&<EquipmentComparison item={equipment} current={currentEquipment} heroId={heroId}/>} {equipment&&equipmentBag.includes(equipment.id)&&<button className="primary preview-equip-action" disabled={!classAllowed||!levelAllowed||!bagFits} title={!classAllowed?'Este item não pode ser usado por esta classe.':!levelAllowed?`Disponível no nível ${equipmentRequiredLevel(equipment)}`:!bagFits?'Há equipamentos demais para esta bolsa.':undefined} onClick={()=>{equip(equipment.id);setOpen(false)}}>{equipLabel}</button>}<em>Clique fora da janela ou pressione Esc para fechar</em></span></span></span>,document.body)}
+  {open&&createPortal(<span className="art-preview-overlay" role="dialog" aria-modal="true" aria-label={`Arte completa de ${name}`} onClick={()=>setOpen(false)}><span className={`art-preview-card${equipment&&!ownSlot?' equipment-comparison-preview':''}`} onClick={event=>event.stopPropagation()}><img src={src} alt={name}/><span className="art-preview-copy"><button className="art-preview-close" onClick={()=>setOpen(false)} aria-label="Fechar visualização">×</button><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}{equipment&&resolvedRef&&<div className="art-preview-forge-bonuses"><small className="forge-bonus-title">Bônus aplicados nesta peça</small>{appliedBonusEntries.length?<ul>{appliedBonusEntries.map((label,i)=><li key={i}>{label}</li>)}</ul>:<p>Nenhum bônus da Forja aplicado ainda.</p>}</div>}{equipment&&!ownSlot&&<EquipmentComparison item={equipment} current={currentEquipment} heroId={heroId}/>} {equipment&&bagRef&&<button className="primary preview-equip-action" disabled={!classAllowed||!levelAllowed||!bagFits} title={!classAllowed?'Este item não pode ser usado por esta classe.':!levelAllowed?`Disponível no nível ${equipmentRequiredLevel(equipment)}`:!bagFits?'Há equipamentos demais para esta bolsa.':undefined} onClick={()=>{equip(bagRef);setOpen(false)}}>{equipLabel}</button>}<em>Clique fora da janela ou pressione Esc para fechar</em></span></span></span>,document.body)}
  </span>
 }
 function cardRarity(card:any,kind?:string):Rarity{
@@ -1009,7 +1016,12 @@ function GuildScreen(){
  const reputation=g.guildClaimed.reduce((sum,id)=>sum+(guildMissionById(id)?.dificuldade??0),0)
  const rank=guildRankFor(reputation),rankIndex=GUILD_RANKS.findIndex(r=>r.id===rank.id),nextRank=GUILD_RANKS[rankIndex+1]
  const active=g.guildAccepted.filter(id=>!g.guildClaimed.includes(id)).length
- const missionProgress=(mission:(typeof GUILD_MISSIONS)[number])=>mission.tipo==='delivery'&&mission.itemId?((g.equipmentBag.includes(mission.itemId)||Object.values(g.equipped).includes(mission.itemId))?1:0):Math.min(mission.quantidade,g.guildProgress[mission.id]??0)
+ // Comparava equipmentBag/equipped (refs de instância, com sufixo '@@...') diretamente com
+ // mission.itemId (id genérico do catálogo) -- nunca eram iguais, então toda missão de entrega
+ // mostrava progresso 0 e o botão "Entregar item" nunca ficava disponível, mesmo com o item na
+ // mochila ou equipado (claimGuildMission, que já usa equipmentRefMatches, sempre funcionou —
+ // só a UI que nunca deixava chegar lá).
+ const missionProgress=(mission:(typeof GUILD_MISSIONS)[number])=>mission.tipo==='delivery'&&mission.itemId?((g.equipmentBag.some(ref=>equipmentBaseId(ref)===mission.itemId)||Object.values(g.equipped).some(ref=>ref&&equipmentBaseId(ref)===mission.itemId))?1:0):Math.min(mission.quantidade,g.guildProgress[mission.id]??0)
  const completed=GUILD_MISSIONS.filter(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&missionProgress(m)>=m.quantidade).length
  const bagFull=g.equipmentBag.length>=equipmentBagCapacity(g)
  return <div className="guild-page"><Panel className="guild-head"><button onClick={()=>g.setScreen('map')}><ArrowLeft/>Voltar ao mapa</button><div><span className="eyebrow">SALÃO DOS AVENTUREIROS</span><h1>Guilda de Havendown</h1><p>Aceite contratos, aumente sua reputação e conquiste acesso às missões mais valiosas.</p></div><Shield className="guild-crest"/></Panel>
