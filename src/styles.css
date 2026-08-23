@@ -383,6 +383,8 @@ body:has(.combat-v033){overflow:hidden}
 .art-preview-forge-bonuses{padding:10px 0;border-top:1px dashed #55391d;border-bottom:1px dashed #55391d;display:flex;flex-direction:column;gap:6px}
 .art-preview-forge-bonuses .forge-bonus-title{color:#d7a64d;font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
 .art-preview-forge-bonuses p{margin:0;color:#c8b9a3;font-size:.78rem;line-height:1.45}
+.art-preview-forge-bonuses ul{margin:0;padding-left:1.1em;color:#c8b9a3;font-size:.78rem;line-height:1.5;display:flex;flex-direction:column;gap:2px}
+.art-preview-forge-bonuses li{color:#e7d8b8}
 .art-preview-close{position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;padding:0;border-radius:50%;font-size:1.45rem;line-height:1;background:rgba(12,8,6,.88)}
 .art-preview-copy{position:relative}
 @keyframes artPreviewIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
