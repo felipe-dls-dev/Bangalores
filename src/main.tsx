@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, KeyRound, Plane, CheckCircle2, XCircle } from 'lucide-react'
-import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, type AttackAnimType, type Summon, type SummonType } from './store/game'
+import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, storyModifiers, specializationBonuses, type AttackAnimType, type Summon, type SummonType } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment } from './types'
 import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
@@ -433,7 +433,7 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
  // que o jogador forje e guarde peças de fim de jogo muito antes de poder sequer usá-las.
  const required=forgeRecipeLevel(recipe.id),requiredPlayerLevel=equipmentRequiredLevel(item),playerLevel=levelInfo(g.xp).lvl
  const masteryLocked=mastery.level<required,playerLocked=playerLevel<requiredPlayerLevel,locked=masteryLocked||playerLocked
- const chance=Math.round(forgeSuccessChance(recipe.id,g.forgeXp??0)*100)
+ const chance=Math.round(forgeSuccessChance(recipe.id,g.forgeXp??0,storyModifiers(g).forge)*100)
  // Forjar com bônus não fabrica uma peça nova: refina uma cópia SEM BÔNUS que o jogador já
  // tem (na mochila ou equipada). Sem essa cópia base, a forja bloqueia o bônus escolhido —
  // por isso não consome espaço da mochila (a peça que sai já existia).
@@ -718,9 +718,9 @@ function CombatScreen(){
   // rolagem (buffs, cura, provocar).
   if(g.heroId==='conjurador')return
   if(g.heroId==='monge'){
-   const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus
+   const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,spec=specializationBonuses(g),bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus
    useGame.setState({heroSkillUses:heroSkillUses+1})
-   void coop.coopAttack(attackValue(g)+2+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Golpe Flamejante',undefined,false,0,critDamageBonusPct,'fogo',true)
+   void coop.coopAttack(attackValue(g)+2+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Golpe Flamejante',undefined,false,0,critDamageBonusPct,'fogo',true,spec.elemental)
    if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})
    return
   }
@@ -742,9 +742,9 @@ function CombatScreen(){
   // igual ao solo (que roda o mesmo playerAttack usado pelo botão Atacar, com +3 de bônus)
   // em vez de um número fixo garantido.
   useGame.setState({itemSkillUsed:true})
-  const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0
-  const bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus
-  void coop.coopAttack(attackValue(g)+effect.value+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,item.nome,undefined,false,critChancePct,critDamageBonusPct,effect.type==='element'?(effect.element??heroWeaponElement(g)):heroWeaponElement(g),effect.type==='element')
+  const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),spec=specializationBonuses(g),critChancePct=(hasCraftedEffect(g,'critico_forjado')?.05:0)+spec.crit,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0
+  const bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus
+  void coop.coopAttack(attackValue(g)+effect.value+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,item.nome,undefined,false,critChancePct,critDamageBonusPct,effect.type==='element'?(effect.element??heroWeaponElement(g)):heroWeaponElement(g),effect.type==='element',spec.elemental)
   if(g.heroRollBonus||g.firstStrikeBonus)useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
  // Postura defensiva, Fervor de Combate e alvo em capangas existiam só no modo solo —
  // aqui espelham o mesmo botão/ação, mas via coopAttack/coopDefend (estado compartilhado).
@@ -761,7 +761,7 @@ function CombatScreen(){
  const statusKindsOf=(status:any)=>(['bleed','burn','poison','frozen','grabbed','blinded','stunned'] as const).filter(k=>status?.[k])
  const heroStatusKinds=isCoop?statusKindsOf(battle.playerBuffs?.[coop.userId]):statusKindsOf(g.heroStatus)
  const enemyStatusKinds=isCoop?statusKindsOf(battle.enemyStatus):statusKindsOf(g.enemyStatus)
- const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),critChancePct=hasCraftedEffect(g,'critico_forjado')?.05:0,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=targetMinionId?0:(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct,heroWeaponElement(g));if(g.heroRollBonus||(!targetMinionId&&g.firstStrikeBonus))useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
+ const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),spec=specializationBonuses(g),critChancePct=(hasCraftedEffect(g,'critico_forjado')?.05:0)+spec.crit,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=targetMinionId?0:(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct,heroWeaponElement(g),false,spec.elemental);if(g.heroRollBonus||(!targetMinionId&&g.firstStrikeBonus))useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
  const performAttack=(targetMinionId?:string)=>{if(isCoop)performCoopAttack(targetMinionId);else g.attack(targetMinionId)}
  const performDefend=()=>{if(isCoop)void coop.coopDefend();else g.defend()}
  // g.flee() (game.ts) só entende o turno solo (s.playerTurn), então no coop nunca fazia
@@ -789,7 +789,7 @@ function CombatScreen(){
   else{useGame.setState({inventory:inv,pendingAttackBonus:g.pendingAttackBonus+Math.max(1,value),activePotionIds});description=`+${value} de ataque no próximo ataque`}
   void coop.coopAbility(it.nome,0,description)
  }
- const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g));if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
+ const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,spec=specializationBonuses(g),bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g),false,spec.elemental);if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
  const attacker=g.combatRoll?.attacker
  // No coop, o dano de "hero" pode ter vindo de qualquer jogador do grupo — sem isso, a
  // animação de ataque sempre usava a arma equipada do jogador local, mesmo quando quem
