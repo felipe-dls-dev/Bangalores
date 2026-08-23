@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -650,5 +650,55 @@ describe('orçamento de pontos dos inimigos', () => {
 
     expect(checked).toBe(100)
     expect(coveredSubregions.size).toBe(Math.min(100, SUBREGIONS.length))
+  })
+})
+
+describe('bugs corrigidos no sistema de forja', () => {
+  it('stats() aplica aprimoramentos e gemas pela instância equipada, não pelo id genérico do catálogo', () => {
+    useGame.getState().newGame('guerreiro')
+    const weaponRef = 'lamina_vento@@upgrade-test'
+    useGame.setState({ equipped: { ...useGame.getState().equipped, mao_direita: weaponRef } } as any)
+    const baseline = attackValue(useGame.getState())
+    useGame.setState({ equipmentUpgrades: { [weaponRef]: 2 }, equipmentGems: { [weaponRef]: ['rubi_forja'] } } as any)
+    const boosted = attackValue(useGame.getState())
+    // +2 do aprimoramento (a arma tem ataque>0) e +2 da gema (Rubi da Forja) -- antes da correção,
+    // stats() procurava essas duas coisas pelo id genérico ('lamina_vento'), uma chave que
+    // upgradeEquipment/socketGem nunca escrevem (eles usam a referência da instância equipada),
+    // então nenhum dos dois bônus chegava a valer em combate.
+    expect(boosted - baseline).toBe(4)
+  })
+
+  it('craftEquipment (refino de atributo) não sobrescreve atonização elemental nem substitui pedras já socketadas', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    try {
+      useGame.getState().newGame('guerreiro')
+      const weaponRef = 'lamina_cinzas@@refine-test'
+      useGame.setState({
+        xp: 50_000_000,
+        forgeXp: 100000,
+        equipped: { ...useGame.getState().equipped, mao_direita: weaponRef },
+        equipmentBag: [],
+        materials: { fragmento_fisico: 50, essencia_magica: 50, rubi_forja: 10 },
+        equipmentElements: { [weaponRef]: 'gelo' },
+        equipmentGems: { [weaponRef]: ['safira_guardia'] },
+        forgedGemLocked: {},
+        craftedEffects: {},
+      } as any)
+      useGame.getState().craftEquipment('receita_lamina_cinzas', 'ataque')
+      const s = useGame.getState()
+      // Refinar um bônus de atributo não deveria mexer em elemento/resistência (isso só nasce
+      // de fabricar uma peça nova do zero) nem substituir a gema já instalada manualmente --
+      // antes da correção, ambos eram sobrescritos incondicionalmente.
+      expect(s.equipmentElements[weaponRef]).toBe('gelo')
+      expect(s.equipmentGems[weaponRef]).toEqual(['safira_guardia', 'rubi_forja'])
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
+  it('forgeLevelInfo trava o progresso em 100% ao atingir o nível máximo', () => {
+    const maxed = forgeLevelInfo(999999)
+    expect(maxed.max).toBe(true)
+    expect(maxed.progress).toBeLessThanOrEqual(maxed.next)
   })
 })
