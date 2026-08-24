@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances } from './game'
+import { REGION_MATERIALS } from '../data/expansion'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -921,5 +922,63 @@ describe('aprimoramento com risco de falha e regressão', () => {
     useGame.getState().upgradeEquipment(weaponRef)
     expect(useGame.getState().equipmentUpgrades[weaponRef]).toBe(3)
     expect(useGame.getState().gold).toBe(before.gold)
+  })
+})
+
+// Cobre attuneEquipment (game.ts) por completo: a tela da Forja só tinha botões pra sintonizar a
+// arma (mao_direita), mas a função sempre soube dar resistência a qualquer outra peça equipada --
+// essa segunda metade nunca tinha um teste, nem um jeito de usar pela interface, até a UI ganhar
+// os botões de resistência para armadura/acessórios equipados.
+describe('serviço de sintonia elemental', () => {
+  it('sintoniza o elemento de dano de uma arma equipada (mão direita)', () => {
+    useGame.getState().newGame('guerreiro')
+    const weaponRef = useGame.getState().equipped.mao_direita!
+    const material = Object.values(REGION_MATERIALS).find(m => m.elemento === 'fogo')!
+    useGame.setState({ gold: 200, materials: { [material.id]: 5 } } as any)
+
+    useGame.getState().attuneEquipment(weaponRef, 'fogo')
+
+    const state = useGame.getState()
+    expect(state.equipmentElements[weaponRef]).toBe('fogo')
+    expect(state.equipmentResistances[weaponRef]).toBeUndefined()
+    expect(state.gold).toBe(120)
+    expect(state.materials[material.id]).toBe(2)
+    expect(heroWeaponElement(state)).toBe('fogo')
+  })
+
+  it('concede resistência elemental a uma peça equipada que não seja a arma', () => {
+    useGame.getState().newGame('guerreiro')
+    const equipped = useGame.getState().equipped
+    const [, armorRef] = (Object.entries(equipped) as [string, string | undefined][]).find(([slot, id]) => slot !== 'mao_direita' && slot !== 'bolsa' && Boolean(id))!
+    const material = Object.values(REGION_MATERIALS).find(m => m.elemento === 'gelo')!
+    useGame.setState({ gold: 200, materials: { [material.id]: 5 } } as any)
+
+    useGame.getState().attuneEquipment(armorRef!, 'gelo')
+
+    const state = useGame.getState()
+    expect(state.equipmentResistances[armorRef!]).toBe('gelo')
+    expect(state.equipmentElements[armorRef!]).toBeUndefined()
+    expect(state.gold).toBe(120)
+    expect(state.materials[material.id]).toBe(2)
+    expect(heroResistances(state)).toContain('gelo')
+  })
+
+  it('bloqueia sem ouro/materiais suficientes ou se a peça não estiver equipada', () => {
+    useGame.getState().newGame('guerreiro')
+    const weaponRef = useGame.getState().equipped.mao_direita!
+    const material = Object.values(REGION_MATERIALS).find(m => m.elemento === 'fogo')!
+
+    useGame.setState({ gold: 10, materials: { [material.id]: 5 } } as any)
+    useGame.getState().attuneEquipment(weaponRef, 'fogo')
+    expect(useGame.getState().equipmentElements[weaponRef]).toBeUndefined()
+
+    useGame.setState({ gold: 200, materials: { [material.id]: 1 } } as any)
+    useGame.getState().attuneEquipment(weaponRef, 'fogo')
+    expect(useGame.getState().equipmentElements[weaponRef]).toBeUndefined()
+
+    useGame.setState({ gold: 200, materials: { [material.id]: 5 } } as any)
+    useGame.getState().attuneEquipment('nao_equipado@@x', 'fogo')
+    expect(useGame.getState().equipmentElements['nao_equipado@@x']).toBeUndefined()
+    expect(useGame.getState().gold).toBe(200)
   })
 })

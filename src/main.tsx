@@ -584,6 +584,11 @@ function MaterialSourceDialog({material,onClose}:{material:ForgeMaterialEntry;on
 // padrão pra não empurrar o catálogo de receitas pra baixo em quem já sabe as regras.
 function ForgeTutorialPanel(){
  const [open,setOpen]=React.useState(false),g=useGame(),weapon=equipmentByRef(g.equipped.mao_direita)
+ // attuneEquipment (game.ts) já sabia dar resistência elemental a qualquer peça que não seja a
+ // arma (ramifica por item.slot!=='mao_direita'), mas só a arma tinha botões nesta tela -- a
+ // metade "resistência" da função ficava impossível de usar. Bolsa fica de fora (não é peça de
+ // combate, não faz sentido "resistir" a um elemento).
+ const armorEntries=(Object.entries(g.equipped) as [Slot,string|undefined][]).filter(([slot,id])=>slot!=='mao_direita'&&slot!=='bolsa'&&id).map(([,id])=>({id:id!,item:equipmentByRef(id!)})).filter((entry):entry is{id:string;item:(typeof EQUIPMENT)[number]}=>Boolean(entry.item))
  return <section className="panel forge-tutorial">
   <button type="button" className="forge-tutorial-toggle" aria-expanded={open} onClick={()=>setOpen(o=>!o)}>
    <span><BookOpen size={16}/>Como funciona a Forja</span>
@@ -597,7 +602,12 @@ function ForgeTutorialPanel(){
    <div className="mechanics-card"><small>5. SUCESSO E FALHA</small><p>Toda tentativa concede XP de Forja e conta pro seu nível de Forjador, ganhe ou perca. Em sucesso, a peça (ou o bônus) sai pronta. Em falha, metade dos materiais e das peças sacrificadas se perde e nada é produzido.</p></div>
    <div className="mechanics-card"><small>6. DEPOIS DE FORJAR</small><p>Na Oficina de desmontagem você recicla itens indesejados em materiais e instala pedras extras nos encaixes livres dos equipamentos ativos — pedras removidas são destruídas, não devolvidas. Aprimoramentos (+1 a +3) custam ouro e materiais, concedem XP de Forja como qualquer tentativa, e reforçam os atributos base do item — mas não são garantidos: +1 tem boa chance de sucesso, +2 é raro e +3 é uma aposta; falhar em +2 ou +3 arrisca regredir o nível da peça, e a falha ainda consome metade dos materiais.</p></div>
   </div>}
-  {weapon&&<div className="attunement-service"><strong>Serviço de sintonia elemental</strong><small>Altere o elemento de {weapon.nome}: 80 ouro e 3 materiais da afinidade.</small><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>g.attuneEquipment(weapon.id,element)}>{element}</button>})}</div></div>}
+  {(weapon||armorEntries.length>0)&&<div className="attunement-service">
+   <strong>Serviço de sintonia elemental</strong>
+   <small>Sintonize o dano da sua arma ou conceda resistência elemental às demais peças equipadas: 80 ouro e 3 materiais da afinidade, por peça.</small>
+   {weapon&&<div className="attunement-item"><span>{weapon.nome}<em>Dano da arma — atual: {heroWeaponElement(g)}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={heroWeaponElement(g)===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>g.attuneEquipment(weapon.id,element)}>{element}</button>})}</div></div>}
+   {armorEntries.map(({id,item})=><div className="attunement-item" key={id}><span>{item.nome}<em>Resistência — atual: {g.equipmentResistances[id]??'nenhuma'}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={g.equipmentResistances[id]===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>g.attuneEquipment(id,element)}>{element}</button>})}</div></div>)}
+  </div>}
  </section>
 }
 function ForgeScreen(){const g=useGame()
