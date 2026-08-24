@@ -1148,16 +1148,20 @@ function GuildHerald(){
  const reputation=g.guildClaimed.reduce((sum,id)=>sum+(guildMissionById(id)?.dificuldade??0),0)
  const rank=guildRankFor(reputation),rankIndex=GUILD_RANKS.findIndex(r=>r.id===rank.id)
  const active=g.guildAccepted.filter(id=>!g.guildClaimed.includes(id)).length
- const ready=sortGuildMissionsByRank(missions.filter(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&guildMissionProgress(g,m)>=m.quantidade))
- const suggestions=ready.length?ready:sortGuildMissionsByRank(missions.filter(m=>!g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&rankIndex>=GUILD_RANKS.findIndex(r=>r.id===m.rank))).slice(0,3)
- const line=guildLeaderLine(g,active,ready.length,reputation)
+ // "Entregável" cobre dois casos: contratos já aceitos e completos (prontos pra resgatar) e
+ // contratos de entrega/coleta ainda não aceitos para os quais o jogador já tem o item ou
+ // material em mãos -- aceitar e entregar nesse segundo caso é imediato (dois cliques, sem
+ // precisar caçar nada), então vale avisar mesmo antes do jogador clicar em "Aceitar".
+ const deliverable=sortGuildMissionsByRank(missions.filter(m=>!g.guildClaimed.includes(m.id)&&rankIndex>=GUILD_RANKS.findIndex(r=>r.id===m.rank)&&guildMissionProgress(g,m)>=m.quantidade))
+ const suggestions=deliverable.length?deliverable:sortGuildMissionsByRank(missions.filter(m=>!g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&rankIndex>=GUILD_RANKS.findIndex(r=>r.id===m.rank))).slice(0,3)
+ const line=guildLeaderLine(g,active,deliverable.length,reputation)
  const openGuild=()=>{g.setScreen('guild');setOpen(false)}
  return <div className="guild-herald" ref={ref}>
-  <button className={`guild-herald-toggle${ready.length?' alert':''}`} aria-label="Recado da Guilda" aria-haspopup="true" aria-expanded={open} title="Ver o que a Guilda tem a dizer" onClick={()=>setOpen(o=>!o)}><Bell size={18}/>{(ready.length||suggestions.length)>0&&<span className="guild-herald-badge">{ready.length||suggestions.length}</span>}</button>
+  <button className={`guild-herald-toggle${deliverable.length?' alert':''}`} aria-label="Recado da Guilda" aria-haspopup="true" aria-expanded={open} title="Ver o que a Guilda tem a dizer" onClick={()=>setOpen(o=>!o)}><Bell size={18}/>{(deliverable.length||suggestions.length)>0&&<span className="guild-herald-badge">{deliverable.length||suggestions.length}</span>}</button>
   {open&&<div className="guild-herald-panel" role="dialog" aria-label="Recado da Guilda">
    <div className="guild-herald-head"><span className="guild-leader-portrait"><UserRound/></span><div><strong>{GUILD_LEADER.nome}</strong><small>{GUILD_LEADER.titulo}</small></div></div>
    <p className="guild-herald-line"><Quote size={12}/>{line}</p>
-   {suggestions.length?<div className="guild-herald-list">{suggestions.map(m=><button key={m.id} className="guild-herald-item" onClick={openGuild}><span className="guild-herald-item-head"><strong>{m.nome}</strong><small>{ready.includes(m)?'Pronta para resgate':'Disponível para aceitar'}</small></span><p>{m.descricao}</p></button>)}</div>:<p className="guild-herald-empty">Nenhum contrato pedindo atenção agora. Volte quando tiver concluído algo.</p>}
+   {suggestions.length?<div className="guild-herald-list">{suggestions.map(m=><button key={m.id} className="guild-herald-item" onClick={openGuild}><span className="guild-herald-item-head"><strong>{m.nome}</strong><small>{deliverable.includes(m)?(g.guildAccepted.includes(m.id)?'Pronta para resgate':'Você já tem o pedido'):'Disponível para aceitar'}</small></span><p>{m.descricao}</p></button>)}</div>:<p className="guild-herald-empty">Nenhum contrato pedindo atenção agora. Volte quando tiver concluído algo.</p>}
    <button className="guild-herald-cta" onClick={openGuild}>Abrir quadro de contratos<ArrowRight size={14}/></button>
   </div>}
  </div>
