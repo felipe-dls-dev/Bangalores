@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown } from './game'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -739,5 +739,139 @@ describe('bugs corrigidos no sistema de forja', () => {
     const base = monsterDropChance(enemy)
     expect(monsterDropChance(enemy, 0.15)).toBeCloseTo(Math.min(1, base + 0.15), 10)
     expect(monsterDropChance({ ...enemy, boss: true }, 0.5)).toBe(1) // já era 100%; nunca passa de 1
+  })
+
+  it('equipmentInstanceBreakdown separa base/aprimoramento/pedra e stats() soma exatamente o total dela', () => {
+    useGame.getState().newGame('guerreiro')
+    const weaponRef = 'lamina_vento@@breakdown-test'
+    useGame.setState({ equipped: { ...useGame.getState().equipped, mao_direita: weaponRef }, equipmentUpgrades: { [weaponRef]: 2 }, equipmentGems: { [weaponRef]: ['rubi_forja'] } } as any)
+    const s = useGame.getState()
+    const item = equipmentByRef(weaponRef)!
+    const b = equipmentInstanceBreakdown(item, weaponRef, s as any)
+    // lamina_vento é incomum com ataque próprio: aprimoramento +2 soma +2 de ataque, a gema
+    // Rubi da Forja soma +2 -- a tela de Equipamentos precisa mostrar essas duas fontes
+    // separadas do "normal" (base), não só a soma total.
+    expect(b.upgrade.atk).toBe(2)
+    expect(b.gems.atk).toBe(2)
+    expect(b.total.atk).toBe(b.base.atk + b.upgrade.atk + b.gems.atk)
+    // O mesmo breakdown por instância é o que stats()/attackValue() usam por baixo -- não pode
+    // haver diferença entre o que a peça soma sozinha e o que ela credita no total do herói.
+    const baseline = attackValue({ ...s, equipmentUpgrades: {}, equipmentGems: {} } as any)
+    expect(attackValue(s) - baseline).toBe(b.upgrade.atk + b.gems.atk)
+  })
+})
+
+describe('aprimoramento com risco de falha e regressão', () => {
+  const equipTestWeapon = () => {
+    useGame.getState().newGame('guerreiro')
+    const weaponRef = 'lamina_vento@@upgrade-risk-test'
+    useGame.setState({
+      equipped: { ...useGame.getState().equipped, mao_direita: weaponRef },
+      gold: 999_999,
+      materials: { fragmento_fisico: 999, essencia_magica: 999 },
+    } as any)
+    return weaponRef
+  }
+
+  it('equipmentUpgradeMaterialCost só exige essência mágica a partir do nível-alvo +2', () => {
+    const item = equipmentByRef('lamina_vento')! // incomum (tier 1)
+    expect(equipmentUpgradeMaterialCost(item, 1)).toEqual({ fragmento_fisico: 5 })
+    expect(equipmentUpgradeMaterialCost(item, 2)).toEqual({ fragmento_fisico: 7, essencia_magica: 3 })
+    expect(equipmentUpgradeMaterialCost(item, 3)).toEqual({ fragmento_fisico: 9, essencia_magica: 4 })
+  })
+
+  it('chance de sucesso cai e chance de regressão sobe a cada nível-alvo', () => {
+    expect(UPGRADE_SUCCESS_CHANCE[1]).toBeGreaterThan(UPGRADE_SUCCESS_CHANCE[2])
+    expect(UPGRADE_SUCCESS_CHANCE[2]).toBeGreaterThan(UPGRADE_SUCCESS_CHANCE[3])
+    expect(UPGRADE_REGRESS_CHANCE[1]).toBe(0) // nível 0 não tem pra onde regredir
+    expect(UPGRADE_REGRESS_CHANCE[2]).toBeLessThan(UPGRADE_REGRESS_CHANCE[3])
+  })
+
+  it('sucesso: avança um nível, consome ouro e o custo cheio de materiais, e concede XP de Forja', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    try {
+      const weaponRef = equipTestWeapon()
+      const before = useGame.getState()
+      useGame.getState().upgradeEquipment(weaponRef)
+      const after = useGame.getState()
+      expect(after.equipmentUpgrades[weaponRef]).toBe(1)
+      expect(after.materials.fragmento_fisico).toBe(before.materials.fragmento_fisico - 5)
+      expect(after.gold).toBeLessThan(before.gold)
+      expect(after.forgeAttempts).toBe((before.forgeAttempts ?? 0) + 1)
+      expect(after.forgeSuccesses).toBe((before.forgeSuccesses ?? 0) + 1)
+      expect(after.forgeXp ?? 0).toBeGreaterThan(before.forgeXp ?? 0)
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
+  it('falha em +1: nível permanece 0 (nada pra regredir), perde metade dos materiais, mas ainda conta a tentativa', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.999)
+    try {
+      const weaponRef = equipTestWeapon()
+      const before = useGame.getState()
+      useGame.getState().upgradeEquipment(weaponRef)
+      const after = useGame.getState()
+      expect(after.equipmentUpgrades[weaponRef] ?? 0).toBe(0)
+      expect(after.materials.fragmento_fisico).toBe(before.materials.fragmento_fisico - 3) // ceil(5/2)
+      expect(after.forgeAttempts).toBe((before.forgeAttempts ?? 0) + 1)
+      expect(after.forgeSuccesses).toBe(before.forgeSuccesses ?? 0)
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
+  it('falha em +2 pode regredir o nível para +1 quando a rolagem de regressão também "acerta"', () => {
+    // newGame/createEquipmentInstance também consomem Math.random() (sufixo da referência de
+    // instância) -- o spy da sequência só pode entrar em cena DEPOIS que a preparação do teste
+    // já rolou os próprios randoms dela, senão a sequência é consumida na ordem errada.
+    const weaponRef = equipTestWeapon()
+    useGame.setState({ equipmentUpgrades: { [weaponRef]: 1 } })
+    const sequence = [0.999, 0.001] // falha o sucesso, depois "acerta" a regressão
+    let i = 0
+    const randomSpy = vi.spyOn(Math, 'random').mockImplementation(() => sequence[i++] ?? 0.5)
+    try {
+      useGame.getState().upgradeEquipment(weaponRef)
+      expect(useGame.getState().equipmentUpgrades[weaponRef]).toBe(0)
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
+  it('bloqueia a tentativa (nenhuma mudança de estado) se faltar ouro ou material', () => {
+    const weaponRef = equipTestWeapon()
+    useGame.setState({ materials: {} })
+    const before = useGame.getState()
+    useGame.getState().upgradeEquipment(weaponRef)
+    const after = useGame.getState()
+    expect(after.equipmentUpgrades[weaponRef] ?? 0).toBe(0)
+    expect(after.gold).toBe(before.gold)
+    expect(after.forgeAttempts ?? 0).toBe(before.forgeAttempts ?? 0)
+  })
+
+  it('avisa o resultado pelo mesmo banner da Forja (forgeResult), já que a tela não exibe explorationNote', () => {
+    // Sem isso, sucesso/falha/regressão do aprimoramento mudavam o estado em silêncio -- a
+    // tela da Forja não renderiza explorationNote em lugar nenhum, então o jogador só saberia
+    // pelos números mudando depois, sem nenhum aviso da regressão.
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    try {
+      const weaponRef = equipTestWeapon()
+      useGame.getState().upgradeEquipment(weaponRef)
+      const result = useGame.getState().forgeResult
+      expect(result?.kind).toBe('upgrade')
+      expect(result?.success).toBe(true)
+      expect(result?.message).toContain('aprimorado para +1')
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
+  it('não faz nada além do nível +3 (máximo)', () => {
+    const weaponRef = equipTestWeapon()
+    useGame.setState({ equipmentUpgrades: { [weaponRef]: 3 } })
+    const before = useGame.getState()
+    useGame.getState().upgradeEquipment(weaponRef)
+    expect(useGame.getState().equipmentUpgrades[weaponRef]).toBe(3)
+    expect(useGame.getState().gold).toBe(before.gold)
   })
 })
