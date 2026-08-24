@@ -781,7 +781,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    // como qualquer outra, e o aviso no topo da tela ("toda tentativa concede XP de Forja") vale
    // pra ela também, não só pra fabricação/refino.
    const tier=RARITY_TIER[item.raridade??'comum'],xpGain=success?12+tier*4+targetLevel*6:6+tier*2+targetLevel*2
-   // Reaproveita o mesmo banner animado (ForgeResultBanner) já usado por craftEquipment -- sem
+   // Reaproveita a mesma janela modal (ForgeResultDialog) já usada por craftEquipment -- sem
    // isso, sucesso/falha/regressão do aprimoramento só mudavam o estado em silêncio: a tela da
    // Forja não exibe explorationNote em lugar nenhum, então o jogador não teria nenhum aviso
    // (principalmente da regressão, que é uma surpresa desagradável e precisa ficar bem visível).
@@ -919,7 +919,10 @@ export function buildSummon(tipo:SummonType,level:number):Summon{
  return{tipo,nome:SUMMON_NAMES[tipo],hp:stats.hp,maxHp:stats.hp,ataque:stats.atk,defesa:stats.def}
 }
 const COMBAT_ROLL_DISPLAY_MS=2500
-const FORGE_RESULT_DISPLAY_MS=3200
+// Agora que o resultado aparece numa janela modal (em vez de um banner que só piscava no topo
+// da página), vale dar mais tempo de leitura antes do auto-dismiss -- o jogador ainda pode
+// fechar na hora clicando em "Entendi" ou fora da janela.
+const FORGE_RESULT_DISPLAY_MS=4500
 export function attackEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Ataque desajeitado':roll<=4?'Ataque normal':roll===5?'Ataque forte':'Ataque crítico'}
 export function defenseEffect(roll:number){return roll===1?'Falha crítica':roll===2?'Defesa fraca':roll<=4?'Defesa normal':roll===5?'Defesa forte':'Defesa perfeita'}
 const HERO_ATTACK_FLAVOR:Record<string,((arma:string)=>string)[]>={
