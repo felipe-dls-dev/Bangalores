@@ -1153,7 +1153,7 @@ function GuildHerald(){
  const line=guildLeaderLine(g,active,ready.length,reputation)
  const openGuild=()=>{g.setScreen('guild');setOpen(false)}
  return <div className="guild-herald" ref={ref}>
-  <button className={`guild-herald-toggle${ready.length?' alert':''}`} aria-label="Recado da Guilda" aria-haspopup="true" aria-expanded={open} title="Ver o que a Guilda tem a dizer" onClick={()=>setOpen(o=>!o)}><Bell size={18}/>{ready.length>0&&<span className="guild-herald-badge">{ready.length}</span>}</button>
+  <button className={`guild-herald-toggle${ready.length?' alert':''}`} aria-label="Recado da Guilda" aria-haspopup="true" aria-expanded={open} title="Ver o que a Guilda tem a dizer" onClick={()=>setOpen(o=>!o)}><Bell size={18}/>{(ready.length||suggestions.length)>0&&<span className="guild-herald-badge">{ready.length||suggestions.length}</span>}</button>
   {open&&<div className="guild-herald-panel" role="dialog" aria-label="Recado da Guilda">
    <div className="guild-herald-head"><span className="guild-leader-portrait"><UserRound/></span><div><strong>{GUILD_LEADER.nome}</strong><small>{GUILD_LEADER.titulo}</small></div></div>
    <p className="guild-herald-line"><Quote size={12}/>{line}</p>
