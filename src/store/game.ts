@@ -400,6 +400,17 @@ export function dismantlePreview(e:Equipment){const tier=Math.max(1,Math.ceil(eq
 // mítico de nível 100. Agora escala com o nível mínimo do item e sua raridade (RARITY_TIER),
 // então equipar algo realmente poderoso custa proporcionalmente mais pra aprimorar.
 export function equipmentUpgradeCost(e:Equipment,currentLevel:number){const itemLevel=equipmentRequiredLevel(e),rarityMult=1+RARITY_TIER[e.raridade??'comum']*.35;return Math.round((10+itemLevel*2)*(currentLevel+1)*rarityMult)}
+// Aprimorar deixou de ser garantido: cada nível-alvo tem sua própria chance de sucesso (+1 é
+// bem provável, +2 já é raro, +3 é uma aposta de fim de jogo) e também custa materiais, não só
+// ouro. Falhar em +2/+3 arrisca REGREDIR o nível atual (não só "não avançar") -- risco cresce
+// junto com a chance de sucesso cair, reforçando que aprimorar até +3 é caro E arriscado.
+export const UPGRADE_SUCCESS_CHANCE:Record<1|2|3,number>={1:.85,2:.55,3:.3}
+export const UPGRADE_REGRESS_CHANCE:Record<1|2|3,number>={1:0,2:.25,3:.4}
+export function equipmentUpgradeMaterialCost(e:Equipment,targetLevel:1|2|3):Record<string,number>{
+ const tier=RARITY_TIER[e.raridade??'comum'],cost:Record<string,number>={fragmento_fisico:2+tier+targetLevel*2}
+ if(targetLevel>=2)cost.essencia_magica=targetLevel+tier
+ return cost
+}
 // Bônus de pedras (gemas) instaladas numa peça específica -- separado de stats() porque também
 // é usado pra exibir o valor "de fato equipado" nas telas de Equipamento/Mochila, não só no
 // cálculo de combate.
@@ -754,7 +765,16 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    })
    setTimeout(()=>{if((get() as GameState).forgeResult?.id===resultId)set({forgeResult:undefined})},FORGE_RESULT_DISPLAY_MS)
   }
-  ,upgradeEquipment:(id:string)=>{const s=get(),item=eqById(id),level=s.equipmentUpgrades[id]??0;if(!item||level>=3)return;const cost=equipmentUpgradeCost(item,level);if(s.gold<cost)return;set({gold:s.gold-cost,equipmentUpgrades:{...s.equipmentUpgrades,[id]:level+1},explorationNote:`${item.nome} aprimorado para +${level+1}.`})}
+  ,upgradeEquipment:(id:string)=>{const s=get(),item=eqById(id),level=s.equipmentUpgrades[id]??0;if(!item||level>=3)return
+   const targetLevel=(level+1) as 1|2|3,goldCost=equipmentUpgradeCost(item,level),materialCost=equipmentUpgradeMaterialCost(item,targetLevel)
+   if(s.gold<goldCost||Object.entries(materialCost).some(([mid,qty])=>(s.materials[mid]??0)<qty))return
+   const success=Math.random()<UPGRADE_SUCCESS_CHANCE[targetLevel]
+   const materials={...s.materials}
+   for(const [mid,qty] of Object.entries(materialCost))materials[mid]=(materials[mid]??0)-(success?qty:Math.max(1,Math.ceil(qty/2)))
+   const regressed=!success&&level>0&&Math.random()<UPGRADE_REGRESS_CHANCE[targetLevel]
+   const newLevel=success?targetLevel:regressed?level-1:level
+   const message=success?`${item.nome} aprimorado para +${targetLevel}.`:regressed?`O aprimoramento de ${item.nome} falhou e o item regrediu para +${newLevel}! Metade dos materiais foi perdida.`:`O aprimoramento de ${item.nome} falhou, mas o nível +${level} foi mantido. Metade dos materiais foi perdida.`
+   set({gold:s.gold-goldCost,materials,equipmentUpgrades:{...s.equipmentUpgrades,[id]:newLevel},explorationNote:message})}
   ,dismantleEquipment:(id:string)=>{const s=get(),index=s.equipmentBag.indexOf(id),item=eqById(id);if(index<0||!item)return;const yieldInfo=dismantlePreview(item),materials={...s.materials,fragmento_fisico:(s.materials.fragmento_fisico??0)+yieldInfo.physical,essencia_magica:(s.materials.essencia_magica??0)+yieldInfo.magical},installed=s.equipmentGems[id]??[];for(const gem of installed)materials[gem]=(materials[gem]??0)+1;let gemName='';if(Math.random()<yieldInfo.gemChance){const gem=FORGE_GEMS[Math.floor(Math.random()*FORGE_GEMS.length)];materials[gem.id]=(materials[gem.id]??0)+1;gemName=` • Pedra encontrada: ${gem.nome}`};const bag=[...s.equipmentBag];bag.splice(index,1);const equipmentUpgrades={...s.equipmentUpgrades},equipmentGems={...s.equipmentGems},forgedGemLocked={...s.forgedGemLocked},craftedEffects={...s.craftedEffects},equipmentElements={...s.equipmentElements},equipmentResistances={...s.equipmentResistances};delete equipmentUpgrades[id];delete equipmentGems[id];delete forgedGemLocked[id];delete craftedEffects[id];delete equipmentElements[id];delete equipmentResistances[id];set({equipmentBag:bag,equipmentUpgrades,equipmentGems,forgedGemLocked,craftedEffects,equipmentElements,equipmentResistances,materials,explorationNote:`${item.nome} desmontado: +${yieldInfo.physical} fragmentos físicos, +${yieldInfo.magical} essências mágicas${gemName}.`})}
   ,socketGem:(equipmentId:string,gemId:string)=>{const s=get(),item=eqById(equipmentId),installed=s.equipmentGems[equipmentId]??[];if(!item||!Object.values(s.equipped).includes(equipmentId)||installed.length>=equipmentSocketCount(item)||(s.materials[gemId]??0)<=0||!FORGE_GEMS.some(g=>g.id===gemId))return;set({materials:{...s.materials,[gemId]:s.materials[gemId]-1},equipmentGems:{...s.equipmentGems,[equipmentId]:[...installed,gemId]},explorationNote:`Pedra instalada em ${item.nome}.`})}
   // Pedras ficam fixas no item onde foram instaladas: removê-las não devolve o material --
