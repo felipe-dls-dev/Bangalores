@@ -601,7 +601,10 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   completeCoopDefeat:(battleId:string)=>{const s=get(),completedBattles=s.coopBattlesCompleted??[];if(!battleId||completedBattles.includes(battleId))return;set({coopBattlesCompleted:[...completedBattles,battleId]});applyDefeatPenalty(set,get,'Sua equipe foi derrotada em combate cooperativo.');set({screen:'loot',loot:{gold:0,xp:0,title:'EQUIPE DERROTADA'}});const completed=get();set({campaigns:saveActiveCampaign(completed)})},
   completeCoopFlee:(battleId:string)=>{const s=get(),completedBattles=s.coopBattlesCompleted??[];if(!battleId||completedBattles.includes(battleId))return;set({coopBattlesCompleted:[...completedBattles,battleId],screen:s.subregionId?'region':'map',enemy:undefined,enemyHp:0,combatMinions:[],combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,shield:0,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,heroStatus:{},enemyStatus:{},pendingAttackBonus:0,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0});const completed=get();set({campaigns:saveActiveCampaign(completed)})},
   receiveCoopEnemyAttack:(damage:number,roll:any)=>{const s=get();if(s.screen!=='combat'||!s.enemy)return;const blocked=Math.max(0,Number(roll?.shieldBlocked??0));set({hp:Math.max(0,s.hp-damage),shield:Math.max(0,s.shield-blocked),combatRoll:{attacker:'enemy',naturalAttackRoll:roll.attackRoll,attackRoll:roll.attackRoll,attackBonus:0,defenseRoll:roll.defenseRoll,attackBase:s.enemy.ataque,defenseBase:defenseValue(s),attackEffect:attackEffect(roll.attackRoll),defenseEffect:defenseEffect(roll.defenseRoll),damage,selfDamage:0,shieldBlocked:blocked||undefined},animating:true,animationActor:'enemy',lastDamage:damage});setTimeout(()=>set({animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined}),COMBAT_ROLL_DISPLAY_MS)},
-  receiveCoopHeroAction:(damage:number,roll:any)=>{const s=get();if(s.screen!=='combat'||!s.enemy)return;const attackRoll=roll?.attackRoll??0,defenseRoll=roll?.defenseRoll??0;set({combatRoll:{attacker:'hero',naturalAttackRoll:attackRoll,attackRoll,attackBonus:0,defenseRoll,attackBase:0,defenseBase:0,attackEffect:attackEffect(attackRoll||3),defenseEffect:defenseEffect(defenseRoll||3),damage,selfDamage:0},animating:true,animationActor:'hero',lastDamage:damage});setTimeout(()=>set({animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined}),COMBAT_ROLL_DISPLAY_MS)},
+  // roll.summonAttackType (só presente quando o dano veio de uma fera invocada, não do próprio
+  // herói -- ver summonRolls em CoopContext.tsx) também liga summonAttackFx aqui, senão o ícone
+  // de arma da fera nunca aparecia no coop (o card do inimigo tremia com o número, mas sem ícone).
+  receiveCoopHeroAction:(damage:number,roll:any)=>{const s=get();if(s.screen!=='combat'||!s.enemy)return;const attackRoll=roll?.attackRoll??0,defenseRoll=roll?.defenseRoll??0;set({combatRoll:{attacker:'hero',naturalAttackRoll:attackRoll,attackRoll,attackBonus:0,defenseRoll,attackBase:0,defenseBase:0,attackEffect:attackEffect(attackRoll||3),defenseEffect:defenseEffect(defenseRoll||3),damage,selfDamage:0},animating:true,animationActor:'hero',lastDamage:damage,...(roll?.summonAttackType?{summonAttackFx:{types:[roll.summonAttackType as AttackAnimType],nonce:Date.now()}}:{})});setTimeout(()=>set({animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined}),COMBAT_ROLL_DISPLAY_MS)},
   receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>{const s=get();if(s.screen!=='combat')return;triggerSupportFx(set,get,type)},
   receiveCoopHeal:(amount:number)=>{const s=get();if(s.screen!=='combat'||amount<=0)return;set({hp:Math.min(maxHp(s),s.hp+amount)})},
   continueGame:()=>{const state=get(),saved=state.activeCampaignId&&state.campaigns[state.activeCampaignId];if(saved){const migrated=migrateEquipmentInstances(saved);set({...migrated,...normalizeAttributes(migrated),campaigns:state.campaigns,activeCampaignId:state.activeCampaignId,guildAccepted:migrated.guildAccepted??[],guildProgress:migrated.guildProgress??{},guildClaimed:migrated.guildClaimed??[],guildNotice:undefined,screen:resumableScreen(migrated.screen),animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,playerTurn:migrated.screen==='combat'&&migrated.enemy?true:(migrated.playerTurn??false)})}else set({screen:state.heroId?'map':'select'})},
@@ -1149,17 +1152,57 @@ function runEnemyAttack(set:any,get:any){const current=get() as GameState;if(!cu
 function enemyAfterDelay(set:any,get:any){
  const s=get() as GameState
  const activeSummons=((s.heroSkillUses??0)>0?(s.summons?.length?s.summons:(s.summon?[s.summon]:[])):[]).filter(fera=>fera.hp>0).slice(0,2)
- if(activeSummons.length&&s.enemy){
-  const en=s.enemy,nextSummons=[...activeSummons],summonAttackTypes:AttackAnimType[]=[];let enemyHp=s.enemyHp,heroHp=s.hp
-  for(let index=0;index<nextSummons.length&&enemyHp>0;index++){
-   const summon=nextSummons[index],attackBase=summon.ataque,defenseBase=enemyDefenseValue(en),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
-   summonAttackTypes.push(SUMMON_ATTACK_ANIMATION[summon.tipo])
-   if(resolved.selfDamage>0){const hp=Math.max(0,summon.hp-resolved.selfDamage),died=hp<=0;nextSummons[index]={...summon,hp};addLog(set,`${summon.nome} ataca, mas erra completamente e sofre ${resolved.selfDamage} de dano.${died?` ${summon.nome} caiu em combate.`:''}`)}
-   else if(resolved.damage>0){enemyHp=Math.max(0,enemyHp-resolved.damage);const healAmount=Math.max(0,Math.min(1,maxHp(s)-heroHp));heroHp+=healAmount;addLog(set,`${summon.nome} ataca: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). Causou ${resolved.damage} de dano a ${en.nome}.${healAmount>0?' O vínculo recupera 1 de vida.':''}`)}
-  }
-  const survivors=nextSummons.filter(fera=>fera.hp>0);set({summons:survivors,summon:survivors[0],enemyHp,hp:heroHp,summonAttackFx:{types:summonAttackTypes,nonce:Date.now()},...(!survivors.some(fera=>fera.tipo==='arcano')?{combatAttackPct:0,combatDefensePct:0}:{})})
-  if(enemyHp<=0){victory(set,get);return}
+ if(activeSummons.length&&s.enemy)resolveSummonAttacks(set,get,()=>continueEnemyAfterDelay(set,get))
+ else continueEnemyAfterDelay(set,get)
+}
+// Antes, os ataques das feras invocadas eram resolvidos num único laço síncrono que já aplicava
+// todo o dano acumulado de uma vez (com um só set() no final) -- a vida do inimigo caía de uma
+// vez só e nenhum turno chegava a passar animating/animationActor/lastDamage, então o card do
+// inimigo nunca tremia nem mostrava o número de dano flutuante da fera (só o ícone de arma da
+// fera aparecia, via summonAttackFx). Agora cada fera ataca em sua própria "vez", igual ao padrão
+// já usado por resolveMinionAttacks (capangas atacando o herói) -- cada acerto liga
+// animating/animationActor:'hero' (o inimigo é quem leva o dano) e um summonAttackFx com um único
+// tipo, dando tempo pro jogador ver o card do inimigo tremer com o número antes do próximo golpe.
+function resolveSummonAttacks(set:any,get:any,onComplete:()=>void){
+ const start=get() as GameState
+ const activeSummons=((start.heroSkillUses??0)>0?(start.summons?.length?start.summons:(start.summon?[start.summon]:[])):[]).filter(fera=>fera.hp>0).slice(0,2)
+ if(!activeSummons.length||!start.enemy){onComplete();return}
+ const nextSummons=[...activeSummons]
+ let index=0
+ const finish=()=>{
+  const survivors=nextSummons.filter(fera=>fera.hp>0)
+  set({summons:survivors,summon:survivors[0],animating:false,animationActor:undefined,lastDamage:undefined,...(!survivors.some(fera=>fera.tipo==='arcano')?{combatAttackPct:0,combatDefensePct:0}:{})})
+  onComplete()
  }
+ const strike=()=>{
+  const s=get() as GameState,en=s.enemy
+  if(s.screen!=='combat'||!en||s.enemyHp<=0||index>=nextSummons.length){finish();return}
+  const summon=nextSummons[index++]
+  if(summon.hp<=0){strike();return}
+  const attackBase=summon.ataque,defenseBase=enemyDefenseValue(en),attackRoll=Math.floor(Math.random()*6)+1,defenseRoll=Math.floor(Math.random()*6)+1,resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
+  if(resolved.selfDamage>0){
+   const hp=Math.max(0,summon.hp-resolved.selfDamage),died=hp<=0
+   nextSummons[index-1]={...summon,hp}
+   addLog(set,`${summon.nome} ataca, mas erra completamente e sofre ${resolved.selfDamage} de dano.${died?` ${summon.nome} caiu em combate.`:''}`)
+   setTimeout(strike,350);return
+  }
+  if(resolved.damage>0){
+   const enemyHp=Math.max(0,s.enemyHp-resolved.damage),healAmount=Math.max(0,Math.min(1,maxHp(s)-s.hp))
+   set({enemyHp,hp:s.hp+healAmount,animating:true,animationActor:'hero',lastDamage:resolved.damage,summonAttackFx:{types:[SUMMON_ATTACK_ANIMATION[summon.tipo]],nonce:Date.now()}})
+   addLog(set,`${summon.nome} ataca: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). Causou ${resolved.damage} de dano a ${en.nome}.${healAmount>0?' O vínculo recupera 1 de vida.':''}`)
+   if(enemyHp<=0){
+    const survivors=nextSummons.filter(fera=>fera.hp>0)
+    set({summons:survivors,summon:survivors[0]})
+    setTimeout(()=>{set({animating:false,animationActor:undefined,lastDamage:undefined});victory(set,get)},900)
+    return
+   }
+  }
+  setTimeout(strike,700)
+ }
+ strike()
+}
+function continueEnemyAfterDelay(set:any,get:any){
+ const s=get() as GameState
  const tick=tickStatus(s.heroStatus)
  if(tick.damage>0){
   const hp=Math.max(0,s.hp-tick.damage)

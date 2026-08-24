@@ -576,6 +576,54 @@ describe('Conjurador com duas feras espectrais', () => {
       }
     }
   })
+
+  // Bug relatado pelo jogador: o ataque das feras nunca "tremia" o card do inimigo nem mostrava
+  // o número de dano flutuante -- só o ícone de arma da fera aparecia. Causa: os ataques de todas
+  // as feras eram resolvidos num único laço síncrono com um só set() no final (dano total
+  // aplicado de uma vez), então animating/animationActor/lastDamage nunca chegavam a ligar para
+  // esse turno. Agora cada fera ataca em sua própria "vez" (setTimeout entre elas), igual ao
+  // padrão já usado por resolveMinionAttacks para os capangas atacando o herói.
+  it('anima o ataque de cada fera invocada em sequência, com dano e tremor no card do inimigo', () => {
+    vi.useFakeTimers()
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(.99)
+    try {
+      useGame.getState().newGame('conjurador')
+      // Monta o estado direto (em vez de chamar summonMonster(), que já dispara seu próprio
+      // enemyAfterDelay ao fundar a invocação) para isolar só o comportamento de
+      // resolveSummonAttacks com duas feras já vivas e nenhum ataque ainda resolvido.
+      const atacante = buildSummon('atacante', 10), defensor = buildSummon('defensor', 10)
+      useGame.setState({ screen: 'combat', enemy: fakeEnemy, enemyHp: 999, hp: 999, playerTurn: true, animating: false, heroSkillUses: 1, summon: atacante, summons: [atacante, defensor], braced: false, braceBonusUsed: true } as any)
+
+      // defend() chama enemyAfterDelay diretamente (sem setTimeout antes) quando ativa a postura --
+      // dispara resolveSummonAttacks com as duas feras vivas.
+      useGame.getState().defend()
+
+      let state = useGame.getState()
+      expect(state.animating).toBe(true)
+      expect(state.animationActor).toBe('hero')
+      expect(state.lastDamage).toBeGreaterThan(0)
+      expect(state.summonAttackFx?.types).toEqual(['garras'])
+      const enemyHpAfterFirst = state.enemyHp
+      expect(enemyHpAfterFirst).toBeLessThan(999)
+
+      vi.advanceTimersByTime(700)
+      state = useGame.getState()
+      expect(state.summonAttackFx?.types).toEqual(['martelo'])
+      expect(state.animationActor).toBe('hero')
+      expect(state.lastDamage).toBeGreaterThan(0)
+      expect(state.enemyHp).toBeLessThan(enemyHpAfterFirst)
+
+      vi.advanceTimersByTime(700)
+      state = useGame.getState()
+      expect(state.animationActor).toBeUndefined()
+      expect(state.lastDamage).toBeUndefined()
+      expect(state.summons).toHaveLength(2)
+    } finally {
+      randomSpy.mockRestore()
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
 })
 
 describe('balanceamento da região inicial', () => {
