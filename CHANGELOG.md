@@ -1,5 +1,59 @@
 # Changelog
 
+## Não lançado — sessão de correções (23–24/08/2026)
+Este changelog não era atualizado desde a v0.4.0; a versão instalada (`package.json`) já está em
+0.6.8, então há um período anterior não documentado aqui. Esta seção cobre apenas os 11 commits da
+sessão de investigação/correção mais recente, do mais antigo ao mais novo.
+
+**Masmorras**
+- Corrigido crédito de vitória/chefe na sub-região errada em algumas rotas de masmorra.
+- Chefe de masmorra (a cada 5º andar) agora só conta como o chefe real da sub-região se a
+  exploração normal dela já tiver sido cumprida — antes ficava liberado sem esse requisito.
+- Bestiário deixou de fragmentar o mesmo monstro em várias entradas por causa de variantes
+  (Veterano/Elite/Campeão) ou prefixos de masmorra/vingança no nome.
+- Adicionados os materiais de região que faltavam para as sub-regiões de Steelmere.
+
+**Talentos e especializações**
+- Corrigidas quatro especializações que não tinham efeito nenhum no jogo (bônus mortos).
+- Bônus de ouro/Forja de certas especializações não eram somados em lugar nenhum; agora entram
+  no cálculo de recompensa e na chance de sucesso da Forja.
+- Cooperativo não aplicava bônus de especialização nenhum; agora replica os mesmos bônus do modo
+  solo.
+
+**Equipamentos e Forja**
+- Corrigido bug em que o bônus de atributo/efeito de uma receita podia ser aplicado na cópia
+  errada de um item duplicado (bolsa em vez do equipado).
+- Comparação de equipamentos (popup de troca) e os cards de item na tela de Equipamentos
+  ignoravam bônus de Forja/pedra e aprimoramento — agora mostram o total real, com o detalhe de
+  quanto vem de cada fonte (normal / forja / pedra).
+- Bloco de materiais da Forja agora lista os três tipos (região, desmontagem, pedras) com a
+  quantidade que o jogador tem e onde conseguir cada um.
+- Aprimoramento (+1/+2/+3) deixou de ser 100% garantido: agora custa materiais além de ouro, tem
+  chance de sucesso decrescente por nível-alvo, e pode regredir o nível em caso de falha nos
+  níveis +2/+3.
+- Aprimoramento passou a conceder XP de Forja como qualquer outra tentativa (antes não concedia
+  nenhum) e a avisar o resultado — antes, sucesso/falha/regressão aconteciam em silêncio total,
+  sem nenhum aviso na tela.
+- Resultado da forja e do aprimoramento agora aparece numa janela modal centralizada (visível de
+  qualquer ponto da rolagem da página), em vez de um banner que piscava no topo da tela e podia
+  passar despercebido.
+- Serviço de sintonia elemental agora também oferece resistência elemental para armadura e
+  acessórios equipados, não só troca do elemento de dano da arma (a função já suportava isso, mas
+  não tinha nenhum botão na interface).
+
+**Combate**
+- Ataque das feras invocadas pelo Conjurador não fazia o card do inimigo tremer nem mostrava o
+  número de dano flutuante (só o ícone de arma da fera aparecia); agora cada fera ataca em sua
+  própria "vez", com a mesma animação de dano usada pelo resto do combate. Corrigido também no
+  cooperativo, que não tinha nem o ícone.
+- Layout de combate no celular (≤760px) mostrava os botões de ação antes do card do inimigo,
+  obrigando a decidir a ação sem ter visto a vida/intenção do inimigo na tela.
+
+**Ficha do personagem**
+- Pontos de atributo disponíveis para distribuir ganharam um aviso em destaque bem ao lado dos
+  botões "+" no painel de Atributos (antes só existia uma indicação discreta, sem destaque, no
+  card de retrato).
+
 ## v0.4.0 — Exploração de Havendown
 - Regiões do mapa agora abrem uma tela de sub-regiões antes do combate.
 - Adicionados Labirinto de Kholgard, Templo do Minotauro, Ninho do Dragão Vermelho, Caverna de Gelo e Mina dos Anões Caídos.

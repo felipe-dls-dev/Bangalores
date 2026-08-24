@@ -6,6 +6,13 @@
 
 O jogo roda diretamente no navegador e salva o progresso localmente no dispositivo do jogador.
 
+## Documentação
+
+- [docs/GAME_MECHANICS.md](docs/GAME_MECHANICS.md) — como os sistemas do jogo funcionam (combate, elementos, forja, aprimoramento, talentos, masmorras, dificuldade, cooperativo).
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — arquitetura do código, convenções e armadilhas conhecidas (referências de instância de equipamento, duplicação solo/coop, cascata do CSS).
+- [docs/COOP_SETUP.md](docs/COOP_SETUP.md) — como ativar o cooperativo online (Supabase).
+- [CHANGELOG.md](CHANGELOG.md) — histórico de mudanças.
+
 ## Catálogo das cartas
 
 A planilha com os dados das cartas e os endereços de suas artes está disponível em
