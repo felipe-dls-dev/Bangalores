@@ -650,8 +650,8 @@ function Panel({title,children,className=''}:{title?:string;children:React.React
 // Painel reutilizável de "NPC falando com o jogador" -- mesmo visual da Brenna na Guilda,
 // agora também usado pela mercadora da Loja e pelo ferreiro da Forja, para que essas telas
 // deixem de ser puros formulários e ganhem uma voz por trás do balcão.
-function NpcBanner({name,title,line,icon}:{name:string;title:string;line:string;icon?:React.ReactNode}){
- return <Panel className="npc-banner"><span className="npc-banner-portrait">{icon??<UserRound/>}</span><div className="npc-banner-copy"><span className="npc-banner-name">{name}<small>{title}</small></span><p><Quote size={13}/>{line}</p></div></Panel>
+function NpcBanner({name,title,line,image,icon}:{name:string;title:string;line:string;image?:string;icon?:React.ReactNode}){
+ return <Panel className="npc-banner"><span className="npc-banner-portrait">{image?<img src={assetUrl(image)} alt={name}/>:icon??<UserRound/>}</span><div className="npc-banner-copy"><span className="npc-banner-name">{name}<small>{title}</small></span><p><Quote size={13}/>{line}</p></div></Panel>
 }
 const WORLD_MAPS:Record<string,{base:string;hd:string;label:string}>={havendown:{base:'./assets/maps/eldravar.png',hd:'./assets/maps/eldravar-v2.png',label:'Havendown'},steelmere:{base:'./assets/maps/steelmere.png',hd:'./assets/maps/steelmere.png',label:'Steelmere'}}
 // Reúne, num só lugar no mapa, as duas fontes de "missão ativa" da campanha: os contratos da
@@ -1138,7 +1138,7 @@ function CardCreatorScreen(){
 }
 function Empty({text}:{text:string}){return <div className="empty"><Package/><p>{text}</p></div>}
 
-const GUILD_LEADER={nome:'Brenna Ashcombe',titulo:'Mestra da Guilda de Havendown'}
+const GUILD_LEADER={nome:'Brenna Ashcombe',titulo:'Mestra da Guilda de Havendown',retrato:'assets/npcs/brenna-ashcombe.webp'}
 // Falas contextuais da líder da Guilda -- puramente narrativas (não afetam mecânica), trocam
 // conforme o estado do jogador para dar a sensação de uma pessoa de verdade administrando o
 // quadro de contratos, e não uma lista estática de tarefas.
@@ -1230,7 +1230,7 @@ function GuildHerald(){
  return <div className="guild-herald" ref={ref}>
   <button className={`guild-herald-toggle${deliverable.length?' alert':''}`} aria-label="Recado da Guilda" aria-haspopup="true" aria-expanded={open} title="Ver o que a Guilda tem a dizer" onClick={()=>setOpen(o=>!o)}><Bell size={18}/>{(deliverable.length||suggestions.length)>0&&<span className="guild-herald-badge">{deliverable.length||suggestions.length}</span>}</button>
   {open&&<div className="guild-herald-panel" role="dialog" aria-label="Recado da Guilda">
-   <div className="guild-herald-head"><span className="npc-banner-portrait"><UserRound/></span><div><strong>{GUILD_LEADER.nome}</strong><small>{GUILD_LEADER.titulo}</small></div></div>
+   <div className="guild-herald-head"><span className="npc-banner-portrait">{GUILD_LEADER.retrato?<img src={assetUrl(GUILD_LEADER.retrato)} alt={GUILD_LEADER.nome}/>:<UserRound/>}</span><div><strong>{GUILD_LEADER.nome}</strong><small>{GUILD_LEADER.titulo}</small></div></div>
    <p className="guild-herald-line"><Quote size={12}/>{line}</p>
    {suggestions.length?<div className="guild-herald-list">{suggestions.map(m=><button key={m.id} className="guild-herald-item" onClick={openGuild}><span className="guild-herald-item-head"><strong>{m.nome}</strong><small>{deliverable.includes(m)?(g.guildAccepted.includes(m.id)?'Pronta para resgate':'Você já tem o pedido'):'Disponível para aceitar'}</small></span><p>{m.descricao}</p></button>)}</div>:<p className="guild-herald-empty">Nenhum contrato pedindo atenção agora. Volte quando tiver concluído algo.</p>}
    <button className="guild-herald-cta" onClick={openGuild}>Abrir quadro de contratos<ArrowRight size={14}/></button>
@@ -1255,7 +1255,7 @@ function GuildScreen(){
  const bagFull=g.equipmentBag.length>=equipmentBagCapacity(g)
  const visibleMissions=sortGuildMissionsByRank(GUILD_MISSIONS.filter(m=>GUILD_MISSION_CATEGORIES.find(c=>c.id===category)!.match(m.tipo)))
  return <div className="guild-page"><Panel className="guild-head"><button onClick={()=>g.setScreen('map')}><ArrowLeft/>Voltar ao mapa</button><div><span className="eyebrow">SALÃO DOS AVENTUREIROS</span><h1>Guilda de Havendown</h1><p>Aceite contratos, aumente sua reputação e conquiste acesso às missões mais valiosas.</p></div><Shield className="guild-crest"/></Panel>
- <NpcBanner name={GUILD_LEADER.nome} title={GUILD_LEADER.titulo} line={guildLeaderLine(g,active,completed,reputation)}/>
+ <NpcBanner name={GUILD_LEADER.nome} title={GUILD_LEADER.titulo} line={guildLeaderLine(g,active,completed,reputation)} image={GUILD_LEADER.retrato}/>
  <section className="guild-rank-panel"><div className="guild-current-rank" style={{'--rank-color':rank.cor} as React.CSSProperties}><Shield/><span><small>RANK DE AVENTUREIRO</small><strong>{rank.nome}</strong></span></div><div className="guild-rank-progress"><div><span>{reputation} pontos de reputação</span><strong>{nextRank?`Próximo: ${nextRank.nome} (${nextRank.minimo})`:'Rank máximo alcançado'}</strong></div><div className="xp-track"><div style={{width:nextRank?`${Math.min(100,(reputation-rank.minimo)/(nextRank.minimo-rank.minimo)*100)}%`:'100%'}}/></div></div><div className="guild-rank-road">{GUILD_RANKS.map(r=><span className={reputation>=r.minimo?'reached':''} style={{'--rank-color':r.cor} as React.CSSProperties} key={r.id} title={`${r.nome}: ${r.minimo} pontos`}><i/>{r.nome}</span>)}</div></section>
  <div className="guild-summary"><span><ScrollText/><small>MISSÕES ATIVAS</small><strong>{active}</strong></span><span><Trophy/><small>PRONTAS PARA RESGATE</small><strong>{completed}</strong></span><span><Package/><small>ESPAÇO NA BOLSA</small><strong>{g.equipmentBag.length}/{equipmentBagCapacity(g)}</strong></span></div>{g.guildNotice&&<div className="guild-notice"><Sparkles/>{g.guildNotice}</div>}
  <div className="guild-filter">{GUILD_MISSION_CATEGORIES.map(c=><button key={c.id} className={category===c.id?'active':''} onClick={()=>setCategory(c.id)}>{c.label}<small>{GUILD_MISSIONS.filter(m=>c.match(m.tipo)).length}</small></button>)}</div>
