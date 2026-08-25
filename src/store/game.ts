@@ -536,7 +536,19 @@ export function balanceEnemyByLevel<T extends Enemy>(enemy:T,allowance=1):T{
 const REWARD_VARIANT_MULT:Record<string,number>={Campeão:2.2,Elite:1.6,Veterano:1.25,Comum:1}
 function rewardVariantMult(variant?:string){return REWARD_VARIANT_MULT[variant??'Comum']??1}
 function rewardBossMult(maxFases?:number){return 2.4+Math.min(4,maxFases??1)*.3}
-// Quantos xp "vale" cada nível, dividido pela dificuldade da sub-região (encontrosNecessarios)
+// O chefe da sub-região era tratado como um "bônus" de XP por fora da cota de
+// encontrosNecessarios (a mesma fatia por-encontro dos monstros comuns, só que multiplicada
+// por até 3,6x) -- ou seja, ele empilhava um valor equivalente a ~3,3 encontros extras em cima
+// dos que já esgotavam a cota da sub-região, quase dobrando o total de XP (regulares + chefe)
+// que essa sub-região deveria entregar. Um único chefe mediano (ex.: Necromante Supremo)
+// chegava a valer mais de um nível inteiro sozinho. O ouro do chefe continua usando
+// rewardBossMult normalmente (isso nunca foi reportado como desproporcional); só o XP ganhou
+// seu próprio multiplicador, menor, e conta o chefe como só mais 1 encontro na divisão (ver
+// xpRewardForLevel) em vez de um extra de graça -- ficando sempre acima do raro "Campeão"
+// comum (2.2x), mas sem disparar.
+function xpBossMult(maxFases?:number){return 1.8+Math.min(4,maxFases??1)*.2}
+// Quantos xp "vale" cada nível, dividido pela dificuldade da sub-região (encontrosNecessarios
+// + 1 quando é o chefe, contando-o como mais um encontro da cota, não como um extra de graça)
 // e por este fator: cada faixa de nível costuma ter ~3 sub-regiões cobrindo-a em paralelo (o
 // jogador não depende de uma só pra progredir), então uma sub-região sozinha não deve entregar
 // o custo de nível inteiro em poucos encontros.
@@ -544,8 +556,9 @@ const SUBREGION_OVERLAP_FACTOR=3
 function subregionXpBudget(sub:Pick<Subregion,'nivelMin'|'nivelMax'>){let total=0;for(let l=sub.nivelMin;l<=sub.nivelMax;l++)total+=costForLevel(l);return total}
 export function xpRewardForLevel(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number;sub?:Pick<Subregion,'nivelMin'|'nivelMax'|'encontrosNecessarios'>}={}):number{
  const lvl=Math.max(1,Math.round(level))
- const base=opts.sub?subregionXpBudget(opts.sub)/Math.max(1,opts.sub.encontrosNecessarios)/SUBREGION_OVERLAP_FACTOR:costForLevel(lvl)/SUBREGION_OVERLAP_FACTOR
- const mult=opts.boss?rewardBossMult(opts.maxFases):rewardVariantMult(opts.variant)
+ const encontros=opts.sub?Math.max(1,opts.sub.encontrosNecessarios)+(opts.boss?1:0):0
+ const base=opts.sub?subregionXpBudget(opts.sub)/encontros/SUBREGION_OVERLAP_FACTOR:costForLevel(lvl)/SUBREGION_OVERLAP_FACTOR
+ const mult=opts.boss?xpBossMult(opts.maxFases):rewardVariantMult(opts.variant)
  return Math.max(1,Math.round(base*mult))
 }
 const GOLD_BASE=4,GOLD_PER_LEVEL=1.5
