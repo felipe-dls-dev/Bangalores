@@ -160,11 +160,18 @@ const bossByDifficulty: Record<number,Enemy> = {
 export const BOSSES = Object.fromEntries(Object.entries(bossByDifficulty).map(([difficulty,boss])=>{const arte=BOSS_ART[boss.nome]??boss.arte;return[difficulty,{...boss,imagem:arte,arte}]})) as Record<number,Enemy>
 
 // Curva única (sem tabela fixa nem quebra de fórmula) cobrindo 1-200: quadrática, "desafiadora
-// mas alcançável". Nível 100 (o endgame atual, com conteúdo/equipamentos) exige ~3,38 milhões de
-// XP acumulado; nível 200 (sem conteúdo próprio ainda -- fica pro próximo continente) ~26,9
-// milhões, como meta de longuíssimo prazo. Farmar xp antes disso estava rápido demais.
+// mas alcançável". Nível 100 (o endgame atual, com conteúdo/equipamentos) exige ~985 mil de XP
+// acumulado; nível 200 (sem conteúdo próprio ainda -- fica pro próximo continente) ~7,94
+// milhões, como meta de longuíssimo prazo.
+// Coeficiente reduzido de 10 pra 3 junto com o teto de xpRewardForLevel (ver MAX_ENEMY_XP):
+// com o coeficiente antigo, um único inimigo no teto (600xp) valeria só 2% de um nível no
+// endgame -- proporção saudável -- mas nos níveis médios (ex.: um chefe de ~nível 30) chegava
+// a valer 85-140% de um nível INTEIRO sozinho, porque o custo por nível crescia muito mais
+// rápido que a recompensa por inimigo enquanto ambos usavam escalas independentes. Reduzir o
+// coeficiente do custo mantém a mesma curva (ainda quadrática, ainda mais cara nos níveis
+// altos) mas calibrada pra a nova escala pequena de recompensa por inimigo.
 function costForLevel(level:number){
-  return Math.max(1,Math.round(10*Math.pow(level,2)))
+  return Math.max(1,Math.round(3*Math.pow(level,2)))
 }
 export function deriveLevel(totalXp:number){ let lvl=1, spent=0; while(totalXp >= spent+costForLevel(lvl)){spent+=costForLevel(lvl);lvl++} return {lvl,progress:totalXp-spent,next:costForLevel(lvl)} }
 const EQUIPMENT_INSTANCE_SEPARATOR='@@'
@@ -536,30 +543,26 @@ export function balanceEnemyByLevel<T extends Enemy>(enemy:T,allowance=1):T{
 const REWARD_VARIANT_MULT:Record<string,number>={Campeão:2.2,Elite:1.6,Veterano:1.25,Comum:1}
 function rewardVariantMult(variant?:string){return REWARD_VARIANT_MULT[variant??'Comum']??1}
 function rewardBossMult(maxFases?:number){return 2.4+Math.min(4,maxFases??1)*.3}
-// O chefe da sub-região era tratado como um "bônus" de XP por fora da cota de
-// encontrosNecessarios (a mesma fatia por-encontro dos monstros comuns, só que multiplicada
-// por até 3,6x) -- ou seja, ele empilhava um valor equivalente a ~3,3 encontros extras em cima
-// dos que já esgotavam a cota da sub-região, quase dobrando o total de XP (regulares + chefe)
-// que essa sub-região deveria entregar. Um único chefe mediano (ex.: Necromante Supremo)
-// chegava a valer mais de um nível inteiro sozinho. O ouro do chefe continua usando
-// rewardBossMult normalmente (isso nunca foi reportado como desproporcional); só o XP ganhou
-// seu próprio multiplicador, menor, e conta o chefe como só mais 1 encontro na divisão (ver
-// xpRewardForLevel) em vez de um extra de graça -- ficando sempre acima do raro "Campeão"
-// comum (2.2x), mas sem disparar.
 function xpBossMult(maxFases?:number){return 1.8+Math.min(4,maxFases??1)*.2}
-// Quantos xp "vale" cada nível, dividido pela dificuldade da sub-região (encontrosNecessarios
-// + 1 quando é o chefe, contando-o como mais um encontro da cota, não como um extra de graça)
-// e por este fator: cada faixa de nível costuma ter ~3 sub-regiões cobrindo-a em paralelo (o
-// jogador não depende de uma só pra progredir), então uma sub-região sozinha não deve entregar
-// o custo de nível inteiro em poucos encontros.
-const SUBREGION_OVERLAP_FACTOR=3
-function subregionXpBudget(sub:Pick<Subregion,'nivelMin'|'nivelMax'>){let total=0;for(let l=sub.nivelMin;l<=sub.nivelMax;l++)total+=costForLevel(l);return total}
-export function xpRewardForLevel(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number;sub?:Pick<Subregion,'nivelMin'|'nivelMax'|'encontrosNecessarios'>}={}):number{
+// XP por inimigo era derivado do orçamento de xp da sub-região inteira (subregionXpBudget,
+// soma de costForLevel por todo o intervalo de nível dela) dividido entre seus encontros -- uma
+// escala indireta, sem teto, que dependia de nivelMin/nivelMax/encontrosNecessarios de cada
+// sub-região. Isso deixava fácil um único chefe ultrapassar o custo de um nível inteiro (ex.:
+// 78495xp num chefe de nível 100 contra ~985 mil de custo do nível), e não dava pra apontar
+// "o xp máximo possível por inimigo no jogo" sem varrer todas as sub-regiões. Agora é uma
+// fórmula direta -- nível efetivo do inimigo × multiplicador do tipo × uma constante -- com um
+// teto explícito: MAX_ENEMY_XP (600) é sempre o valor do ÚNICO inimigo mais forte do jogo
+// (nível 100, chefe de 4 fases, dificuldade Lendário); todo o resto escala proporcionalmente
+// abaixo disso. MAX_LEVEL_REF/MAX_TIER_MULT/MAX_DIFFICULTY_MULT são as três variáveis que juntas
+// definem esse pico -- se o conteúdo crescer além do nível 100 no futuro, MAX_LEVEL_REF deve
+// subir junto (senão o teto passa a ser atingido antes do fim do jogo).
+export const MAX_ENEMY_XP=600
+const MAX_LEVEL_REF=100,MAX_TIER_MULT=2.6,MAX_DIFFICULTY_MULT=1.32
+const XP_PER_LEVEL_UNIT=MAX_ENEMY_XP/(MAX_LEVEL_REF*MAX_TIER_MULT*MAX_DIFFICULTY_MULT)
+export function xpRewardForLevel(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number}={}):number{
  const lvl=Math.max(1,Math.round(level))
- const encontros=opts.sub?Math.max(1,opts.sub.encontrosNecessarios)+(opts.boss?1:0):0
- const base=opts.sub?subregionXpBudget(opts.sub)/encontros/SUBREGION_OVERLAP_FACTOR:costForLevel(lvl)/SUBREGION_OVERLAP_FACTOR
  const mult=opts.boss?xpBossMult(opts.maxFases):rewardVariantMult(opts.variant)
- return Math.max(1,Math.round(base*mult))
+ return Math.max(1,Math.min(MAX_ENEMY_XP,Math.round(lvl*mult*XP_PER_LEVEL_UNIT)))
 }
 const GOLD_BASE=4,GOLD_PER_LEVEL=1.5
 function goldRewardRange(level:number,opts:{boss?:boolean;variant?:string;maxFases?:number}={}){
@@ -612,16 +615,16 @@ export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
   const extra=variant==='Campeão'?' • Aura de campeão':variant==='Elite'?' • Técnica de elite':variant==='Veterano'?' • Experiência de combate':''
   return balanceEnemyByLevel({
     id:`${sub.id}_${base.nome.toLowerCase().replace(/[^a-z0-9]+/g,'_')}_${Date.now()}`,
-    nome:prefix+base.nome, ataque:scaledAtk, vida:scaledHp, ouro:rollGoldReward(effectiveLevel,{variant}), xpReward:xpRewardForLevel(effectiveLevel,{variant,sub}), dificuldade:effectiveLevel,
+    nome:prefix+base.nome, ataque:scaledAtk, vida:scaledHp, ouro:rollGoldReward(effectiveLevel,{variant}), xpReward:xpRewardForLevel(effectiveLevel,{variant}), dificuldade:effectiveLevel,
     habilidade:base.habilidade+extra, imagem:base.arte, arte:base.arte, raridade:rarityForVariant(variant), elite:variant==='Elite'||variant==='Campeão', nivel:effectiveLevel, variante:variant, elemento:REGION_MATERIALS[sub.regionId]?.elemento
   })
 }
 export function buildBoss(sub:Subregion):Enemy{
   const b=sub.chefe
   const startingRegion=sub.regionId==='campos_dourados'
-  return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*noviceDamping(sub.nivelMax,.58))),vida:Math.max(1,Math.ceil(b.vida*noviceDamping(sub.nivelMax,.55))),ouro:rollGoldReward(sub.nivelMax,{boss:true,maxFases:b.maxFases}),xpReward:xpRewardForLevel(sub.nivelMax,{boss:true,maxFases:b.maxFases,sub}),dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento})
+  return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*noviceDamping(sub.nivelMax,.58))),vida:Math.max(1,Math.ceil(b.vida*noviceDamping(sub.nivelMax,.55))),ouro:rollGoldReward(sub.nivelMax,{boss:true,maxFases:b.maxFases}),xpReward:xpRewardForLevel(sub.nivelMax,{boss:true,maxFases:b.maxFases}),dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento})
 }
-function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return balanceEnemyByLevel({...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward),xpReward:enemy.xpReward!=null?Math.round(enemy.xpReward*DIFFICULTIES[mode].reward):enemy.xpReward},multiplier)}
+function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return balanceEnemyByLevel({...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward),xpReward:enemy.xpReward!=null?Math.min(MAX_ENEMY_XP,Math.round(enemy.xpReward*DIFFICULTIES[mode].reward)):enemy.xpReward},multiplier)}
 export function buildCoopEnemy(subregionId:string,playerLevel:number,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildEnemy(sub,playerLevel),mode):undefined}
 export function buildCoopSubregionBoss(subregionId:string,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildBoss(sub),mode):undefined}
 export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode){const region=TERRITORIES.find(item=>item.id===regionId),base=region&&BOSSES[region.dificuldade];return region&&base?difficultyEnemy({...base,id:`coop_region_boss_${region.id}`,nome:`${base.nome} • Soberano de ${region.nome}`,ouro:rollGoldReward(region.nivelMax,{boss:true,maxFases:base.maxFases}),xpReward:xpRewardForLevel(region.nivelMax,{boss:true,maxFases:base.maxFases})},mode):undefined}
@@ -639,7 +642,7 @@ export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode){const r
 // função também nunca recebia o nível do jogador, então um herói de nível alto revisitando uma
 // sub-região antiga enfrentava sempre o mesmo chefe fraco. Agora o nível efetivo cresce com wins
 // E com o nível do jogador (o maior dos dois), e a defesa é recalculada a partir desse nível.
-export function buildRevengeBoss(sub:Subregion,wins:number,playerLevel=0):Enemy{const base=buildBoss(sub),power=1.35+wins*.18,level=Math.max((base.nivel??base.dificuldade)+wins*3,playerLevel),rewardMult=1+Math.min(wins,10)*.15;return balanceEnemyByLevel({...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),defesa:Math.max(1,level-2),ouro:Math.round((base.ouro??1)*rewardMult),xpReward:Math.round((base.xpReward??1)*rewardMult),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true,nivel:level,dificuldade:level})}
+export function buildRevengeBoss(sub:Subregion,wins:number,playerLevel=0):Enemy{const base=buildBoss(sub),power=1.35+wins*.18,level=Math.max((base.nivel??base.dificuldade)+wins*3,playerLevel),rewardMult=1+Math.min(wins,10)*.15;return balanceEnemyByLevel({...base,id:`revenge_${sub.id}_${Date.now()}`,nome:`Vingança ${wins+1}: ${base.nome}`,ataque:Math.ceil(base.ataque*power),vida:Math.ceil(base.vida*power),defesa:Math.max(1,level-2),ouro:Math.round((base.ouro??1)*rewardMult),xpReward:Math.min(MAX_ENEMY_XP,Math.round((base.xpReward??1)*rewardMult)),maxFases:Math.min(5,(base.maxFases??2)+1),habilidade:`${base.habilidade} • Memória da derrota • Fúria vingativa`,revenge:true,nivel:level,dificuldade:level})}
 
 function campaignSnapshot(source:any):CampaignSave{const snapshot:any={savedAt:Date.now()};for(const [key,value] of Object.entries(source)){if(typeof value!=='function'&&key!=='campaigns'&&key!=='activeCampaignId'&&key!=='customCards')snapshot[key]=value}return snapshot}
 function saveActiveCampaign(state:GameState){if(!state.activeCampaignId||!state.heroId||state.screen==='menu'||state.screen==='select'||state.screen==='cardCreator')return state.campaigns;return{...state.campaigns,[state.activeCampaignId]:campaignSnapshot(state)}}
@@ -882,9 +885,13 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     // DUNGEON_REWARD_MIN_GROWTH e DUNGEON_REWARD_MAX_GROWTH em relação ao andar anterior desta
     // descida (nunca cai, nunca dispara). Continua usando scalingDepth (com teto) como base
     // "natural", igual ao rebalanceamento anterior desse mesmo bug.
-    const naturalXp=Math.round((enemyLevel*4+scalingDepth*6)*(isBoss?1.6:1))
+    // Usa a mesma unidade por-nível de xpRewardForLevel (XP_PER_LEVEL_UNIT) pra ficar na mesma
+    // escala que o resto do jogo, e o mesmo teto (MAX_ENEMY_XP) -- sem isso, uma descida funda o
+    // bastante (enemyLevel cresce sem limite com a profundidade) escapava do teto de 600 mesmo
+    // depois do rebalanceamento de xpRewardForLevel, já que essa conta nunca passava por ele.
+    const naturalXp=Math.min(MAX_ENEMY_XP,Math.round((enemyLevel+scalingDepth*1.5)*XP_PER_LEVEL_UNIT*(isBoss?1.6:1)))
     const naturalGold=Math.ceil(enemy.ouro*(1+scalingDepth*.18))
-    const xpReward=freshRun||s.dungeonLastXpReward==null?naturalXp:Math.round(clamp(naturalXp,s.dungeonLastXpReward*(1+DUNGEON_REWARD_MIN_GROWTH),s.dungeonLastXpReward*(1+DUNGEON_REWARD_MAX_GROWTH)))
+    const xpReward=freshRun||s.dungeonLastXpReward==null?naturalXp:Math.min(MAX_ENEMY_XP,Math.round(clamp(naturalXp,s.dungeonLastXpReward*(1+DUNGEON_REWARD_MIN_GROWTH),s.dungeonLastXpReward*(1+DUNGEON_REWARD_MAX_GROWTH))))
     const goldReward=freshRun||s.dungeonLastGoldReward==null?naturalGold:Math.round(clamp(naturalGold,s.dungeonLastGoldReward*(1+DUNGEON_REWARD_MIN_GROWTH),s.dungeonLastGoldReward*(1+DUNGEON_REWARD_MAX_GROWTH)))
     dungeonEnemy={...dungeonEnemy,xpReward,ouro:goldReward}
 
