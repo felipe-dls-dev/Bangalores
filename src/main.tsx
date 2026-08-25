@@ -610,13 +610,34 @@ function ForgeTutorialPanel(){
   </div>}
  </section>
 }
+const BLACKSMITH={nome:'Borin Fenrick',titulo:'Mestre Ferreiro de Havendown'}
+const BLACKSMITH_WELCOME=[
+ 'Bigorna quente, martelo pronto. Traga os materiais e vamos ver o que sai daqui.',
+ 'Toda peça boa que você usa por aí passou nessa forja antes.',
+ 'Fabricar leva tempo, aprimorar leva sorte. Os dois valem o risco.',
+ 'Não existe metal que essa forja não tenha dobrado, cedo ou tarde.'
+]
+const BLACKSMITH_LOW_MATERIALS=[
+ 'Sua bolsa de materiais tá bem magra. Volte pro campo antes de me pedir milagre.',
+ 'Sem minério, sem escama, sem essência — não dá pra forjar no ar.',
+ 'Traga o que a região tem pra oferecer. A forja não inventa material do nada.'
+]
+const BLACKSMITH_VETERAN=[
+ 'Você já domina essa forja melhor que muito aprendiz que passou por aqui.',
+ 'Seu nível de forjador fala por si. Poucos chegam tão longe na bigorna.',
+ 'Continue assim e logo serei eu perguntando os segredos a você.'
+]
+function blacksmithLine(masteryLevel:number,attempts:number,totalMaterials:number){
+ const pool=masteryLevel>=6?BLACKSMITH_VETERAN:(attempts>0&&totalMaterials===0)?BLACKSMITH_LOW_MATERIALS:BLACKSMITH_WELCOME
+ return pool[(masteryLevel+attempts)%pool.length]
+}
 function ForgeScreen(){const g=useGame()
  // Mostra TODOS os materiais possíveis da Forja num só grid (com contagem atual do jogador),
  // não só os de região -- antes fragmentos/essências (Oficina) e pedras (FORGE_GEMS) só
  // apareciam na carteira da Oficina, sem indicação nenhuma de onde vêm, e ficavam fora deste
  // painel de "materiais e fabricação" mesmo sendo usados pelas receitas e pelo aprimoramento.
  const materials:ForgeMaterialEntry[]=[...Object.entries(REGION_MATERIALS).map(([regionId,m]):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'region',elemento:m.elemento,regionId})),...FORGE_MATERIALS.map((m):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'dismantle'})),...FORGE_GEMS.map((m):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'gem',texto:m.texto}))]
- const mastery=forgeLevelInfo(g.forgeXp??0),rate=(g.forgeAttempts??0)?Math.round((g.forgeSuccesses??0)/(g.forgeAttempts??1)*100):0;const [materialInfo,setMaterialInfo]=React.useState<ForgeMaterialEntry|undefined>(undefined);return <div className="forge-page"><Panel className="forge-header"><span className="eyebrow">OFICINA DE HAVENDOWN</span><h1>Forja</h1><p>Transforme espólios em materiais, produza itens por receita e instale pedras de melhoria.</p><div className="forge-mastery"><div><small>NÍVEL DE FORJADOR</small><strong>{mastery.level}</strong></div><div className="forge-xp"><span>{mastery.max?'Maestria máxima':`${mastery.progress}/${mastery.next} XP`}</span><div className="xp-track"><div style={{width:`${mastery.max?100:Math.min(100,mastery.progress/mastery.next*100)}%`}}/></div></div><div><small>SUCESSOS</small><strong>{g.forgeSuccesses??0}/{g.forgeAttempts??0}</strong><span>{rate}% de êxito</span></div></div><p className="forge-warning">Toda tentativa concede XP de Forja. Falhas consomem metade dos materiais; níveis maiores liberam receitas poderosas e aumentam a chance de sucesso.</p></Panel><ForgeResultDialog/><ForgeTutorialPanel/><Panel title="Materiais e fabricação"><div className="material-grid">{materials.map(m=><button key={m.id} type="button" onClick={()=>setMaterialInfo(m)} title="Ver onde conseguir este material"><b>{g.materials[m.id]??0}</b><small>{m.nome}</small></button>)}</div><div className="forge-items">{g.equipmentBag.slice(0,12).map((id,index)=>{const item=equipmentByRef(id);if(!item)return null;const upLevel=g.equipmentUpgrades[id]??0
+ const mastery=forgeLevelInfo(g.forgeXp??0),rate=(g.forgeAttempts??0)?Math.round((g.forgeSuccesses??0)/(g.forgeAttempts??1)*100):0;const totalMaterials=Object.values(g.materials).reduce((sum,n)=>sum+n,0);const [materialInfo,setMaterialInfo]=React.useState<ForgeMaterialEntry|undefined>(undefined);return <div className="forge-page"><Panel className="forge-header"><span className="eyebrow">OFICINA DE HAVENDOWN</span><h1>Forja</h1><p>Transforme espólios em materiais, produza itens por receita e instale pedras de melhoria.</p><div className="forge-mastery"><div><small>NÍVEL DE FORJADOR</small><strong>{mastery.level}</strong></div><div className="forge-xp"><span>{mastery.max?'Maestria máxima':`${mastery.progress}/${mastery.next} XP`}</span><div className="xp-track"><div style={{width:`${mastery.max?100:Math.min(100,mastery.progress/mastery.next*100)}%`}}/></div></div><div><small>SUCESSOS</small><strong>{g.forgeSuccesses??0}/{g.forgeAttempts??0}</strong><span>{rate}% de êxito</span></div></div><p className="forge-warning">Toda tentativa concede XP de Forja. Falhas consomem metade dos materiais; níveis maiores liberam receitas poderosas e aumentam a chance de sucesso.</p></Panel><NpcBanner name={BLACKSMITH.nome} title={BLACKSMITH.titulo} line={blacksmithLine(mastery.level,g.forgeAttempts??0,totalMaterials)}/><ForgeResultDialog/><ForgeTutorialPanel/><Panel title="Materiais e fabricação"><div className="material-grid">{materials.map(m=><button key={m.id} type="button" onClick={()=>setMaterialInfo(m)} title="Ver onde conseguir este material"><b>{g.materials[m.id]??0}</b><small>{m.nome}</small></button>)}</div><div className="forge-items">{g.equipmentBag.slice(0,12).map((id,index)=>{const item=equipmentByRef(id);if(!item)return null;const upLevel=g.equipmentUpgrades[id]??0
    if(upLevel>=3)return <article key={`${id}-${index}`}><span><strong>{item.nome} +{upLevel}</strong><small>Nível máximo de aprimoramento</small></span><button disabled>Aprimorar</button></article>
    // Aprimorar agora também gasta materiais e tem chance de falha (que pode regredir o nível
    // em +2/+3) -- mostra o custo completo e a chance real antes do jogador arriscar a peça.
@@ -626,6 +647,12 @@ function ForgeScreen(){const g=useGame()
    const canAfford=g.gold>=goldCost&&Object.entries(matCost).every(([mid,qty])=>(g.materials[mid]??0)>=qty)
    return <article key={`${id}-${index}`}><span><strong>{item.nome} +{upLevel}</strong><small>Aprimorar para +{targetLevel}: {goldCost} ouro, {matText} • {chance}% de sucesso{targetLevel>1?' (falha pode regredir o nível)':''}</small></span><button disabled={!canAfford} onClick={()=>g.upgradeEquipment(id)}>Aprimorar</button></article>})}</div></Panel><RecipeCatalog/><ForgeSalvagePanel/>{materialInfo&&<MaterialSourceDialog material={materialInfo} onClose={()=>setMaterialInfo(undefined)}/>}</div>}
 function Panel({title,children,className=''}:{title?:string;children:React.ReactNode;className?:string}){const content=className.split(' ').includes('summary'),guildHead=className.split(' ').includes('guild-head');const nodes=React.Children.toArray(children);return <section className={'panel '+className}>{title&&<h2 className="panel-title">{title}</h2>}{content?<>{nodes.slice(0,-4)}<hr/><MapGuildMissions/></>:children}{guildHead&&<button className="guild-reset-rank" onClick={()=>window.confirm('Zerar ranking, contratos aceitos e progresso da Guilda? Seus demais itens e avanços serão preservados.')&&useGame.setState({guildAccepted:[],guildProgress:{},guildClaimed:[],guildNotice:'Ranking da Guilda reiniciado para teste.'})}>Reiniciar ranking</button>}</section>}
+// Painel reutilizável de "NPC falando com o jogador" -- mesmo visual da Brenna na Guilda,
+// agora também usado pela mercadora da Loja e pelo ferreiro da Forja, para que essas telas
+// deixem de ser puros formulários e ganhem uma voz por trás do balcão.
+function NpcBanner({name,title,line,icon}:{name:string;title:string;line:string;icon?:React.ReactNode}){
+ return <Panel className="npc-banner"><span className="npc-banner-portrait">{icon??<UserRound/>}</span><div className="npc-banner-copy"><span className="npc-banner-name">{name}<small>{title}</small></span><p><Quote size={13}/>{line}</p></div></Panel>
+}
 const WORLD_MAPS:Record<string,{base:string;hd:string;label:string}>={havendown:{base:'./assets/maps/eldravar.png',hd:'./assets/maps/eldravar-v2.png',label:'Havendown'},steelmere:{base:'./assets/maps/steelmere.png',hd:'./assets/maps/steelmere.png',label:'Steelmere'}}
 // Reúne, num só lugar no mapa, as duas fontes de "missão ativa" da campanha: os contratos da
 // Guilda (já existia) e o objetivo do capítulo atual das Crônicas (StoryCampaignPanel) --
@@ -670,6 +697,34 @@ function ItemCard({image,name,subtitle,footer,previewStats,previewAllowEquip=fal
  // baixo do ícone pra preencher o retângulo do cartão. Sem correspondência em EQUIPMENT, o
  // item é um consumível (ou outra carta não-equipamento) e usa "contain" em vez disso.
  return <article className={`item-card item-rarity-${rarity}${equipment?'':' item-card-contain'}`}><div className="item-art-wrap"><ArtPreview image={image} name={name} text={footer} stats={previewStats??subtitle} compareEquipment={Boolean(equipment)} allowEquip={previewAllowEquip} instanceRef={instanceRef}/>{emblem&&<img className="item-class-emblem" src={'./'+emblem} alt={emblemLabel} title={`Classe: ${emblemLabel}`}/>}</div><div className="item-copy"><div className="item-title-row"><strong>{name}</strong><span className={`mini-rarity rarity-${rarity}`}>{rarityLabel[rarity]}</span></div>{subtitle&&<span>{subtitle}</span>}{footer&&<small>{footer}</small>}{children}</div></article>}
+const MERCHANT={nome:'Mira Bellwether',titulo:'Mercadora de Havendown'}
+const MERCHANT_WELCOME=[
+ 'Entre, entre! Toda peça nessa prateleira já viu campo de batalha — ou vai ver, com você.',
+ 'Se não achar o que precisa hoje, volte amanhã. Minhas rotas de suprimento nunca param.',
+ 'Aqui ninguém sai de mãos vazias — só de bolsos mais leves.',
+ 'Cada moeda que você gasta aqui volta pra estrada, de um jeito ou de outro.'
+]
+const MERCHANT_CART=[
+ 'Boa escolha aí no carrinho. Confirma antes que eu mude de ideia sobre o preço.',
+ 'Gosto de ver alguém que sabe o que quer. Vai levar tudo isso mesmo?',
+ 'Separei o melhor do estoque pra quem chega decidido.',
+ 'Fechado assim que você confirmar — sem essa de "deixa eu pensar" depois.'
+]
+const MERCHANT_SELL=[
+ 'Deixa eu ver o que você trouxe... sempre gosto de uma surpresa.',
+ 'Vendendo, é? Espero que não seja nada que você vá sentir falta amanhã.',
+ 'Todo espólio tem um preço justo aqui — o meu, claro.',
+ 'Menos peso na bolsa, mais moedas no bolso. Parece um bom negócio pra mim.'
+]
+const MERCHANT_BROKE=[
+ 'Poucas moedas hoje, hein? Nada que uma boa caçada não resolva.',
+ 'Sem ouro sobrando eu não posso fazer milagre, mas posso guardar algo pra depois.',
+ 'Volte quando o bolso estiver mais cheio — ou venda algo pra mim agora mesmo.'
+]
+function merchantLine(gold:number,cartCount:number,selling:boolean){
+ const pool=selling?MERCHANT_SELL:cartCount>0?MERCHANT_CART:gold<20?MERCHANT_BROKE:MERCHANT_WELCOME
+ return pool[(gold+cartCount*7)%pool.length]
+}
 function ShopScreen(){
  const g=useGame()
  const [tab,setTab]=React.useState<ShopTab>('Armas')
@@ -709,6 +764,7 @@ function ShopScreen(){
  const confirm=()=>{if(!valid)return;lines.forEach(line=>{for(let i=0;i<line.qty;i++)line.kind==='c'?g.buyConsumable(line.id):g.buyEquipment(line.id)});clear();setCartOpen(false)}
  const changeMode=()=>{g.toggleShopMode();setFilter('Todos');clear();setCartOpen(false)}
  return <div><div className="shop-head"><div><h1>Loja de Havendown</h1><p>{g.shopMode==='buy'?'Adicione produtos ao carrinho e confirme antes de recebê-los.':'Venda de itens não concede experiência.'}</p></div><div><span className="gold"><Coins/> {g.gold}</span>{g.shopMode==='buy'&&<button className="shop-cart-button" onClick={()=>setCartOpen(true)}><ShoppingCart/> Carrinho <b>{count}</b></button>}<button onClick={changeMode}>{g.shopMode==='buy'?'Mudar para vender':'Mudar para comprar'}</button></div></div>
+  <NpcBanner name={MERCHANT.nome} title={MERCHANT.titulo} line={merchantLine(g.gold,count,g.shopMode==='sell')}/>
   <div className="shop-tabs" role="tablist" aria-label="Seções da loja">{shopTabs.map(item=><button key={item} role="tab" aria-selected={tab===item} className={tab===item?'active':''} onClick={()=>chooseTab(item)}>{item}<small>{tabCount(item)}</small></button>)}</div>
   <div className="shop-filter-row">
    <div className="gallery-filters shop-category-filters shop-subfilters" role="group" aria-label={`Filtros de ${tab}`}>{filters.map(([id,label])=><button key={id} className={filter===id?'active':''} onClick={()=>setFilter(id)}>{label}<small>{filterCount(id)}</small></button>)}</div>
@@ -1110,8 +1166,23 @@ const GUILD_LEADER_VETERAN=[
  'Se esse quadro um dia ficar vazio, a culpa vai ser sua — e eu não vou reclamar.',
  'Aventureiros como você são a razão de eu ainda acreditar nesse trabalho.'
 ]
-function guildLeaderLine(g:{guildClaimed:string[]},active:number,completed:number,reputation:number){
- const pool=completed>0?GUILD_LEADER_READY:active>0?GUILD_LEADER_ACTIVE:reputation>=500?GUILD_LEADER_VETERAN:GUILD_LEADER_IDLE
+// Reações a marcos da campanha -- não são só um estado de "quadro de contratos", é a Brenna
+// acompanhando o que acontece com você lá fora, mesmo fora da Guilda (derrota seguida, primeiro
+// chefe abatido). Têm prioridade sobre as falas de rotina porque são mais específicas ao momento.
+const GUILD_LEADER_COMFORT=[
+ 'Ouvi dizer que as coisas não andaram fáceis lá fora. Poeira, sacode e volta — todo aventureiro que valha a pena já perdeu uma luta.',
+ 'Perder uma batalha não risca seu nome do meu registro. Só desistir faz isso.',
+ 'Respira. Nem o maior herói de Havendown venceu tudo na primeira tentativa.',
+ 'Se precisar de um contrato mais fácil pra recuperar o fôlego, o quadro tem de sobra.'
+]
+const GUILD_LEADER_FIRST_BOSS=[
+ 'Um chefe derrotado! Guarde essa sensação — vai querer sentir de novo.',
+ 'Seu primeiro chefe caiu. Havendown vai ouvir falar de você em breve.',
+ 'Isso não foi sorte. Foi você mostrando do que é feito.',
+ 'Anotei no registro: primeiro chefe abatido. É só o começo.'
+]
+function guildLeaderLine(g:{guildClaimed:string[];consecutiveDefeats:number;bossesDefeated:string[]},active:number,completed:number,reputation:number){
+ const pool=g.consecutiveDefeats>=2?GUILD_LEADER_COMFORT:completed>0?GUILD_LEADER_READY:g.bossesDefeated.length===1?GUILD_LEADER_FIRST_BOSS:active>0?GUILD_LEADER_ACTIVE:reputation>=500?GUILD_LEADER_VETERAN:GUILD_LEADER_IDLE
  const seed=g.guildClaimed.length+active*3+completed*7
  return pool[seed%pool.length]
 }
@@ -1159,7 +1230,7 @@ function GuildHerald(){
  return <div className="guild-herald" ref={ref}>
   <button className={`guild-herald-toggle${deliverable.length?' alert':''}`} aria-label="Recado da Guilda" aria-haspopup="true" aria-expanded={open} title="Ver o que a Guilda tem a dizer" onClick={()=>setOpen(o=>!o)}><Bell size={18}/>{(deliverable.length||suggestions.length)>0&&<span className="guild-herald-badge">{deliverable.length||suggestions.length}</span>}</button>
   {open&&<div className="guild-herald-panel" role="dialog" aria-label="Recado da Guilda">
-   <div className="guild-herald-head"><span className="guild-leader-portrait"><UserRound/></span><div><strong>{GUILD_LEADER.nome}</strong><small>{GUILD_LEADER.titulo}</small></div></div>
+   <div className="guild-herald-head"><span className="npc-banner-portrait"><UserRound/></span><div><strong>{GUILD_LEADER.nome}</strong><small>{GUILD_LEADER.titulo}</small></div></div>
    <p className="guild-herald-line"><Quote size={12}/>{line}</p>
    {suggestions.length?<div className="guild-herald-list">{suggestions.map(m=><button key={m.id} className="guild-herald-item" onClick={openGuild}><span className="guild-herald-item-head"><strong>{m.nome}</strong><small>{deliverable.includes(m)?(g.guildAccepted.includes(m.id)?'Pronta para resgate':'Você já tem o pedido'):'Disponível para aceitar'}</small></span><p>{m.descricao}</p></button>)}</div>:<p className="guild-herald-empty">Nenhum contrato pedindo atenção agora. Volte quando tiver concluído algo.</p>}
    <button className="guild-herald-cta" onClick={openGuild}>Abrir quadro de contratos<ArrowRight size={14}/></button>
@@ -1184,7 +1255,7 @@ function GuildScreen(){
  const bagFull=g.equipmentBag.length>=equipmentBagCapacity(g)
  const visibleMissions=sortGuildMissionsByRank(GUILD_MISSIONS.filter(m=>GUILD_MISSION_CATEGORIES.find(c=>c.id===category)!.match(m.tipo)))
  return <div className="guild-page"><Panel className="guild-head"><button onClick={()=>g.setScreen('map')}><ArrowLeft/>Voltar ao mapa</button><div><span className="eyebrow">SALÃO DOS AVENTUREIROS</span><h1>Guilda de Havendown</h1><p>Aceite contratos, aumente sua reputação e conquiste acesso às missões mais valiosas.</p></div><Shield className="guild-crest"/></Panel>
- <Panel className="guild-leader"><span className="guild-leader-portrait"><UserRound/></span><div className="guild-leader-copy"><span className="guild-leader-name">{GUILD_LEADER.nome}<small>{GUILD_LEADER.titulo}</small></span><p><Quote size={13}/>{guildLeaderLine(g,active,completed,reputation)}</p></div></Panel>
+ <NpcBanner name={GUILD_LEADER.nome} title={GUILD_LEADER.titulo} line={guildLeaderLine(g,active,completed,reputation)}/>
  <section className="guild-rank-panel"><div className="guild-current-rank" style={{'--rank-color':rank.cor} as React.CSSProperties}><Shield/><span><small>RANK DE AVENTUREIRO</small><strong>{rank.nome}</strong></span></div><div className="guild-rank-progress"><div><span>{reputation} pontos de reputação</span><strong>{nextRank?`Próximo: ${nextRank.nome} (${nextRank.minimo})`:'Rank máximo alcançado'}</strong></div><div className="xp-track"><div style={{width:nextRank?`${Math.min(100,(reputation-rank.minimo)/(nextRank.minimo-rank.minimo)*100)}%`:'100%'}}/></div></div><div className="guild-rank-road">{GUILD_RANKS.map(r=><span className={reputation>=r.minimo?'reached':''} style={{'--rank-color':r.cor} as React.CSSProperties} key={r.id} title={`${r.nome}: ${r.minimo} pontos`}><i/>{r.nome}</span>)}</div></section>
  <div className="guild-summary"><span><ScrollText/><small>MISSÕES ATIVAS</small><strong>{active}</strong></span><span><Trophy/><small>PRONTAS PARA RESGATE</small><strong>{completed}</strong></span><span><Package/><small>ESPAÇO NA BOLSA</small><strong>{g.equipmentBag.length}/{equipmentBagCapacity(g)}</strong></span></div>{g.guildNotice&&<div className="guild-notice"><Sparkles/>{g.guildNotice}</div>}
  <div className="guild-filter">{GUILD_MISSION_CATEGORIES.map(c=><button key={c.id} className={category===c.id?'active':''} onClick={()=>setCategory(c.id)}>{c.label}<small>{GUILD_MISSIONS.filter(m=>c.match(m.tipo)).length}</small></button>)}</div>
