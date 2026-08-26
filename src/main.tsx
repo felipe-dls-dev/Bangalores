@@ -903,7 +903,12 @@ function CombatScreen(){
  const personalSummons=heroSkillUses>0?(isCoop?battle.playerBuffs?.[coop.userId]?.summons:g.summons):[]
  const legacySummon=heroSkillUses>0?(isCoop?battle.playerBuffs?.[coop.userId]?.summon:g.summon):undefined
  const currentSummons:Summon[]=(Array.isArray(personalSummons)?personalSummons:(legacySummon?[legacySummon]:[])).filter((fera:Summon)=>fera.hp>0).slice(0,2)
- const statusKindsOf=(status:any)=>(['bleed','burn','poison','frozen','grabbed','blinded','stunned'] as const).filter(k=>status?.[k])
+ // Cada condição carrega quantos turnos de fato restam (bleed/burn/poison guardam isso em
+ // .turns; frozen/grabbed/blinded são o próprio número; stunned é uso único, sem contagem) --
+ // o badge em combate só mostrava o nome, então virar informado exigia passar o mouse (inútil
+ // no toque/celular) sobre um tooltip que, até a correção acima, ainda dizia um valor errado.
+ const statusTurnsOf=(status:any,kind:string):number|undefined=>{const value=status?.[kind];if(value==null)return undefined;return typeof value==='object'?value.turns:typeof value==='number'?value:undefined}
+ const statusKindsOf=(status:any)=>(['bleed','burn','poison','frozen','grabbed','blinded','stunned'] as const).filter(k=>status?.[k]).map(k=>({kind:k,turns:statusTurnsOf(status,k)}))
  const heroStatusKinds=isCoop?statusKindsOf(battle.playerBuffs?.[coop.userId]):statusKindsOf(g.heroStatus)
  const enemyStatusKinds=isCoop?statusKindsOf(battle.enemyStatus):statusKindsOf(g.enemyStatus)
  const performCoopAttack=(targetMinionId?:string)=>{const heal=coopHealProc(g),rollBonus=g.heroRollBonus+(g.classRollBonus??0),critBoost=hasCraftedEffect(g,'critico'),spec=specializationBonuses(g),critChancePct=(hasCraftedEffect(g,'critico_forjado')?.05:0)+spec.crit,critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,bossBonus=targetMinionId?0:(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),rollBonus,critBoost,heal.chance,heal.amount,targetMinionId?'Ataque direcionado':undefined,targetMinionId,false,critChancePct,critDamageBonusPct,heroWeaponElement(g),false,spec.elemental);if(g.heroRollBonus||(!targetMinionId&&g.firstStrikeBonus))useGame.setState({heroRollBonus:0,firstStrikeBonus:0})}
@@ -1013,7 +1018,7 @@ function CombatScreen(){
 
    <div className="combat-tip"><Sparkles size={15}/> Dica: use os consumíveis no momento certo — utilizar um item consome seu turno.</div>
  </div>}
-function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly string[]}){
+function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly{kind:string;turns?:number}[]}){
  const galleryKind=side==='hero'?'Herói':boss?'Chefe':kind==='ELITE'?'Elite':'Monstro'
  const card={id:classId,nome:name,arte:image,habilidade:ability,ataque:attack,defesa:defense,vida:max,boss,elite:kind==='ELITE',raridade:side==='hero'?'heroico':boss?'lendario':kind==='ELITE'?'raro':'comum'}
  return <motion.article className={'fighter premium-fighter combat-card-fighter '+side+(boss?' boss':'')} animate={shaking?{x:[0,-9,8,-5,0]}:{x:0}} transition={{duration:.35}}>
@@ -1021,7 +1026,7 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
   {boss&&<small className="combat-card-phase">FASE {phase??1}</small>}
   {shaking&&damage!==undefined&&<motion.div className="floating-damage" initial={{opacity:0,y:10,scale:.7}} animate={{opacity:1,y:-45,scale:1.2}} transition={{duration:.5}}>-{damage}</motion.div>}
   <div className="hp-label"><span>Vida</span><strong>{Math.max(0,hp)}/{max}</strong></div><div className="hp-track"><motion.div animate={{width:`${Math.max(0,hp/max*100)}%`}} transition={{duration:.45}}/></div>
-  {Boolean(statusKinds?.length)&&<div className="status-badges">{statusKinds!.map(k=><span key={k} className={`status-badge status-${k}`} title={STATUS_DURATION_NOTE[k]??''}>{STATUS_LABELS[k]}</span>)}</div>}
+  {Boolean(statusKinds?.length)&&<div className="status-badges">{statusKinds!.map(({kind,turns})=><span key={kind} className={`status-badge status-${kind}`} title={STATUS_DURATION_NOTE[kind]??''}>{STATUS_LABELS[kind]}{turns!=null&&turns>0?` ×${turns}`:''}</span>)}</div>}
  </motion.article>
 }
 function LootScreen(){const g=useGame(),coop=useCoop();const l=g.loot,defeat=l?.title==='EQUIPE DERROTADA',epic=Boolean(l&&!defeat&&l.title!=='VITÓRIA');
