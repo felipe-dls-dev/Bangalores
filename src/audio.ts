@@ -1,6 +1,16 @@
+// Um único som ('hit') tocava pra todo tipo de ataque -- lâmina, garras, martelo e magia
+// soavam idênticos. Agora cada AttackAnimType (ver game.ts) tem seu próprio arquivo; o mapa
+// tipo→som fica em main.tsx (ATTACK_SFX), perto de onde AttackAnimType já é importado, pra
+// este arquivo continuar sem depender da store.
 const SFX_FILES={
  click:'assets/sfx/click.ogg',
- hit:'assets/sfx/hit.ogg',
+ atkCorte:'assets/sfx/attack-corte.ogg',
+ atkFacas:'assets/sfx/attack-facas.ogg',
+ atkMartelo:'assets/sfx/attack-martelo.ogg',
+ atkMagico:'assets/sfx/attack-magico.ogg',
+ atkFuro:'assets/sfx/attack-furo.ogg',
+ atkGarras:'assets/sfx/attack-garras.ogg',
+ atkEspinhos:'assets/sfx/attack-espinhos.ogg',
  coin:'assets/sfx/coin.ogg',
  levelup:'assets/sfx/levelup.ogg',
  forgeSuccess:'assets/sfx/forge-success.ogg',

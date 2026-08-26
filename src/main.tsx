@@ -9,10 +9,12 @@ import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BO
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
 import { onlineConfigured } from './online/supabase'
 import { CoopProvider, useCoop } from './online/CoopContext'
-import { playSfx, isAudioMuted, setAudioMuted } from './audio'
+import { playSfx, isAudioMuted, setAudioMuted, type SfxId } from './audio'
 import { AuthProvider, useAuth } from './online/AuthContext'
 import PersistentCoopScreen from './online/CoopScreen'
 import './styles.css'
+
+const ATTACK_SFX:Record<AttackAnimType,SfxId>={corte:'atkCorte',facas:'atkFacas',martelo:'atkMartelo',magico:'atkMagico',furo:'atkFuro',garras:'atkGarras',espinhos:'atkEspinhos'}
 
 const nav=[['map','Mapa',Map],['character','Ficha',ScrollText],['inventory','Mochila',Backpack],['equipment','Equipamentos',Shield],['shop','Loja',ShoppingBag],['forge','Forja',Wand2],['guild','Guilda',Trophy],['chronicle','Crônicas',History],['gallery','Coleção',Images],['coop','Coop',Users],['tutorial','Tutorial',BookOpen]] as const
 const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
@@ -851,7 +853,27 @@ function CombatScreen(){
  const summonFxEvent=isCoop?battle?.summonAttackFx:g.summonAttackFx
  const [summonFxIndex,setSummonFxIndex]=React.useState(-1)
  React.useEffect(()=>{const types=summonFxEvent?.types as AttackAnimType[]|undefined;if(!types?.length){setSummonFxIndex(-1);return}setSummonFxIndex(0);const timers=types.slice(1).map((_,index)=>window.setTimeout(()=>setSummonFxIndex(index+1),(index+1)*700));timers.push(window.setTimeout(()=>setSummonFxIndex(-1),types.length*700+1400));return()=>timers.forEach(window.clearTimeout)},[summonFxEvent?.nonce])
- React.useEffect(()=>{if(g.combatRoll)playSfx('hit')},[g.combatRoll])
+ // Um único som ('hit') tocava pra todo ataque -- lâmina, garras, martelo e magia soavam
+ // idênticos. Agora o tipo de arma/ataque decide o som, igual ao que já decide a animação
+ // visual (currentAttackType, mais abaixo): arma equipada do herói, ou a heurística de nome/
+ // habilidade do inimigo (enemyWeaponAnimationType). No coop, um golpe de um COLEGA (não do
+ // jogador local) usa a arma dele, guardada em memberVitals -- sem isso o som sempre tocaria a
+ // arma do jogador local, mesmo quando quem bateu foi um arqueiro do grupo.
+ React.useEffect(()=>{
+  const roll=g.combatRoll
+  if(!roll)return
+  if(roll.attacker==='enemy'){if(e)playSfx(ATTACK_SFX[enemyWeaponAnimationType(e)]);return}
+  const attackerUserId=isCoop?battle?.lastRoll?.attackerUserId:undefined
+  const attackerWeaponAnim=isCoop&&attackerUserId&&attackerUserId!==coop.userId?(coop.room?.shared_state?.memberVitals as Record<string,{weaponAnim?:AttackAnimType}>|undefined)?.[attackerUserId]?.weaponAnim:undefined
+  playSfx(ATTACK_SFX[attackerWeaponAnim??heroWeaponAnimationType(g.equipped.mao_direita)])
+ },[g.combatRoll])
+ // Ataques de fera invocada (garras/mágico/martelo conforme o tipo, ver SUMMON_ATTACK_ANIMATION)
+ // nunca tocavam som nenhum -- só combatRoll disparava áudio, e ataque de fera nunca seta
+ // combatRoll (usa summonAttackFx à parte). O nonce muda a cada golpe, então serve de gatilho.
+ React.useEffect(()=>{
+  const type=summonFxEvent?.types?.[0] as AttackAnimType|undefined
+  if(type)playSfx(ATTACK_SFX[type])
+ },[summonFxEvent?.nonce])
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
  const defeated=g.hp<=0,disabled=!myTurn||g.animating||defeated,sharedRoll=isCoop?battle.lastRoll:undefined,intent=enemyIntentFor(e,g.combatTurn)
  // Sem limite de quantos tipos aparecem aqui -- a lista já rola (combat-v033 .combat-consumables
