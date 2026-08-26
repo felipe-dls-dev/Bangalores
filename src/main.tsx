@@ -613,7 +613,11 @@ function ForgeTutorialPanel(){
   {(weapon||armorEntries.length>0)&&<div className="attunement-service">
    <strong>Serviço de sintonia elemental</strong>
    <small>Sintonize o dano da sua arma ou conceda resistência elemental às demais peças equipadas: 80 ouro e 3 materiais da afinidade, por peça.</small>
-   {weapon&&<div className="attunement-item"><span>{weapon.nome}<em>Dano da arma — atual: {heroWeaponElement(g)}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={heroWeaponElement(g)===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>g.attuneEquipment(weapon.id,element)}>{element}</button>})}</div></div>}
+   {/* attuneEquipment exige a referência de instância equipada (com sufixo '@@...'), não o id
+       genérico do catálogo -- weapon.id (vindo de equipmentByRef) é o id base, então os botões
+       de sintonia da arma nunca faziam nada (Object.values(s.equipped).includes(id) sempre
+       falhava). g.equipped.mao_direita é a referência de instância de verdade. */}
+   {weapon&&<div className="attunement-item"><span>{weapon.nome}<em>Dano da arma — atual: {heroWeaponElement(g)}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={heroWeaponElement(g)===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>g.attuneEquipment(g.equipped.mao_direita!,element)}>{element}</button>})}</div></div>}
    {armorEntries.map(({id,item})=><div className="attunement-item" key={id}><span>{item.nome}<em>Resistência — atual: {g.equipmentResistances[id]??'nenhuma'}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={g.equipmentResistances[id]===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>g.attuneEquipment(id,element)}>{element}</button>})}</div></div>)}
   </div>}
  </section>
