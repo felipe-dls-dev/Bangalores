@@ -36,11 +36,14 @@ const ELEMENT_LABELS:Record<string,string>={fisico:'Físico',fogo:'Fogo',gelo:'G
 // Elemento (arma) e resistência (demais slots) só existem em itens forjados com sucesso ou
 // obtidos de chefes — a loja nunca atribui essas propriedades, então a nota só aparece
 // quando o id específico deste item ganhou o atributo (equipmentElements/equipmentResistances).
-// Duração real de cada condição de status (ver STATUS_INFO em data/expansion.ts e tickStatus/
-// applyElementalStatus em store/game.ts): todas duram exatamente 1 turno, só o efeito muda --
-// os badges de status em combate só mostravam o nome (ex. "Sangrando"), sem dizer por quanto
-// tempo o efeito ficava ativo.
-const STATUS_DURATION_NOTE:Record<string,string>={bleed:'Sangrando: dano único ao fim do turno seguinte (dura 1 turno).',burn:'Pegando fogo: dano único ao fim do turno seguinte (dura 1 turno).',poison:'Envenenado: dano único ao fim do turno seguinte (dura 1 turno).',frozen:'Congelado: penaliza rolagens de ataque e defesa no turno seguinte (dura 1 turno).',grabbed:'Agarrado: penaliza rolagens de ataque e defesa no turno seguinte (dura 1 turno).',blinded:'Cego: penaliza rolagens de ataque e defesa no turno seguinte (dura 1 turno).',stunned:'Atordoado: cancela a próxima defesa ou ação (uso único, some após isso).'}
+// Duração real de cada condição (ver applyElementalStatus em store/game.ts, que é quem define
+// os valores de fato): NÃO é uniforme -- este texto dizia "todas duram exatamente 1 turno" pra
+// toda condição, mas só Pegando fogo e Cego realmente duram 1; Sangrando/Congelado/Agarrado
+// duram 2 e Envenenado dura 3 (a especialização Domínio Elemental soma +1 turno a todas quando
+// o herói é quem aplica). O tooltip do badge de status em combate mostrava esse "1 turno" errado
+// pra 4 das 7 condições -- alinhado agora com STATUS_INFO (data/expansion.ts), que sempre esteve
+// correto.
+const STATUS_DURATION_NOTE:Record<string,string>={bleed:'Sangrando: dano a cada turno, dura 2 turnos (a especialização Domínio Elemental soma +1).',burn:'Pegando fogo: dano único, dura 1 turno.',poison:'Envenenado: dano a cada turno, dura 3 turnos (a especialização Domínio Elemental soma +1).',frozen:'Congelado: penaliza rolagens de ataque e defesa, dura 2 turnos (a especialização Domínio Elemental soma +1).',grabbed:'Agarrado: penaliza rolagens de ataque e defesa, dura 2 turnos (a especialização Domínio Elemental soma +1).',blinded:'Cego: penaliza rolagens de ataque e defesa, dura 1 turno.',stunned:'Atordoado: cancela a próxima defesa ou ação (uso único, some após isso).'}
 function elementalNote(g:{equipmentElements:Record<string,string>;equipmentResistances:Record<string,string>},id:string){const el=g.equipmentElements[id];if(el)return ` • Elemento: ${ELEMENT_LABELS[el]}`;const res=g.equipmentResistances[id];if(res)return ` • Resistência: ${ELEMENT_LABELS[res]}`;return''}
 // Pedras instaladas numa peça específica não apareciam em lugar nenhum fora da Forja -- o
 // jogador via os atributos "de fábrica" do item em toda outra tela (Equipamentos, Mochila) e
