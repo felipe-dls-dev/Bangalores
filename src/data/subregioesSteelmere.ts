@@ -48,7 +48,10 @@ const rows:Row[]=[
  ['aether_coracao','aetherium','Coração do Reator',96,100,'⚡','Tesouros míticos e núcleos supremos','O Arquiteto de Steelmere',7],
 ]
 
-function makeEnemy(name:string,level:number,index:number):SubregionEnemy{return{nome:name,ataque:Math.ceil(4+level*.9)+(index===2?2:0),vida:Math.ceil(14+level*3.6)+(index===1?8:0),ouro:Math.ceil(6+level*1.3),habilidade:['Ataque a vapor','Blindagem reforçada','Precisão mecânica'][index],arte:enemyArt[(level+index)%enemyArt.length]}}
+function makeEnemy(name:string,level:number,index:number):SubregionEnemy{
+  const filename = name.toLowerCase().replace(/ /g, '-').replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ã/g, 'a').replace(/õ/g, 'o').replace(/ç/g, 'c').replace(/â/g, 'a') + '.webp';
+  return{nome:name,ataque:Math.ceil(4+level*.9)+(index===2?2:0),vida:Math.ceil(14+level*3.6)+(index===1?8:0),ouro:Math.ceil(6+level*1.3),habilidade:['Ataque a vapor','Blindagem reforçada','Precisão mecânica'][index],arte:`assets/art/monsters/steelmere/${filename}`}
+}
 export const STEELMERE_SUBREGIONS:Subregion[]=rows.map((row,index)=>{const[id,regionId,nome,min,max,icone,tema,chefe,tier]=row,encontrosNecessarios=3+Math.min(3,Math.floor(tier/2)),raridade=(tier>=7?'mitico':tier>=5?'lendario':tier>=3?'epico':'raro') as Rarity,maxFases=tier>=7?4:tier>=4?3:2
  return{id,regionId,nome,descricao:`Uma expedição perigosa em ${nome}, no coração industrial de Steelmere.`,nivelMin:min,nivelMax:max,encontrosNecessarios,icone,temaLoot:tema,desafios:['Vazamento de vapor','Patrulha automatizada','Cofre trancado','Armadilha mecânica'],inimigos:[makeEnemy(`Predador de ${nome}`,min,0),makeEnemy(`Sentinela de ${nome}`,min+1,1),makeEnemy(`Arauto de ${nome}`,max,2)],chefe:{nome:chefe,ataque:Math.ceil(8+max*1.1),vida:Math.ceil(30+max*7.2),ouro:Math.ceil(14+max*6.4),habilidade:maxFases>=4?'Quatro fases e sobrecarga crescente':maxFases>=3?'Muda de fase e reforça a blindagem':'Ataque duplo ao perder metade da vida',arte:bossArt[index%bossArt.length],maxFases,raridade:raridade as Rarity}}
 })

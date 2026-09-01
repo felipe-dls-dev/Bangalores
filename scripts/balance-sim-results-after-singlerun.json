@@ -1,0 +1,591 @@
+[
+  {
+    "heroId": "guerreiro",
+    "finalLevel": 69,
+    "totalBattles": 4929,
+    "totalHeroActions": 12386,
+    "deaths": 21,
+    "bossesDefeated": 39,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "lunar_aranhas"
+    ],
+    "avgDamageOverall": 49.96300974377481,
+    "milestones": {
+      "10": {
+        "battles": 11,
+        "heroActions": 55,
+        "hits": 33,
+        "totalDamage": 357
+      },
+      "20": {
+        "battles": 82,
+        "heroActions": 342,
+        "hits": 172,
+        "totalDamage": 3852
+      },
+      "40": {
+        "battles": 4809,
+        "heroActions": 11797,
+        "hits": 5265,
+        "totalDamage": 256758
+      },
+      "50": {
+        "battles": 4860,
+        "heroActions": 12020,
+        "hits": 5369,
+        "totalDamage": 263188
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 11,
+        "heroActions": 55,
+        "avgDamage": 10.818181818181818
+      },
+      "10-20": {
+        "battles": 71,
+        "heroActions": 287,
+        "avgDamage": 25.14388489208633
+      },
+      "20-40": {
+        "battles": 4727,
+        "heroActions": 11455,
+        "avgDamage": 49.65756921264481
+      },
+      "40-50": {
+        "battles": 51,
+        "heroActions": 223,
+        "avgDamage": 61.82692307692308
+      }
+    }
+  },
+  {
+    "heroId": "cacadora",
+    "finalLevel": 80,
+    "totalBattles": 33126,
+    "totalHeroActions": 88556,
+    "deaths": 120,
+    "bossesDefeated": 33,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "lunar_monolito",
+      "montanhas_passagem",
+      "pico_cratera",
+      "mortas_torre",
+      "eclipse_jardim",
+      "eclipse_torre",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 66.38353336900849,
+    "milestones": {
+      "10": {
+        "battles": 13,
+        "heroActions": 85,
+        "hits": 50,
+        "totalDamage": 429
+      },
+      "20": {
+        "battles": 561,
+        "heroActions": 1609,
+        "hits": 843,
+        "totalDamage": 16463
+      },
+      "40": {
+        "battles": 7074,
+        "heroActions": 18615,
+        "hits": 8676,
+        "totalDamage": 302606
+      },
+      "50": {
+        "battles": 9538,
+        "heroActions": 25034,
+        "hits": 11642,
+        "totalDamage": 446097
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 13,
+        "heroActions": 85,
+        "avgDamage": 8.58
+      },
+      "10-20": {
+        "battles": 548,
+        "heroActions": 1524,
+        "avgDamage": 20.219419924337956
+      },
+      "20-40": {
+        "battles": 6513,
+        "heroActions": 17006,
+        "avgDamage": 36.530448104174646
+      },
+      "40-50": {
+        "battles": 2464,
+        "heroActions": 6419,
+        "avgDamage": 48.37862440997977
+      }
+    }
+  },
+  {
+    "heroId": "arcanista",
+    "finalLevel": 82,
+    "totalBattles": 42676,
+    "totalHeroActions": 92375,
+    "deaths": 97,
+    "bossesDefeated": 31,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "montanhas_mina",
+      "khar_templo_minotauro",
+      "pico_encosta",
+      "mortas_campos",
+      "montanhas_cume",
+      "eclipse_jardim",
+      "eclipse_arquivo",
+      "eclipse_trono",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 97.81508713963282,
+    "milestones": {
+      "10": {
+        "battles": 15,
+        "heroActions": 37,
+        "hits": 19,
+        "totalDamage": 458
+      },
+      "20": {
+        "battles": 40,
+        "heroActions": 162,
+        "hits": 72,
+        "totalDamage": 2047
+      },
+      "40": {
+        "battles": 4804,
+        "heroActions": 11046,
+        "hits": 4922,
+        "totalDamage": 286891
+      },
+      "50": {
+        "battles": 11582,
+        "heroActions": 26387,
+        "hits": 11739,
+        "totalDamage": 790420
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 15,
+        "heroActions": 37,
+        "avgDamage": 24.105263157894736
+      },
+      "10-20": {
+        "battles": 25,
+        "heroActions": 125,
+        "avgDamage": 29.9811320754717
+      },
+      "20-40": {
+        "battles": 4764,
+        "heroActions": 10884,
+        "avgDamage": 58.730721649484536
+      },
+      "40-50": {
+        "battles": 6778,
+        "heroActions": 15341,
+        "avgDamage": 73.86372304532786
+      }
+    }
+  },
+  {
+    "heroId": "guardiao",
+    "finalLevel": 75,
+    "totalBattles": 23773,
+    "totalHeroActions": 70000,
+    "deaths": 59,
+    "bossesDefeated": 35,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "pico_cinzas",
+      "eclipse_jardim",
+      "eclipse_arquivo",
+      "eclipse_trono",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 68.31861256448721,
+    "milestones": {
+      "10": {
+        "battles": 12,
+        "heroActions": 56,
+        "hits": 35,
+        "totalDamage": 374
+      },
+      "20": {
+        "battles": 38,
+        "heroActions": 251,
+        "hits": 139,
+        "totalDamage": 1861
+      },
+      "40": {
+        "battles": 286,
+        "heroActions": 1257,
+        "hits": 656,
+        "totalDamage": 18404
+      },
+      "50": {
+        "battles": 4834,
+        "heroActions": 14191,
+        "hits": 5877,
+        "totalDamage": 271530
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 12,
+        "heroActions": 56,
+        "avgDamage": 10.685714285714285
+      },
+      "10-20": {
+        "battles": 26,
+        "heroActions": 195,
+        "avgDamage": 14.298076923076923
+      },
+      "20-40": {
+        "battles": 248,
+        "heroActions": 1006,
+        "avgDamage": 31.99806576402321
+      },
+      "40-50": {
+        "battles": 4548,
+        "heroActions": 12934,
+        "avgDamage": 48.48228308753112
+      }
+    }
+  },
+  {
+    "heroId": "druida",
+    "finalLevel": 81,
+    "totalBattles": 47302,
+    "totalHeroActions": 102066,
+    "deaths": 95,
+    "bossesDefeated": 30,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "lunar_aranhas",
+      "montanhas_mina",
+      "mortas_catacumbas",
+      "pico_cratera",
+      "eclipse_portoes",
+      "eclipse_jardim",
+      "eclipse_torre",
+      "eclipse_arquivo",
+      "eclipse_trono",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 73.82622130665096,
+    "milestones": {
+      "10": {
+        "battles": 15,
+        "heroActions": 48,
+        "hits": 33,
+        "totalDamage": 429
+      },
+      "20": {
+        "battles": 43,
+        "heroActions": 192,
+        "hits": 125,
+        "totalDamage": 1956
+      },
+      "40": {
+        "battles": 5841,
+        "heroActions": 12817,
+        "hits": 6917,
+        "totalDamage": 258379
+      },
+      "50": {
+        "battles": 9571,
+        "heroActions": 20868,
+        "hits": 11225,
+        "totalDamage": 479044
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 15,
+        "heroActions": 48,
+        "avgDamage": 13
+      },
+      "10-20": {
+        "battles": 28,
+        "heroActions": 144,
+        "avgDamage": 16.597826086956523
+      },
+      "20-40": {
+        "battles": 5798,
+        "heroActions": 12625,
+        "avgDamage": 37.753680800942284
+      },
+      "40-50": {
+        "battles": 3730,
+        "heroActions": 8051,
+        "avgDamage": 51.22214484679666
+      }
+    }
+  },
+  {
+    "heroId": "cacador",
+    "finalLevel": 75,
+    "totalBattles": 23702,
+    "totalHeroActions": 65865,
+    "deaths": 108,
+    "bossesDefeated": 35,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "pico_encosta",
+      "pico_cratera",
+      "mortas_torre",
+      "eclipse_arquivo",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 73.57683223854158,
+    "milestones": {
+      "10": {
+        "battles": 13,
+        "heroActions": 55,
+        "hits": 30,
+        "totalDamage": 388
+      },
+      "20": {
+        "battles": 36,
+        "heroActions": 245,
+        "hits": 134,
+        "totalDamage": 2145
+      },
+      "40": {
+        "battles": 3182,
+        "heroActions": 8848,
+        "hits": 3827,
+        "totalDamage": 187777
+      },
+      "50": {
+        "battles": 4837,
+        "heroActions": 13299,
+        "hits": 5767,
+        "totalDamage": 296470
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 13,
+        "heroActions": 55,
+        "avgDamage": 12.933333333333334
+      },
+      "10-20": {
+        "battles": 23,
+        "heroActions": 190,
+        "avgDamage": 16.89423076923077
+      },
+      "20-40": {
+        "battles": 3146,
+        "heroActions": 8603,
+        "avgDamage": 50.26590847549418
+      },
+      "40-50": {
+        "battles": 1655,
+        "heroActions": 4451,
+        "avgDamage": 56.02731958762887
+      }
+    }
+  },
+  {
+    "heroId": "monge",
+    "finalLevel": 71,
+    "totalBattles": 18974,
+    "totalHeroActions": 33021,
+    "deaths": 83,
+    "bossesDefeated": 36,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "montanhas_abismo",
+      "pico_cratera",
+      "mortas_torre",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 72.50146402991126,
+    "milestones": {
+      "10": {
+        "battles": 15,
+        "heroActions": 26,
+        "hits": 25,
+        "totalDamage": 343
+      },
+      "20": {
+        "battles": 36,
+        "heroActions": 104,
+        "hits": 80,
+        "totalDamage": 1484
+      },
+      "40": {
+        "battles": 3425,
+        "heroActions": 5477,
+        "hits": 4068,
+        "totalDamage": 190431
+      },
+      "50": {
+        "battles": 4834,
+        "heroActions": 7807,
+        "hits": 5761,
+        "totalDamage": 277519
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 15,
+        "heroActions": 26,
+        "avgDamage": 13.72
+      },
+      "10-20": {
+        "battles": 21,
+        "heroActions": 78,
+        "avgDamage": 20.745454545454546
+      },
+      "20-40": {
+        "battles": 3389,
+        "heroActions": 5373,
+        "avgDamage": 47.37888665997994
+      },
+      "40-50": {
+        "battles": 1409,
+        "heroActions": 2330,
+        "avgDamage": 51.44004725339634
+      }
+    }
+  },
+  {
+    "heroId": "sacerdotisa",
+    "finalLevel": 70,
+    "totalBattles": 9623,
+    "totalHeroActions": 28246,
+    "deaths": 45,
+    "bossesDefeated": 38,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "khar_cofre",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 64.91665196683718,
+    "milestones": {
+      "10": {
+        "battles": 14,
+        "heroActions": 68,
+        "hits": 33,
+        "totalDamage": 391
+      },
+      "20": {
+        "battles": 41,
+        "heroActions": 246,
+        "hits": 120,
+        "totalDamage": 1784
+      },
+      "40": {
+        "battles": 2451,
+        "heroActions": 7090,
+        "hits": 3024,
+        "totalDamage": 128316
+      },
+      "50": {
+        "battles": 4849,
+        "heroActions": 13870,
+        "hits": 5785,
+        "totalDamage": 265484
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 14,
+        "heroActions": 68,
+        "avgDamage": 11.848484848484848
+      },
+      "10-20": {
+        "battles": 27,
+        "heroActions": 178,
+        "avgDamage": 16.011494252873565
+      },
+      "20-40": {
+        "battles": 2410,
+        "heroActions": 6844,
+        "avgDamage": 43.57162534435262
+      },
+      "40-50": {
+        "battles": 2398,
+        "heroActions": 6780,
+        "avgDamage": 49.68055052517204
+      }
+    }
+  },
+  {
+    "heroId": "conjurador",
+    "finalLevel": 74,
+    "totalBattles": 28378,
+    "totalHeroActions": 48402,
+    "deaths": 135,
+    "bossesDefeated": 34,
+    "totalBosses": 40,
+    "bossesSkipped": [
+      "khar_labirinto",
+      "mortas_brejo",
+      "eclipse_portoes",
+      "eclipse_arquivo",
+      "eclipse_trono",
+      "eclipse_fenda"
+    ],
+    "avgDamageOverall": 70.58151144257661,
+    "milestones": {
+      "10": {
+        "battles": 16,
+        "heroActions": 42,
+        "hits": 33,
+        "totalDamage": 431
+      },
+      "20": {
+        "battles": 44,
+        "heroActions": 146,
+        "hits": 106,
+        "totalDamage": 1901
+      },
+      "40": {
+        "battles": 4804,
+        "heroActions": 7367,
+        "hits": 5738,
+        "totalDamage": 222929
+      },
+      "50": {
+        "battles": 4856,
+        "heroActions": 7618,
+        "hits": 5901,
+        "totalDamage": 229959
+      }
+    },
+    "brackets": {
+      "1-10": {
+        "battles": 16,
+        "heroActions": 42,
+        "avgDamage": 13.06060606060606
+      },
+      "10-20": {
+        "battles": 28,
+        "heroActions": 104,
+        "avgDamage": 20.136986301369863
+      },
+      "20-40": {
+        "battles": 4760,
+        "heroActions": 7221,
+        "avgDamage": 39.24502840909091
+      },
+      "40-50": {
+        "battles": 52,
+        "heroActions": 251,
+        "avgDamage": 43.12883435582822
+      }
+    }
+  }
+]
