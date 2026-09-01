@@ -975,7 +975,9 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .attunement-item em{font-style:normal;color:var(--muted);font-weight:400;font-size:.78rem}
 .attunement-item>div{display:flex;flex-wrap:wrap;gap:6px}
 .attunement-item button.selected{border-color:#c59343;background:rgba(169,113,36,.18);font-weight:700}@media(max-width:700px){.build-summary-grid,.build-tags,.specialization-tier>div{grid-template-columns:1fr 1fr}}
-.loot-page>.panel{width:min(920px,100%)}
+.loot-page>.panel{width:min(920px,100%);position:relative}
+.loot-page>.panel>button.primary:last-child{position:absolute;top:18px;right:18px;margin:0;z-index:2}
+@media(max-width:600px){.loot-page>.panel>button.primary:last-child{top:12px;right:12px;padding:.55rem .7rem;font-size:.8rem}}
 .loot-preparation{margin:18px 0;padding:14px;text-align:left;border:1px solid #654820;border-radius:12px;background:linear-gradient(145deg,#21160e,#100b08)}
 .loot-preparation>header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px}
 .loot-preparation>header>div{display:flex;align-items:center;gap:10px}.loot-preparation>header svg{color:#e3ad4f}.loot-preparation>header span{display:grid;gap:3px}.loot-preparation>header strong{color:#edc777;font-family:Georgia,serif}.loot-preparation>header small{color:#a99679}.loot-preparation>header>b{white-space:nowrap;color:#efc96e}
