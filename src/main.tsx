@@ -34,6 +34,13 @@ function heroAbilityParts(text:string):{passivo?:string;ativo:string}{
 // Themed card frames per region, matching each region's lore (lava/volcano -> fire, undead catacombs -> death, etc).
 // Regions left out (campos_dourados, trilhouro) keep the default gold frame-overlay.png.
 const CATEGORY_FRAME:Record<string,string>={CHEFE:'red',ELITE:'purple',INIMIGO:'green'}
+// Paleta de interface acompanha a região ativa sem alterar as regras de jogo.
+// O dourado continua sendo o fallback para o menu e regiões sem uma identidade própria.
+const REGION_UI_THEME:Record<string,string>={
+ campos_dourados:'gold',floresta_lunargenta:'forest',montanhas_cinzentas:'frost',pico_escarlate:'volcanic',
+ terras_mortas:'shadow',khar_dur:'forge',coracao_eclipse:'eclipse',frostgard:'frost',engrenverde:'forest',
+ trilhouro:'harvest',vulcannis:'volcanic',ferrujal:'rust',coroferro:'coroferro',aetherium:'aetherium'
+}
 const ELEMENT_LABELS:Record<string,string>={fisico:'Físico',fogo:'Fogo',gelo:'Gelo',natureza:'Natureza',sombra:'Sombra',luz:'Luz',arcano:'Arcano'}
 // Elemento (arma) e resistência (demais slots) só existem em itens forjados com sucesso ou
 // obtidos de chefes — a loja nunca atribui essas propriedades, então a nota só aparece
@@ -253,7 +260,8 @@ function App(){
   document.addEventListener('keydown',handleEscape)
   return()=>document.removeEventListener('keydown',handleEscape)
  },[fleeConfirm,g.screen,hero,g.setScreen])
- return <div className="app-shell"><CoopBattleSync/>
+ const regionTheme=REGION_UI_THEME[g.regionId]??'gold'
+ return <div className="app-shell" data-region-theme={regionTheme}><CoopBattleSync/>
    {g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='event'&&g.screen!=='cardCreator'&&<TopBar/>}
    <AnimatePresence mode="wait">
     <motion.main key={g.screen} className="screen" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.22}}>
