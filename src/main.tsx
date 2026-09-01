@@ -246,6 +246,7 @@ function App(){
  // (não representam uma ação real) para não tocar som em cliques que não fizeram nada.
  React.useEffect(()=>{const onClick=(event:MouseEvent)=>{const button=(event.target as HTMLElement)?.closest?.('button');if(button&&!button.disabled)playSfx('click',.28)};document.addEventListener('click',onClick);return()=>document.removeEventListener('click',onClick)},[])
  const g=useGame();
+ React.useEffect(()=>{let previous=g.screen;return useGame.subscribe((state:any)=>{if(state.screen==='loot'&&previous!=='loot'){playSfx(state.loot?.title==='EQUIPE DERROTADA'?'defeat':'coin',.5)}previous=state.screen})},[g.screen])
  const hero=HEROES.find(h=>h.id===g.heroId)
  const [fleeConfirm,setFleeConfirm]=React.useState(false)
  React.useEffect(()=>{if(g.screen!=='combat')setFleeConfirm(false)},[g.screen])

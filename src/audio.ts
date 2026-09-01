@@ -15,6 +15,7 @@ const SFX_FILES={
  levelup:'assets/sfx/levelup.ogg',
  forgeSuccess:'assets/sfx/forge-success.ogg',
  forgeFail:'assets/sfx/forge-fail.ogg',
+ heal:'assets/sfx/forge-success.ogg',potion:'assets/sfx/levelup.ogg',defeat:'assets/sfx/forge-fail.ogg',
 } as const
 export type SfxId=keyof typeof SFX_FILES
 const MUTE_KEY='bangalores-audio-muted'
