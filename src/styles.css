@@ -979,6 +979,10 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .loot-page>.panel>button.primary:last-child{position:absolute;top:18px;right:18px;margin:0;z-index:2}
 .loot-page .loot-actions{width:100%;margin:24px auto 0;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}
 .loot-page .loot-actions button{min-width:220px;text-align:center}
+.loot-page>.panel:has(.loot-actions){display:flex;flex-direction:column}
+.loot-page>.panel:has(.loot-actions)>.loot-actions{order:2}
+.loot-page>.panel:has(.loot-actions)>.loot-stats{order:3}
+.loot-page>.panel:has(.loot-actions)>.loot-preparation,.loot-page>.panel:has(.loot-actions)>.loot-equipment{order:4}
 @media(max-width:600px){.loot-page>.panel>button.primary:last-child{top:12px;right:12px;padding:.55rem .7rem;font-size:.8rem}}
 .loot-preparation{margin:18px 0;padding:14px;text-align:left;border:1px solid #654820;border-radius:12px;background:linear-gradient(145deg,#21160e,#100b08)}
 .loot-preparation>header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px}
