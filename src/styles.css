@@ -720,6 +720,14 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .equipment-layout .slot-art-preview{grid-column:1;grid-row:2;align-self:start}
 .equipment-layout .slot-info{grid-column:2;grid-row:2;align-self:start;padding-top:1px}
 .equipment-layout .slot-remove{grid-column:1/3;grid-row:3;align-self:end}
+
+/* Textos sobre as molduras ilustradas usam a placa clara da própria carta.
+   Mantemos preto em todas as regiões para preservar contraste e leitura. */
+.app-shell .game-card.ornate-card .ornate-name,
+.app-shell .game-card.ornate-card .ornate-effect,
+.app-shell .game-card.ornate-card .ornate-stat,
+.app-shell .game-card.ornate-card .ornate-badge,
+.app-shell .game-card.ornate-card.ornate-enemy .ornate-badge{color:#24170b!important;text-shadow:0 1px rgba(255,255,255,.28)}
 .equipment-layout .slot.boots{grid-column:2;width:100%;justify-self:stretch}
 .equipment-layout .slot.backpack-slot{cursor:default;border-color:#9a7138!important;box-shadow:inset 0 0 20px rgba(202,153,69,.06)}
 .equipment-layout .slot.backpack-slot:hover{transform:none}
