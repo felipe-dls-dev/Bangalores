@@ -621,6 +621,15 @@ function MaterialSourceDialog({material,onClose}:{material:ForgeMaterialEntry;on
 function ForgeTutorialPanel(){
  const [open,setOpen]=React.useState(false),[attunementPrompt,setAttunementPrompt]=React.useState<null|{id:string;element:GameElement;name:string;effect:string;material:string;type:'weapon'|'armor'}>(null),g=useGame(),weapon=equipmentByRef(g.equipped.mao_direita)
  const attunementTheme:Record<GameElement,{glow:string;border:string;accent:string}>={fisico:{glow:'rgba(179,120,49,.28)',border:'#9a6633',accent:'#efc77a'},fogo:{glow:'rgba(193,71,29,.28)',border:'#c15c2d',accent:'#ffb47f'},gelo:{glow:'rgba(74,144,183,.28)',border:'#4a90b7',accent:'#b7e6ff'},natureza:{glow:'rgba(78,143,71,.28)',border:'#5d8c43',accent:'#c7ef9a'},sombra:{glow:'rgba(104,78,140,.28)',border:'#8260aa',accent:'#d5bef7'},luz:{glow:'rgba(185,158,69,.28)',border:'#d7bc63',accent:'#fff1b8'},arcano:{glow:'rgba(110,92,189,.28)',border:'#8875f0',accent:'#ddd6ff'}}
+ const attunementDetails:Record<GameElement,{condition:string;impact:string;influence:string;armor:string}>={
+  fisico:{condition:'Sangrando',impact:'causa dano fixo ao fim do turno por um curto período.',influence:'não mexe em rolagens; pune trocas longas e acumula pressão.',armor:'reduz dano físico recebido e impede Sangramento.'},
+  fogo:{condition:'Pegando fogo',impact:'aplica dano fixo contínuo e aquece a troca para o próximo turno.',influence:'não altera a rolagem; o foco é dano persistente e desgaste.',armor:'reduz dano de fogo recebido e impede Queimadura.'},
+  gelo:{condition:'Congelado',impact:'aplica penalidade nas rolagens de ataque e defesa enquanto durar.',influence:'reduz a qualidade das suas rolagens; é uma condição de controle.',armor:'reduz dano de gelo recebido e impede Congelamento.'},
+  natureza:{condition:'Envenenado',impact:'causa dano fixo ao fim de cada turno enquanto estiver ativo.',influence:'não altera rolagens; desgasta o alvo com tempo.',armor:'reduz dano de natureza recebido e impede Envenenamento.'},
+  sombra:{condition:'Agarrado',impact:'aplica penalidade nas rolagens de ataque e defesa do alvo.',influence:'reduz consistência e abre espaço para pressão contínua.',armor:'reduz dano de sombra recebido e impede Aprisionamento.'},
+  luz:{condition:'Cego',impact:'penaliza as rolagens do alvo e enfraquece sua leitura de combate.',influence:'dificulta ataques e defesas durante a duração.',armor:'reduz dano de luz recebido e impede Cegueira.'},
+  arcano:{condition:'Atordoado',impact:'pode cancelar a próxima ação ou defesa do alvo.',influence:'é a opção mais disruptiva; corta o turno em vez de só reduzir números.',armor:'reduz dano arcano recebido e impede Atordoamento.'}
+ }
  // attuneEquipment (game.ts) já sabia dar resistência elemental a qualquer peça que não seja a
  // arma (ramifica por item.slot!=='mao_direita'), mas só a arma tinha botões nesta tela -- a
  // metade "resistência" da função ficava impossível de usar. Bolsa fica de fora (não é peça de
@@ -655,7 +664,21 @@ function ForgeTutorialPanel(){
       <span>{attunementPrompt.type==='weapon'?'DANO DA ARMA':'RESISTENCIA'}</span>
      </div>
      <h2 id="attunement-title">Sintonizar {attunementPrompt.name} com {ELEMENT_LABELS[attunementPrompt.element]}?</h2>
-     <p className="attunement-modal-effect"><strong>Efeito:</strong> {attunementPrompt.effect}</p>
+     <p className="attunement-modal-effect"><strong>Efeito imediato:</strong> {attunementPrompt.effect}</p>
+     <div className="attunement-modal-impact">
+      <span>
+       <small>Condição aplicada</small>
+       <b>{attunementDetails[attunementPrompt.element].condition}</b>
+      </span>
+      <span>
+       <small>Como funciona</small>
+       <b>{attunementPrompt.type==='weapon'?attunementDetails[attunementPrompt.element].impact:attunementDetails[attunementPrompt.element].armor}</b>
+      </span>
+      <span>
+       <small>Influência no combate</small>
+       <b>{attunementDetails[attunementPrompt.element].influence}</b>
+      </span>
+     </div>
      <div className="attunement-modal-meta">
       <span><small>Custo</small><b>80 ouro</b></span>
       <span><small>Material</small><b>3 {attunementPrompt.material}</b></span>
@@ -665,7 +688,7 @@ function ForgeTutorialPanel(){
       <strong>Falha</strong>
       <span>Todos os recursos são consumidos.</span>
      </div>
-     <p className="attunement-modal-note">{attunementPrompt.type==='weapon'?'A arma só muda de elemento quando sintonizada com sucesso.':'A resistência substitui a afinidade elemental atual desta peça.'}</p>
+     <p className="attunement-modal-note">{attunementPrompt.type==='weapon'?'Armas usam o elemento para definir o tipo de dano e a condição que pode ser aplicada em críticos.':'Resistência troca a afinidade elemental da peça e reduz o dano desse tipo, bloqueando a condição associada.'}</p>
      <div className="attunement-modal-actions">
       <button onClick={()=>setAttunementPrompt(null)}>Cancelar</button>
       <button className="primary" onClick={()=>{const prompt=attunementPrompt;setAttunementPrompt(null);g.attuneEquipment(prompt.id,prompt.element)}}>Confirmar</button>
