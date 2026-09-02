@@ -1001,3 +1001,4 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .loot-equipment .item-grid{max-height:420px;overflow:auto;padding-right:3px}
 .loot-item-actions{display:flex;flex-wrap:wrap;gap:6px}.loot-item-actions button{flex:1;min-width:88px;padding:.5rem .55rem;font-size:.78rem}
 @media(max-width:760px){.loot-equipment>header{align-items:flex-start;flex-direction:column}.loot-item-actions button{flex:1 1 100%}}
+.attunement-service:after{content:'Arma: acrescenta o elemento ao dano. Armaduras: reduzem o dano elemental recebido e bloqueiam sua condição. Custo por troca: 80 ouro + 3 materiais do elemento escolhido.';display:block;margin-top:12px;padding:10px 12px;border:1px solid #59401f;border-radius:8px;background:rgba(9,6,4,.5);color:#cdb88f;font-size:.74rem;line-height:1.45}
