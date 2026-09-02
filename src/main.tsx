@@ -109,13 +109,15 @@ const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
  mortas_campos:[.56,.68],mortas_catacumbas:[.82,.80],mortas_vila:[.64,.62],mortas_brejo:[.90,.84],mortas_torre:[.76,.90],
  khar_galerias:[.14,.72],khar_labirinto:[.30,.81],khar_templo_minotauro:[.18,.91],khar_forjas:[.26,.69],khar_cofre:[.35,.89],khar_profundezas:[.10,.84],
  eclipse_portoes:[.40,.58],eclipse_torre:[.48,.34],eclipse_trono:[.57,.52],eclipse_jardim:[.42,.44],eclipse_arquivo:[.60,.40],eclipse_fenda:[.51,.64],
- frost_rota:[.16,.18],frost_refinaria:[.27,.26],frost_fenda:[.20,.42],frost_estaleiro:[.33,.36],frost_geleira:[.40,.20],
- engren_trilha:[.48,.62],engren_vila:[.58,.52],engren_estufa:[.69,.58],engren_torre:[.79,.46],engren_cerne:[.86,.60],
- trilho_trilhos:[.48,.82],trilho_fazenda:[.58,.72],trilho_silo:[.67,.80],trilho_comboio:[.79,.72],trilho_terminal:[.88,.83],
- vulcan_encosta:[.18,.82],vulcan_aqueduto:[.31,.74],vulcan_fundicao:[.46,.83],vulcan_chamines:[.60,.72],vulcan_camara:[.76,.82],
- ferro_trilha:[.12,.58],ferro_pocas:[.23,.49],ferro_fabrica:[.36,.57],ferro_cemiterio:[.48,.47],ferro_nucleo:[.60,.55],
- coro_viaduto:[.66,.28],coro_distrito:[.76,.40],coro_praca:[.84,.31],coro_subterraneo:[.74,.55],coro_torre:[.86,.18],
- aether_anel:[.54,.28],aether_galeria:[.64,.22],aether_ressonancia:[.73,.33],aether_vortice:[.83,.27],aether_coracao:[.91,.36]
+ // Steelmere: cada grupo ocupa a área ilustrada da própria região. As posições
+ // também preservam as zonas dos títulos e dos sete marcadores principais.
+ frost_rota:[.15,.22],frost_refinaria:[.29,.23],frost_fenda:[.39,.29],frost_estaleiro:[.27,.36],frost_geleira:[.14,.36],
+ engren_trilha:[.10,.55],engren_vila:[.23,.56],engren_estufa:[.35,.50],engren_torre:[.13,.65],engren_cerne:[.29,.66],
+ trilho_trilhos:[.69,.52],trilho_fazenda:[.88,.51],trilho_silo:[.76,.58],trilho_comboio:[.91,.62],trilho_terminal:[.82,.65],
+ vulcan_encosta:[.57,.25],vulcan_aqueduto:[.68,.28],vulcan_fundicao:[.82,.22],vulcan_chamines:[.88,.32],vulcan_camara:[.73,.36],
+ ferro_trilha:[.12,.72],ferro_pocas:[.24,.77],ferro_fabrica:[.13,.86],ferro_cemiterio:[.29,.88],ferro_nucleo:[.44,.86],
+ coro_viaduto:[.56,.77],coro_distrito:[.81,.73],coro_praca:[.91,.77],coro_subterraneo:[.58,.88],coro_torre:[.79,.89],
+ aether_anel:[.43,.45],aether_galeria:[.57,.46],aether_ressonancia:[.45,.56],aether_vortice:[.59,.58],aether_coracao:[.50,.66]
 }
 // No mapa estreito do celular o rótulo de um pino perto da borda (ex: x=.91) estourava
 // o container arredondado e ficava cortado, já que .map-wrap/.panel usam overflow:hidden
