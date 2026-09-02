@@ -848,8 +848,10 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .screen-intro{display:grid;gap:8px;margin:0 0 16px;padding:15px 16px;border:1px solid rgba(202,158,82,.22);border-radius:14px;background:linear-gradient(180deg,rgba(31,20,11,.66),rgba(12,8,5,.38));box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
 .screen-intro small{color:#cfac69;letter-spacing:.16em;font-size:.62rem;font-weight:800;text-transform:uppercase}
 .screen-intro p{margin:0;color:#e0d1b7;line-height:1.5;max-width:72ch}
-.screen-intro .screen-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.screen-intro .screen-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;align-items:center}
 .screen-intro .screen-actions button{padding:.55rem .8rem}
+.screen-intro .screen-actions .primary{min-width:210px}
+.screen-intro .screen-actions .ghost-action{background:transparent}
 .quick-note{padding:10px 12px;border:1px dashed rgba(202,158,82,.22);border-radius:10px;background:rgba(0,0,0,.12);color:#d8c7a7;font-size:.8rem;line-height:1.45}
 .status-chip-row{display:flex;flex-wrap:wrap;gap:8px}
 .status-chip{display:inline-flex;align-items:center;gap:6px;padding:.45rem .65rem;border:1px solid rgba(202,158,82,.18);border-radius:999px;background:rgba(0,0,0,.18);color:#eed39f;font-size:.72rem}
@@ -862,7 +864,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .section-summary,.loot-summary,.battle-summary-strip,.forge-summary-strip,.hero-select-summary{align-items:stretch}
 .section-summary>span,.loot-summary>span,.battle-summary-strip>span,.forge-summary-strip>span,.hero-select-summary>span{min-height:64px}
 @media(max-width:900px){.screen-summary,.section-summary,.loot-summary,.battle-summary-strip,.forge-summary-strip,.hero-select-summary,.screen-split{grid-template-columns:1fr}}
-@media(max-width:620px){.screen-intro .screen-actions{flex-direction:column}.screen-intro .screen-actions button{width:100%}}
+@media(max-width:620px){.screen-intro{padding:12px 13px}.screen-intro .screen-actions{flex-direction:column}.screen-intro .screen-actions button{width:100%;min-width:0}.screen-intro .screen-actions .primary{min-width:0}}
 .combat-v033 .screen-intro{margin-bottom:12px}
 .combat-v033 .battle-summary-strip{margin-top:10px}
 .combat-v033 .battle-summary-strip>span{padding:10px 11px}
@@ -882,12 +884,21 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .guild-summary>span{min-height:66px}
 .guild-mission-grid{align-items:start}
 .guild-mission{align-self:start}
+.guild-head{gap:18px}
+.guild-head p{line-height:1.5}
 .forge-page .screen-intro{margin-bottom:12px}
 .forge-summary-strip{margin-top:12px}
 .forge-summary-strip>span{padding:10px 12px}
 .forge-page .forge-warning{margin-top:12px}
+.forge-header{display:grid;gap:6px}
+.forge-header p{max-width:72ch;line-height:1.5}
 .hero-select-summary{margin-bottom:12px}
 .hero-select-summary>span{padding:10px 12px}
+.hero-choice-copy{display:grid;gap:10px}
+.hero-choice-ability p{line-height:1.5}
+.map-layout.map-layout-with-index{align-items:start}
+.map-region-index,.map-layout-with-index>.summary,.map-layout-with-index>.map-panel{border-radius:16px}
+.map-index-head p,.map-panel .screen-intro p{line-height:1.5}
 /* Coop persistent session and shared destination */
 .coop-members article.coop-host{border-color:#c99339;box-shadow:inset 3px 0 #d5a34b}.coop-destination{display:grid;gap:12px}.coop-destination h2{margin:0;color:#e7c178;font-family:Georgia,serif}.coop-destination select{width:100%;padding:10px;border:1px solid #684823;border-radius:8px;background:#0b0806;color:#ead8b7}.coop-destination-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.coop-destination-grid button{display:grid;text-align:left}.coop-destination-grid button small{color:#8d7b61}.coop-destination-grid button.selected{border-color:#d4a44e;background:#4b2d10}.coop-sub-boss-marker{margin-top:3px;font-style:normal;font-size:.62rem;font-weight:700;letter-spacing:.02em;color:#c98a4a}.coop-sub-boss-marker.ready{color:#7bc97e}.coop-selected{display:flex;align-items:center;gap:7px;color:#bd9d67}@media(max-width:750px){.coop-destination-grid{grid-template-columns:1fr 1fr}}
 /* Cooperative travel confirmation */
