@@ -1082,14 +1082,18 @@ const STATUS_PROC_CHANCE=.5
 // pelo id do equipamento, no mesmo padrão já usado por equipmentGems/craftedEffects.
 export function heroWeaponElement(s:GameState):Element{const id=s.equipped.mao_direita;return (id?s.equipmentElements?.[id]:undefined)??'fisico'}
 export function heroHasResistance(s:GameState,element:Element){return (Object.values(s.equipped) as (string|undefined)[]).some(id=>id&&s.equipmentResistances?.[id]===element)}
+export function heroResistanceReduction(s:GameState,element:Element){return Math.max(0,(Object.values(s.equipped) as (string|undefined)[]).reduce((sum,id)=>{if(!id||s.equipmentResistances?.[id]!==element)return sum;return sum+attunementResistanceReduction(s,id)},0))}
 export function heroResistances(s:GameState):Element[]{return Array.from(new Set((Object.values(s.equipped) as (string|undefined)[]).map(id=>id?s.equipmentResistances?.[id]:undefined).filter((r):r is Element=>Boolean(r))))}
+export function attunementItemLevel(s:GameState,ref:string|undefined){const e=ref?eqById(ref):undefined;if(!e||!ref)return 1;return equipmentRequiredLevel(e)+(s.equipmentUpgrades?.[ref]??0)*2}
+export function attunementResistanceReduction(s:GameState,ref:string|undefined){const heroLevel=deriveLevel(s.xp).lvl,itemLevel=attunementItemLevel(s,ref);return Math.min(5,1+Math.floor((itemLevel-1)/10)+Math.floor((heroLevel-1)/20))}
+export function attunementStatusChance(s:GameState,ref:string|undefined){const heroLevel=deriveLevel(s.xp).lvl,itemLevel=attunementItemLevel(s,ref);return Math.min(.75,.5+Math.floor((itemLevel-1)/10)*.03+Math.floor((heroLevel-1)/15)*.02)}
 export function rollPenaltyFrom(status?:StatusEffects){return status?(status.frozen?1:0)+(status.grabbed?1:0)+(status.blinded?1:0):0}
 // extraTurn: especialização 'elemental' (Domínio Elemental) -- só se aplica quando é o HERÓI
 // aplicando a condição no inimigo (chamador passa a especialização do próprio jogador), nunca
 // quando o inimigo aplica no herói, senão o bônus do jogador beneficiaria o ataque inimigo.
-export function applyElementalStatus(status:StatusEffects|undefined,element:Element,attackPower:number,force=false,extraTurn=false):{status:StatusEffects;appliedKind?:string}{
+ export function applyElementalStatus(status:StatusEffects|undefined,element:Element,attackPower:number,force=false,extraTurn=false,procChance=STATUS_PROC_CHANCE):{status:StatusEffects;appliedKind?:string}{
  const kind=ELEMENT_STATUS[element],current=status??{},bonus=extraTurn?1:0
- if(!kind||(!force&&Math.random()>=STATUS_PROC_CHANCE))return{status:current}
+ if(!kind||(!force&&Math.random()>=procChance))return{status:current}
  if(kind==='stunned')return{status:{...current,stunned:true},appliedKind:kind}
  if(kind==='frozen')return{status:{...current,frozen:2+bonus},appliedKind:kind}
  if(kind==='grabbed')return{status:{...current,grabbed:2+bonus},appliedKind:kind}
@@ -1205,7 +1209,9 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const healProc=druidHealProc(s),healed=Math.random()<healProc.chance,forgedHeal=hasCraftedEffect(s,'cura_forjada')&&Math.random()<.05,curaBonusMult=1+(hasCraftedEffect(s,'cura_bonus')?.1:0),rawHeal=((healed?healProc.amount:0)+(forgedHeal?Math.max(2,Math.round(attackBase*.25)):0))*curaBonusMult,healAmount=rawHeal>0?Math.max(0,Math.min(Math.round(rawHeal),maxHp(s)-s.hp)):0
  const monkFervorProc=s.heroId==='monge'&&attackRoll===5&&Math.random()<.25
  const fervor=forceCrit?0:attackRoll===6||monkFervorProc?Math.min(3,(s.fervor??0)+1):(s.fervor??0)
- const statusResult=!target&&damage>0&&!selfDamage&&(Boolean(forceStatusElement)||naturalAttackRoll===6)?applyElementalStatus(enemyStun.status,forceStatusElement??heroWeaponElement(s),attackBase,Boolean(forceStatusElement),spec.elemental):{status:enemyStun.status,appliedKind:undefined as string|undefined}
+ const weaponRef=s.equipped.mao_direita
+ const statusChance=attunementStatusChance(s,weaponRef)
+ const statusResult=!target&&damage>0&&!selfDamage&&(Boolean(forceStatusElement)||naturalAttackRoll===6)?applyElementalStatus(enemyStun.status,forceStatusElement??heroWeaponElement(s),attackBase,Boolean(forceStatusElement),spec.elemental,statusChance):{status:enemyStun.status,appliedKind:undefined as string|undefined}
  set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,firstStrikeBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus,enemyStatus:statusResult.status,hp:healAmount>0?s.hp+healAmount:s.hp,fervor})
  if(healAmount>0)triggerSupportFx(set,get,'cura')
  const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=`${heroApproachPhrase(s.heroId,weaponName)}, ${attackTierPhrase(attackRoll)}`
@@ -1332,8 +1338,8 @@ function enemyAttack(set:any,get:any){
  const intercepting=Boolean(summon)
  const attackBase=Math.ceil(enemy.ataque*(intent.type==='heavy'?1.35:1)),defenseBase=intercepting?summon!.defesa:defenseValue(s)+(s.braced?2:0),naturalAttackRoll=Math.floor(Math.random()*6)+1,attackBonus=s.enemyRollBonus-rollPenaltyFrom(s.enemyStatus),attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+attackBonus-(s.heroId==='druida'&&Math.random()<.25?1:0)-(s.enemyFearPenalty??0))),naturalDefenseRoll=Math.floor(Math.random()*6)+1,defenseRoll=intercepting?Math.max(1,naturalDefenseRoll):Math.max(1,Math.min(6,naturalDefenseRoll+(s.classRollBonus??0)+(hasCraftedEffect(s,'defesa_perfeita')&&naturalDefenseRoll===5?1:0)-rollPenaltyFrom(s.heroStatus)))
  const dodged=!intercepting&&(((s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2)||(hasCraftedEffect(s,'esquiva_forjada')&&Math.random()<.05)),resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll);let raw=dodged?0:resolved.damage,shield=s.shield
- const enemyElement=enemy.elemento??'fisico',resisted=!intercepting&&heroHasResistance(s,enemyElement)
- if(resisted&&raw>0)raw=Math.max(0,raw-1)
+ const enemyElement=enemy.elemento??'fisico',resisted=!intercepting&&heroHasResistance(s,enemyElement),resistanceReduction=resisted?heroResistanceReduction(s,enemyElement):0
+ if(resisted&&raw>0)raw=Math.max(0,raw-resistanceReduction)
  const blocked=intercepting?0:Math.min(shield,raw),enemyName=enemy.nome,enemyApproach=enemyApproachPhrase(enemy),heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'Você';raw-=blocked;if(!intercepting)shield-=blocked
  const statusResult=!intercepting&&!dodged&&!resolved.selfDamage&&raw>0&&!resisted&&(naturalAttackRoll===6||intent.type==='status')?applyElementalStatus(s.heroStatus,enemyElement,attackBase,intent.type==='status'):{status:s.heroStatus??{},appliedKind:undefined as string|undefined}
  const priestDefenseHeal=!intercepting&&!resolved.selfDamage&&s.heroId==='sacerdotisa'&&defenseRoll>=5&&Math.random()<.2?1:0
@@ -1348,7 +1354,7 @@ function enemyAttack(set:any,get:any){
   if(resolved.selfDamage){addLog(set,`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}, sofrendo ${resolved.selfDamage} de dano do próprio golpe.`);if(enemyHp<=0){victory(set,get);return}set({enemyHp,hp,animating:false,animationActor:undefined,combatRoll:undefined});resolveMinionAttacks(set,get,()=>{const latest=get() as GameState;if(latest.screen==='combat')set({playerTurn:true,combatTurn:latest.combatTurn+1})});return}
   set({hp,animationActor:undefined,combatRoll:undefined,playerTurn:false})
   if(intercepting)addLog(set,`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}, mas ${summon!.nome} intercepta o golpe! Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); a fera sofre ${summonDamage} de dano${summonDied?' e cai em combate!':'.'}`)
-  else addLog(set,dodged?`${enemyName} ${enemyApproach}, mas a Esquiva do Ladino faz o golpe errar completamente.`:`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}. ${heroName} ${defenseTierPhrase(defenseRoll)}. Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}${resisted?' (resistência elemental reduziu o dano)':''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}${statusResult.appliedKind?` Você fica ${STATUS_LABELS[statusResult.appliedKind]}.`:''}${priestDefenseHeal?' A fé da Sacerdotisa recupera 1 de vida.':''}`)
+  else addLog(set,dodged?`${enemyName} ${enemyApproach}, mas a Esquiva do Ladino faz o golpe errar completamente.`:`${enemyName} ${enemyApproach}, ${attackTierPhrase(attackRoll)}. ${heroName} ${defenseTierPhrase(defenseRoll)}. Dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}); causou ${raw} de dano${blocked?` (${blocked} bloqueado)`:''}${resisted?` (resistência elemental reduziu ${resistanceReduction})`:''}.${attackRoll===2?' Você recebe +1 na próxima rolagem.':''}${statusResult.appliedKind?` Você fica ${STATUS_LABELS[statusResult.appliedKind]}.`:''}${priestDefenseHeal?' A fé da Sacerdotisa recupera 1 de vida.':''}`)
   if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get),900);return}resolveMinionAttacks(set,get,()=>{const latest=get() as GameState;if(latest.screen==='combat')set({animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:true,combatTurn:latest.combatTurn+1})})
  },COMBAT_ROLL_DISPLAY_MS)
 }
