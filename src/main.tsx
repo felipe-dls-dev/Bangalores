@@ -14,7 +14,7 @@ import { AuthProvider, useAuth } from './online/AuthContext'
 import PersistentCoopScreen from './online/CoopScreen'
 import './styles.css'
 
-const ATTACK_SFX:Record<AttackAnimType,SfxId>={corte:'atkCorte',facas:'atkFacas',martelo:'atkMartelo',magico:'atkMagico',furo:'atkFuro',garras:'atkGarras',espinhos:'atkEspinhos'}
+const ATTACK_SFX:Record<AttackAnimType,SfxId>={corte:'atkCorte',facas:'atkFacas',martelo:'atkMartelo',magico:'atkMagico',furo:'atkDisparo',garras:'atkGarras',espinhos:'atkEspinhos'}
 
 const nav=[['map','Mapa',Map],['character','Ficha',ScrollText],['inventory','Mochila',Backpack],['equipment','Equipamentos',Shield],['shop','Loja',ShoppingBag],['forge','Forja',Wand2],['guild','Guilda',Trophy],['chronicle','Crônicas',History],['gallery','Coleção',Images],['coop','Coop',Users],['tutorial','Tutorial',BookOpen]] as const
 const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}

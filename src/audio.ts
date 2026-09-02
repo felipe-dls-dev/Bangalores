@@ -9,6 +9,7 @@ const SFX_FILES={
  atkMartelo:'assets/sfx/attack-martelo.ogg',
  atkMagico:'assets/sfx/attack-magico.ogg',
  atkFuro:'assets/sfx/attack-furo.ogg',
+ atkDisparo:'assets/sfx/attack-furo.ogg',
  atkGarras:'assets/sfx/attack-garras.ogg',
  atkEspinhos:'assets/sfx/attack-espinhos.ogg',
  coin:'assets/sfx/coin.ogg',
