@@ -1085,8 +1085,8 @@ export function heroHasResistance(s:GameState,element:Element){return (Object.va
 export function heroResistanceReduction(s:GameState,element:Element){return Math.max(0,(Object.values(s.equipped) as (string|undefined)[]).reduce((sum,id)=>{if(!id||s.equipmentResistances?.[id]!==element)return sum;return sum+attunementResistanceReduction(s,id)},0))}
 export function heroResistances(s:GameState):Element[]{return Array.from(new Set((Object.values(s.equipped) as (string|undefined)[]).map(id=>id?s.equipmentResistances?.[id]:undefined).filter((r):r is Element=>Boolean(r))))}
 export function attunementItemLevel(s:GameState,ref:string|undefined){const e=ref?eqById(ref):undefined;if(!e||!ref)return 1;return equipmentRequiredLevel(e)+(s.equipmentUpgrades?.[ref]??0)*2}
-export function attunementResistanceReduction(s:GameState,ref:string|undefined){const heroLevel=deriveLevel(s.xp).lvl,itemLevel=attunementItemLevel(s,ref);return Math.min(5,1+Math.floor((itemLevel-1)/10)+Math.floor((heroLevel-1)/20))}
-export function attunementStatusChance(s:GameState,ref:string|undefined){const heroLevel=deriveLevel(s.xp).lvl,itemLevel=attunementItemLevel(s,ref);return Math.min(.75,.5+Math.floor((itemLevel-1)/10)*.03+Math.floor((heroLevel-1)/15)*.02)}
+export function attunementResistanceReduction(s:GameState,ref:string|undefined){const heroLevel=deriveLevel(s.xp).lvl,itemLevel=attunementItemLevel(s,ref);return Math.min(8,2+Math.floor((itemLevel-1)/8)+Math.floor((heroLevel-1)/15))}
+export function attunementStatusChance(s:GameState,ref:string|undefined){const heroLevel=deriveLevel(s.xp).lvl,itemLevel=attunementItemLevel(s,ref);return Math.min(.6,.35+Math.floor((itemLevel-1)/12)*.025+Math.floor((heroLevel-1)/18)*.015)}
 export function rollPenaltyFrom(status?:StatusEffects){return status?(status.frozen?1:0)+(status.grabbed?1:0)+(status.blinded?1:0):0}
 // extraTurn: especialização 'elemental' (Domínio Elemental) -- só se aplica quando é o HERÓI
 // aplicando a condição no inimigo (chamador passa a especialização do próprio jogador), nunca
@@ -1095,13 +1095,13 @@ export function rollPenaltyFrom(status?:StatusEffects){return status?(status.fro
  const kind=ELEMENT_STATUS[element],current=status??{},bonus=extraTurn?1:0
  if(!kind||(!force&&Math.random()>=procChance))return{status:current}
  if(kind==='stunned')return{status:{...current,stunned:true},appliedKind:kind}
- if(kind==='frozen')return{status:{...current,frozen:2+bonus},appliedKind:kind}
- if(kind==='grabbed')return{status:{...current,grabbed:2+bonus},appliedKind:kind}
+ if(kind==='frozen')return{status:{...current,frozen:1+bonus},appliedKind:kind}
+ if(kind==='grabbed')return{status:{...current,grabbed:1+bonus},appliedKind:kind}
  if(kind==='blinded')return{status:{...current,blinded:1+bonus},appliedKind:kind}
  const existing=current[kind]
- if(kind==='bleed')return{status:{...current,bleed:{turns:2+bonus,amount:Math.max(1,(existing?.amount??0)+Math.round(attackPower*.18))}},appliedKind:kind}
- if(kind==='burn')return{status:{...current,burn:{turns:1+bonus,amount:Math.max(2,Math.round(attackPower*.38))}},appliedKind:kind}
- return{status:{...current,poison:{turns:3+bonus,amount:Math.max(1,Math.round(attackPower*.16))}},appliedKind:kind}
+ if(kind==='bleed')return{status:{...current,bleed:{turns:2+bonus,amount:Math.max(1,(existing?.amount??0)+Math.round(attackPower*.14))}},appliedKind:kind}
+ if(kind==='burn')return{status:{...current,burn:{turns:1+bonus,amount:Math.max(2,Math.round(attackPower*.3))}},appliedKind:kind}
+ return{status:{...current,poison:{turns:3+bonus,amount:Math.max(1,Math.round(attackPower*.12))}},appliedKind:kind}
 }
 export function tickStatus(status?:StatusEffects):{status:StatusEffects;damage:number;messages:string[]}{
  const current:StatusEffects={...(status??{})},messages:string[]=[]
