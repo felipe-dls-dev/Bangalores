@@ -108,7 +108,14 @@ const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
  pico_encosta:[.61,.11],pico_ninho_dragao:[.86,.20],pico_cinzas:[.62,.27],pico_forja:[.76,.31],pico_cratera:[.87,.10],
  mortas_campos:[.60,.72],mortas_catacumbas:[.78,.77],mortas_vila:[.68,.65],mortas_brejo:[.88,.79],mortas_torre:[.73,.88],
  khar_galerias:[.18,.69],khar_labirinto:[.34,.79],khar_templo_minotauro:[.22,.89],khar_forjas:[.30,.67],khar_cofre:[.39,.87],khar_profundezas:[.13,.82],
- eclipse_portoes:[.43,.55],eclipse_torre:[.51,.37],eclipse_trono:[.55,.50],eclipse_jardim:[.45,.42],eclipse_arquivo:[.58,.43],eclipse_fenda:[.48,.61]
+ eclipse_portoes:[.43,.55],eclipse_torre:[.51,.37],eclipse_trono:[.55,.50],eclipse_jardim:[.45,.42],eclipse_arquivo:[.58,.43],eclipse_fenda:[.48,.61],
+ frost_rota:[.16,.18],frost_refinaria:[.27,.26],frost_fenda:[.20,.42],frost_estaleiro:[.33,.36],frost_geleira:[.40,.20],
+ engren_trilha:[.48,.62],engren_vila:[.58,.52],engren_estufa:[.69,.58],engren_torre:[.79,.46],engren_cerne:[.86,.60],
+ trilho_trilhos:[.48,.82],trilho_fazenda:[.58,.72],trilho_silo:[.67,.80],trilho_comboio:[.79,.72],trilho_terminal:[.88,.83],
+ vulcan_encosta:[.18,.82],vulcan_aqueduto:[.31,.74],vulcan_fundicao:[.46,.83],vulcan_chamines:[.60,.72],vulcan_camara:[.76,.82],
+ ferro_trilha:[.12,.58],ferro_pocas:[.23,.49],ferro_fabrica:[.36,.57],ferro_cemiterio:[.48,.47],ferro_nucleo:[.60,.55],
+ coro_viaduto:[.66,.28],coro_distrito:[.76,.40],coro_praca:[.84,.31],coro_subterraneo:[.74,.55],coro_torre:[.86,.18],
+ aether_anel:[.54,.28],aether_galeria:[.64,.22],aether_ressonancia:[.73,.33],aether_vortice:[.83,.27],aether_coracao:[.91,.36]
 }
 // No mapa estreito do celular o rótulo de um pino perto da borda (ex: x=.91) estourava
 // o container arredondado e ficava cortado, já que .map-wrap/.panel usam overflow:hidden
