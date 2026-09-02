@@ -840,6 +840,27 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .map-index-subs{display:none!important}.map-index-region{position:relative}.map-index-region.completed:after{content:'✓';position:absolute;right:7px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:22px;height:22px;border:1px solid #5b8d4e;border-radius:50%;color:#8ed17e;background:#153015;box-shadow:0 0 9px #4f9b3b44}.map-index-region.completed .map-index-region-button{padding-right:36px}.map-region-list{gap:6px}.map-index-region-button{min-height:48px}
 @media(max-width:1000px){.map-region-list{grid-template-columns:repeat(2,minmax(0,1fr))}.map-layout.map-layout-with-index{grid-template-columns:1fr}.map-layout-with-index>.map-region-index,.map-layout-with-index>.map-panel,.map-layout-with-index>.summary{grid-column:1}.map-layout-with-index>.map-panel{grid-row:2;height:auto;min-height:480px}.map-layout-with-index>.summary{grid-row:3;height:auto;overflow:visible;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}.map-layout-with-index>.summary>.panel-title,.map-layout-with-index>.summary>hr,.map-layout-with-index>.summary>strong,.map-layout-with-index>.summary>p{grid-column:1/3}}
 @media(max-width:620px){.map-index-head{display:block}.map-index-head p{margin-top:3px}.map-index-totals{grid-template-columns:1fr 1fr}.map-region-list{grid-template-columns:1fr}.map-index-subs span{font-size:.62rem}.map-index-subs span>small{font-size:.5rem}.map-layout-with-index>.summary{grid-template-columns:1fr}.map-layout-with-index>.summary>*{grid-column:1!important}.map-layout-with-index>.map-panel{min-height:360px}}
+
+.screen-summary,.section-summary,.loot-summary,.battle-summary-strip,.forge-summary-strip,.hero-select-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 0}
+.screen-summary>span,.section-summary>span,.loot-summary>span,.battle-summary-strip>span,.forge-summary-strip>span,.hero-select-summary>span{display:grid;gap:4px;padding:12px;border:1px solid rgba(202,158,82,.2);border-radius:12px;background:rgba(9,6,4,.42)}
+.screen-summary small,.section-summary small,.loot-summary small,.battle-summary-strip small,.forge-summary-strip small,.hero-select-summary small{color:#ae9271;font-size:.66rem;letter-spacing:.08em}
+.screen-summary strong,.section-summary strong,.loot-summary strong,.battle-summary-strip strong,.forge-summary-strip strong,.hero-select-summary strong{color:#f0cb79;font-size:1.05rem}
+.screen-intro{display:grid;gap:8px;margin:0 0 14px;padding:14px 15px;border:1px solid rgba(202,158,82,.22);border-radius:12px;background:linear-gradient(180deg,rgba(28,18,10,.56),rgba(12,8,5,.36))}
+.screen-intro small{color:#cfac69;letter-spacing:.14em;font-size:.62rem;font-weight:800}
+.screen-intro p{margin:0;color:#d8c6a8;line-height:1.45}
+.screen-intro .screen-actions{display:flex;gap:8px;flex-wrap:wrap}
+.screen-intro .screen-actions button{padding:.5rem .7rem}
+.quick-note{padding:10px 12px;border:1px dashed rgba(202,158,82,.22);border-radius:10px;background:rgba(0,0,0,.12);color:#d8c7a7;font-size:.8rem;line-height:1.45}
+.status-chip-row{display:flex;flex-wrap:wrap;gap:8px}
+.status-chip{display:inline-flex;align-items:center;gap:6px;padding:.45rem .65rem;border:1px solid rgba(202,158,82,.18);border-radius:999px;background:rgba(0,0,0,.18);color:#eed39f;font-size:.72rem}
+.status-chip b{color:#fff1c3}
+.status-chip.good{border-color:#44745c;background:rgba(34,74,54,.2)}
+.status-chip.warn{border-color:#85612d;background:rgba(77,49,13,.24)}
+.status-chip.bad{border-color:#843e36;background:rgba(76,26,22,.24)}
+.screen-split{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.9fr);gap:14px;align-items:start}
+.screen-split .panel{height:100%}
+@media(max-width:900px){.screen-summary,.section-summary,.loot-summary,.battle-summary-strip,.forge-summary-strip,.hero-select-summary,.screen-split{grid-template-columns:1fr}}
+@media(max-width:620px){.screen-intro .screen-actions{flex-direction:column}.screen-intro .screen-actions button{width:100%}}
 /* Coop persistent session and shared destination */
 .coop-members article.coop-host{border-color:#c99339;box-shadow:inset 3px 0 #d5a34b}.coop-destination{display:grid;gap:12px}.coop-destination h2{margin:0;color:#e7c178;font-family:Georgia,serif}.coop-destination select{width:100%;padding:10px;border:1px solid #684823;border-radius:8px;background:#0b0806;color:#ead8b7}.coop-destination-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.coop-destination-grid button{display:grid;text-align:left}.coop-destination-grid button small{color:#8d7b61}.coop-destination-grid button.selected{border-color:#d4a44e;background:#4b2d10}.coop-sub-boss-marker{margin-top:3px;font-style:normal;font-size:.62rem;font-weight:700;letter-spacing:.02em;color:#c98a4a}.coop-sub-boss-marker.ready{color:#7bc97e}.coop-selected{display:flex;align-items:center;gap:7px;color:#bd9d67}@media(max-width:750px){.coop-destination-grid{grid-template-columns:1fr 1fr}}
 /* Cooperative travel confirmation */
