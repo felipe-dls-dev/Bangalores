@@ -757,7 +757,19 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   ,unlockTalent:(id:string)=>{const s=get(),talent=TALENTS.find(t=>t.id===id),level=deriveLevel(s.xp).lvl;if(!talent||level<talent.level||s.talents.includes(id))return;set({talents:[...s.talents,id]})}
   ,chooseSpecialization:(level:number,id:string)=>{const s=get(),tier=SPECIALIZATION_CHOICES.find(t=>t.level===level),option=tier?.options.find(o=>o.id===id);if(!tier||!option||deriveLevel(s.xp).lvl<level||(s.specializations??{})[String(level)])return;set({specializations:{...(s.specializations??{}),[String(level)]:id},explorationNote:`Especialização escolhida: ${option.nome}.`})}
   ,resetSpecializations:()=>{const s=get(),cost=100+Object.keys(s.specializations??{}).length*75;if(s.gold<cost)return;set({gold:s.gold-cost,specializations:{},explorationNote:`Especializações redefinidas por ${cost} ouro.`})}
-  ,attuneEquipment:(id:string,element:Element)=>{const s=get(),item=eqById(id),material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element),cost=80;if(!item||!material||!Object.values(s.equipped).includes(id)||s.gold<cost||(s.materials[material.id]??0)<3)return;const materials={...s.materials,[material.id]:s.materials[material.id]-3},success=Math.random()<.8;if(!success){set({gold:s.gold-cost,materials,explorationNote:`A sintonia de ${item.nome} falhou. O ouro e os materiais foram consumidos.`});return}if(item.slot==='mao_direita')set({gold:s.gold-cost,materials,equipmentElements:{...s.equipmentElements,[id]:element},explorationNote:`${item.nome} agora causa dano de ${element}.`});else set({gold:s.gold-cost,materials,equipmentResistances:{...s.equipmentResistances,[id]:element},explorationNote:`${item.nome} agora concede resistência a ${element}.`})}
+  ,attuneEquipment:(id:string,element:Element)=>{
+   const s=get(),item=eqById(id),material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element),cost=80
+   if(!item||!material||!Object.values(s.equipped).includes(id)||s.gold<cost||(s.materials[material.id]??0)<3)return
+   const materials={...s.materials,[material.id]:s.materials[material.id]-3},success=Math.random()<.6,resultId=Date.now()
+   const message=success
+    ?item.slot==='mao_direita'?`${item.nome} agora causa dano de ${element}.`:`${item.nome} agora concede resistência a ${element}.`
+    :`A sintonia de ${item.nome} falhou. Os 80 de ouro e 3 ${material.nome} foram consumidos.`
+   const result={gold:s.gold-cost,materials,explorationNote:message,forgeResult:{success,message,id:resultId}}
+   if(success&&item.slot==='mao_direita')set({...result,equipmentElements:{...s.equipmentElements,[id]:element}})
+   else if(success)set({...result,equipmentResistances:{...s.equipmentResistances,[id]:element}})
+   else set(result)
+   setTimeout(()=>{if((get() as GameState).forgeResult?.id===resultId)set({forgeResult:undefined})},FORGE_RESULT_DISPLAY_MS)
+  }
   ,craftEquipment:(recipeId?:string,choice?:ForgeChoice)=>{
    const s=get(),recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&eqById(recipe.equipmentId),required=recipe?forgeRecipeLevel(recipe.id):99,requiredPlayerLevel=item?equipmentRequiredLevel(item):999,forgeXp=s.forgeXp??0
    const isAttribute=choice==='ataque'||choice==='defesa'||choice==='vida'
