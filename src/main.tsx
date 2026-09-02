@@ -875,7 +875,7 @@ function CombatScreen(){
   if(roll.attacker==='enemy'){if(e)playSfx(ATTACK_SFX[enemyWeaponAnimationType(e)]);return}
   const attackerUserId=isCoop?battle?.lastRoll?.attackerUserId:undefined
   const attackerWeaponAnim=isCoop&&attackerUserId&&attackerUserId!==coop.userId?(coop.room?.shared_state?.memberVitals as Record<string,{weaponAnim?:AttackAnimType}>|undefined)?.[attackerUserId]?.weaponAnim:undefined
-  playSfx(ATTACK_SFX[attackerWeaponAnim??heroWeaponAnimationType(g.equipped.mao_direita)])
+  playSfx(g.heroId==='druida'?'atkEspinhos':ATTACK_SFX[attackerWeaponAnim??heroWeaponAnimationType(g.equipped.mao_direita)])
  },[g.combatRoll])
  // Ataques de fera invocada (garras/mágico/martelo conforme o tipo, ver SUMMON_ATTACK_ANIMATION)
  // nunca tocavam som nenhum -- só combatRoll disparava áudio, e ataque de fera nunca seta
