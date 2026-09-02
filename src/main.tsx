@@ -642,12 +642,21 @@ function ForgeTutorialPanel(){
    {armorEntries.map(({id,item})=><div className="attunement-item" key={id}><span>{item.nome}<em>Resistência — atual: {g.equipmentResistances[id]??'nenhuma'}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={g.equipmentResistances[id]===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>material&&setAttunementPrompt({id,element,name:item.nome,effect:`esta peça reduzirá dano de ${ELEMENT_LABELS[element]} e bloqueará sua condição elemental.`,material:material.nome,type:'armor'})}>{element}</button>})}</div></div>)}
    {attunementPrompt&&<div className="attunement-modal-overlay" role="presentation" onClick={()=>setAttunementPrompt(null)}>
     <section className="attunement-modal" role="dialog" aria-modal="true" aria-labelledby="attunement-title" onClick={e=>e.stopPropagation()}>
-     <small>SINTONIA ELEMENTAL</small>
+     <div className={`attunement-modal-badge ${attunementPrompt.type}`}>
+      {attunementPrompt.type==='weapon'?<Sword size={14}/>:<Shield size={14}/>}
+      <span>{attunementPrompt.type==='weapon'?'DANO DA ARMA':'RESISTENCIA'}</span>
+     </div>
      <h2 id="attunement-title">Sintonizar {attunementPrompt.name} com {ELEMENT_LABELS[attunementPrompt.element]}?</h2>
-     <p><strong>Efeito:</strong> {attunementPrompt.effect}</p>
-     <p><strong>Custo:</strong> 80 ouro + 3 {attunementPrompt.material}.</p>
-     <p><strong>Chance de sucesso:</strong> 60%.</p>
-     <p>Em caso de falha, todos os recursos são consumidos.</p>
+     <p className="attunement-modal-effect"><strong>Efeito:</strong> {attunementPrompt.effect}</p>
+     <div className="attunement-modal-meta">
+      <span><small>Custo</small><b>80 ouro</b></span>
+      <span><small>Material</small><b>3 {attunementPrompt.material}</b></span>
+      <span><small>Sucesso</small><b>60%</b></span>
+     </div>
+     <div className="attunement-modal-risk">
+      <strong>Falha</strong>
+      <span>Todos os recursos são consumidos.</span>
+     </div>
      <div className="attunement-modal-actions">
       <button onClick={()=>setAttunementPrompt(null)}>Cancelar</button>
       <button className="primary" onClick={()=>{const prompt=attunementPrompt;setAttunementPrompt(null);g.attuneEquipment(prompt.id,prompt.element)}}>Confirmar</button>
