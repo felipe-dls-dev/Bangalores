@@ -977,6 +977,10 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 /* Cross-world travel (Havendown <-> Steelmere) */
 .map-travel-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:10px 0 14px;padding:.6rem 1rem;border:1px solid #6c522f;border-radius:8px;background:linear-gradient(180deg,#2c1d11,#17100b);color:var(--gold2);font-weight:700}
 .map-travel-button:hover{background:linear-gradient(180deg,#3a2716,#1d150d)}
+.world-travel-card{display:grid;gap:8px;margin:10px 0 14px;padding:12px 13px;border:1px solid rgba(202,158,82,.22);border-radius:12px;background:linear-gradient(180deg,rgba(31,20,11,.66),rgba(12,8,5,.38))}
+.world-travel-card small{color:#cfac69;letter-spacing:.16em;font-size:.62rem;font-weight:800;text-transform:uppercase}
+.world-travel-card p{margin:0;color:#e0d1b7;line-height:1.45;font-size:.86rem}
+.world-travel-card .map-travel-button{margin:4px 0 0}
 .map-index-soon{margin:0 0 4px;padding:.5rem .7rem;color:#a99879;font-size:.78rem;font-style:italic}
 /* Estas duas media queries ficavam no topo do arquivo, antes de várias regras base (.char-grid,
    .shop-grid etc.) que são redefinidas mais adiante — como CSS resolve por ordem de origem entre
