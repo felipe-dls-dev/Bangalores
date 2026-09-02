@@ -1002,3 +1002,9 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .loot-item-actions{display:flex;flex-wrap:wrap;gap:6px}.loot-item-actions button{flex:1;min-width:88px;padding:.5rem .55rem;font-size:.78rem}
 @media(max-width:760px){.loot-equipment>header{align-items:flex-start;flex-direction:column}.loot-item-actions button{flex:1 1 100%}}
 .attunement-service:after{content:'Arma: acrescenta o elemento ao dano. Armaduras: reduzem o dano elemental recebido e bloqueiam sua condição. Custo por troca: 80 ouro + 3 materiais do elemento escolhido.';display:block;margin-top:12px;padding:10px 12px;border:1px solid #59401f;border-radius:8px;background:rgba(9,6,4,.5);color:#cdb88f;font-size:.74rem;line-height:1.45}
+.attunement-service{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;padding:14px;border:1px solid rgba(202,158,82,.25);border-radius:10px;background:linear-gradient(145deg,rgba(34,22,12,.55),rgba(10,7,5,.35))}
+.attunement-service>strong,.attunement-service>small,.attunement-service:after{grid-column:1/-1}
+.attunement-service>strong{font-size:1rem}.attunement-service>small{max-width:850px;line-height:1.4}
+.attunement-item{gap:8px;padding:10px;border:1px solid rgba(202,158,82,.2);border-radius:9px;background:rgba(8,6,4,.42);min-width:0}
+.attunement-item>span{display:block}.attunement-item>span em{display:block;margin-top:3px;font-size:.7rem}.attunement-item>div{gap:5px}.attunement-item button{padding:.48rem .62rem;font-size:.78rem;flex:1 1 auto}
+@media(max-width:760px){.attunement-service{grid-template-columns:1fr}.attunement-service>strong,.attunement-service>small,.attunement-service:after{grid-column:auto}}
