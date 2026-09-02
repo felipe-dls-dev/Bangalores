@@ -1038,8 +1038,8 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .attunement-item em{font-style:normal;color:var(--muted);font-weight:400;font-size:.78rem}
 .attunement-item>div{display:flex;flex-wrap:wrap;gap:6px}
 .attunement-item button.selected{border-color:#c59343;background:rgba(169,113,36,.18);font-weight:700}
-.attunement-item button.unavailable{opacity:.82;background:linear-gradient(180deg,rgba(24,31,36,.9),rgba(11,14,17,.95));border-color:#304752;color:#a8c8d8;box-shadow:inset 0 0 0 1px rgba(124,181,214,.08)}
-.attunement-item button.unavailable:hover{border-color:#5b86a1;transform:translateY(-1px)}
+.attunement-item button.unavailable{opacity:.58;background:linear-gradient(180deg,rgba(18,20,22,.94),rgba(9,10,11,.98));border-color:#24333c;color:#6f7f88;box-shadow:none}
+.attunement-item button.unavailable:hover{border-color:#304752;background:linear-gradient(180deg,rgba(22,25,28,.96),rgba(10,11,12,.99));transform:translateY(-1px)}
 .attunement-modal-requirements{display:grid;gap:4px;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(202,158,82,.22);border-radius:10px;background:rgba(0,0,0,.12)}
 .attunement-modal-requirements small{color:#cfac69;letter-spacing:.14em;font-size:.62rem;font-weight:800;text-transform:uppercase}
 .attunement-modal-requirements p{margin:0;color:#dec8a5;line-height:1.45}
