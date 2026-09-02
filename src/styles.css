@@ -984,6 +984,7 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .loot-page>.panel:has(.loot-actions)>.loot-stats{order:3}
 .loot-page>.panel:has(.loot-actions)>.loot-preparation,.loot-page>.panel:has(.loot-actions)>.loot-equipment{order:4}
 @media(max-width:600px){.loot-page>.panel>button.primary:last-child{top:12px;right:12px;padding:.55rem .7rem;font-size:.8rem}}
+@media(max-width:760px){.portrait.art-preview-trigger{height:min(430px,70vh)!important;max-height:min(430px,70vh)!important;aspect-ratio:auto}.portrait.art-preview-trigger>img{height:100%!important;object-fit:cover}}
 .loot-preparation{margin:18px 0;padding:14px;text-align:left;border:1px solid #654820;border-radius:12px;background:linear-gradient(145deg,#21160e,#100b08)}
 .loot-preparation>header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px}
 .loot-preparation>header>div{display:flex;align-items:center;gap:10px}.loot-preparation>header svg{color:#e3ad4f}.loot-preparation>header span{display:grid;gap:3px}.loot-preparation>header strong{color:#edc777;font-family:Georgia,serif}.loot-preparation>header small{color:#a99679}.loot-preparation>header>b{white-space:nowrap;color:#efc96e}
