@@ -861,6 +861,7 @@ function CombatScreen(){
  const g=useGame(),coop=useCoop(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy,battle=coop.room?.shared_state?.battle as any,isCoop=Boolean(coop.room&&battle?.status==='playing'),myTurn=isCoop?battle.activeUserId===coop.userId:g.playerTurn
  React.useEffect(()=>{window.scrollTo({top:0,left:0,behavior:'auto'});document.documentElement.scrollTop=0;document.body.scrollTop=0},[])
  const summonFxEvent=isCoop?battle?.summonAttackFx:g.summonAttackFx
+ React.useEffect(()=>{if(g.heroId!=='conjurador'&&(g.summons?.length||g.summon))useGame.setState({summons:[],summon:undefined} as any)},[g.heroId])
  const [summonFxIndex,setSummonFxIndex]=React.useState(-1)
  React.useEffect(()=>{const types=summonFxEvent?.types as AttackAnimType[]|undefined;if(!types?.length){setSummonFxIndex(-1);return}setSummonFxIndex(0);const timers=types.slice(1).map((_,index)=>window.setTimeout(()=>setSummonFxIndex(index+1),(index+1)*700));timers.push(window.setTimeout(()=>setSummonFxIndex(-1),types.length*700+1400));return()=>timers.forEach(window.clearTimeout)},[summonFxEvent?.nonce])
  // Um único som ('hit') tocava pra todo ataque -- lâmina, garras, martelo e magia soavam
