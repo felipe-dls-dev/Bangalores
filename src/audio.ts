@@ -31,6 +31,9 @@ export function setAudioMuted(next:boolean){muted=next;try{localStorage.setItem(
 // partir do qual clonar, evitando recriar o Audio() (e reler o arquivo) a cada chamada.
 export function playSfx(id:SfxId,volume=.45){
  if(muted)return
+ if(id==='atkDisparo'&&typeof window!=='undefined'){
+  const Ctx=window.AudioContext??(window as any).webkitAudioContext; if(Ctx){const ctx=new Ctx(),now=ctx.currentTime,g=ctx.createGain(),o=ctx.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(620,now);o.frequency.exponentialRampToValueAtTime(120,now+.16);g.gain.setValueAtTime(Math.max(.001,volume*.3),now);g.gain.exponentialRampToValueAtTime(.001,now+.16);o.connect(g).connect(ctx.destination);o.start(now);o.stop(now+.17);return}
+ }
  let template=cache.get(id)
  if(!template){template=new Audio(sfxUrl(SFX_FILES[id]));template.preload='auto';cache.set(id,template)}
  const instance=template.cloneNode(true) as HTMLAudioElement
