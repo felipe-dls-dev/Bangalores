@@ -882,7 +882,7 @@ function CombatScreen(){
  // combatRoll (usa summonAttackFx à parte). O nonce muda a cada golpe, então serve de gatilho.
  React.useEffect(()=>{
   const type=summonFxEvent?.types?.[0] as AttackAnimType|undefined
-  if(type)playSfx(ATTACK_SFX[type])
+  if(type)playSfx(g.heroId==='conjurador'?'summonTroll':ATTACK_SFX[type])
  },[summonFxEvent?.nonce])
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
  const defeated=g.hp<=0,disabled=!myTurn||g.animating||defeated,sharedRoll=isCoop?battle.lastRoll:undefined,intent=enemyIntentFor(e,g.combatTurn)
