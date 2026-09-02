@@ -1,3 +1,6 @@
 Audio: "Knife sharpening slice 1" by The Berklee College of Music, submitted by qubodup.
 Source: https://opengameart.org/content/knife-sharpening-slice-1
 License: Creative Commons Attribution 3.0 (CC BY 3.0).
+Audio: "EFFORT SOUNDS (Male) - Audio Pack" by VoiceBosch.
+Source: https://opengameart.org/content/effort-sounds-male-audio-pack
+License: Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0). Attribution: VoiceBosch.

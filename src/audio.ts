@@ -11,7 +11,7 @@ const SFX_FILES={
  atkFuro:'assets/sfx/attack-furo.ogg',
  atkDisparo:'assets/sfx/attack-disparo.wav',
  atkGarras:'assets/sfx/attack-garras.flac',
- atkEspinhos:'assets/sfx/attack-druida.ogg',summonTroll:'assets/sfx/summon-troll.ogg',
+ atkEspinhos:'assets/sfx/attack-druida.ogg',atkMonge:'assets/sfx/attack-monge.wav',summonTroll:'assets/sfx/summon-troll.ogg',
  coin:'assets/sfx/coin.ogg',
  levelup:'assets/sfx/levelup.ogg',
  forgeSuccess:'assets/sfx/forge-success.ogg',
