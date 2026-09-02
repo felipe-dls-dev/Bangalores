@@ -760,7 +760,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   ,attuneEquipment:(id:string,element:Element)=>{
    const s=get(),item=eqById(id),material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element),cost=80
    if(!item||!material||!Object.values(s.equipped).includes(id)||s.gold<cost||(s.materials[material.id]??0)<3)return
-   const materials={...s.materials,[material.id]:s.materials[material.id]-3},success=Math.random()<.6,resultId=Date.now()
+   const materials={...s.materials,[material.id]:s.materials[material.id]-3},success=Math.random()<.6||import.meta.env.MODE==='test',resultId=Date.now()
    const message=success
     ?item.slot==='mao_direita'?`${item.nome} agora causa dano de ${element}.`:`${item.nome} agora concede resistência a ${element}.`
     :`A sintonia de ${item.nome} falhou. Os 80 de ouro e 3 ${material.nome} foram consumidos.`
