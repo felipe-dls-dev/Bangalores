@@ -102,13 +102,13 @@ const equipmentFilters=[['Todos','Todos'],['bolsa','Bolsas'],['mao_esquerda','M�
 const consumableFilters=[['Todos','Todos'],['cura','Cura'],['bonus','Bônus']] as const
 const sortOptions=[['padrao','Padrão'],['preco','Preço'],['raridade','Raridade'],['nome','Nome']] as const
 const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
- campos_estrada:[.12,.31],campos_ponte:[.30,.52],campos_fazendas:[.19,.45],campos_moinho:[.28,.35],campos_ruinas:[.13,.53],
- lunar_bosque:[.75,.35],lunar_goblins:[.86,.47],lunar_monolito:[.72,.59],lunar_aranhas:[.88,.65],lunar_lago:[.82,.36],lunar_raizes:[.78,.53],lunar_pantano:[.91,.55],
- montanhas_passagem:[.34,.12],montanhas_mina:[.42,.23],montanhas_gelo:[.31,.31],montanhas_forte:[.46,.11],montanhas_abismo:[.39,.30],montanhas_cume:[.40,.07],
- pico_encosta:[.61,.11],pico_ninho_dragao:[.86,.20],pico_cinzas:[.62,.27],pico_forja:[.76,.31],pico_cratera:[.87,.10],
- mortas_campos:[.60,.72],mortas_catacumbas:[.78,.77],mortas_vila:[.68,.65],mortas_brejo:[.88,.79],mortas_torre:[.73,.88],
- khar_galerias:[.18,.69],khar_labirinto:[.34,.79],khar_templo_minotauro:[.22,.89],khar_forjas:[.30,.67],khar_cofre:[.39,.87],khar_profundezas:[.13,.82],
- eclipse_portoes:[.43,.55],eclipse_torre:[.51,.37],eclipse_trono:[.55,.50],eclipse_jardim:[.45,.42],eclipse_arquivo:[.58,.43],eclipse_fenda:[.48,.61],
+ campos_estrada:[.08,.29],campos_ponte:[.26,.57],campos_fazendas:[.22,.40],campos_moinho:[.33,.30],campos_ruinas:[.10,.55],
+ lunar_bosque:[.70,.30],lunar_goblins:[.90,.50],lunar_monolito:[.68,.63],lunar_aranhas:[.92,.69],lunar_lago:[.84,.28],lunar_raizes:[.74,.57],lunar_pantano:[.95,.60],
+ montanhas_passagem:[.28,.10],montanhas_mina:[.38,.26],montanhas_gelo:[.26,.34],montanhas_forte:[.43,.08],montanhas_abismo:[.35,.33],montanhas_cume:[.34,.06],
+ pico_encosta:[.58,.08],pico_ninho_dragao:[.89,.22],pico_cinzas:[.60,.31],pico_forja:[.80,.35],pico_cratera:[.90,.08],
+ mortas_campos:[.56,.68],mortas_catacumbas:[.82,.80],mortas_vila:[.64,.62],mortas_brejo:[.90,.84],mortas_torre:[.76,.90],
+ khar_galerias:[.14,.72],khar_labirinto:[.30,.81],khar_templo_minotauro:[.18,.91],khar_forjas:[.26,.69],khar_cofre:[.35,.89],khar_profundezas:[.10,.84],
+ eclipse_portoes:[.40,.58],eclipse_torre:[.48,.34],eclipse_trono:[.57,.52],eclipse_jardim:[.42,.44],eclipse_arquivo:[.60,.40],eclipse_fenda:[.51,.64],
  frost_rota:[.16,.18],frost_refinaria:[.27,.26],frost_fenda:[.20,.42],frost_estaleiro:[.33,.36],frost_geleira:[.40,.20],
  engren_trilha:[.48,.62],engren_vila:[.58,.52],engren_estufa:[.69,.58],engren_torre:[.79,.46],engren_cerne:[.86,.60],
  trilho_trilhos:[.48,.82],trilho_fazenda:[.58,.72],trilho_silo:[.67,.80],trilho_comboio:[.79,.72],trilho_terminal:[.88,.83],
