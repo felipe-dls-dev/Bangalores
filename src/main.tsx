@@ -115,8 +115,8 @@ const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
  engren_trilha:[.10,.55],engren_vila:[.23,.56],engren_estufa:[.35,.50],engren_torre:[.13,.65],engren_cerne:[.29,.66],
  trilho_trilhos:[.69,.52],trilho_fazenda:[.88,.51],trilho_silo:[.76,.58],trilho_comboio:[.91,.62],trilho_terminal:[.82,.65],
  vulcan_encosta:[.57,.25],vulcan_aqueduto:[.68,.28],vulcan_fundicao:[.82,.22],vulcan_chamines:[.88,.32],vulcan_camara:[.73,.36],
- ferro_trilha:[.12,.72],ferro_pocas:[.24,.77],ferro_fabrica:[.13,.86],ferro_cemiterio:[.29,.88],ferro_nucleo:[.44,.86],
- coro_viaduto:[.56,.77],coro_distrito:[.81,.73],coro_praca:[.91,.77],coro_subterraneo:[.58,.88],coro_torre:[.79,.89],
+ ferro_trilha:[.12,.72],ferro_pocas:[.24,.77],ferro_fabrica:[.12,.82],ferro_cemiterio:[.29,.83],ferro_nucleo:[.44,.82],
+ coro_viaduto:[.56,.77],coro_distrito:[.81,.73],coro_praca:[.91,.77],coro_subterraneo:[.58,.83],coro_torre:[.79,.84],
  aether_anel:[.43,.45],aether_galeria:[.57,.46],aether_ressonancia:[.45,.56],aether_vortice:[.59,.58],aether_coracao:[.50,.66]
 }
 // No mapa estreito do celular o rótulo de um pino perto da borda (ex: x=.91) estourava

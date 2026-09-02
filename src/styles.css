@@ -898,6 +898,11 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .hero-choice-copy{display:grid;gap:10px}
 .hero-choice-ability p{line-height:1.5}
 .map-layout.map-layout-with-index{align-items:start}
+@media(min-width:1001px){
+ .map-layout-with-index>.map-panel{display:flex;flex-direction:column;height:auto}
+ .map-layout-with-index>.map-panel>.map-wrap{flex:none;width:100%;height:auto;aspect-ratio:1672/941}
+ .map-layout-with-index>.map-panel>.map-wrap>img{object-fit:contain}
+}
 .map-region-index,.map-layout-with-index>.summary,.map-layout-with-index>.map-panel{border-radius:16px}
 .map-index-head p,.map-panel .screen-intro p{line-height:1.5}
 /* Coop persistent session and shared destination */
