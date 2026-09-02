@@ -613,6 +613,7 @@ function MaterialSourceDialog({material,onClose}:{material:ForgeMaterialEntry;on
 // padrão pra não empurrar o catálogo de receitas pra baixo em quem já sabe as regras.
 function ForgeTutorialPanel(){
  const [open,setOpen]=React.useState(false),[attunementPrompt,setAttunementPrompt]=React.useState<null|{id:string;element:GameElement;name:string;effect:string;material:string;type:'weapon'|'armor'}>(null),g=useGame(),weapon=equipmentByRef(g.equipped.mao_direita)
+ const attunementTheme:Record<GameElement,{glow:string;border:string;accent:string}>={fisico:{glow:'rgba(179,120,49,.28)',border:'#9a6633',accent:'#efc77a'},fogo:{glow:'rgba(193,71,29,.28)',border:'#c15c2d',accent:'#ffb47f'},gelo:{glow:'rgba(74,144,183,.28)',border:'#4a90b7',accent:'#b7e6ff'},natureza:{glow:'rgba(78,143,71,.28)',border:'#5d8c43',accent:'#c7ef9a'},sombra:{glow:'rgba(104,78,140,.28)',border:'#8260aa',accent:'#d5bef7'},luz:{glow:'rgba(185,158,69,.28)',border:'#d7bc63',accent:'#fff1b8'},arcano:{glow:'rgba(110,92,189,.28)',border:'#8875f0',accent:'#ddd6ff'}}
  // attuneEquipment (game.ts) já sabia dar resistência elemental a qualquer peça que não seja a
  // arma (ramifica por item.slot!=='mao_direita'), mas só a arma tinha botões nesta tela -- a
  // metade "resistência" da função ficava impossível de usar. Bolsa fica de fora (não é peça de
@@ -641,7 +642,7 @@ function ForgeTutorialPanel(){
    {weapon&&<div className="attunement-item"><span>{weapon.nome}<em>Dano da arma — atual: {heroWeaponElement(g)}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={heroWeaponElement(g)===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>material&&setAttunementPrompt({id:g.equipped.mao_direita!,element,name:weapon.nome,effect:`os ataques desta arma passarão a causar dano de ${ELEMENT_LABELS[element]}.`,material:material.nome,type:'weapon'})}>{element}</button>})}</div></div>}
    {armorEntries.map(({id,item})=><div className="attunement-item" key={id}><span>{item.nome}<em>Resistência — atual: {g.equipmentResistances[id]??'nenhuma'}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={g.equipmentResistances[id]===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>material&&setAttunementPrompt({id,element,name:item.nome,effect:`esta peça reduzirá dano de ${ELEMENT_LABELS[element]} e bloqueará sua condição elemental.`,material:material.nome,type:'armor'})}>{element}</button>})}</div></div>)}
    {attunementPrompt&&<div className="attunement-modal-overlay" role="presentation" onClick={()=>setAttunementPrompt(null)}>
-    <section className="attunement-modal" role="dialog" aria-modal="true" aria-labelledby="attunement-title" onClick={e=>e.stopPropagation()}>
+    <section className={`attunement-modal ${attunementPrompt.type}`} role="dialog" aria-modal="true" aria-labelledby="attunement-title" style={{'--attune-glow':attunementTheme[attunementPrompt.element].glow,'--attune-border':attunementTheme[attunementPrompt.element].border,'--attune-accent':attunementTheme[attunementPrompt.element].accent} as React.CSSProperties} onClick={e=>e.stopPropagation()}>
      <div className={`attunement-modal-badge ${attunementPrompt.type}`}>
       {attunementPrompt.type==='weapon'?<Sword size={14}/>:<Shield size={14}/>}
       <span>{attunementPrompt.type==='weapon'?'DANO DA ARMA':'RESISTENCIA'}</span>
@@ -657,6 +658,7 @@ function ForgeTutorialPanel(){
       <strong>Falha</strong>
       <span>Todos os recursos são consumidos.</span>
      </div>
+     <p className="attunement-modal-note">{attunementPrompt.type==='weapon'?'A arma só muda de elemento quando sintonizada com sucesso.':'A resistência substitui a afinidade elemental atual desta peça.'}</p>
      <div className="attunement-modal-actions">
       <button onClick={()=>setAttunementPrompt(null)}>Cancelar</button>
       <button className="primary" onClick={()=>{const prompt=attunementPrompt;setAttunementPrompt(null);g.attuneEquipment(prompt.id,prompt.element)}}>Confirmar</button>

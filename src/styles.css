@@ -895,7 +895,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .menu-dropdown-exit{color:#e2a98f}
 .menu-dropdown-exit:hover{background:#3a1c14}
 @media(max-width:520px){.menu-dropdown{right:-8px;width:min(280px,calc(100vw - 24px))}}
-body::after{content:"VERSÃO 0.6.9 • 01/09/2026 • Sintonia em modal temático, leitura melhorada nas fichas e ajustes visuais nas telas de resumo"}
+body::after{content:"VERSÃO 0.7.0 • 01/09/2026\A Sintonia em modal temático, leitura melhorada nas fichas\A e ajustes visuais nas telas de resumo";white-space:pre-line}
 /* The version toast above overlapped page content on almost every screen
    (nothing reserves space for it). Keep it readable for a few seconds,
    then fade it out of the way instead of leaving it stuck on top forever.
@@ -1010,18 +1010,21 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 @media(max-width:760px){.attunement-service{grid-template-columns:1fr}.attunement-service>strong,.attunement-service>small,.attunement-service:after{grid-column:auto}}
 
 .attunement-modal-overlay{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px;background:rgba(7,4,2,.82);backdrop-filter:blur(6px)}
-.attunement-modal{width:min(560px,100%);padding:22px 22px 20px;border:1px solid #a57432;border-radius:14px;background:linear-gradient(145deg,#25180f,#0d0906);box-shadow:0 24px 90px rgba(0,0,0,.7);color:#ebd2a0}
-.attunement-modal-badge{display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;padding:.32rem .62rem;border:1px solid #5f4522;border-radius:999px;background:rgba(174,127,45,.16);color:#efcc83;font-size:.66rem;font-weight:800;letter-spacing:.16em}
-.attunement-modal-badge.weapon{border-color:#8f5531;background:linear-gradient(180deg,rgba(159,82,40,.28),rgba(88,44,19,.18))}
-.attunement-modal-badge.armor{border-color:#4f6e7e;background:linear-gradient(180deg,rgba(56,92,113,.28),rgba(23,43,56,.18))}
-.attunement-modal h2{margin:0 0 12px;color:#f0cb79;font-family:Georgia,serif;font-size:1.4rem;line-height:1.15}
+.attunement-modal{width:min(560px,100%);padding:22px 22px 20px;border:1px solid var(--attune-border,#a57432);border-radius:14px;background:
+ radial-gradient(circle at top, var(--attune-glow,rgba(174,127,45,.16)), transparent 42%),
+ linear-gradient(145deg,#25180f,#0d0906);box-shadow:0 24px 90px rgba(0,0,0,.7);color:#ebd2a0}
+.attunement-modal-badge{display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;padding:.32rem .62rem;border:1px solid color-mix(in srgb,var(--attune-border,#5f4522) 80%, #fff 0%);border-radius:999px;background:color-mix(in srgb,var(--attune-glow,rgba(174,127,45,.16)) 78%, transparent);color:var(--attune-accent,#efcc83);font-size:.66rem;font-weight:800;letter-spacing:.16em}
+.attunement-modal-badge.weapon{box-shadow:0 0 0 1px rgba(0,0,0,.15) inset}
+.attunement-modal-badge.armor{box-shadow:0 0 0 1px rgba(0,0,0,.15) inset}
+.attunement-modal h2{margin:0 0 12px;color:var(--attune-accent,#f0cb79);font-family:Georgia,serif;font-size:1.4rem;line-height:1.15}
 .attunement-modal-effect{margin:0 0 12px}
 .attunement-modal-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px}
-.attunement-modal-meta span{display:grid;gap:2px;padding:10px;border:1px solid #5f4522;border-radius:10px;background:rgba(7,5,3,.34)}
+.attunement-modal-meta span{display:grid;gap:2px;padding:10px;border:1px solid color-mix(in srgb,var(--attune-border,#5f4522) 65%, #000 35%);border-radius:10px;background:rgba(7,5,3,.34)}
 .attunement-modal-meta small{margin:0;color:#b99663;letter-spacing:.08em;font-size:.62rem}
-.attunement-modal-meta b{color:#f1cf8a;font-size:.92rem}
-.attunement-modal-risk{display:flex;justify-content:space-between;gap:10px;margin:0 0 2px;padding:10px 12px;border:1px solid #7f3e33;border-radius:10px;background:rgba(67,23,18,.36);color:#efb8a6}
-.attunement-modal-risk strong{color:#f0cab2}
+.attunement-modal-meta b{color:var(--attune-accent,#f1cf8a);font-size:.92rem}
+.attunement-modal-risk{display:flex;justify-content:space-between;gap:10px;margin:0 0 2px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--attune-border,#7f3e33) 82%, #000 18%);border-radius:10px;background:rgba(67,23,18,.36);color:#efb8a6}
+.attunement-modal-risk strong{color:var(--attune-accent,#f0cab2)}
+.attunement-modal-note{margin:2px 0 0;padding:.8rem .95rem;border:1px dashed color-mix(in srgb,var(--attune-border,#5f4522) 72%, #fff 28%);border-radius:10px;background:rgba(0,0,0,.12);color:#d6c1a0;font-size:.78rem;line-height:1.45}
 .attunement-modal p{margin:0 0 10px;color:#ccb996;line-height:1.5}
 .attunement-modal p strong{color:#efd08b}
 .attunement-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
