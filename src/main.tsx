@@ -579,7 +579,8 @@ function RegionRevengePanel(){const g=useGame(),subs=SUBREGIONS.filter(s=>s.regi
 // resultado da forja/aprimoramento não importa em que ponto da tela ele clicou o botão.
 function ForgeResultDialog(){
  const g=useGame(),result=g.forgeResult
- const title=result?.kind==='upgrade'?(result.success?'Aprimoramento bem-sucedido!':'Aprimoramento falhou'):(result?.success?'Forja bem-sucedida!':'Fabricação falhou')
+ const attunementResult=result&&result.message.toLowerCase().includes('sintonia')
+ const title=attunementResult?(result.success?'Sintonia bem-sucedida!':'Sintonia falhou'):result?.kind==='upgrade'?(result.success?'Aprimoramento bem-sucedido!':'Aprimoramento falhou'):(result?.success?'Forja bem-sucedida!':'Fabricação falhou')
  const close=()=>useGame.setState({forgeResult:undefined})
  React.useEffect(()=>{if(result)playSfx(result.success?'forgeSuccess':'forgeFail')},[result?.id])
  return <AnimatePresence>{result&&<motion.div key={result.id} className="forge-result-overlay" role="presentation" onClick={close} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.18}}>
@@ -611,7 +612,7 @@ function MaterialSourceDialog({material,onClose}:{material:ForgeMaterialEntry;on
 // bônus como refino em vez de criação) tentando forjar e sendo bloqueado. Recolhido por
 // padrão pra não empurrar o catálogo de receitas pra baixo em quem já sabe as regras.
 function ForgeTutorialPanel(){
- const [open,setOpen]=React.useState(false),g=useGame(),weapon=equipmentByRef(g.equipped.mao_direita)
+ const [open,setOpen]=React.useState(false),[attunementPrompt,setAttunementPrompt]=React.useState<null|{id:string;element:GameElement;name:string;effect:string;material:string;type:'weapon'|'armor'}>(null),g=useGame(),weapon=equipmentByRef(g.equipped.mao_direita)
  // attuneEquipment (game.ts) já sabia dar resistência elemental a qualquer peça que não seja a
  // arma (ramifica por item.slot!=='mao_direita'), mas só a arma tinha botões nesta tela -- a
  // metade "resistência" da função ficava impossível de usar. Bolsa fica de fora (não é peça de
@@ -637,8 +638,22 @@ function ForgeTutorialPanel(){
        genérico do catálogo -- weapon.id (vindo de equipmentByRef) é o id base, então os botões
        de sintonia da arma nunca faziam nada (Object.values(s.equipped).includes(id) sempre
        falhava). g.equipped.mao_direita é a referência de instância de verdade. */}
-   {weapon&&<div className="attunement-item"><span>{weapon.nome}<em>Dano da arma — atual: {heroWeaponElement(g)}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={heroWeaponElement(g)===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>material&&window.confirm(`Sintonizar ${weapon.nome} com ${ELEMENT_LABELS[element]}?\n\nEfeito: os ataques desta arma passarão a causar dano de ${ELEMENT_LABELS[element]}.\nCusto: 80 ouro + 3 ${material.nome}.\nChance de sucesso: 60%.\n\nEm caso de falha, todos os recursos são consumidos.`)&&g.attuneEquipment(g.equipped.mao_direita!,element)}>{element}</button>})}</div></div>}
-   {armorEntries.map(({id,item})=><div className="attunement-item" key={id}><span>{item.nome}<em>Resistência — atual: {g.equipmentResistances[id]??'nenhuma'}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={g.equipmentResistances[id]===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>material&&window.confirm(`Sintonizar ${item.nome} com ${ELEMENT_LABELS[element]}?\n\nEfeito: esta peça reduzirá dano de ${ELEMENT_LABELS[element]} e bloqueará sua condição elemental.\nCusto: 80 ouro + 3 ${material.nome}.\nChance de sucesso: 60%.\n\nEm caso de falha, todos os recursos são consumidos.`)&&g.attuneEquipment(id,element)}>{element}</button>})}</div></div>)}
+   {weapon&&<div className="attunement-item"><span>{weapon.nome}<em>Dano da arma — atual: {heroWeaponElement(g)}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={heroWeaponElement(g)===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>material&&setAttunementPrompt({id:g.equipped.mao_direita!,element,name:weapon.nome,effect:`os ataques desta arma passarão a causar dano de ${ELEMENT_LABELS[element]}.`,material:material.nome,type:'weapon'})}>{element}</button>})}</div></div>}
+   {armorEntries.map(({id,item})=><div className="attunement-item" key={id}><span>{item.nome}<em>Resistência — atual: {g.equipmentResistances[id]??'nenhuma'}</em></span><div>{ELEMENTS.map(element=>{const material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element);return <button key={element} className={g.equipmentResistances[id]===element?'selected':''} disabled={g.gold<80||!material||(g.materials[material.id]??0)<3} onClick={()=>material&&setAttunementPrompt({id,element,name:item.nome,effect:`esta peça reduzirá dano de ${ELEMENT_LABELS[element]} e bloqueará sua condição elemental.`,material:material.nome,type:'armor'})}>{element}</button>})}</div></div>)}
+   {attunementPrompt&&<div className="attunement-modal-overlay" role="presentation" onClick={()=>setAttunementPrompt(null)}>
+    <section className="attunement-modal" role="dialog" aria-modal="true" aria-labelledby="attunement-title" onClick={e=>e.stopPropagation()}>
+     <small>SINTONIA ELEMENTAL</small>
+     <h2 id="attunement-title">Sintonizar {attunementPrompt.name} com {ELEMENT_LABELS[attunementPrompt.element]}?</h2>
+     <p><strong>Efeito:</strong> {attunementPrompt.effect}</p>
+     <p><strong>Custo:</strong> 80 ouro + 3 {attunementPrompt.material}.</p>
+     <p><strong>Chance de sucesso:</strong> 60%.</p>
+     <p>Em caso de falha, todos os recursos são consumidos.</p>
+     <div className="attunement-modal-actions">
+      <button onClick={()=>setAttunementPrompt(null)}>Cancelar</button>
+      <button className="primary" onClick={()=>{const prompt=attunementPrompt;setAttunementPrompt(null);g.attuneEquipment(prompt.id,prompt.element)}}>Confirmar</button>
+     </div>
+    </section>
+   </div>}
   </div>}
  </section>
 }

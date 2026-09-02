@@ -1008,3 +1008,12 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .attunement-item{gap:8px;padding:10px;border:1px solid rgba(202,158,82,.2);border-radius:9px;background:rgba(8,6,4,.42);min-width:0}
 .attunement-item>span{display:block}.attunement-item>span em{display:block;margin-top:3px;font-size:.7rem}.attunement-item>div{gap:5px}.attunement-item button{padding:.48rem .62rem;font-size:.78rem;flex:1 1 auto}
 @media(max-width:760px){.attunement-service{grid-template-columns:1fr}.attunement-service>strong,.attunement-service>small,.attunement-service:after{grid-column:auto}}
+
+.attunement-modal-overlay{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px;background:rgba(7,4,2,.82);backdrop-filter:blur(6px)}
+.attunement-modal{width:min(560px,100%);padding:22px 22px 20px;border:1px solid #a57432;border-radius:14px;background:linear-gradient(145deg,#25180f,#0d0906);box-shadow:0 24px 90px rgba(0,0,0,.7);color:#ebd2a0}
+.attunement-modal small{display:block;margin-bottom:8px;color:#d2a14d;letter-spacing:.16em;font-size:.66rem;font-weight:700}
+.attunement-modal h2{margin:0 0 12px;color:#f0cb79;font-family:Georgia,serif;font-size:1.4rem;line-height:1.15}
+.attunement-modal p{margin:0 0 10px;color:#ccb996;line-height:1.5}
+.attunement-modal p strong{color:#efd08b}
+.attunement-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+@media(max-width:600px){.attunement-modal{padding:18px}.attunement-modal-actions{flex-direction:column}.attunement-modal-actions button{width:100%}}
