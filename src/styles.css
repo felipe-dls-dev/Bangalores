@@ -1024,14 +1024,17 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .attunement-item>div{display:flex;flex-wrap:wrap;gap:6px}
 .attunement-item button.selected{border-color:#c59343;background:rgba(169,113,36,.18);font-weight:700}@media(max-width:700px){.build-summary-grid,.build-tags,.specialization-tier>div{grid-template-columns:1fr 1fr}}
 .loot-page>.panel{width:min(920px,100%);position:relative}
-.loot-page>.panel>button.primary:last-child{position:absolute;top:18px;right:18px;margin:0;z-index:2}
-.loot-page .loot-actions{width:100%;margin:24px auto 0;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}
+.loot-page>.panel{display:flex;flex-direction:column;gap:12px}
+.loot-page h1{margin:.2rem 0 0}
+.loot-page>.trophy,.loot-page>.panel>.trophy{margin:8px auto 0}
+.loot-page .loot-summary{margin-top:4px}
+.loot-page .loot-summary>span{padding:11px 12px}
+.loot-page .loot-stats{margin-top:6px}
+.loot-page .loot-actions{width:100%;margin:10px 0 0;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid rgba(202,158,82,.18)}
 .loot-page .loot-actions button{min-width:220px;text-align:center}
-.loot-page>.panel:has(.loot-actions){display:flex;flex-direction:column}
-.loot-page>.panel:has(.loot-actions)>.loot-actions{order:2}
-.loot-page>.panel:has(.loot-actions)>.loot-stats{order:3}
-.loot-page>.panel:has(.loot-actions)>.loot-preparation,.loot-page>.panel:has(.loot-actions)>.loot-equipment{order:4}
-@media(max-width:600px){.loot-page>.panel>button.primary:last-child{top:12px;right:12px;padding:.55rem .7rem;font-size:.8rem}}
+.loot-page>.panel:has(.loot-actions)>.loot-actions{order:4}
+.loot-page>.panel:has(.loot-actions)>.loot-preparation,.loot-page>.panel:has(.loot-actions)>.loot-equipment{order:5}
+@media(max-width:600px){.loot-page .loot-actions button{min-width:0;width:100%}}
 @media(max-width:760px){.portrait.art-preview-trigger{height:min(430px,70vh)!important;max-height:min(430px,70vh)!important;aspect-ratio:auto}.portrait.art-preview-trigger>img{height:100%!important;object-fit:cover}}
 .loot-preparation{margin:18px 0;padding:14px;text-align:left;border:1px solid #654820;border-radius:12px;background:linear-gradient(145deg,#21160e,#100b08)}
 .loot-preparation>header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px}
