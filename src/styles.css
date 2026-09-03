@@ -1208,3 +1208,97 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .app-shell[data-region-theme] .gold{color:var(--gold2)}
 
 body::after{content:"VERSÃO 0.7.3 • 03/09/2026\A Cobertura visual regional ampliada em botões, painéis, Forja, encaixes e estados interativos";white-space:pre-line;border-color:var(--line);color:var(--gold2)}
+
+/* Full UI audit: legacy components used literal bronze colours. These selectors cover
+   the shared visual vocabulary across character, map, region, guild, shop, tutorial,
+   forge, chronicle, coop and combat screens. */
+.app-shell[data-region-theme] :where(
+ .attr-row,.points-box,.mechanics-card,.item-card,.slot,.shop-row,.subregion-card,
+ .system-list button,.bestiary-list span,.material-grid button,.material-info-dialog,
+ .material-info-subs li,.dungeon-sub-button,.forge-items article,.gallery-progress,
+ .tutorial-hero,.tutorial-start,.tutorial-start-grid article,.tutorial-chapters article,
+ .hero-choice-card,.hero-choice-stats span,.hero-confirm-dialog,.campaign-list article,
+ .region-step-nav button,.guild-summary>span,.npc-banner,.guild-filter button,
+ .guild-herald-panel,.guild-herald-item,.guild-mission,.guild-rank-panel,
+ .guild-delivery-item,.guild-fast-travel,.map-index-totals>span,.map-index-region,
+ .map-index-region-button,.coop-teammate-chip,.coop-travel-confirm,.coop-risk-overlay section,
+ .shop-cart-panel,.combat-consumable,.combat-hint-box,.event-card-panel,.story-notice,
+ .forge-result-dialog,.card-creator-form,.art-editor-box
+){border-color:var(--theme-border-soft);background:linear-gradient(145deg,var(--theme-surface-raised),var(--theme-surface-deep))}
+
+.app-shell[data-region-theme] :where(
+ .item-art-wrap,.slot-art-preview,.shop-row-thumb,.forge-item-art,.subregion-icon,
+ .combat-consumable-art,.npc-banner-portrait,.tutorial-start-grid article>b,
+ .map-index-difficulty,.guild-mission header>span
+){border-color:var(--theme-border);background:radial-gradient(circle,var(--theme-surface-raised),#070605)}
+
+.app-shell[data-region-theme] :where(
+ .region-head h1,.region-level strong,.subregion-top h2,.dungeon-region-group>strong,
+ .chronicle-hero h1,.material-grid b,.gallery-progress strong,.gallery-undiscovered h2,
+ .tutorial-hero h1,.tutorial-start-head h2,.tutorial-start-grid strong,
+ .tutorial-chapters article>button strong,.hero-choice-copy h2,.hero-confirm-dialog h2,
+ .campaign-library-title,.campaign-list strong,.region-step-nav strong,.guild-head h1,
+ .guild-summary strong,.npc-banner-name,.guild-herald-head strong,.guild-herald-item-head strong,
+ .guild-mission h2,.guild-progress strong,.guild-reward strong,.guild-fast-travel strong,
+ .map-index-head h2,.map-index-totals strong,.map-index-region-button strong,
+ .shop-row-title strong,.shop-row-price,.combat-consumable strong
+){color:var(--theme-strong)}
+
+.app-shell[data-region-theme] :where(
+ .region-head p,.region-level span,.subregion-desc,.subregion-details small,
+ .chronicle-hero p,.chronicle-grid p,.system-list small,.material-grid small,
+ .material-info-dialog p,.dungeon-sub-button,.dungeon-sub-button small,.forge-items small,
+ .gallery-progress p,.gallery-undiscovered,.tutorial-hero p,.tutorial-start-grid p,
+ .tutorial-tools span,.tutorial-chapter-body p,.tutorial-chapter-body ul,
+ .hero-choice-stats small,.hero-confirm-dialog p,.campaign-library-title small,
+ .campaign-list span,.campaign-list small,.region-step-nav em,.guild-head p,
+ .guild-summary small,.npc-banner-copy p,.guild-filter button,.guild-herald-line,
+ .guild-herald-item p,.guild-herald-empty,.guild-mission>p,.guild-location,
+ .guild-progress>div:first-child,.guild-reward small,.guild-required-rank,
+ .guild-delivery-item,.guild-fast-travel small,.map-index-head p,.map-index-totals small,
+ .map-index-region-button small,.map-index-region-button>b,.shop-row-meta,.shop-row-desc,
+ .shop-sort small,.coop-teammate-chip small,.coop-travel-confirm small,
+ .combat-consumable small,.consumables-head small
+){color:var(--theme-muted)}
+
+.app-shell[data-region-theme] :where(
+ .eyebrow,.region-level small,.subregion-meta,.material-info-dialog>small,
+ .material-info-subs>small,.gallery-progress small,.tutorial-hero>svg,
+ .tutorial-chapters article>button span,.tutorial-chapters article>button svg,
+ .hero-choice-ability small,.hero-confirm-dialog>div>small,.region-step-nav small,
+ .region-step-nav svg,.guild-crest,.guild-summary svg,.npc-banner-name small,
+ .guild-filter button.active,.guild-herald-toggle.alert,.guild-mission header small,
+ .guild-mission header>b,.guild-location svg,.guild-reward svg,.guild-delivery-item>svg,
+ .guild-fast-travel>svg,.map-index-totals svg,.map-index-difficulty,.map-index-subs i,
+ .gallery-progress svg,.consumables-head,.combat-tip svg
+){color:var(--gold)}
+
+.app-shell[data-region-theme] :where(
+ .attr-row,.subregion-top,.subregion-details,.campaign-library,.guild-rank-divider,
+ .guild-herald-line,.guild-reward,.guild-rank-road,.consumables-head,
+ .combat-v033 .combat-consumables-panel .consumables-head,.loot-actions
+){border-color:var(--theme-border-soft)}
+
+.app-shell[data-region-theme] :where(
+ .difficulty-row button.active,.dungeon-sub-button.active,.tutorial-chapters article.open,
+ .campaign-list article.active,.guild-filter button.active,.guild-mission.active,
+ .guild-mission.ready,.coop-destination-grid button.selected,.coop-boss-options button.selected,
+ .build-tags>span.active,.specialization-tier button.selected
+){border-color:var(--gold);background:linear-gradient(145deg,color-mix(in srgb,var(--theme-button),var(--gold) 24%),var(--theme-button-deep));box-shadow:inset 3px 0 var(--gold),0 0 16px var(--theme-glow)}
+
+.app-shell[data-region-theme] .region-world-button,
+.app-shell[data-region-theme] .subregion-list-back,
+.app-shell[data-region-theme] .map-travel-button,
+.app-shell[data-region-theme] .guild-fast-travel{border-color:var(--theme-border);background:linear-gradient(145deg,var(--theme-button),var(--theme-button-deep));color:var(--theme-strong)}
+.app-shell[data-region-theme] :where(.region-world-button,.subregion-list-back,.map-travel-button,.guild-fast-travel):hover:not(:disabled){border-color:var(--gold2);background:linear-gradient(145deg,color-mix(in srgb,var(--theme-button),#fff 12%),var(--theme-button-deep));box-shadow:0 0 16px var(--theme-glow)}
+
+.app-shell[data-region-theme] .map-wrap{border-color:var(--theme-border);box-shadow:0 0 22px var(--theme-soft)}
+.app-shell[data-region-theme] .map-pin:not(.completed),
+.app-shell[data-region-theme] .map-sub-pin:not(.completed){border-color:var(--gold);background:linear-gradient(145deg,var(--theme-button),var(--theme-button-deep));color:var(--theme-strong);box-shadow:0 2px 10px #000,0 0 12px var(--theme-glow)}
+.app-shell[data-region-theme] .map-sub-pin>b{border-color:var(--theme-border);background:var(--theme-surface);color:var(--theme-strong)}
+
+.app-shell[data-region-theme] :where(.topbar,.footer-tip){border-color:var(--theme-border);background:color-mix(in srgb,var(--theme-surface-deep) 95%,transparent)}
+.app-shell[data-region-theme] :where(.menu-dropdown-divider,.guild-rank-road,.guild-herald-line){background:var(--theme-border-soft)}
+.app-shell[data-region-theme] :where(.nav-tooltip,.menu-dropdown-notice){border-color:var(--theme-border);background:linear-gradient(180deg,var(--theme-surface-raised),var(--theme-surface-deep));color:var(--theme-text)}
+
+body::after{content:"VERSÃO 0.7.4 • 03/09/2026\A Revisão completa de cores regionais em todas as telas e componentes compartilhados"}
