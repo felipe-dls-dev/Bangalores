@@ -448,9 +448,9 @@ body:has(.combat-v033){overflow:hidden}
 .tilt-card{transition:transform .4s cubic-bezier(.2,0,0,1),box-shadow .4s ease}
 @media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
  .tilt-card{transform:perspective(1000px) rotateX(var(--tilt-rx,0deg)) rotateY(var(--tilt-ry,0deg))}
- .game-card.ornate-card.tilt-card::before{display:block;content:"";position:absolute;z-index:25;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:overlay;background:radial-gradient(circle at var(--tilt-gx,50%) var(--tilt-gy,50%),color-mix(in srgb,var(--rarity),white 30%) 0%,transparent 55%)}
- .tilt-card:hover::before{opacity:.6}
- .tilt-card:hover{box-shadow:0 26px 60px #000,0 0 46px color-mix(in srgb,var(--rarity),transparent 55%)}
+ .game-card.ornate-card.tilt-card::before{display:block;content:"";position:absolute;z-index:25;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background:radial-gradient(circle at var(--tilt-gx,50%) var(--tilt-gy,50%),color-mix(in srgb,var(--rarity),white 55%) 0%,color-mix(in srgb,var(--rarity),transparent 30%) 35%,transparent 72%)}
+ .tilt-card:hover::before{opacity:.9}
+ .tilt-card:hover{box-shadow:0 26px 60px #000,0 0 70px color-mix(in srgb,var(--rarity),transparent 30%)}
 }
 .game-card.ornate-card::before,.game-card.ornate-card::after{display:none}
 .ornate-art{position:absolute;z-index:1;left:4%;top:11%;width:84%;height:77%;overflow:hidden;background:#080604}
@@ -1314,3 +1314,4 @@ body::after{content:"VERSÃO 0.7.3 • 03/09/2026\A Cobertura visual regional am
 
 body::after{content:"VERSÃO 0.7.5 • 03/09/2026\A Botões expansíveis da sintonia elemental agora usam preenchimento sólido"}
 body::after{content:"VERSÃO 0.7.6 • 03/09/2026\A Cartas da Coleção ganharam tilt 3D e brilho na cor da raridade ao passar o mouse"}
+body::after{content:"VERSÃO 0.7.7 • 03/09/2026\A Brilho holográfico das cartas da Coleção ficou mais intenso e visível"}
