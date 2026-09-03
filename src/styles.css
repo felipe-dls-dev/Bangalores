@@ -1126,3 +1126,85 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .attunement-modal p strong{color:#efd08b}
 .attunement-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 @media(max-width:600px){.attunement-modal{padding:18px}.attunement-modal-meta,.attunement-modal-impact{grid-template-columns:1fr}.attunement-modal-risk{flex-direction:column}.attunement-modal-actions{flex-direction:column}.attunement-modal-actions button{width:100%}}
+
+/* Regional theme coverage: every piece of interface chrome follows the active region.
+   Semantic feedback (danger, success, health and rarity) intentionally keeps its own colour. */
+.app-shell[data-region-theme]{
+ --theme-surface:color-mix(in srgb,var(--panel) 86%,#050403 14%);
+ --theme-surface-raised:color-mix(in srgb,var(--panel2) 82%,#080605 18%);
+ --theme-surface-deep:color-mix(in srgb,var(--panel) 54%,#050403 46%);
+ --theme-border:color-mix(in srgb,var(--line) 78%,transparent);
+ --theme-border-soft:color-mix(in srgb,var(--line) 42%,transparent);
+ --theme-accent-soft:color-mix(in srgb,var(--gold) 16%,transparent);
+ --theme-muted:color-mix(in srgb,var(--theme-text) 72%,#71685d 28%);
+ background:radial-gradient(circle at 50% -12%,var(--theme-soft),transparent 34%),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(rgba(255,255,255,.01) 1px,transparent 1px),#070605;
+ background-size:auto,52px 52px,52px 52px,auto;
+}
+.app-shell[data-region-theme] .panel,
+.app-shell[data-region-theme] .forge-tutorial,
+.app-shell[data-region-theme] .attunement-service,
+.app-shell[data-region-theme] .loot-preparation,
+.app-shell[data-region-theme] .loot-equipment,
+.app-shell[data-region-theme] .shop-head,
+.app-shell[data-region-theme] .world-travel-card,
+.app-shell[data-region-theme] .screen-intro{border-color:var(--theme-border);background:linear-gradient(145deg,var(--theme-surface-raised),var(--theme-surface-deep));}
+.app-shell[data-region-theme] .panel-title,
+.app-shell[data-region-theme] .subhead,
+.app-shell[data-region-theme] .shop-head,
+.app-shell[data-region-theme] hr{border-color:var(--theme-border-soft)}
+.app-shell[data-region-theme] .panel-title,
+.app-shell[data-region-theme] .subhead,
+.app-shell[data-region-theme] .eyebrow,
+.app-shell[data-region-theme] .capacity,
+.app-shell[data-region-theme] .forge-tutorial-toggle,
+.app-shell[data-region-theme] .attunement-service>strong{color:var(--theme-strong)}
+.app-shell[data-region-theme] .forge-tutorial-toggle,
+.app-shell[data-region-theme] .attunement-item-toggle{background:linear-gradient(180deg,var(--theme-surface-raised),var(--theme-surface));border-color:var(--theme-border-soft)}
+.app-shell[data-region-theme] .forge-tutorial-toggle svg,
+.app-shell[data-region-theme] .attunement-item-toggle>svg,
+.app-shell[data-region-theme] .loot-preparation>header svg,
+.app-shell[data-region-theme] .loot-equipment>header svg{color:var(--gold)}
+.app-shell[data-region-theme] .attunement-item,
+.app-shell[data-region-theme] .recipe-grid article,
+.app-shell[data-region-theme] .salvage-list article,
+.app-shell[data-region-theme] .socket-list article,
+.app-shell[data-region-theme] .material-counts span,
+.app-shell[data-region-theme] .socket-row span,
+.app-shell[data-region-theme] .quick-note,
+.app-shell[data-region-theme] .attunement-modal-requirements{border-color:var(--theme-border-soft);background:var(--theme-surface-deep)}
+.app-shell[data-region-theme] .material-counts span,
+.app-shell[data-region-theme] .socket-row span,
+.app-shell[data-region-theme] .socket-row button{color:var(--theme-text)}
+.app-shell[data-region-theme] .socket-row span,
+.app-shell[data-region-theme] .socket-row button{border-color:color-mix(in srgb,var(--gold) 56%,transparent);background:linear-gradient(145deg,var(--theme-button),var(--theme-button-deep));box-shadow:inset 0 0 16px var(--theme-soft)}
+.app-shell[data-region-theme] .attunement-elements button.selected{border-color:var(--gold);background:linear-gradient(145deg,color-mix(in srgb,var(--theme-button),var(--gold) 25%),var(--theme-button-deep));color:var(--theme-strong);box-shadow:0 0 12px var(--theme-glow)}
+.app-shell[data-region-theme] .attunement-elements button.unavailable{opacity:.62;border-color:color-mix(in srgb,var(--line) 35%,#182027);background:linear-gradient(180deg,color-mix(in srgb,var(--theme-button-deep) 72%,#11171a),#080a0b);color:color-mix(in srgb,var(--theme-text) 48%,#667078);box-shadow:none}
+.app-shell[data-region-theme] .attunement-elements button.unavailable:hover{opacity:.82;border-color:var(--line);background:linear-gradient(180deg,color-mix(in srgb,var(--theme-button) 58%,#151b1e),var(--theme-button-deep));color:var(--theme-text)}
+.app-shell[data-region-theme] .attunement-service:after{border-color:var(--theme-border);background:var(--theme-surface-deep);color:var(--theme-muted)}
+.app-shell[data-region-theme] .screen-summary>span,
+.app-shell[data-region-theme] .section-summary>span,
+.app-shell[data-region-theme] .loot-summary>span,
+.app-shell[data-region-theme] .battle-summary-strip>span,
+.app-shell[data-region-theme] .forge-summary-strip>span,
+.app-shell[data-region-theme] .hero-select-summary>span{border-color:var(--theme-border-soft);background:var(--theme-surface-deep)}
+.app-shell[data-region-theme] .screen-summary small,
+.app-shell[data-region-theme] .section-summary small,
+.app-shell[data-region-theme] .loot-summary small,
+.app-shell[data-region-theme] .battle-summary-strip small,
+.app-shell[data-region-theme] .forge-summary-strip small,
+.app-shell[data-region-theme] .hero-select-summary small{color:var(--theme-muted)}
+.app-shell[data-region-theme] .screen-summary strong,
+.app-shell[data-region-theme] .section-summary strong,
+.app-shell[data-region-theme] .loot-summary strong,
+.app-shell[data-region-theme] .battle-summary-strip strong,
+.app-shell[data-region-theme] .forge-summary-strip strong,
+.app-shell[data-region-theme] .hero-select-summary strong{color:var(--theme-strong)}
+.app-shell[data-region-theme] .topbar nav button.active,
+.app-shell[data-region-theme] .menu-mini,
+.app-shell[data-region-theme] .menu-dropdown{border-color:var(--theme-border)!important;background:linear-gradient(180deg,var(--theme-surface-raised),var(--theme-surface-deep))!important}
+.app-shell[data-region-theme] .topbar svg,
+.app-shell[data-region-theme] .brand,
+.app-shell[data-region-theme] .hud-level,
+.app-shell[data-region-theme] .gold{color:var(--gold2)}
+
+body::after{content:"VERSÃO 0.7.3 • 03/09/2026\A Cobertura visual regional ampliada em botões, painéis, Forja, encaixes e estados interativos";white-space:pre-line;border-color:var(--line);color:var(--gold2)}
