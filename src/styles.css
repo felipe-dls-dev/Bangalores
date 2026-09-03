@@ -1301,4 +1301,8 @@ body::after{content:"VERSÃO 0.7.3 • 03/09/2026\A Cobertura visual regional am
 .app-shell[data-region-theme] :where(.menu-dropdown-divider,.guild-rank-road,.guild-herald-line){background:var(--theme-border-soft)}
 .app-shell[data-region-theme] :where(.nav-tooltip,.menu-dropdown-notice){border-color:var(--theme-border);background:linear-gradient(180deg,var(--theme-surface-raised),var(--theme-surface-deep));color:var(--theme-text)}
 
-body::after{content:"VERSÃO 0.7.4 • 03/09/2026\A Revisão completa de cores regionais em todas as telas e componentes compartilhados"}
+/* Sintonia: cabeçalhos expansíveis usam cor chapada para reduzir ruído visual. */
+.app-shell[data-region-theme] .attunement-item-toggle,
+.app-shell[data-region-theme] .attunement-item-toggle:hover:not(:disabled){background:var(--theme-surface-raised)!important;box-shadow:none;transform:none}
+
+body::after{content:"VERSÃO 0.7.5 • 03/09/2026\A Botões expansíveis da sintonia elemental agora usam preenchimento sólido"}
