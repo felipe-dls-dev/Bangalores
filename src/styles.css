@@ -963,7 +963,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .menu-dropdown-exit{color:#e2a98f}
 .menu-dropdown-exit:hover{background:#3a1c14}
 @media(max-width:520px){.menu-dropdown{right:-8px;width:min(280px,calc(100vw - 24px))}}
-body::after{content:"VERSÃO 0.7.1 • 02/09/2026\A Sintonia escalada por nível, bônus expostos na interface\A e leitura melhorada dos elementos nos equipamentos";white-space:pre-line}
+body::after{content:"VERSÃO 0.7.2 • 03/09/2026\A Sintonia elemental da Forja agora abre por item\A em vez de mostrar todos os elementos de uma vez";white-space:pre-line}
 /* The version toast above overlapped page content on almost every screen
    (nothing reserves space for it). Keep it readable for a few seconds,
    then fade it out of the way instead of leaving it stuck on top forever.
