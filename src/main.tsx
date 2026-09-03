@@ -102,13 +102,13 @@ const equipmentFilters=[['Todos','Todos'],['bolsa','Bolsas'],['mao_esquerda','M�
 const consumableFilters=[['Todos','Todos'],['cura','Cura'],['bonus','Bônus']] as const
 const sortOptions=[['padrao','Padrão'],['preco','Preço'],['raridade','Raridade'],['nome','Nome']] as const
 const SUBREGION_MAP_POINTS:Record<string,[number,number]>={
- campos_estrada:[.08,.29],campos_ponte:[.26,.57],campos_fazendas:[.22,.40],campos_moinho:[.33,.30],campos_ruinas:[.10,.55],
- lunar_bosque:[.70,.30],lunar_goblins:[.90,.50],lunar_monolito:[.68,.63],lunar_aranhas:[.92,.69],lunar_lago:[.84,.28],lunar_raizes:[.74,.57],lunar_pantano:[.95,.60],
- montanhas_passagem:[.28,.10],montanhas_mina:[.38,.26],montanhas_gelo:[.26,.34],montanhas_forte:[.43,.08],montanhas_abismo:[.35,.33],montanhas_cume:[.34,.06],
- pico_encosta:[.58,.08],pico_ninho_dragao:[.89,.22],pico_cinzas:[.60,.31],pico_forja:[.80,.35],pico_cratera:[.90,.08],
- mortas_campos:[.56,.68],mortas_catacumbas:[.82,.80],mortas_vila:[.64,.62],mortas_brejo:[.90,.84],mortas_torre:[.76,.90],
- khar_galerias:[.14,.72],khar_labirinto:[.30,.81],khar_templo_minotauro:[.18,.91],khar_forjas:[.26,.69],khar_cofre:[.35,.89],khar_profundezas:[.10,.84],
- eclipse_portoes:[.40,.58],eclipse_torre:[.48,.34],eclipse_trono:[.57,.52],eclipse_jardim:[.42,.44],eclipse_arquivo:[.60,.40],eclipse_fenda:[.51,.64],
+ campos_estrada:[.13,.31],campos_ponte:[.31,.40],campos_fazendas:[.16,.48],campos_moinho:[.29,.53],campos_ruinas:[.11,.57],
+ lunar_bosque:[.67,.39],lunar_goblins:[.82,.37],lunar_monolito:[.90,.45],lunar_aranhas:[.70,.58],lunar_lago:[.87,.60],lunar_raizes:[.64,.67],lunar_pantano:[.81,.69],
+ montanhas_passagem:[.23,.21],montanhas_mina:[.32,.29],montanhas_gelo:[.44,.21],montanhas_forte:[.50,.11],montanhas_abismo:[.47,.31],montanhas_cume:[.30,.08],
+ pico_encosta:[.58,.12],pico_ninho_dragao:[.83,.18],pico_cinzas:[.60,.29],pico_forja:[.75,.31],pico_cratera:[.79,.08],
+ mortas_campos:[.55,.79],mortas_catacumbas:[.73,.84],mortas_vila:[.59,.68],mortas_brejo:[.85,.76],mortas_torre:[.77,.90],
+ khar_galerias:[.16,.71],khar_labirinto:[.24,.83],khar_templo_minotauro:[.36,.87],khar_forjas:[.41,.70],khar_cofre:[.29,.91],khar_profundezas:[.12,.83],
+ eclipse_portoes:[.40,.39],eclipse_torre:[.52,.34],eclipse_trono:[.59,.43],eclipse_jardim:[.41,.56],eclipse_arquivo:[.59,.57],eclipse_fenda:[.50,.64],
  // Steelmere: cada grupo ocupa a área ilustrada da própria região. As posições
  // também preservam as zonas dos títulos e dos sete marcadores principais.
  frost_rota:[.15,.22],frost_refinaria:[.29,.23],frost_fenda:[.39,.29],frost_estaleiro:[.27,.36],frost_geleira:[.14,.36],
