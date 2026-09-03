@@ -448,10 +448,10 @@ body:has(.combat-v033){overflow:hidden}
 .tilt-card{position:relative;transition:transform .4s cubic-bezier(.2,0,0,1),box-shadow .4s ease}
 @media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
  .tilt-card{transform:perspective(1000px) rotateX(var(--tilt-rx,0deg)) rotateY(var(--tilt-ry,0deg))}
- .tilt-card::before{content:"";position:absolute;z-index:4;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background:radial-gradient(circle at var(--tilt-gx,50%) var(--tilt-gy,50%),color-mix(in srgb,var(--rarity),white 55%) 0%,color-mix(in srgb,var(--rarity),transparent 30%) 35%,transparent 72%)}
+ .tilt-card::before{content:"";position:absolute;z-index:4;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background:radial-gradient(circle at var(--tilt-gx,50%) var(--tilt-gy,50%),color-mix(in srgb,var(--rarity),white 65%) 0%,color-mix(in srgb,var(--rarity),white 25%) 22%,color-mix(in srgb,var(--rarity),transparent 25%) 45%,transparent 68%)}
  .game-card.ornate-card.tilt-card::before{display:block;z-index:25}
- .tilt-card:hover::before{opacity:.9}
- .tilt-card:hover{box-shadow:0 26px 60px #000,0 0 70px color-mix(in srgb,var(--rarity),transparent 30%)}
+ .tilt-card:hover::before{opacity:.95}
+ .tilt-card:hover{box-shadow:0 30px 70px #000,0 0 130px color-mix(in srgb,var(--rarity),transparent 5%)}
 }
 .game-card.ornate-card::before,.game-card.ornate-card::after{display:none}
 .ornate-art{position:absolute;z-index:1;left:4%;top:11%;width:84%;height:77%;overflow:hidden;background:#080604}
@@ -1317,3 +1317,4 @@ body::after{content:"VERSÃO 0.7.5 • 03/09/2026\A Botões expansíveis da sint
 body::after{content:"VERSÃO 0.7.6 • 03/09/2026\A Cartas da Coleção ganharam tilt 3D e brilho na cor da raridade ao passar o mouse"}
 body::after{content:"VERSÃO 0.7.7 • 03/09/2026\A Brilho holográfico das cartas da Coleção ficou mais intenso e visível"}
 body::after{content:"VERSÃO 0.7.8 • 03/09/2026\A Tilt 3D e brilho holográfico agora também nas cartas de combate e nos itens da mochila/equipamentos"}
+body::after{content:"VERSÃO 0.7.9 • 03/09/2026\A Brilho holográfico das cartas ficou bem mais forte, com halo maior ao redor"}
