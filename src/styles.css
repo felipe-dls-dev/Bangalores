@@ -1346,3 +1346,4 @@ body::after{content:"VERSÃO 0.7.11 • 03/09/2026\A Efeito holográfico arco-í
 body::after{content:"VERSÃO 0.7.12 • 03/09/2026\A Criador de cartas ganhou bancada de teste: holo só na moldura ou só na imagem"}
 body::after{content:"VERSÃO 0.7.13 • 03/09/2026\A Brilho holográfico arco-íris reduzido em 70% em todos os lugares; máscara da moldura mais robusta"}
 body::after{content:"VERSÃO 0.7.14 • 03/09/2026\A Corrigido vazamento de brilho nos cantos vazios fora do desenho da moldura"}
+body::after{content:"VERSÃO 0.7.15 • 03/09/2026\A Coleção e combate agora usam o brilho holográfico só na moldura"}
