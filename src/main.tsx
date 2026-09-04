@@ -258,15 +258,22 @@ function useCardTilt(enabled:boolean){
  },[enabled])
  return ref
 }
-function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supportFx,tilt}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType;attackFxCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';tilt?:boolean}){
+function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supportFx,tilt,holoMode}:{card:any;kind:string;artStyle?:React.CSSProperties;frameTheme?:string;attackFx?:AttackAnimType;attackFxCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';tilt?:boolean;holoMode?:'off'|'full'|'frame'|'art'}){
  const tiltRef=useCardTilt(Boolean(tilt))
  const rarity=cardRarity(card,kind),baseEffect=card.habilidade??card.descricao??'Sem efeito especial.',effect=kind==='Equipamento'?`Nível ${equipmentRequiredLevel(card)} • ${baseEffect}`:baseEffect
  const enemy=kind==='Monstro'||kind==='Elite'||kind==='Chefe'||card.boss||card.elite
  const attack=card.ataque??0,defense=card.defesa??(enemy?Math.max(0,(card.dificuldade??1)-2):0),life=card.vida??(kind==='Consumível'?card.valor??0:0)
  const nameLength=String(card.nome??'').length,nameSize=nameLength>32?'name-xlong':nameLength>23?'name-long':nameLength>16?'name-medium':'name-short',effectLength=String(effect).length,effectSize=effectLength>92?'effect-xlong':effectLength>66?'effect-long':effectLength>42?'effect-medium':'effect-short'
- return <article ref={tiltRef as React.RefObject<HTMLElement>} className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize} ${frameTheme?`frame-theme-${frameTheme}`:''} ${tilt?'tilt-card holo-rainbow holo-textured':''}`}>
-  <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/></div>
-  <img className="ornate-frame" src={assetUrl(cardSystemRoot+(frameTheme?`frame-${frameTheme}.png`:'frame-overlay.png'))} alt="" aria-hidden="true"/>
+ // holoMode deixa o Criador de cartas testar o arco-íris isolado na moldura (usa a própria
+ // transparência do PNG da moldura como máscara) ou isolado na arte (fica dentro de .ornate-art,
+ // que já recorta/posiciona atrás da moldura) -- os demais usos de CardFrame não passam holoMode
+ // e continuam com o comportamento antigo (carta inteira quando tilt, nada quando não).
+ const frameSrc=assetUrl(cardSystemRoot+(frameTheme?`frame-${frameTheme}.png`:'frame-overlay.png'))
+ const mode=holoMode??(tilt?'full':'off')
+ return <article ref={tiltRef as React.RefObject<HTMLElement>} className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize} ${frameTheme?`frame-theme-${frameTheme}`:''} ${tilt?'tilt-card':''} ${mode==='full'?'holo-rainbow holo-textured':''}`}>
+  <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/>{mode==='art'&&<div className="ornate-art-holo"/>}</div>
+  <img className="ornate-frame" src={frameSrc} alt="" aria-hidden="true"/>
+  {mode==='frame'&&<div className="ornate-frame-holo" style={{'--frame-mask-url':`url(${frameSrc})`} as React.CSSProperties}/>}
   <h2 className="ornate-name">{card.nome}</h2>
   <img className="ornate-emblem" src={assetUrl(cardEmblem(card,kind))} alt={enemy?`Categoria ${cardBadge(card,kind,rarity)}`:`Compatibilidade de ${kind}`}/>
   <strong className="ornate-badge">{cardBadge(card,kind,rarity)}</strong>
@@ -1253,6 +1260,10 @@ function CardCreatorScreen(){
   e.target.value=''
  }
  const [justSaved,setJustSaved]=React.useState(false)
+ // Bancada de teste do efeito holográfico arco-íris: "moldura" usa a própria transparência do
+ // PNG da moldura como máscara (só tinge a borda ornamentada); "imagem" fica confinado a
+ // .ornate-art (atrás da moldura); "carta inteira" é o que já roda na Coleção/combate/itens.
+ const [holoMode,setHoloMode]=React.useState<'off'|'full'|'frame'|'art'>('off')
  const artStyle=artTransform(zoom,panX,panY)
  const previewCard={nome:draft.nome||'Nova Carta',ataque:draft.ataque,defesa:draft.defesa,vida:draft.vida,habilidade:draft.habilidade||'Descreva a habilidade ou efeito da carta.',arte:draft.imagem,raridade:draft.raridade,boss:draft.kind==='Chefe',elite:draft.kind==='Elite'}
  const addToCollection=()=>{
@@ -1292,7 +1303,16 @@ function CardCreatorScreen(){
    </Panel>
    <Panel title="Pré-visualização" className="card-creator-preview">
     <div className="card-creator-preview-inner">
-     <CardFrame card={previewCard} kind={draft.kind} artStyle={draft.imagem?artStyle:undefined}/>
+     <div className="holo-test-bench" role="group" aria-label="Teste do efeito holográfico">
+      <small>TESTE: EFEITO ARCO-ÍRIS</small>
+      <div className="holo-test-options">
+       <button type="button" className={holoMode==='off'?'active':''} onClick={()=>setHoloMode('off')}>Sem holo</button>
+       <button type="button" className={holoMode==='full'?'active':''} onClick={()=>setHoloMode('full')}>Carta inteira</button>
+       <button type="button" className={holoMode==='frame'?'active':''} onClick={()=>setHoloMode('frame')}>Só moldura</button>
+       <button type="button" className={holoMode==='art'?'active':''} onClick={()=>setHoloMode('art')}>Só imagem</button>
+      </div>
+     </div>
+     <CardFrame card={previewCard} kind={draft.kind} artStyle={draft.imagem?artStyle:undefined} tilt holoMode={holoMode}/>
      <button type="button" className="primary" disabled={!draft.imagem} onClick={addToCollection}><Plus size={16}/>Adicionar à coleção</button>
      <small className="field-hint">{justSaved?'✓ Adicionada!':`${g.customCards.length} carta${g.customCards.length===1?'':'s'} na coleção`}</small>
     </div>
