@@ -268,12 +268,21 @@ function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supp
  // transparência do PNG da moldura como máscara) ou isolado na arte (fica dentro de .ornate-art,
  // que já recorta/posiciona atrás da moldura) -- os demais usos de CardFrame não passam holoMode
  // e continuam com o comportamento antigo (carta inteira quando tilt, nada quando não).
+ // O card tem cantos vazios/transparentes fora do desenho da moldura (ela não é um retângulo
+ // cheio). Um brilho aplicado ao retângulo inteiro (::before/::after antigos) vazava nesses
+ // cantos vazios, parecendo um bug. Por isso TUDO -- inclusive o "spot" de raridade, que antes
+ // era genérico via .tilt-card::before -- agora é confinado à própria moldura (máscara) ou à
+ // arte (.ornate-art já recorta), nunca ao retângulo cheio do card. "Carta inteira" = os dois
+ // pares (moldura+arte) ligados ao mesmo tempo, não mais um terceiro efeito por cima de tudo.
  const frameSrc=assetUrl(cardSystemRoot+(frameTheme?`frame-${frameTheme}.png`:'frame-overlay.png'))
+ const frameMaskStyle={maskImage:`url(${frameSrc})`,WebkitMaskImage:`url(${frameSrc})`} as React.CSSProperties
  const mode=holoMode??(tilt?'full':'off')
- return <article ref={tiltRef as React.RefObject<HTMLElement>} className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize} ${frameTheme?`frame-theme-${frameTheme}`:''} ${tilt?'tilt-card':''} ${mode==='full'?'holo-rainbow holo-textured':''}`}>
-  <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/>{mode==='art'&&<div className="ornate-art-holo"/>}</div>
+ const showFrameRainbow=mode==='frame'||mode==='full',showArtRainbow=mode==='art'||mode==='full'
+ return <article ref={tiltRef as React.RefObject<HTMLElement>} className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize} ${frameTheme?`frame-theme-${frameTheme}`:''} ${tilt?'tilt-card':''}`}>
+  <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/>{tilt&&<div className="ornate-art-spot"/>}{showArtRainbow&&<div className="ornate-art-holo"/>}</div>
   <img className="ornate-frame" src={frameSrc} alt="" aria-hidden="true"/>
-  {mode==='frame'&&<div className="ornate-frame-holo" style={{maskImage:`url(${frameSrc})`,WebkitMaskImage:`url(${frameSrc})`} as React.CSSProperties}/>}
+  {tilt&&<div className="ornate-frame-spot" style={frameMaskStyle}/>}
+  {showFrameRainbow&&<div className="ornate-frame-holo" style={frameMaskStyle}/>}
   <h2 className="ornate-name">{card.nome}</h2>
   <img className="ornate-emblem" src={assetUrl(cardEmblem(card,kind))} alt={enemy?`Categoria ${cardBadge(card,kind,rarity)}`:`Compatibilidade de ${kind}`}/>
   <strong className="ornate-badge">{cardBadge(card,kind,rarity)}</strong>

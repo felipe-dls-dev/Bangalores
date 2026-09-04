@@ -449,14 +449,24 @@ body:has(.combat-v033){overflow:hidden}
 @media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
  .tilt-card{transform:perspective(1000px) rotateX(var(--tilt-rx,0deg)) rotateY(var(--tilt-ry,0deg))}
  .tilt-card::before{content:"";position:absolute;z-index:4;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background:radial-gradient(circle at var(--tilt-gx,50%) var(--tilt-gy,50%),color-mix(in srgb,var(--rarity),white 65%) 0%,color-mix(in srgb,var(--rarity),white 25%) 22%,color-mix(in srgb,var(--rarity),transparent 25%) 45%,transparent 68%)}
- .game-card.ornate-card.tilt-card::before{display:block;z-index:25}
  .tilt-card:hover::before{opacity:.19}
  .tilt-card:hover{box-shadow:0 30px 70px #000,0 0 130px color-mix(in srgb,var(--rarity),transparent 5%)}
  .tilt-card.holo-rainbow::after{content:"";position:absolute;z-index:26;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background-image:linear-gradient(115deg,#ff2ec4 0%,#ffe45c 20%,#58ff9e 40%,#58d3ff 60%,#b06bff 80%,#ff2ec4 100%);background-size:180% 180%;background-position:var(--tilt-gx,50%) var(--tilt-gy,50%)}
- .game-card.ornate-card.holo-rainbow::after{display:block}
  .tilt-card.holo-rainbow.holo-textured::after{background-image:repeating-linear-gradient(125deg,rgba(255,255,255,.4) 0 1px,transparent 1px 3px),linear-gradient(115deg,#ff2ec4 0%,#ffe45c 20%,#58ff9e 40%,#58d3ff 60%,#b06bff 80%,#ff2ec4 100%);background-size:6px 6px,180% 180%;background-position:0 0,var(--tilt-gx,50%) var(--tilt-gy,50%)}
  .tilt-card.holo-rainbow:hover::after{opacity:.12}
- .ornate-art-holo{position:absolute;z-index:2;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background-image:repeating-linear-gradient(125deg,rgba(255,255,255,.4) 0 1px,transparent 1px 3px),linear-gradient(115deg,#ff2ec4 0%,#ffe45c 20%,#58ff9e 40%,#58d3ff 60%,#b06bff 80%,#ff2ec4 100%);background-size:6px 6px,180% 180%;background-position:0 0,var(--tilt-gx,50%) var(--tilt-gy,50%)}
+ /* Cards ornamentados (CardFrame) não são um retângulo cheio -- a moldura tem cantos vazios e
+    transparentes fora do seu próprio desenho. O ::before/::after acima (genéricos, usados pelo
+    ItemCard) cobrem o retângulo inteiro e vazariam luz nesses cantos vazios; por isso o
+    ornate-card usa camadas próprias (divs reais, não pseudo-elementos), confinadas à máscara da
+    moldura ou à caixa da arte -- nunca ao retângulo cheio. A regra de base mais abaixo
+    (.game-card.ornate-card::before,::after{display:none}) já desliga os pseudo-elementos aqui
+    por conta própria (maior especificidade), então nada precisa ser sobrescrito.
+    */
+ .ornate-frame-spot,.ornate-art-spot{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background:radial-gradient(circle at var(--tilt-gx,50%) var(--tilt-gy,50%),color-mix(in srgb,var(--rarity),white 65%) 0%,color-mix(in srgb,var(--rarity),white 25%) 22%,color-mix(in srgb,var(--rarity),transparent 25%) 45%,transparent 68%)}
+ .ornate-art-spot{z-index:2}
+ .ornate-frame-spot{z-index:24;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+ .tilt-card:hover .ornate-frame-spot,.tilt-card:hover .ornate-art-spot{opacity:.19}
+ .ornate-art-holo{position:absolute;z-index:3;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background-image:repeating-linear-gradient(125deg,rgba(255,255,255,.4) 0 1px,transparent 1px 3px),linear-gradient(115deg,#ff2ec4 0%,#ffe45c 20%,#58ff9e 40%,#58d3ff 60%,#b06bff 80%,#ff2ec4 100%);background-size:6px 6px,180% 180%;background-position:0 0,var(--tilt-gx,50%) var(--tilt-gy,50%)}
  .tilt-card:hover .ornate-art-holo{opacity:.15}
  .ornate-frame-holo{position:absolute;z-index:21;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;background-image:repeating-linear-gradient(125deg,rgba(255,255,255,.4) 0 1px,transparent 1px 3px),linear-gradient(115deg,#ff2ec4 0%,#ffe45c 20%,#58ff9e 40%,#58d3ff 60%,#b06bff 80%,#ff2ec4 100%);background-size:6px 6px,180% 180%;background-position:0 0,var(--tilt-gx,50%) var(--tilt-gy,50%)}
  .tilt-card:hover .ornate-frame-holo{opacity:.18}
@@ -1335,3 +1345,4 @@ body::after{content:"VERSÃO 0.7.10 • 03/09/2026\A Ponto de brilho das cartas 
 body::after{content:"VERSÃO 0.7.11 • 03/09/2026\A Efeito holográfico arco-íris com textura de folha metálica nas cartas"}
 body::after{content:"VERSÃO 0.7.12 • 03/09/2026\A Criador de cartas ganhou bancada de teste: holo só na moldura ou só na imagem"}
 body::after{content:"VERSÃO 0.7.13 • 03/09/2026\A Brilho holográfico arco-íris reduzido em 70% em todos os lugares; máscara da moldura mais robusta"}
+body::after{content:"VERSÃO 0.7.14 • 03/09/2026\A Corrigido vazamento de brilho nos cantos vazios fora do desenho da moldura"}
