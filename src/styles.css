@@ -1347,3 +1347,28 @@ body::after{content:"VERSÃO 0.7.12 • 03/09/2026\A Criador de cartas ganhou ba
 body::after{content:"VERSÃO 0.7.13 • 03/09/2026\A Brilho holográfico arco-íris reduzido em 70% em todos os lugares; máscara da moldura mais robusta"}
 body::after{content:"VERSÃO 0.7.14 • 03/09/2026\A Corrigido vazamento de brilho nos cantos vazios fora do desenho da moldura"}
 body::after{content:"VERSÃO 0.7.15 • 03/09/2026\A Coleção e combate agora usam o brilho holográfico só na moldura"}
+body::after{content:"VERSÃO 0.8.0 • 04/09/2026\A Pacote de polimento visual: ouro/XP/nível contam animados, críticos tremem mais forte e mostram CRÍTICO!, barras de progresso deslizam suavemente, cliques em botões têm resposta tátil e a troca de carta na Coleção agora tem transição"}
+
+/* ==========================================================
+   Pacote de polimento visual/"juice" -- feedback tátil e de
+   impacto em várias telas (ver game-feel/game-ui-ux em
+   .claude/skills). Regras de reforço ficam no fim do arquivo
+   de propósito: como o CSS deste projeto acumula várias
+   camadas por ordem cronológica (mesma especificidade =
+   última regra do arquivo vence), colocar tudo aqui garante
+   que nada anterior sobrescreva por acidente. */
+
+/* Barras de progresso (XP, coleção) saltavam pro valor novo sem transição -- agora deslizam. */
+.xp-track>div,.gallery-progress-track>i{transition:width .6s cubic-bezier(.16,1,.3,1)}
+
+/* Feedback tátil de clique em todo botão do jogo (a maioria só tinha estado de hover). */
+button:active:not(:disabled){transform:translateY(0) scale(.95);transition-duration:.08s}
+
+/* Número de dano crítico: maior, mais vermelho, com um rótulo "CRÍTICO!" acima. */
+.floating-damage.critical{color:#ff6a52;text-shadow:0 2px 9px #000,0 0 18px #ff2f1f,0 0 34px rgba(255,60,30,.55);font-size:2.6rem}
+.floating-damage.critical b{display:block;font-size:.36em;letter-spacing:.06em;color:#ffd166;text-shadow:0 2px 6px #000,0 0 10px rgba(255,180,60,.7)}
+
+/* Cartas obtidas no resumo de batalha (LootScreen) surgem com um leve "pop" em vez de aparecer
+   de uma vez -- ver o motion.div que envolve cada ItemCard em LootScreen (main.tsx). */
+.loot-stats .item-card{will-change:transform}
+
