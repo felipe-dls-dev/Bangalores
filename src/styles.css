@@ -452,6 +452,10 @@ body:has(.combat-v033){overflow:hidden}
  .game-card.ornate-card.tilt-card::before{display:block;z-index:25}
  .tilt-card:hover::before{opacity:.19}
  .tilt-card:hover{box-shadow:0 30px 70px #000,0 0 130px color-mix(in srgb,var(--rarity),transparent 5%)}
+ .tilt-card.holo-rainbow::after{content:"";position:absolute;z-index:26;inset:0;pointer-events:none;opacity:0;transition:opacity .3s ease;mix-blend-mode:screen;background-image:linear-gradient(115deg,#ff2ec4 0%,#ffe45c 20%,#58ff9e 40%,#58d3ff 60%,#b06bff 80%,#ff2ec4 100%);background-size:180% 180%;background-position:var(--tilt-gx,50%) var(--tilt-gy,50%)}
+ .game-card.ornate-card.holo-rainbow::after{display:block}
+ .tilt-card.holo-rainbow.holo-textured::after{background-image:repeating-linear-gradient(125deg,rgba(255,255,255,.4) 0 1px,transparent 1px 3px),linear-gradient(115deg,#ff2ec4 0%,#ffe45c 20%,#58ff9e 40%,#58d3ff 60%,#b06bff 80%,#ff2ec4 100%);background-size:6px 6px,180% 180%;background-position:0 0,var(--tilt-gx,50%) var(--tilt-gy,50%)}
+ .tilt-card.holo-rainbow:hover::after{opacity:.4}
 }
 .game-card.ornate-card::before,.game-card.ornate-card::after{display:none}
 .ornate-art{position:absolute;z-index:1;left:4%;top:11%;width:84%;height:77%;overflow:hidden;background:#080604}
@@ -1319,3 +1323,4 @@ body::after{content:"VERSÃO 0.7.7 • 03/09/2026\A Brilho holográfico das cart
 body::after{content:"VERSÃO 0.7.8 • 03/09/2026\A Tilt 3D e brilho holográfico agora também nas cartas de combate e nos itens da mochila/equipamentos"}
 body::after{content:"VERSÃO 0.7.9 • 03/09/2026\A Brilho holográfico das cartas ficou bem mais forte, com halo maior ao redor"}
 body::after{content:"VERSÃO 0.7.10 • 03/09/2026\A Ponto de brilho das cartas reduzido em 80% (halo ao redor mantido)"}
+body::after{content:"VERSÃO 0.7.11 • 03/09/2026\A Efeito holográfico arco-íris com textura de folha metálica nas cartas"}
