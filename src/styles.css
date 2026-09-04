@@ -1349,6 +1349,7 @@ body::after{content:"VERSÃO 0.7.14 • 03/09/2026\A Corrigido vazamento de bril
 body::after{content:"VERSÃO 0.7.15 • 03/09/2026\A Coleção e combate agora usam o brilho holográfico só na moldura"}
 body::after{content:"VERSÃO 0.8.0 • 04/09/2026\A Pacote de polimento visual: ouro/XP/nível contam animados, críticos tremem mais forte e mostram CRÍTICO!, barras de progresso deslizam suavemente, cliques em botões têm resposta tátil e a troca de carta na Coleção agora tem transição"}
 body::after{content:"VERSÃO 0.8.1 • 04/09/2026\A Cartas raras brilham sozinhas de vez em quando, chefes anunciam troca de fase, marcadores do mapa chegam em sequência e pulsam, menu principal ganhou atmosfera em movimento, e agora há um botão 'Reduzir efeitos visuais' no Menu"}
+body::after{content:"VERSÃO 0.8.2 • 04/09/2026\A Corrigido: monstros comuns, de elite e chefes voltaram a usar molduras verde/roxa/vermelha na Coleção (o combate já estava correto, só a Coleção sempre usara a dourada padrão)"}
 
 /* ==========================================================
    Pacote de polimento visual/"juice" -- feedback tátil e de
