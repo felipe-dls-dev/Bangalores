@@ -1351,7 +1351,7 @@ body::after{content:"VERSÃO 0.8.0 • 04/09/2026\A Pacote de polimento visual: 
 body::after{content:"VERSÃO 0.8.1 • 04/09/2026\A Cartas raras brilham sozinhas de vez em quando, chefes anunciam troca de fase, marcadores do mapa chegam em sequência e pulsam, menu principal ganhou atmosfera em movimento, e agora há um botão 'Reduzir efeitos visuais' no Menu"}
 body::after{content:"VERSÃO 0.8.2 • 04/09/2026\A Corrigido: monstros comuns, de elite e chefes voltaram a usar molduras verde/roxa/vermelha na Coleção (o combate já estava correto, só a Coleção sempre usara a dourada padrão)"}
 
-body::after{content:"VERSÃO 0.8.3 • 04/09/2026\A Motion premium expandido: tilt otimizado com GSAP, cartas reagem por raridade, mapa entra com mais elegância e resultados da Forja ganharam apresentação reforçada"}
+body::after{content:"VERSÃO 0.8.4 • 04/09/2026\A Combate com mais impacto: atacante avança, alvo reage melhor, cura/bloqueio/crítico ganham leitura própria e o painel dos dados agora explica o resultado visual"}
 
 /* ==========================================================
    Pacote de polimento visual/"juice" -- feedback tátil e de
@@ -1437,6 +1437,34 @@ button:active:not(:disabled){transform:translateY(0) scale(.95);transition-durat
 .region-step-nav button{min-height:72px}
 .map-wrap{box-shadow:0 18px 42px rgba(0,0,0,.34),inset 0 0 0 1px rgba(255,255,255,.03)}
 .world-travel-card,.map-index-region{overflow:hidden}
+.combat-card-fighter{overflow:hidden;isolation:isolate}
+.fighter-card-motion{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;height:calc(100% - 38px)}
+.fighter-card-motion>.ornate-card{height:100%}
+.fighter-turn-glow,.fighter-strike-trail,.fighter-impact-flash{position:absolute;pointer-events:none}
+.fighter-turn-glow{inset:10px;border-radius:22px;z-index:0;border:1px solid rgba(235,191,98,.28);box-shadow:0 0 22px rgba(222,170,77,.16),inset 0 0 26px rgba(244,208,129,.08);background:radial-gradient(circle at center,rgba(231,187,92,.12),transparent 68%)}
+.fighter-strike-trail{top:18%;bottom:24%;width:26%;z-index:1;filter:blur(2px);opacity:0}
+.fighter-strike-trail.hero{right:10%;background:linear-gradient(90deg,rgba(255,211,124,0),rgba(255,211,124,.68) 55%,rgba(255,127,80,.26))}
+.fighter-strike-trail.enemy{left:10%;background:linear-gradient(270deg,rgba(255,160,120,0),rgba(255,133,95,.7) 55%,rgba(255,214,140,.22))}
+.fighter-impact-flash{inset:11% 11% 24%;z-index:3;border-radius:24px;mix-blend-mode:screen}
+.fighter-impact-flash.hit{background:radial-gradient(circle,rgba(255,208,112,.38),rgba(255,120,70,.18) 42%,transparent 70%)}
+.fighter-impact-flash.critical{background:radial-gradient(circle,rgba(255,224,118,.54),rgba(255,84,56,.34) 40%,transparent 72%);box-shadow:0 0 34px rgba(255,88,56,.28)}
+.fighter-impact-flash.blocked{background:radial-gradient(circle,rgba(142,208,255,.34),rgba(89,154,214,.16) 44%,transparent 72%)}
+.fighter-impact-flash.glance{background:radial-gradient(circle,rgba(218,207,177,.22),rgba(116,96,72,.1) 44%,transparent 72%)}
+.fighter-impact-flash.self{background:radial-gradient(circle,rgba(255,122,104,.42),rgba(130,39,39,.22) 45%,transparent 72%)}
+.fighter-impact-flash.heal{background:radial-gradient(circle,rgba(132,228,161,.4),rgba(61,146,94,.18) 45%,transparent 72%)}
+.fighter-impact-flash.buff{background:radial-gradient(circle,rgba(141,214,255,.34),rgba(116,124,255,.18) 45%,transparent 72%)}
+.combat-action-callout{display:grid;gap:3px;margin:0 0 8px;padding:8px 10px;border:1px solid rgba(202,158,82,.18);border-radius:10px;background:rgba(9,6,4,.28)}
+.combat-action-callout small{font-size:.62rem;letter-spacing:.12em;color:#ab8c5e}
+.combat-action-callout strong{font:700 .96rem Georgia,serif;color:#f1cf8a}
+.combat-action-callout span{font-size:.68rem;line-height:1.35;color:#c3b39b}
+.combat-action-callout.impact-critical{border-color:#a94739;background:linear-gradient(180deg,rgba(65,20,16,.5),rgba(17,8,7,.52))}
+.combat-action-callout.impact-blocked,.combat-action-callout.impact-buff{border-color:#537da2;background:linear-gradient(180deg,rgba(18,36,49,.52),rgba(9,13,19,.54))}
+.combat-action-callout.impact-heal{border-color:#4c8b5d;background:linear-gradient(180deg,rgba(18,44,28,.5),rgba(8,16,10,.54))}
+.combat-action-callout.impact-self{border-color:#9f4f46;background:linear-gradient(180deg,rgba(63,19,16,.54),rgba(20,8,7,.56))}
+.combat-action-callout.impact-hit{border-color:#9a6a35}
+.combat-action-callout.impact-glance{border-color:#67553e}
+.combat-v033 .combat-dice-panel{display:flex;flex-direction:column;overflow:hidden}
+.combat-v033 .combat-dice-panel>.combat-dice-roll,.combat-v033 .combat-dice-panel>.combat-dice-idle{flex:1}
 .forge-result-dialog{position:relative;overflow:hidden}
 .forge-result-aura{position:absolute;inset:-30% -10% auto;height:180px;pointer-events:none;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 68%);filter:blur(12px);opacity:.85}
 .forge-result-icon{position:relative;display:grid;place-items:center;width:82px;height:82px;border-radius:50%;border:1px solid currentColor;background:rgba(0,0,0,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}

@@ -1048,6 +1048,37 @@ function CombatDiceRoll({roll}:{roll:{attacker:'hero'|'enemy';naturalAttackRoll:
  return <motion.aside className={`combat-dice-roll ${roll.attacker}`} initial={{opacity:0,y:-18,scale:.9}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-12}} aria-live="assertive"><small>{roll.attacker==='hero'?'SEU TESTE DE ATAQUE':'ATAQUE DO INIMIGO'}</small><div className="combat-dice-pair">{roll.attacker==='hero'?<>{attackDie}<i>VS</i>{defenseDie}</>:<>{defenseDie}<i>VS</i>{attackDie}</>}</div><p>{roll.selfDamage?'FALHA CRÍTICA — DANO NO ATACANTE':'DANO'} <strong>{roll.selfDamage||roll.damage}</strong>{roll.shieldBlocked?` • ESCUDO BLOQUEOU ${roll.shieldBlocked}`:''}</p></motion.aside>
 }
 function FleeDiceRoll({roll}:{roll:{roll:number;outcome:'failed'|'neutral'|'success'}}){const message=roll.outcome==='success'?'Fuga bem-sucedida!':roll.outcome==='neutral'?'Você mantém sua ação':'Fuga falhou — turno perdido';return <motion.aside className={`flee-dice-roll ${roll.outcome}`} initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:.92}} aria-live="assertive"><small>TESTE DE FUGA</small><motion.b className="combat-die flee-die" animate={{rotate:[0,130,280,420,360],scale:[.7,1.22,.88,1]}} transition={{duration:.65}}>{roll.roll}</motion.b><strong>{message}</strong><span>1–3 perde o turno • 4 mantém a ação • 5–6 foge</span></motion.aside>}
+type CombatImpactKind='hit'|'critical'|'blocked'|'glance'|'self'|'heal'|'buff'
+function combatImpactFromState(roll:{attacker:'hero'|'enemy';damage:number;selfDamage:number;shieldBlocked?:number;attackRoll:number}|undefined,supportFx?:'fortificacao'|'cura'|'cura-item'):{target?:'hero'|'enemy';kind?:CombatImpactKind}{
+ if(supportFx)return{target:'hero' as const,kind:(supportFx==='fortificacao'?'buff':'heal') as CombatImpactKind}
+ if(!roll)return{target:undefined,kind:undefined}
+ if(roll.selfDamage>0)return{target:roll.attacker,kind:'self' as CombatImpactKind}
+ const target=roll.attacker==='hero'?'enemy':'hero'
+ if(roll.attackRoll===6&&roll.damage>0)return{target,kind:'critical' as CombatImpactKind}
+ if((roll.shieldBlocked??0)>0)return{target,kind:(roll.damage>0?'blocked':'glance') as CombatImpactKind}
+ if(roll.damage>0)return{target,kind:'hit' as CombatImpactKind}
+ return{target,kind:'glance' as CombatImpactKind}
+}
+function combatEventHeadline(kind?:CombatImpactKind){
+ if(kind==='critical')return'Impacto crítico'
+ if(kind==='blocked')return'Golpe parcialmente bloqueado'
+ if(kind==='glance')return'Golpe sem impacto decisivo'
+ if(kind==='self')return'Falha crítica'
+ if(kind==='heal')return'Cura canalizada'
+ if(kind==='buff')return'Reforço aplicado'
+ if(kind==='hit')return'Golpe confirmado'
+ return'Próxima ação'
+}
+function combatEventDescription(kind?:CombatImpactKind,side?:'hero'|'enemy'){
+ if(kind==='critical')return side==='hero'?'O inimigo encontrou um ponto fraco no seu herói.':'Você abriu a guarda do inimigo com um golpe pesado.'
+ if(kind==='blocked')return side==='hero'?'Seu escudo segurou parte do impacto.':'A resistência do alvo absorveu parte do dano.'
+ if(kind==='glance')return side==='hero'?'Você resistiu ao impacto sem perder o controle.':'O alvo segurou o golpe e permaneceu firme.'
+ if(kind==='self')return'Uma falha crítica devolveu o golpe contra o próprio atacante.'
+ if(kind==='heal')return'Sinais visuais reforçam que a recuperação já foi aplicada.'
+ if(kind==='buff')return'Sua preparação defensiva está ativa e influencia os próximos turnos.'
+ if(kind==='hit')return side==='hero'?'O inimigo acertou e mudou o ritmo da rodada.':'Você acertou em cheio e ganhou pressão.'
+ return'Observe a intenção do inimigo e os bônus ativos antes de agir.'
+}
 // Combina a cura de druida (druidHealProc) com o proc independente de "cura_forjada" e o
 // multiplicador de "cura_bonus" em um único par chance/quantia, já que coopAttack só aceita
 // uma rolagem de cura por ataque (ao contrário do solo, que rola as duas separadamente).
@@ -1201,6 +1232,14 @@ function CombatScreen(){
  const currentAttackType=attacker==='hero'?(attackerWeaponAnim??heroWeaponAnimationType(g.equipped.mao_direita)):attacker==='enemy'?enemyWeaponAnimationType(e):undefined
  const currentSummonAttackType=summonFxIndex>=0?summonFxEvent?.types?.[summonFxIndex] as AttackAnimType|undefined:undefined
  const currentAttackCritical=g.combatRoll?.attackRoll===6
+ const currentRoll=g.combatRoll
+ const currentSupportFx=g.supportFx?.type
+ const heroActing=Boolean(g.animating&&(currentSupportFx||currentRoll?.attacker==='hero'||currentSummonAttackType))
+ const enemyActing=Boolean(g.animating&&currentRoll?.attacker==='enemy'&&!currentRoll?.selfDamage)
+ const impactState=combatImpactFromState(currentRoll,currentSupportFx)
+ const heroImpact=impactState.target==='hero'?impactState.kind:undefined
+ const enemyImpact=impactState.target==='enemy'?impactState.kind:undefined
+ const actionBadgeLabel=currentSupportFx?currentSupportFx==='fortificacao'?'Reforço ativo':'Cura ativa':currentSummonAttackType?'Ataque da invocação':currentRoll?.attacker==='hero'?'Seu ataque em execução':currentRoll?.attacker==='enemy'?'Ataque inimigo em execução':'Próxima ação'
  // No coop, o painel de dados usava só um resumo em texto (battle.lastRoll), nunca a animação
  // rica de CombatDiceRoll/FleeDiceRoll que o modo solo tem — mesmo já existindo dados suficientes
  // no estado compartilhado para isso. Aqui a gente prioriza a animação sempre que possível.
@@ -1218,12 +1257,12 @@ function CombatScreen(){
   <div className="screen-intro"><small>FOCO DO TURNO</small><p>Olhe primeiro a intenção do inimigo, depois os bônus ativos e os consumíveis. O log continua disponível, mas a ação principal precisa ser lida em um só olhar.</p></div>
   <div className="battle-summary-strip"><span><small>SEU ATAQUE</small><strong>{attackValue(g)}</strong></span><span><small>SUA DEFESA</small><strong>{defenseValue(g)}</strong></span><span><small>INTENÇÃO</small><strong>{intent.label}</strong></span></div>
   <div className="combat-hero-area">
-    <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds}/>
+    <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds} attacking={heroActing} impactKind={heroImpact} turnOwner={myTurn&&!g.animating}/>
     {isCoop&&<CoopTeammatesRow coop={coop} battle={battle}/>}
     {currentSummons.length>0&&<div className="summon-row">{currentSummons.map((fera,index)=><article key={`${fera.tipo}-${index}`}><Sparkles/><span><strong>{fera.nome}</strong><small>ATQ {fera.ataque} • DEF {fera.defesa} • VIDA {fera.hp}/{fera.maxHp}</small><i><b style={{width:`${fera.hp/fera.maxHp*100}%`}}/></i></span></article>)}</div>}
    </div>
    <div className="combat-enemy-area">
-    <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={enemyDefenseValue(e)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} summonAttackType={currentSummonAttackType} attackCritical={currentAttackCritical} statusKinds={enemyStatusKinds}/>
+    <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={enemyDefenseValue(e)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} summonAttackType={currentSummonAttackType} attackCritical={currentAttackCritical} statusKinds={enemyStatusKinds} attacking={enemyActing} impactKind={enemyImpact} turnOwner={!myTurn&&!g.animating}/>
     {Boolean(activeMinions.some(minion=>minion.hp>0))&&<div className="boss-minion-row">{activeMinions.filter(minion=>minion.hp>0).map(minion=><article key={minion.id} className="targetable" role="button" tabIndex={disabled?-1:0} aria-disabled={disabled} title={`Atacar ${minion.nome} em vez do alvo principal`} onClick={()=>{if(!disabled)performAttack(minion.id)}} onKeyDown={event=>{if(!disabled&&(event.key==='Enter'||event.key===' ')){event.preventDefault();performAttack(minion.id)}}}><Shield/><span><strong>{minion.nome}</strong><i><b style={{width:`${minion.hp/minion.maxHp*100}%`}}/></i><small>ATQ {minion.ataque} • Vida {minion.hp}/{minion.maxHp}</small></span></article>)}</div>}
     <div className={`enemy-intent intent-${intent.type}`}><small>PRÓXIMA AÇÃO</small><strong>{intent.label}</strong><span>{intent.description}</span></div>
    </div>
@@ -1260,6 +1299,11 @@ function CombatScreen(){
    </Panel>
 
    <Panel title="Rolagem dos dados" className="combat-dice-panel combat-dice-area">
+    <div className={`combat-action-callout${impactState.kind?` impact-${impactState.kind}`:''}`}>
+      <small>{actionBadgeLabel}</small>
+      <strong>{combatEventHeadline(impactState.kind)}</strong>
+      <span>{combatEventDescription(impactState.kind,impactState.target)}</span>
+    </div>
     <AnimatePresence mode="wait">{diceNode}</AnimatePresence>
    </Panel>
 
@@ -1272,7 +1316,7 @@ function CombatScreen(){
 
    <div className="combat-tip"><Sparkles size={15}/> Dica: use os consumíveis no momento certo — utilizar um item consome seu turno.</div>
  </div>}
-function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly{kind:string;turns?:number}[]}){
+function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds,attacking,impactKind,turnOwner}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly{kind:string;turns?:number}[];attacking?:boolean;impactKind?:CombatImpactKind;turnOwner?:boolean}){
  const galleryKind=side==='hero'?'Herói':boss?'Chefe':kind==='ELITE'?'Elite':'Monstro'
  const card={id:classId,nome:name,arte:image,habilidade:ability,ataque:attack,defesa:defense,vida:max,boss,elite:kind==='ELITE',raridade:side==='hero'?'heroico':boss?'lendario':kind==='ELITE'?'raro':'comum'}
  // Um crítico batia igualzinho a um golpe comum -- mesmo tremor, mesmo número flutuante --
@@ -1295,8 +1339,14 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
   const timer=setTimeout(()=>setPhaseFlash(false),1300)
   return()=>clearTimeout(timer)
  },[phase,boss])
- return <motion.article className={'fighter premium-fighter combat-card-fighter '+side+(boss?' boss':'')} animate={shakeAnim} transition={{duration:shaking&&attackCritical?.5:.35}}>
-  <CardFrame card={card} kind={galleryKind} frameTheme={frameTheme} attackFx={summonAttackType??(shaking?attackType:undefined)} attackFxCritical={summonAttackType?false:(shaking?attackCritical:undefined)} supportFx={supportFx} tilt holoMode="frame"/>
+ const strikeAnim=!attacking?{x:0,y:0,scale:1,filter:'brightness(1)'}:effectsReduced()?{x:side==='hero'?[0,8,0]:[0,-8,0],y:0,scale:[1,1.015,1],filter:['brightness(1)','brightness(1.06)','brightness(1)']}:{x:side==='hero'?[0,18,6,0]:[0,-18,-6,0],y:[0,-4,0],scale:attackCritical?[1,1.04,1.01,1]:[1,1.025,1],filter:['brightness(1)','brightness(1.12)','brightness(1.04)','brightness(1)']}
+ return <motion.article className={'fighter premium-fighter combat-card-fighter '+side+(boss?' boss':'')+(turnOwner?' turn-owner':'')+(impactKind?` impact-${impactKind}`:'')} animate={shakeAnim} transition={{duration:shaking&&attackCritical?.5:.35}}>
+  {turnOwner&&!effectsReduced()&&<motion.div className="fighter-turn-glow" animate={{opacity:[.28,.58,.28],scale:[.985,1.01,.985]}} transition={{duration:2.2,repeat:Infinity,ease:'easeInOut'}}/>}
+  {attacking&&!effectsReduced()&&<motion.div className={`fighter-strike-trail ${side}`} initial={{opacity:0,scale:.88,x:side==='hero'?-14:14}} animate={{opacity:[0,.92,.2,0],scale:[.88,1.04,1.12,1.16],x:side==='hero'?[-14,18,36,54]:[14,-18,-36,-54]}} transition={{duration:attackCritical?.56:.42,times:[0,.28,.72,1],ease:'easeOut'}}/>}
+  {impactKind&&!effectsReduced()&&<motion.div className={`fighter-impact-flash ${impactKind}`} initial={{opacity:0,scale:.84}} animate={{opacity:[0,.95,.18,0],scale:impactKind==='critical'?[.84,1.08,1.12,1.18]:[.84,1.02,1.08]}} transition={{duration:impactKind==='critical'?.62:.44,times:[0,.18,.68,1],ease:'easeOut'}}/>}
+  <motion.div className="fighter-card-motion" animate={strikeAnim} transition={{duration:attacking?(attackCritical?.52:.36):.24,ease:[0.22,1,0.36,1]}}>
+   <CardFrame card={card} kind={galleryKind} frameTheme={frameTheme} attackFx={summonAttackType??(shaking?attackType:undefined)} attackFxCritical={summonAttackType?false:(shaking?attackCritical:undefined)} supportFx={supportFx} tilt holoMode="frame"/>
+  </motion.div>
   {boss&&<small className="combat-card-phase">FASE {phase??1}</small>}
   {phaseFlash&&!effectsReduced()&&<motion.div className="phase-transition-banner" initial={{opacity:0,scale:.6,y:-8}} animate={{opacity:[0,1,1,0],scale:[.6,1.08,1,1],y:0}} transition={{duration:1.2,times:[0,.22,.78,1]}}><Zap size={15}/>FASE {phase}!</motion.div>}
   {shaking&&damage!==undefined&&<motion.div className={`floating-damage${attackCritical?' critical':''}`} initial={{opacity:0,y:10,scale:.5}} animate={{opacity:1,y:-45,scale:attackCritical?1.3:1.15}} transition={{duration:.5,delay:attackCritical?.14:.08,ease:'backOut'}}>{attackCritical&&<b>CRÍTICO!</b>}-{damage}</motion.div>}
