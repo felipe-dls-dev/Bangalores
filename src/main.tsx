@@ -17,6 +17,15 @@ import PersistentCoopScreen from './online/CoopScreen'
 import './styles.css'
 
 gsap.registerPlugin(useGSAP)
+// O tremor de crítico, o brilho holográfico e o tilt 3D das cartas só respeitavam
+// prefers-reduced-motion (a preferência do sistema operacional) -- sem nenhuma forma de o
+// jogador desligar os efeitos manualmente caso o navegador/SO não exponha essa opção, ou caso
+// prefira sons/estática mas ainda queira menos agitação visual. effectsReduced() combina as
+// duas fontes; o toggle "Reduzir efeitos visuais" no menu superior grava a preferência manual.
+const REDUCE_EFFECTS_KEY='bangalores_reduce_effects'
+function getReduceEffectsPref():boolean{try{return localStorage.getItem(REDUCE_EFFECTS_KEY)==='1'}catch{return false}}
+function setReduceEffectsPref(value:boolean){try{localStorage.setItem(REDUCE_EFFECTS_KEY,value?'1':'0')}catch{}}
+function effectsReduced():boolean{return getReduceEffectsPref()||(typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
 // Números que sobem/descem (ouro, XP) trocavam de valor num salto seco -- sem nenhuma
 // transição, o "cha-ching" de uma recompensa passava despercebido. Conta do valor anterior
 // até o novo via GSAP em vez de re-renderizar dígito a dígito (mais barato e sem jank do que
@@ -27,7 +36,7 @@ function AnimatedNumber({value,duration=.8}:{value:number;duration?:number}){
  useGSAP(()=>{
   const el=ref.current
   if(!el)return
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=String(value);shown.current=value;return}
+  if(effectsReduced()){el.textContent=String(value);shown.current=value;return}
   const counter={n:shown.current}
   gsap.to(counter,{n:value,duration,ease:'power2.out',onUpdate:()=>{el.textContent=String(Math.round(counter.n))}})
   shown.current=value
@@ -264,7 +273,7 @@ function useCardTilt(enabled:boolean){
   const el=ref.current
   if(!enabled||!el)return
   if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches)return
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return
+  if(effectsReduced())return
   const onMove=(event:PointerEvent)=>{
    const rect=el.getBoundingClientRect(),px=(event.clientX-rect.left)/rect.width,py=(event.clientY-rect.top)/rect.height
    el.style.setProperty('--tilt-rx',`${((.5-py)*14).toFixed(2)}deg`)
@@ -304,6 +313,11 @@ function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supp
   <img className="ornate-frame" src={frameSrc} alt="" aria-hidden="true"/>
   {tilt&&<div className="ornate-frame-spot" style={frameMaskStyle}/>}
   {showFrameRainbow&&<div className="ornate-frame-holo" style={frameMaskStyle}/>}
+  {/* Sheen ambiente (CSS puro, ver .ornate-frame-idle): só entra em ação pra raridade
+      épico+ via seletor de raridade no CSS -- sempre presente aqui, nunca observável em
+      cartas comuns/incomuns/raras. Ao contrário do spot/holo acima, não depende de hover
+      nem de holoMode, então funciona em toque/mobile também. */}
+  <div className="ornate-frame-idle" style={frameMaskStyle}/>
   <h2 className="ornate-name">{card.nome}</h2>
   <img className="ornate-emblem" src={assetUrl(cardEmblem(card,kind))} alt={enemy?`Categoria ${cardBadge(card,kind,rarity)}`:`Compatibilidade de ${kind}`}/>
   <strong className="ornate-badge">{cardBadge(card,kind,rarity)}</strong>
@@ -317,6 +331,7 @@ function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supp
 }
 
 function App(){
+ React.useEffect(()=>{document.documentElement.classList.toggle('reduce-effects',getReduceEffectsPref())},[])
  React.useEffect(()=>{const heal=()=>{const s=useGame.getState() as any;if(!s.heroId||s.hp<=0)return;const now=Date.now();if(s.lastPassiveHealAt==null||s.screen==='combat'){useGame.setState({lastPassiveHealAt:now} as any);return}const interval=s.regenBoostUntil>now?30000:60000,points=Math.floor((now-s.lastPassiveHealAt)/interval);if(points>0)useGame.setState({hp:Math.min(maxHp(s),s.hp+points),lastPassiveHealAt:s.lastPassiveHealAt+points*interval} as any)};heal();const timer=setInterval(heal,10000),unsubscribe=useGame.subscribe((state:any,previous:any)=>{if((state.inventory.tonico_regeneracao??0)<(previous.inventory.tonico_regeneracao??0))useGame.setState({regenBoostUntil:Date.now()+3600000,lastPassiveHealAt:Date.now(),explorationNote:'Tônico da Regeneração Acelerada: cura acelerada ativa por 1 hora.'} as any)});return()=>{clearInterval(timer);unsubscribe()}},[])
  React.useEffect(()=>useGame.subscribe((state:any)=>{const ids:string[]=state.activePotionIds??[],active=ids.filter(id=>{const item=CONSUMABLES.find(candidate=>candidate.id===id);return item?.tipo==='ataque'?state.pendingAttackBonus>0:item?.tipo==='escudo'?state.shield>0:false});if(active.length!==ids.length)useGame.setState({activePotionIds:active} as any)}),[])
  // Som de clique genérico -- um único listener delegado no documento em vez de tocar o som
@@ -428,6 +443,8 @@ function TopBar(){
  const [menuOpen,setMenuOpen]=React.useState(false)
  const [muted,setMutedState]=React.useState(isAudioMuted())
  const toggleMute=()=>{const next=!muted;setAudioMuted(next);setMutedState(next)}
+ const [reduceEffects,setReduceEffectsState]=React.useState(getReduceEffectsPref())
+ const toggleReduceEffects=()=>{const next=!reduceEffects;setReduceEffectsPref(next);document.documentElement.classList.toggle('reduce-effects',next);setReduceEffectsState(next)}
  const [bonusClock,setBonusClock]=React.useState(Date.now())
  const menuRef=React.useRef<HTMLDivElement>(null)
  const regenUntil=Number((g as any).regenBoostUntil??0),regenRemaining=Math.max(0,regenUntil-bonusClock)
@@ -451,6 +468,7 @@ function TopBar(){
    <div className="menu-dropdown-screens">{nav.map(([id,label,Icon])=><button key={id} role="menuitem" disabled={navigationLocked} title={navigationLocked?navigationLockTitle:undefined} className={g.screen===id?'active':''} onClick={()=>goTo(id)}><Icon size={16}/><span>{label}</span></button>)}</div>
    <div className="menu-dropdown-divider"/>
    <button role="menuitem" onClick={toggleMute}>{muted?<VolumeX size={16}/>:<Volume2 size={16}/>}<span>{muted?'Ativar sons':'Desativar sons'}</span></button>
+   <button role="menuitem" onClick={toggleReduceEffects} title="Reduz tremores de combate, brilhos e animações de cartas para uma experiência mais tranquila"><Zap size={16}/><span>{reduceEffects?'Efeitos visuais completos':'Reduzir efeitos visuais'}</span></button>
    <div className="menu-dropdown-divider"/>
    <button role="menuitem" className="menu-dropdown-exit" onClick={()=>goTo('menu')}><ArrowLeftRight size={16}/><span>Trocar de campanha</span></button>
    <button role="menuitem" className="menu-dropdown-exit" onClick={()=>goTo('menu')}><LogOut size={16}/><span>Sair do jogo</span></button>
@@ -835,7 +853,7 @@ function MapScreen(){
  const completedSubregions=worldSubregions.filter(sub=>g.subregionBossesDefeated.includes(sub.id)).length
  const completedRegions=regions.filter(region=>{const subs=worldSubregions.filter(sub=>sub.regionId===region.id);return subs.length>0&&subs.every(sub=>g.subregionBossesDefeated.includes(sub.id))}).length
  const otherWorld=world==='havendown'?'steelmere':'havendown',otherUnlocked=worldUnlocked(g,otherWorld)
- return <div className="map-layout map-layout-with-index"><Panel className="map-region-index"><div className="map-index-head"><span className="eyebrow">EXPLORAÇÃO</span><h2>Regiões de {worldInfo.label}</h2><p>Destinos organizados por nível de dificuldade.</p></div><div className="screen-intro"><small>COMO LER O MAPA</small><p>Cada região e sub-região tem um nível recomendado. O painel lateral resume sua build atual e ajuda a decidir se vale avançar ou revisar o equipamento.</p></div>{world==='havendown'&&otherUnlocked&&<div className="world-travel-card"><small>ROTAS ENTRE MUNDOS</small><p>Quando quiser mudar de cenário, siga para Steelmere e use o outro mapa como base da viagem.</p><button className="map-travel-button" onClick={()=>g.travelWorld(otherWorld)}><Plane size={16}/>Viajar para Steelmere</button></div>}{otherUnlocked&&world!=='havendown'&&<button className="map-travel-button" onClick={()=>g.travelWorld(otherWorld)}><Plane size={16}/>Voltar para {WORLD_MAPS[otherWorld].label}</button>}<div className="map-index-totals"><span><Map/><small>REGIÕES</small><strong>{completedRegions}/{regions.length}</strong></span><span><ScrollText/><small>SUB-REGIÕES</small><strong>{completedSubregions}/{worldSubregions.length}</strong></span></div><div className="map-region-list">{regions.map(region=>{const subs=worldSubregions.filter(sub=>sub.regionId===region.id).sort((a,b)=>a.nivelMin-b.nivelMin),done=subs.filter(sub=>g.subregionBossesDefeated.includes(sub.id)).length,completed=subs.length>0&&done===subs.length;return <section className={`map-index-region${completed?' completed':''}`} key={region.id}><button className="map-index-region-button" onClick={()=>g.openRegion(region)}><span className="map-index-difficulty">{region.dificuldade}</span><span><strong>{region.nome}</strong><small>Nível {region.nivelMin}–{region.nivelMax}</small></span><b>{done}/{subs.length}</b></button>{subs.length>0?<div className="map-index-subs">{subs.map(sub=>{const subDone=g.subregionBossesDefeated.includes(sub.id);return <button className={subDone?'completed':''} key={sub.id} onClick={()=>g.openSubregion(sub.id)}><i>{subDone?'✓':'◆'}</i><span>{sub.nome}<small>Nível {sub.nivelMin}–{sub.nivelMax}</small></span></button>})}</div>:<p className="map-index-soon">Sub-regiões em construção.</p>}</section>})}</div></Panel><Panel className="map-panel"><div className="screen-intro"><small>DESTINO ATUAL</small><p>Toque nos marcadores do mapa para entrar diretamente em uma região ou sub-região. Os destinos já vencidos ficam destacados em verde.</p></div><div className="map-wrap"><img src={worldInfo.base} alt={`Mapa de ${worldInfo.label}`}/>{regions.map(t=>{const subs=worldSubregions.filter(s=>s.regionId===t.id);const completed=subs.length>0&&subs.every(s=>g.subregionBossesDefeated.includes(s.id));return <button key={t.id} className={`map-sub-pin map-territory-pin${completed?' completed':''}${pinEdgeClass(t.x,t.y)}`} style={{left:`${t.x*100}%`,top:`${t.y*100}%`}} onClick={()=>g.openRegion(t)} title={`Explorar ${t.nome}`} aria-label={`Explorar território ${t.nome}`}><span>{completed?'✓':'◆'}</span><b>{t.nome}</b></button>})}{worldSubregions.map(sub=>{const point=SUBREGION_MAP_POINTS[sub.id];if(!point)return null;const completed=g.subregionBossesDefeated.includes(sub.id);return <button key={`sub_${sub.id}`} className={`map-sub-pin${completed?' completed':''}${pinEdgeClass(point[0],point[1])}`} style={{left:`${point[0]*100}%`,top:`${point[1]*100}%`}} onClick={()=>g.openSubregion(sub.id)} title={`Acessar diretamente: ${sub.nome}`} aria-label={`Acessar ${sub.nome}`}><span>{completed?'✓':'◆'}</span><b>{sub.nome}</b></button>})}</div></Panel><Panel title="Resumo do herói" className="summary"><Stat label="Vida" value={`${g.hp}/${maxHp(g)}`}/><Stat label="Ataque" value={attackValue(g)}/><Stat label="Defesa" value={defenseValue(g)}/><Stat label="Ouro" value={g.gold}/><Stat label="Equip. guardados" value={`${g.equipmentBag.length}/${equipmentBagCapacity(g)}`}/><hr/><div className="level-row"><strong>Nível {li.lvl}</strong><span>{li.progress}/{li.next} XP</span></div><div className="xp-track"><div style={{width:`${Math.min(100,li.progress/li.next*100)}%`}}/></div><p className="muted">Experiência total: {g.xp}</p><p className={g.attributePoints?'points hot':'points'}>Pontos de atributo: {g.attributePoints}</p><hr/><strong>Exploração de {worldInfo.label}</strong><p className="muted">Todos os losangos e nomes da lista dão acesso direto aos destinos.</p><p className="hint">Marcadores verdes indicam locais cujos chefes já foram derrotados.</p></Panel></div>
+ return <div className="map-layout map-layout-with-index"><Panel className="map-region-index"><div className="map-index-head"><span className="eyebrow">EXPLORAÇÃO</span><h2>Regiões de {worldInfo.label}</h2><p>Destinos organizados por nível de dificuldade.</p></div><div className="screen-intro"><small>COMO LER O MAPA</small><p>Cada região e sub-região tem um nível recomendado. O painel lateral resume sua build atual e ajuda a decidir se vale avançar ou revisar o equipamento.</p></div>{world==='havendown'&&otherUnlocked&&<div className="world-travel-card"><small>ROTAS ENTRE MUNDOS</small><p>Quando quiser mudar de cenário, siga para Steelmere e use o outro mapa como base da viagem.</p><button className="map-travel-button" onClick={()=>g.travelWorld(otherWorld)}><Plane size={16}/>Viajar para Steelmere</button></div>}{otherUnlocked&&world!=='havendown'&&<button className="map-travel-button" onClick={()=>g.travelWorld(otherWorld)}><Plane size={16}/>Voltar para {WORLD_MAPS[otherWorld].label}</button>}<div className="map-index-totals"><span><Map/><small>REGIÕES</small><strong>{completedRegions}/{regions.length}</strong></span><span><ScrollText/><small>SUB-REGIÕES</small><strong>{completedSubregions}/{worldSubregions.length}</strong></span></div><div className="map-region-list">{regions.map(region=>{const subs=worldSubregions.filter(sub=>sub.regionId===region.id).sort((a,b)=>a.nivelMin-b.nivelMin),done=subs.filter(sub=>g.subregionBossesDefeated.includes(sub.id)).length,completed=subs.length>0&&done===subs.length;return <section className={`map-index-region${completed?' completed':''}`} key={region.id}><button className="map-index-region-button" onClick={()=>g.openRegion(region)}><span className="map-index-difficulty">{region.dificuldade}</span><span><strong>{region.nome}</strong><small>Nível {region.nivelMin}–{region.nivelMax}</small></span><b>{done}/{subs.length}</b></button>{subs.length>0?<div className="map-index-subs">{subs.map(sub=>{const subDone=g.subregionBossesDefeated.includes(sub.id);return <button className={subDone?'completed':''} key={sub.id} onClick={()=>g.openSubregion(sub.id)}><i>{subDone?'✓':'◆'}</i><span>{sub.nome}<small>Nível {sub.nivelMin}–{sub.nivelMax}</small></span></button>})}</div>:<p className="map-index-soon">Sub-regiões em construção.</p>}</section>})}</div></Panel><Panel className="map-panel"><div className="screen-intro"><small>DESTINO ATUAL</small><p>Toque nos marcadores do mapa para entrar diretamente em uma região ou sub-região. Os destinos já vencidos ficam destacados em verde.</p></div><div className="map-wrap"><img src={worldInfo.base} alt={`Mapa de ${worldInfo.label}`}/>{regions.map((t,i)=>{const subs=worldSubregions.filter(s=>s.regionId===t.id);const completed=subs.length>0&&subs.every(s=>g.subregionBossesDefeated.includes(s.id));return <button key={t.id} className={`map-sub-pin map-territory-pin${completed?' completed':''}${pinEdgeClass(t.x,t.y)}`} style={{left:`${t.x*100}%`,top:`${t.y*100}%`,'--i':i} as React.CSSProperties} onClick={()=>g.openRegion(t)} title={`Explorar ${t.nome}`} aria-label={`Explorar território ${t.nome}`}><span>{completed?'✓':'◆'}</span><b>{t.nome}</b></button>})}{worldSubregions.map((sub,i)=>{const point=SUBREGION_MAP_POINTS[sub.id];if(!point)return null;const completed=g.subregionBossesDefeated.includes(sub.id);return <button key={`sub_${sub.id}`} className={`map-sub-pin${completed?' completed':''}${pinEdgeClass(point[0],point[1])}`} style={{left:`${point[0]*100}%`,top:`${point[1]*100}%`,'--i':i} as React.CSSProperties} onClick={()=>g.openSubregion(sub.id)} title={`Acessar diretamente: ${sub.nome}`} aria-label={`Acessar ${sub.nome}`}><span>{completed?'✓':'◆'}</span><b>{sub.nome}</b></button>})}</div></Panel><Panel title="Resumo do herói" className="summary"><Stat label="Vida" value={`${g.hp}/${maxHp(g)}`}/><Stat label="Ataque" value={attackValue(g)}/><Stat label="Defesa" value={defenseValue(g)}/><Stat label="Ouro" value={g.gold}/><Stat label="Equip. guardados" value={`${g.equipmentBag.length}/${equipmentBagCapacity(g)}`}/><hr/><div className="level-row"><strong>Nível {li.lvl}</strong><span>{li.progress}/{li.next} XP</span></div><div className="xp-track"><div style={{width:`${Math.min(100,li.progress/li.next*100)}%`}}/></div><p className="muted">Experiência total: {g.xp}</p><p className={g.attributePoints?'points hot':'points'}>Pontos de atributo: {g.attributePoints}</p><hr/><strong>Exploração de {worldInfo.label}</strong><p className="muted">Todos os losangos e nomes da lista dão acesso direto aos destinos.</p><p className="hint">Marcadores verdes indicam locais cujos chefes já foram derrotados.</p></Panel></div>
 }
 
 function dangerFor(level:number,min:number,max:number){if(level<min-2)return {label:'PERIGO EXTREMO',stars:5,cls:'deadly'};if(level<min)return {label:'Difícil',stars:4,cls:'hard'};if(level<=max)return {label:'Adequado',stars:3,cls:'fair'};if(level<=max+3)return {label:'Fácil',stars:2,cls:'easy'};return {label:'Muito fácil',stars:1,cls:'easy'}}
@@ -1205,11 +1223,25 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
  // agora treme mais forte (com uma leve rotação) e o número de dano sai maior, atrasado um
  // instante (a arte de impacto -critico.webp aparece primeiro) e com um rótulo "CRÍTICO!".
  // prefers-reduced-motion corta a amplitude do tremor pra não gerar desconforto.
- const reducedMotion=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches
- const shakeAnim=!shaking?{x:0,rotate:0}:reducedMotion?{x:[0,-3,0],rotate:0}:attackCritical?{x:[0,-16,14,-10,6,-3,0],rotate:[0,-2.5,2.5,-1.5,0]}:{x:[0,-9,8,-5,0],rotate:0}
+ const shakeAnim=!shaking?{x:0,rotate:0}:effectsReduced()?{x:[0,-3,0],rotate:0}:attackCritical?{x:[0,-16,14,-10,6,-3,0],rotate:[0,-2.5,2.5,-1.5,0]}:{x:[0,-9,8,-5,0],rotate:0}
+ // Uma mudança de fase de chefe (game.ts: en.fase avança quando a vida cruza o limiar) só
+ // trocava um pequeno badge "FASE N" no canto -- fácil de não perceber no meio da rolagem de
+ // dados. Compara a fase recebida com a anterior (via ref) pra mostrar um rótulo passageiro só
+ // no exato turno da transição, sem precisar que o combate/store saibam nada sobre isso.
+ const previousPhase=React.useRef(phase)
+ const [phaseFlash,setPhaseFlash]=React.useState(false)
+ React.useEffect(()=>{
+  const previous=previousPhase.current
+  previousPhase.current=phase
+  if(!boss||phase==null||previous==null||phase===previous)return
+  setPhaseFlash(true)
+  const timer=setTimeout(()=>setPhaseFlash(false),1300)
+  return()=>clearTimeout(timer)
+ },[phase,boss])
  return <motion.article className={'fighter premium-fighter combat-card-fighter '+side+(boss?' boss':'')} animate={shakeAnim} transition={{duration:shaking&&attackCritical?.5:.35}}>
   <CardFrame card={card} kind={galleryKind} frameTheme={frameTheme} attackFx={summonAttackType??(shaking?attackType:undefined)} attackFxCritical={summonAttackType?false:(shaking?attackCritical:undefined)} supportFx={supportFx} tilt holoMode="frame"/>
   {boss&&<small className="combat-card-phase">FASE {phase??1}</small>}
+  {phaseFlash&&!effectsReduced()&&<motion.div className="phase-transition-banner" initial={{opacity:0,scale:.6,y:-8}} animate={{opacity:[0,1,1,0],scale:[.6,1.08,1,1],y:0}} transition={{duration:1.2,times:[0,.22,.78,1]}}><Zap size={15}/>FASE {phase}!</motion.div>}
   {shaking&&damage!==undefined&&<motion.div className={`floating-damage${attackCritical?' critical':''}`} initial={{opacity:0,y:10,scale:.5}} animate={{opacity:1,y:-45,scale:attackCritical?1.3:1.15}} transition={{duration:.5,delay:attackCritical?.14:.08,ease:'backOut'}}>{attackCritical&&<b>CRÍTICO!</b>}-{damage}</motion.div>}
   <div className="hp-label"><span>Vida</span><strong>{Math.max(0,hp)}/{max}</strong></div><div className="hp-track"><motion.div animate={{width:`${Math.max(0,hp/max*100)}%`}} transition={{duration:.45}}/></div>
   {Boolean(statusKinds?.length)&&<div className="status-badges">{statusKinds!.map(({kind,turns})=><span key={kind} className={`status-badge status-${kind}`} title={STATUS_DURATION_NOTE[kind]??''}>{STATUS_LABELS[kind]}{turns!=null&&turns>0?` ×${turns}`:''}</span>)}</div>}

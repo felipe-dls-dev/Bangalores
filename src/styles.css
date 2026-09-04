@@ -1348,6 +1348,7 @@ body::after{content:"VERSÃO 0.7.13 • 03/09/2026\A Brilho holográfico arco-í
 body::after{content:"VERSÃO 0.7.14 • 03/09/2026\A Corrigido vazamento de brilho nos cantos vazios fora do desenho da moldura"}
 body::after{content:"VERSÃO 0.7.15 • 03/09/2026\A Coleção e combate agora usam o brilho holográfico só na moldura"}
 body::after{content:"VERSÃO 0.8.0 • 04/09/2026\A Pacote de polimento visual: ouro/XP/nível contam animados, críticos tremem mais forte e mostram CRÍTICO!, barras de progresso deslizam suavemente, cliques em botões têm resposta tátil e a troca de carta na Coleção agora tem transição"}
+body::after{content:"VERSÃO 0.8.1 • 04/09/2026\A Cartas raras brilham sozinhas de vez em quando, chefes anunciam troca de fase, marcadores do mapa chegam em sequência e pulsam, menu principal ganhou atmosfera em movimento, e agora há um botão 'Reduzir efeitos visuais' no Menu"}
 
 /* ==========================================================
    Pacote de polimento visual/"juice" -- feedback tátil e de
@@ -1371,4 +1372,52 @@ button:active:not(:disabled){transform:translateY(0) scale(.95);transition-durat
 /* Cartas obtidas no resumo de batalha (LootScreen) surgem com um leve "pop" em vez de aparecer
    de uma vez -- ver o motion.div que envolve cada ItemCard em LootScreen (main.tsx). */
 .loot-stats .item-card{will-change:transform}
+
+/* ==========================================================
+   Segunda leva do pacote de polimento visual: sheen ambiente em
+   cartas raras, chegada de chefe em fases, marcadores do mapa
+   "vivos" e um menu principal com atmosfera em movimento. Tudo
+   abaixo respeita tanto prefers-reduced-motion quanto o novo
+   toggle manual "Reduzir efeitos visuais" (classe .reduce-effects
+   em <html>, ver getReduceEffectsPref/effectsReduced em main.tsx). */
+
+/* Sheen ambiente: uma faixa de luz diagonal varre a moldura de cartas
+   épico+ a cada ~4.5s, mesmo sem hover -- funciona em toque/mobile
+   também, ao contrário do spot/holo (que exigem hover:hover). */
+.ornate-frame-idle{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;mix-blend-mode:screen;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;background-image:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.85) 49%,rgba(255,255,255,.85) 51%,transparent 65%);background-size:240% 240%;background-position:-60% -60%}
+@keyframes card-idle-shine{0%{background-position:-60% -60%;opacity:0}10%{opacity:.32}22%{opacity:0}100%{background-position:160% 160%;opacity:0}}
+@media(prefers-reduced-motion:no-preference){
+ html:not(.reduce-effects) .rarity-epico .ornate-frame-idle,
+ html:not(.reduce-effects) .rarity-lendario .ornate-frame-idle,
+ html:not(.reduce-effects) .rarity-mitico .ornate-frame-idle,
+ html:not(.reduce-effects) .rarity-heroico .ornate-frame-idle{animation:card-idle-shine 4.5s ease-in-out infinite}
+}
+
+/* Rótulo passageiro quando um chefe muda de fase (Fighter, main.tsx). */
+.phase-transition-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:linear-gradient(135deg,#4a1010,#241505);border:1px solid #ff6a52;color:#ffdca0;font:800 .82rem Georgia,serif;letter-spacing:.04em;text-shadow:0 2px 6px #000;box-shadow:0 0 26px rgba(255,90,60,.55);pointer-events:none;white-space:nowrap}
+.phase-transition-banner svg{color:#ffb35c;flex:none}
+
+/* Marcadores do mapa: chegam em sequência (não todos de uma vez) e os ainda não vencidos
+   pulsam bem sutilmente para chamar o olho -- só a opacidade/filter é animada, nunca
+   transform, porque .map-sub-pin já usa transform:translate(-50%,-50%) via CSS pra se
+   centralizar no ponto {left,top}; animar transform aqui destruiria essa centralização. */
+@keyframes map-pin-reveal{from{opacity:0}to{opacity:1}}
+@keyframes map-pin-pulse{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 7px rgba(232,178,76,.65))}}
+@media(prefers-reduced-motion:no-preference){
+ html:not(.reduce-effects) .map-sub-pin{animation:map-pin-reveal .35s ease both;animation-delay:calc(var(--i,0) * 22ms)}
+ html:not(.reduce-effects) .map-sub-pin:not(.completed){animation-name:map-pin-reveal,map-pin-pulse;animation-duration:.35s,3.2s;animation-timing-function:ease,ease-in-out;animation-iteration-count:1,infinite;animation-fill-mode:both,none;animation-delay:calc(var(--i,0) * 22ms),calc(var(--i,0) * 22ms + 400ms)}
+}
+
+/* Menu principal: duas manchas de luz à deriva atrás do card, bem lentas e sutis, pra tela
+   de título não ficar estática. Pseudo-elementos de um <div> que já existia e já era
+   position:absolute/inset:0 -- nenhuma mudança de JSX necessária. */
+.menu-atmosphere::before,.menu-atmosphere::after{content:'';position:absolute;border-radius:50%;pointer-events:none;filter:blur(10px)}
+.menu-atmosphere::before{top:-80px;left:8%;width:360px;height:360px;background:radial-gradient(circle,rgba(216,163,64,.16),transparent 70%)}
+.menu-atmosphere::after{bottom:-100px;right:6%;width:280px;height:280px;background:radial-gradient(circle,rgba(120,90,190,.13),transparent 70%)}
+@keyframes menu-ember-drift-a{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,35px) scale(1.15)}}
+@keyframes menu-ember-drift-b{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-40px,-30px) scale(1.1)}}
+@media(prefers-reduced-motion:no-preference){
+ html:not(.reduce-effects) .menu-atmosphere::before{animation:menu-ember-drift-a 22s ease-in-out infinite}
+ html:not(.reduce-effects) .menu-atmosphere::after{animation:menu-ember-drift-b 26s ease-in-out infinite}
+}
 
