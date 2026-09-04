@@ -273,7 +273,7 @@ function CardFrame({card,kind,artStyle,frameTheme,attackFx,attackFxCritical,supp
  return <article ref={tiltRef as React.RefObject<HTMLElement>} className={`game-card ornate-card rarity-${rarity} ${enemy?'ornate-enemy':''} ${nameSize} ${effectSize} ${frameTheme?`frame-theme-${frameTheme}`:''} ${tilt?'tilt-card':''} ${mode==='full'?'holo-rainbow holo-textured':''}`}>
   <div className="ornate-art"><ArtPreview image={cardArt(card)} name={card.nome} text={artText(card)} stats={artStats(card,kind)} imgStyle={artStyle}/>{mode==='art'&&<div className="ornate-art-holo"/>}</div>
   <img className="ornate-frame" src={frameSrc} alt="" aria-hidden="true"/>
-  {mode==='frame'&&<div className="ornate-frame-holo" style={{'--frame-mask-url':`url(${frameSrc})`} as React.CSSProperties}/>}
+  {mode==='frame'&&<div className="ornate-frame-holo" style={{maskImage:`url(${frameSrc})`,WebkitMaskImage:`url(${frameSrc})`} as React.CSSProperties}/>}
   <h2 className="ornate-name">{card.nome}</h2>
   <img className="ornate-emblem" src={assetUrl(cardEmblem(card,kind))} alt={enemy?`Categoria ${cardBadge(card,kind,rarity)}`:`Compatibilidade de ${kind}`}/>
   <strong className="ornate-badge">{cardBadge(card,kind,rarity)}</strong>
