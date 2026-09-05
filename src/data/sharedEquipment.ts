@@ -66,6 +66,13 @@ const GROUPS: SharedGroup[] = [
 ]
 
 const ART_FOLDER: Record<string, string> = { capacete: 'shared-headgear', peitoral: 'shared-armor', calcas: 'shared-legwear', botas: 'shared-boots' }
+// A linha da Ordem da Vida ainda não possui todas as artes dedicadas no pacote visual.
+// Mantemos um fallback de calças já existente para evitar imagens quebradas enquanto os
+// tiers específicos são produzidos; isso também corrige imediatamente a Saia de Amanhecer Bento.
+const sharedArtPath = (group: SharedGroup, slot: Slot, id: string) =>
+  group.id === 'ordem_vida' && slot === 'calcas'
+    ? 'assets/art/hd/equipment-extra/calcas_nevoa-hd.webp'
+    : `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`
 // Vida/defesa por slot e índice de tier (0-7), no mesmo padrão de newClassEquipment.ts.
 const slotStats = (slot: Slot, i: number) => {
  const high = Math.floor(i / 2)
@@ -80,7 +87,7 @@ const armorLine = (group: SharedGroup, slot: Slot, tiers: number[]): Equipment[]
  return {
   id, nome: `${label} de ${theme}`, slot, preco: 14 + i * 3, ataque: 0, vida: stat.vida, defesa: stat.defesa,
   habilidade: group.ability(theme),
-  imagem: `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`, arte: `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`,
+  imagem: sharedArtPath(group, slot, id), arte: sharedArtPath(group, slot, id),
   classeExclusiva: group.classes, tipoEquipamento: group.tipo,
   statsByClass: group.statsByClass(bonus)
  } as Equipment
