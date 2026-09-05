@@ -70,8 +70,12 @@ const ART_FOLDER: Record<string, string> = { capacete: 'shared-headgear', peitor
 // Mantemos um fallback de calças já existente para evitar imagens quebradas enquanto os
 // tiers específicos são produzidos; isso também corrige imediatamente a Saia de Amanhecer Bento.
 const sharedArtPath = (group: SharedGroup, slot: Slot, id: string) =>
-  group.id === 'ordem_vida' && slot === 'calcas'
-    ? 'assets/art/hd/equipment-extra/calcas_nevoa-hd.webp'
+  group.id === 'ordem_vida'
+    ? slot === 'calcas'
+      ? 'assets/art/hd/equipment-extra/calcas_nevoa-hd.webp'
+      : slot === 'peitoral'
+        ? 'assets/art/hd/equipment/manto-ordem-vida-hd.webp'
+        : `assets/art/hd/shared-${slot === 'capacete' ? 'headgear' : 'boots'}/andarilhos_${slot === 'capacete' ? 'capacete' : 'botas'}_t1.webp`
     : `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`
 // Vida/defesa por slot e índice de tier (0-7), no mesmo padrão de newClassEquipment.ts.
 const slotStats = (slot: Slot, i: number) => {
