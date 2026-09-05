@@ -780,11 +780,17 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .flee-dice-roll{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;border:1px solid #8c692d;border-radius:10px;background:radial-gradient(circle,rgba(78,54,16,.45),rgba(10,7,5,.88))}.flee-dice-roll>small{color:#d9aa49;font-size:.62rem;font-weight:900;letter-spacing:.14em}.flee-die{width:58px;height:58px;background:linear-gradient(145deg,#ffe69a,#c58b1d);border-color:#fff0b0;color:#322006;box-shadow:inset 0 0 0 2px rgba(93,58,5,.32),0 4px 12px #000,0 0 18px rgba(225,171,54,.32)}.flee-dice-roll>strong{font:700 1.05rem Georgia,serif;color:#edc776}.flee-dice-roll.success>strong{color:#8fcd75}.flee-dice-roll.failed>strong{color:#ee8170}.flee-dice-roll>span{color:#9e8d72;font-size:.62rem}
 
 /* v0.4.3 — batalha em três faixas com área fixa para os dados.
-   No desktop, Ações (linha 1) tinha só 23vh contra 43vh de Rolagem dos dados (linha 2) --
-   igual ao problema do celular, isso deixava até 6 botões de ação (ex: Provocar do Guardião)
-   espremidos com rolagem interna, enquanto o painel de dados sobrava vazio à toa quando
-   ocioso. Ações ganha a fatia maior agora; dados, a menor. */
-.combat-v033{grid-template-columns:minmax(300px,30%) minmax(400px,34%) minmax(410px,36%);grid-template-rows:minmax(320px,40vh) minmax(200px,24vh) minmax(205px,auto) 18px;grid-template-areas:"hero actions enemy" "hero dice enemy" "effects log consumables" "tip tip tip";align-content:start}
+   Ações e Rolagem dos dados (linhas 1 e 2 da coluna do meio, no desktop) tiveram alturas bem
+   desiguais em duas rodadas de ajuste: primeiro Ações menor que Dados (Ações apertava com 6
+   botões), depois Ações bem maior que Dados (sobrava vazio embaixo dos botões na maioria das
+   batalhas, com só 4-5 ações). Nenhuma das duas ficava visualmente equilibrada. Agora as duas
+   linhas dividem o mesmo espaço (mesmo total de antes: 32vh+32vh = as antigas 40vh+24vh) --
+   funciona porque .combat-actions-grid e .combat-dice-panel já lidam com conteúdo variável via
+   min-height:0 e rolagem interna quando necessário, então nenhum dos dois realmente precisa de
+   mais espaço fixo que o outro. Mobile (@media max-width:760px, mais abaixo) mantém Ações maior
+   de propósito -- lá o grid de ações pode chegar a 6 botões (ex: escolha de invocação do
+   Conjurador) sem o layout lado a lado do tablet para absorver a diferença. */
+.combat-v033{grid-template-columns:minmax(300px,30%) minmax(400px,34%) minmax(410px,36%);grid-template-rows:minmax(260px,32vh) minmax(260px,32vh) minmax(205px,auto) 18px;grid-template-areas:"hero actions enemy" "hero dice enemy" "effects log consumables" "tip tip tip";align-content:start}
 .combat-v033 .combat-hero-area{display:flex;min-height:0;overflow:hidden}.combat-v033 .combat-hero-area>.combat-card-fighter{flex:1;height:100%;min-height:0}
 .combat-v033 .combat-enemy-area{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}.combat-v033 .combat-enemy-area>.combat-card-fighter{flex:1;height:auto;min-height:0}.combat-v033 .combat-enemy-area>.enemy-intent{flex:none;width:100%;max-width:none;margin:0;padding:8px 12px}
 .combat-v033 .combat-dice-area{grid-area:dice;min-height:0;overflow:hidden}
@@ -1352,6 +1358,7 @@ body::after{content:"VERSÃO 0.8.1 • 04/09/2026\A Cartas raras brilham sozinha
 body::after{content:"VERSÃO 0.8.2 • 04/09/2026\A Corrigido: monstros comuns, de elite e chefes voltaram a usar molduras verde/roxa/vermelha na Coleção (o combate já estava correto, só a Coleção sempre usara a dourada padrão)"}
 
 body::after{content:"VERSÃO 0.8.4 • 04/09/2026\A Combate com mais impacto: atacante avança, alvo reage melhor, cura/bloqueio/crítico ganham leitura própria e o painel dos dados agora explica o resultado visual"}
+body::after{content:"VERSÃO 0.8.5 • 04/09/2026\A Caixas de Ações e Rolagem dos dados no combate agora têm o mesmo tamanho"}
 
 /* ==========================================================
    Pacote de polimento visual/"juice" -- feedback tátil e de
