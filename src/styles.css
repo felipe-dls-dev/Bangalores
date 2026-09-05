@@ -1359,6 +1359,7 @@ body::after{content:"VERSÃO 0.8.2 • 04/09/2026\A Corrigido: monstros comuns, 
 
 body::after{content:"VERSÃO 0.8.4 • 04/09/2026\A Combate com mais impacto: atacante avança, alvo reage melhor, cura/bloqueio/crítico ganham leitura própria e o painel dos dados agora explica o resultado visual"}
 body::after{content:"VERSÃO 0.8.5 • 04/09/2026\A Caixas de Ações e Rolagem dos dados no combate agora têm o mesmo tamanho"}
+body::after{content:"VERSÃO 0.8.6 • 04/09/2026\A Corrigido: clicar fora da janela de arte ampliada (itens, personagem, cartas) agora realmente fecha a janela"}
 
 /* ==========================================================
    Pacote de polimento visual/"juice" -- feedback tátil e de
