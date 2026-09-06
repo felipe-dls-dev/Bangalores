@@ -1360,6 +1360,31 @@ body::after{content:"VERSÃO 0.8.2 • 04/09/2026\A Corrigido: monstros comuns, 
 body::after{content:"VERSÃO 0.8.4 • 04/09/2026\A Combate com mais impacto: atacante avança, alvo reage melhor, cura/bloqueio/crítico ganham leitura própria e o painel dos dados agora explica o resultado visual"}
 body::after{content:"VERSÃO 0.8.5 • 04/09/2026\A Caixas de Ações e Rolagem dos dados no combate agora têm o mesmo tamanho"}
 body::after{content:"VERSÃO 0.8.6 • 04/09/2026\A Corrigido: clicar fora da janela de arte ampliada (itens, personagem, cartas) agora realmente fecha a janela"}
+body::after{content:"VERSÃO 0.8.7 • 05/09/2026\A Loja reorganizada: filtro de classe/categoria e ordenação viram dois seletores compactos, e 'Todos' agora agrupa os itens em seções por classe/categoria"}
+
+/* ==========================================================
+   Reformulação dos filtros/lista da Loja -- a fileira de até 11
+   pílulas de classe (Armas) quebrava em várias linhas antes de
+   mostrar qualquer item, e a lista em "Todos" misturava tudo numa
+   coluna só, sem separação. Filtro + ordenação viram dois selects
+   numa única linha; "Todos" agora divide a lista em seções.
+   Ver ShopScreen em main.tsx. */
+.shop-filter-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:18px}
+.shop-filter-select{display:flex;flex-direction:column;gap:5px;min-width:210px}
+.shop-filter-select>span:first-child{color:#a99879;font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.shop-sort-select{margin-left:auto}
+.shop-select-wrap{position:relative;display:block}
+.shop-select-wrap select{width:100%;appearance:none;-webkit-appearance:none;font:inherit;font-size:.86rem;color:var(--text);border:1px solid var(--line);background:linear-gradient(180deg,#241a10,#150f0a);padding:.62rem 34px .62rem .85rem;border-radius:9px;cursor:pointer;transition:border-color .15s ease}
+.shop-select-wrap select:hover{border-color:#a16d2e}
+.shop-select-wrap select:focus-visible{outline:2px solid #e3b65f;outline-offset:1px}
+.shop-select-wrap select option{background:#1b130c;color:#eadbc0}
+.shop-select-caret{position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:#a99879}
+.shop-group{margin-bottom:20px}
+.shop-group:last-child{margin-bottom:0}
+.shop-group-title{display:flex;align-items:center;gap:9px;margin:0 0 9px;padding-bottom:7px;border-bottom:1px solid #3d2b19;font:700 .95rem Georgia,serif;color:#e0be79}
+.shop-group-title small{font:800 .64rem Inter,sans-serif;letter-spacing:.03em;color:#8f816b;background:#1c130c;border:1px solid #3d2b19;border-radius:999px;padding:2px 9px}
+.shop-group-items{display:flex;flex-direction:column;gap:8px}
+@media(max-width:650px){.shop-filter-row{flex-direction:column;align-items:stretch}.shop-filter-select{min-width:0}.shop-sort-select{margin-left:0}}
 
 /* ==========================================================
    Pacote de polimento visual/"juice" -- feedback tátil e de

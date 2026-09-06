@@ -976,8 +976,13 @@ function merchantLine(gold:number,cartCount:number,selling:boolean){
 }
 function ShopScreen(){
  const g=useGame()
+ // Antes o filtro de Armas sempre abria em "Todos" -- misturando espadas, cajados, arcos e
+ // adagas de classes que o herói nem pode usar na mesma lista, logo de cara. Equipamentos não
+ // sofre disso (já é pré-filtrado por equipmentClassAllowed), então só Armas precisa de um
+ // valor padrão diferente de "Todos".
+ const armaDefaultFilter=g.heroId&&weaponFilters.some(([id])=>id===g.heroId)?g.heroId:'Todos'
  const [tab,setTab]=React.useState<ShopTab>('Armas')
- const [filter,setFilter]=React.useState('Todos')
+ const [filter,setFilter]=React.useState<string>(armaDefaultFilter)
  const [sortBy,setSortBy]=React.useState<typeof sortOptions[number][0]>('padrao')
  const [cart,setCart]=React.useState<Record<string,number>>({})
  const [cartOpen,setCartOpen]=React.useState(false)
@@ -992,15 +997,23 @@ function ShopScreen(){
  const matchesWeapon=(e:any,id:string)=>id==='Todos'||(id==='neutra'?!equipmentAffinity(e):equipmentAffinity(e)===id)
  const matchesGear=(e:any,id:string)=>id==='Todos'||(id==='aneis'?(e.slot==='anel_1'||e.slot==='anel_2'):e.slot===id)
  const matchesConsumable=(item:any,id:string)=>id==='Todos'||(id==='cura'?(item.tipo==='cura'||item.tipo==='vida_max'):(item.tipo!=='cura'&&item.tipo!=='vida_max'))
- const equipment=tab==='Armas'?weapons.filter(e=>matchesWeapon(e,filter)):tab==='Equipamentos'?gear.filter(e=>matchesGear(e,filter)):[]
- const consumables=tab==='Consumíveis'?availableConsumables.filter(item=>matchesConsumable(item,filter)):[]
  const rarityOrder:Record<Rarity,number>={comum:0,incomum:1,raro:2,epico:3,lendario:4,mitico:5,heroico:6}
- equipment.sort((a,b)=>equipmentRequiredLevel(a)-equipmentRequiredLevel(b)||(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.nome.localeCompare(b.nome,'pt-BR'))
- consumables.sort((a,b)=>(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'))
  const sortCmp=sortBy==='preco'?(a:any,b:any)=>a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'):sortBy==='raridade'?(a:any,b:any)=>(rarityOrder[(a.raridade??'comum') as Rarity]-rarityOrder[(b.raridade??'comum') as Rarity])||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'):sortBy==='nome'?(a:any,b:any)=>a.nome.localeCompare(b.nome,'pt-BR'):undefined
- if(sortCmp){equipment.sort(sortCmp);consumables.sort(sortCmp)}
+ const sortEquipmentList=(list:any[])=>{list.sort(sortCmp??((a,b)=>equipmentRequiredLevel(a)-equipmentRequiredLevel(b)||(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.nome.localeCompare(b.nome,'pt-BR')));return list}
+ const sortConsumableList=(list:any[])=>{list.sort(sortCmp??((a,b)=>(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR')));return list}
+ const equipment=tab==='Armas'?sortEquipmentList(weapons.filter(e=>matchesWeapon(e,filter))):tab==='Equipamentos'?sortEquipmentList(gear.filter(e=>matchesGear(e,filter))):[]
+ const consumables=tab==='Consumíveis'?sortConsumableList(availableConsumables.filter(item=>matchesConsumable(item,filter))):[]
  const filterCount=(id:string)=>tab==='Armas'?weapons.filter(e=>matchesWeapon(e,id)).length:tab==='Equipamentos'?gear.filter(e=>matchesGear(e,id)).length:availableConsumables.filter(item=>matchesConsumable(item,id)).length
- const chooseTab=(next:ShopTab)=>{setTab(next);setFilter('Todos')}
+ // "Todos" empilhava dezenas de itens sem nenhuma separação visual -- difícil de escanear.
+ // Com "Todos" selecionado, a lista passa a se dividir em seções (por classe nas Armas, por
+ // categoria/slot nos Equipamentos, por tipo nos Consumíveis), reaproveitando os mesmos
+ // filtros e a mesma ordenação já calculados acima para cada seção individualmente.
+ const showGroups=filter==='Todos'
+ const groups=showGroups?filters.filter(([id])=>id!=='Todos').map(([id,label])=>({
+  label,
+  items:tab==='Consumíveis'?sortConsumableList(availableConsumables.filter(item=>matchesConsumable(item,id))):sortEquipmentList((tab==='Armas'?weapons:gear).filter((e:any)=>tab==='Armas'?matchesWeapon(e,id):matchesGear(e,id)))
+ })).filter(group=>group.items.length):[]
+ const chooseTab=(next:ShopTab)=>{setTab(next);setFilter(next==='Armas'?armaDefaultFilter:'Todos')}
  const lines=Object.entries(cart).filter(([,q])=>q>0).flatMap(([key,qty])=>{const [kind,id]=key.split(':');const item=kind==='c'?CONSUMABLES.find(x=>x.id===id):EQUIPMENT.find(x=>x.id===id);return item?[{key,kind,id,qty,item}]:[]})
  const count=lines.reduce((sum,line)=>sum+line.qty,0),total=lines.reduce((sum,line)=>sum+line.item.preco*line.qty,0),equipmentCount=lines.filter(line=>line.kind==='e').reduce((sum,line)=>sum+line.qty,0)
  const valid=count>0&&total<=g.gold&&g.equipmentBag.length+equipmentCount<=equipmentBagCapacity(g)&&lines.every(line=>line.kind==='c'||(equipmentClassAllowed(line.item as any,g.heroId)&&equipmentLevelAllowed(line.item as any,g.xp)&&(line.item as any).raridade!=='epico'&&(line.item as any).raridade!=='lendario'))
@@ -1011,15 +1024,21 @@ function ShopScreen(){
  const dec=(key:string)=>setQty(key,(cart[key]??0)-1)
  const clear=()=>setCart({})
  const confirm=()=>{if(!valid)return;lines.forEach(line=>{for(let i=0;i<line.qty;i++)line.kind==='c'?g.buyConsumable(line.id):g.buyEquipment(line.id)});clear();setCartOpen(false)}
- const changeMode=()=>{g.toggleShopMode();setFilter('Todos');clear();setCartOpen(false)}
+ const changeMode=()=>{g.toggleShopMode();setFilter(tab==='Armas'?armaDefaultFilter:'Todos');clear();setCartOpen(false)}
  return <div><div className="shop-head"><div><h1>Loja de Havendown</h1><p>{g.shopMode==='buy'?'Adicione produtos ao carrinho e confirme antes de recebê-los.':'Venda de itens não concede experiência.'}</p></div><div><span className="gold"><Coins/> {g.gold}</span>{g.shopMode==='buy'&&<button className="shop-cart-button" onClick={()=>setCartOpen(true)}><ShoppingCart/> Carrinho <b>{count}</b></button>}<button onClick={changeMode}>{g.shopMode==='buy'?'Mudar para vender':'Mudar para comprar'}</button></div></div>
   <NpcBanner name={MERCHANT.nome} title={MERCHANT.titulo} line={merchantLine(g.gold,count,g.shopMode==='sell')} image={MERCHANT.retrato}/>
   <div className="shop-tabs" role="tablist" aria-label="Seções da loja">{shopTabs.map(item=><button key={item} role="tab" aria-selected={tab===item} className={tab===item?'active':''} onClick={()=>chooseTab(item)}>{item}<small>{tabCount(item)}</small></button>)}</div>
   <div className="shop-filter-row">
-   <div className="gallery-filters shop-category-filters shop-subfilters" role="group" aria-label={`Filtros de ${tab}`}>{filters.map(([id,label])=><button key={id} className={filter===id?'active':''} onClick={()=>setFilter(id)}>{label}<small>{filterCount(id)}</small></button>)}</div>
-   <div className="shop-sort" role="group" aria-label="Ordenar itens"><small>Ordenar</small>{sortOptions.map(([id,label])=><button key={id} className={sortBy===id?'active':''} onClick={()=>setSortBy(id)}>{label}</button>)}</div>
+   <label className="shop-filter-select">
+    <span>{tab==='Armas'?'Classe':tab==='Equipamentos'?'Categoria':'Tipo'}</span>
+    <span className="shop-select-wrap"><select value={filter} onChange={event=>setFilter(event.target.value)} aria-label={`Filtrar ${tab} por ${tab==='Armas'?'classe':tab==='Equipamentos'?'categoria':'tipo'}`}>{filters.map(([id,label])=><option key={id} value={id}>{label} ({filterCount(id)})</option>)}</select><ChevronDown size={14} className="shop-select-caret"/></span>
+   </label>
+   <label className="shop-filter-select shop-sort-select">
+    <span>Ordenar</span>
+    <span className="shop-select-wrap"><select value={sortBy} onChange={event=>setSortBy(event.target.value as typeof sortOptions[number][0])} aria-label="Ordenar itens">{sortOptions.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select><ChevronDown size={14} className="shop-select-caret"/></span>
+   </label>
   </div>
-  <div className="shop-list">{consumables.map(it=><ShopConsumable key={it.id} id={it.id} sell={g.shopMode==='sell'} onAdd={()=>add('c',it.id)} quantity={cart[`c:${it.id}`]??0}/>)}{equipment.map((e,i)=><ShopEquipment key={e.id+i} id={e.id} sell={g.shopMode==='sell'} onAdd={()=>add('e',e.id)} quantity={cart[`e:${e.id}`]??0}/>)}{!consumables.length&&!equipment.length&&<div className="shop-empty"><Package/><strong>Nenhum item neste filtro.</strong><span>{g.shopMode==='sell'?'Você ainda não possui itens desse tipo.':'Não há mercadorias disponíveis.'}</span></div>}</div>
+  <div className="shop-list">{showGroups?<>{groups.map(group=><section className="shop-group" key={group.label}><h3 className="shop-group-title"><span>{group.label}</span><small>{group.items.length}</small></h3><div className="shop-group-items">{tab==='Consumíveis'?group.items.map((it:any)=><ShopConsumable key={it.id} id={it.id} sell={g.shopMode==='sell'} onAdd={()=>add('c',it.id)} quantity={cart[`c:${it.id}`]??0}/>):group.items.map((e:any,i:number)=><ShopEquipment key={e.id+i} id={e.id} sell={g.shopMode==='sell'} onAdd={()=>add('e',e.id)} quantity={cart[`e:${e.id}`]??0}/>)}</div></section>)}{!groups.length&&<div className="shop-empty"><Package/><strong>Nenhum item neste filtro.</strong><span>{g.shopMode==='sell'?'Você ainda não possui itens desse tipo.':'Não há mercadorias disponíveis.'}</span></div>}</>:<>{consumables.map(it=><ShopConsumable key={it.id} id={it.id} sell={g.shopMode==='sell'} onAdd={()=>add('c',it.id)} quantity={cart[`c:${it.id}`]??0}/>)}{equipment.map((e,i)=><ShopEquipment key={e.id+i} id={e.id} sell={g.shopMode==='sell'} onAdd={()=>add('e',e.id)} quantity={cart[`e:${e.id}`]??0}/>)}{!consumables.length&&!equipment.length&&<div className="shop-empty"><Package/><strong>Nenhum item neste filtro.</strong><span>{g.shopMode==='sell'?'Você ainda não possui itens desse tipo.':'Não há mercadorias disponíveis.'}</span></div>}</>}</div>
   {cartOpen&&<div className="shop-cart-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setCartOpen(false)}}><section className="shop-cart-panel" role="dialog" aria-modal="true"><header><div><small>LOJA DE HAVENDOWN</small><h2><ShoppingCart/> Carrinho de compras</h2></div><button onClick={()=>setCartOpen(false)}>Fechar</button></header>{lines.length?<><div className="shop-cart-lines">{lines.map(line=><article key={line.key}><img src={'./'+cardArt(line.item)} alt=""/><div><strong>{line.item.nome}</strong><span>{line.item.preco} ouro cada</span></div><div className="shop-cart-qty"><button title="Diminuir" onClick={()=>dec(line.key)}><Minus size={14}/></button><b>{line.qty}</b><button title="Aumentar" onClick={()=>inc(line.key)}><Plus size={14}/></button></div><b className="shop-cart-line-total">{line.qty*line.item.preco}</b><button title="Remover" onClick={()=>remove(line.key)}><Trash2/></button></article>)}</div><footer><div><span>Total</span><strong>{total} ouro</strong><small>Saldo após a compra: {g.gold-total} ouro</small>{g.equipmentBag.length+equipmentCount>equipmentBagCapacity(g)&&<em>Não há espaço suficiente na bolsa.</em>}{total>g.gold&&<em>Ouro insuficiente.</em>}</div><button onClick={clear}>Esvaziar</button><button className="primary" disabled={!valid} onClick={confirm}>Confirmar compra</button></footer></>:<div className="shop-cart-empty"><ShoppingCart/><strong>Seu carrinho está vazio.</strong><span>Adicione os itens que deseja revisar antes da compra.</span></div>}</section></div>}
  </div>
 }
