@@ -999,8 +999,8 @@ function ShopScreen(){
  const matchesConsumable=(item:any,id:string)=>id==='Todos'||(id==='cura'?(item.tipo==='cura'||item.tipo==='vida_max'):(item.tipo!=='cura'&&item.tipo!=='vida_max'))
  const rarityOrder:Record<Rarity,number>={comum:0,incomum:1,raro:2,epico:3,lendario:4,mitico:5,heroico:6}
  const sortCmp=sortBy==='preco'?(a:any,b:any)=>a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'):sortBy==='raridade'?(a:any,b:any)=>(rarityOrder[(a.raridade??'comum') as Rarity]-rarityOrder[(b.raridade??'comum') as Rarity])||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR'):sortBy==='nome'?(a:any,b:any)=>a.nome.localeCompare(b.nome,'pt-BR'):undefined
- const sortEquipmentList=(list:any[])=>{list.sort(sortCmp??((a,b)=>equipmentRequiredLevel(a)-equipmentRequiredLevel(b)||(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.nome.localeCompare(b.nome,'pt-BR')));return list}
- const sortConsumableList=(list:any[])=>{list.sort(sortCmp??((a,b)=>(rarityOrder[a.raridade??'comum']-rarityOrder[b.raridade??'comum'])||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR')));return list}
+ const sortEquipmentList=(list:any[])=>{list.sort(sortCmp??((a,b)=>equipmentRequiredLevel(a)-equipmentRequiredLevel(b)||(rarityOrder[(a.raridade??'comum') as Rarity]-rarityOrder[(b.raridade??'comum') as Rarity])||a.nome.localeCompare(b.nome,'pt-BR')));return list}
+ const sortConsumableList=(list:any[])=>{list.sort(sortCmp??((a,b)=>(rarityOrder[(a.raridade??'comum') as Rarity]-rarityOrder[(b.raridade??'comum') as Rarity])||a.preco-b.preco||a.nome.localeCompare(b.nome,'pt-BR')));return list}
  const equipment=tab==='Armas'?sortEquipmentList(weapons.filter(e=>matchesWeapon(e,filter))):tab==='Equipamentos'?sortEquipmentList(gear.filter(e=>matchesGear(e,filter))):[]
  const consumables=tab==='Consumíveis'?sortConsumableList(availableConsumables.filter(item=>matchesConsumable(item,filter))):[]
  const filterCount=(id:string)=>tab==='Armas'?weapons.filter(e=>matchesWeapon(e,id)).length:tab==='Equipamentos'?gear.filter(e=>matchesGear(e,id)).length:availableConsumables.filter(item=>matchesConsumable(item,id)).length
