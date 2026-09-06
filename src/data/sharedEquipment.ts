@@ -76,6 +76,10 @@ const sharedArtPath = (group: SharedGroup, slot: Slot, id: string) =>
       : slot === 'peitoral'
         ? 'assets/art/hd/equipment/manto-ordem-vida-hd.webp'
         : `assets/art/hd/shared-${slot === 'capacete' ? 'headgear' : 'boots'}/andarilhos_${slot === 'capacete' ? 'capacete' : 'botas'}_t1.webp`
+    : group.id === 'circulo_arcano' && id.endsWith('_t0')
+      // O conjunto começa no tier 0, mas os arquivos entregues começam no tier 1.
+      // Reaproveitamos a peça equivalente do próprio Círculo Arcano até as artes t0 existirem.
+      ? `assets/art/hd/${ART_FOLDER[slot]}/circulo_arcano_${slot}_t1.webp`
     : `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`
 // Vida/defesa por slot e índice de tier (0-7), no mesmo padrão de newClassEquipment.ts.
 const slotStats = (slot: Slot, i: number) => {
