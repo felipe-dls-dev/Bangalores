@@ -72,9 +72,7 @@ const ART_FOLDER: Record<string, string> = { capacete: 'shared-headgear', peitor
 const sharedArtPath = (group: SharedGroup, slot: Slot, id: string) =>
   group.id === 'ordem_vida'
     ? slot === 'calcas'
-      ? id === 'ordem_vida_calcas_t1'
-        ? 'assets/art/hd/shared-legwear/ordem_vida_calcas_t1.png'
-        : 'assets/art/hd/equipment-extra/calcas_nevoa-hd.webp'
+      ? 'assets/art/hd/shared-legwear/ordem_vida_calcas_t1.png'
       : slot === 'peitoral'
         ? 'assets/art/hd/equipment/manto-ordem-vida-hd.webp'
         : `assets/art/hd/shared-${slot === 'capacete' ? 'headgear' : 'boots'}/andarilhos_${slot === 'capacete' ? 'capacete' : 'botas'}_t1.webp`
