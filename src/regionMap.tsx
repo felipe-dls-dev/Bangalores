@@ -124,9 +124,13 @@ function buildCamposDourados(): RegionMapDef {
   vline(base, 3, 7, 13, 'bridge') // a ponte, atravessando o rio
   hline(base, 13, 18, 7, 'path') // ponte -> ruínas
   vline(base, 5, 7, 18, 'path')
-  rect(base, 5, 2, 6, 3, 'tree') // bosquetes decorativos (não bloqueiam a trilha)
-  rect(base, 16, 10, 17, 11, 'tree')
+  // Sem bosquetes decorativos isolados: a arte de árvore é uma parede densa pensada pra
+  // borda contínua do mapa, então um blocão 2x2 sozinho no meio do campo aberto ficava com
+  // cara de bloco quadrado artificial (sem afunilamento nem borda arredondada). Uma faixa de
+  // flores espalhadas cumpre o mesmo papel decorativo sem esse problema, já que é a mesma
+  // textura de grama por baixo -- funde com a vizinhança em vez de destoar.
   base[9][10] = 'flower'; base[9][11] = 'flower'; base[10][6] = 'flower'
+  base[5][3] = 'flower'; base[6][5] = 'flower'; base[11][16] = 'flower'; base[11][17] = 'flower'
   return {
     id: 'campos_dourados', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 3, y: 14 },
