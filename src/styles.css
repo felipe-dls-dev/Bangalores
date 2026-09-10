@@ -410,8 +410,19 @@ body:has(.combat-v033){overflow:hidden}
 .regionmap-tile{image-rendering:pixelated;background-size:cover}
 .tile-grass{background-color:#4c8a3f;background-image:url('/assets/maps/tiles/plains/grass.png')}
 .tile-flower{background-color:#4c8a3f;background-image:url('/assets/maps/tiles/plains/flower.png')}
-.tile-path{background-color:#c9a05a;background-image:url('/assets/maps/tiles/plains/path.png')}
-.tile-bridge{background-color:#a9773f;background-image:url('/assets/maps/tiles/plains/bridge.png')}
+.tile-path_v{background-color:#c9a05a;background-image:url('/assets/maps/tiles/plains/path_v.png')}
+.tile-path_h{background-color:#c9a05a;background-image:url('/assets/maps/tiles/plains/path_h.png')}
+.tile-path_corner_br{background-color:#c9a05a;background-image:url('/assets/maps/tiles/plains/path_corner_br.png')}
+.tile-path_corner_bl{background-color:#c9a05a;background-image:url('/assets/maps/tiles/plains/path_corner_bl.png')}
+.tile-path_corner_tr{background-color:#c9a05a;background-image:url('/assets/maps/tiles/plains/path_corner_tr.png')}
+.tile-path_corner_tl{background-color:#c9a05a;background-image:url('/assets/maps/tiles/plains/path_corner_tl.png')}
+.tile-bank_v{background-color:#4c8a3f;background-image:url('/assets/maps/tiles/plains/bank_v.png')}
+.tile-bank_v_r{background-color:#4c8a3f;background-image:url('/assets/maps/tiles/plains/bank_v.png');transform:scaleX(-1)}
+.tile-bank_h{background-color:#4c8a3f;background-image:url('/assets/maps/tiles/plains/bank_h.png')}
+.tile-bank_h_r{background-color:#4c8a3f;background-image:url('/assets/maps/tiles/plains/bank_h.png');transform:scaleY(-1)}
+.tile-bridge_cap_top{background-color:#3d7fa8;background-image:url('/assets/maps/tiles/plains/bridge_cap_top.png')}
+.tile-bridge_mid{background-color:#3d7fa8;background-image:url('/assets/maps/tiles/plains/bridge_mid.png')}
+.tile-bridge_cap_bottom{background-color:#3d7fa8;background-image:url('/assets/maps/tiles/plains/bridge_cap_bottom.png')}
 .tile-water{background-color:#3d7fa8;background-image:url('/assets/maps/tiles/plains/water.png')}
 .tile-tree{background-color:#2c5a2c;background-image:url('/assets/maps/tiles/plains/tree.png')}
 .regionmap-location{position:absolute;display:grid;place-items:center;padding:0;border:2px solid #1c130a;border-radius:6px;background:#e8b84f;cursor:pointer;box-shadow:0 2px 0 #6b4a1e}
@@ -422,7 +433,6 @@ body:has(.combat-v033){overflow:hidden}
 .regionmap-player{position:absolute;transition:left .17s linear,top .17s linear;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;z-index:5}
 .regionmap-player-sprite-wrap{display:block;width:85%}
 .regionmap-player-sprite{display:block;width:100%;height:auto;image-rendering:pixelated;filter:drop-shadow(0 2px 1px rgba(0,0,0,.5))}
-.regionmap-player.walking .regionmap-player-sprite{animation:regionmap-bob .34s ease-in-out infinite alternate}
 .regionmap-controls{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
 .regionmap-hint{margin:0;color:var(--muted,#a99b85);font-size:.68rem;text-align:center}
 .regionmap-dpad{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,40px);gap:3px}
@@ -433,7 +443,6 @@ body:has(.combat-v033){overflow:hidden}
 .regionmap-modal{position:relative;width:min(420px,100%);max-height:88vh;overflow-y:auto}
 .regionmap-modal-close{position:absolute;top:-14px;right:-14px;z-index:2;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--gold2);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 @keyframes regionmap-pulse{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.5);opacity:0}}
-@keyframes regionmap-bob{to{transform:translateY(-2px)}}
 @media(max-width:760px){.regionmap-dpad{grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px)}.region-page-mapview{height:auto}}
 
 /* Eventos de exploração */
@@ -1547,3 +1556,4 @@ button:active:not(:disabled){transform:translateY(0) scale(.95);transition-durat
 @media(max-width:640px){.forge-result-meta{grid-template-columns:1fr}}
 body::after{content:"VERSÃO 0.8.8 • 10/09/2026\A Protótipo: Planícies de Alvora agora é um mapa navegável com personagem, grade e colisão (estilo Pokémon), em vez da lista de sub-regiões. Demais regiões seguem como antes"}
 body::after{content:"VERSÃO 0.8.9 • 10/09/2026\A O mapa navegável de Planícies de Alvora ganhou arte pixel de verdade: grama, trilha, ponte, água e mata (em vez dos blocos de cor) e um personagem com sprite nas 4 direções"}
+body::after{content:"VERSÃO 0.8.10 • 10/09/2026\A Mapa navegável: trilha reta+curvas de verdade (peça certa conforme o cruzamento), margens do rio entre grama e água, mata sem falhas nas bordas, ponte alinhada com o rio e o personagem agora anima os passos ao caminhar (antes só deslizava)"}
