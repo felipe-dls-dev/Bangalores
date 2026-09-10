@@ -6,6 +6,12 @@
 import React from 'react'
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
 
+// GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
+// como '/assets/...' resolvem para a raiz do domínio e quebram (404) em produção -- só
+// funcionam em dev, onde o app já está na raiz. import.meta.env.BASE_URL carrega o prefixo
+// correto nos dois casos (replica o mesmo padrão usado por assetUrl() em main.tsx).
+function mapAsset(path: string) { return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}` }
+
 // Grid "de autoria" -- o que se desenha à mão em build*() usando fill/hline/vline/rect.
 // Tipos genéricos: não sabem (nem precisam saber) qual variante de arte existe pra cada caso.
 type BaseTile = 'grass' | 'flower' | 'tree' | 'water' | 'path' | 'bridge'
@@ -215,7 +221,7 @@ function buildCamposDourados(): RegionMapDef {
   hline(base, 14, 17, 5, 'bridge')
   hline(base, 14, 17, 6, 'bridge')
   return {
-    id: 'campos_dourados', background: '/assets/maps/campos-dourados-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'campos_dourados', background: mapAsset('assets/maps/campos-dourados-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     // Ponto de chegada na estrada principal. Evita iniciar colado à borda inferior,
     // onde a câmera precisava acompanhar o primeiro passo para revelar o personagem.
     spawn: { x: 10, y: 9 },
@@ -245,7 +251,7 @@ function buildFlorestaLunargenta(): RegionMapDef {
   hline(base, 15, 20, 10, 'bridge')
   vline(base, 8, 13, 18, 'bridge')
   return {
-    id: 'floresta_lunargenta', background: '/assets/maps/floresta-lunargenta-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'floresta_lunargenta', background: mapAsset('assets/maps/floresta-lunargenta-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     locations: [
       { subId: 'lunar_lago', x: 7, y: 4, icon: '🌙' },
@@ -266,7 +272,7 @@ function buildMontanhasCinzentas(): RegionMapDef {
   rect(base, 14, 3, 17, 11, 'water')
   hline(base, 13, 18, 7, 'bridge')
   return {
-    id: 'montanhas_cinzentas', background: '/assets/maps/montanhas-cinzentas-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'montanhas_cinzentas', background: mapAsset('assets/maps/montanhas-cinzentas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     locations: [
       { subId: 'montanhas_forte', x: 5, y: 3, icon: '🏰' },
@@ -290,7 +296,7 @@ function buildPicoEscarlate(): RegionMapDef {
   rect(base, 17, 7, 20, 10, 'water')
   hline(base, 16, 20, 10, 'bridge')
   return {
-    id: 'pico_escarlate', background: '/assets/maps/pico-escarlate-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'pico_escarlate', background: mapAsset('assets/maps/pico-escarlate-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     locations: [
       { subId: 'pico_cinzas', x: 4, y: 3, icon: '🔥' },
@@ -311,7 +317,7 @@ function buildTerrasMortas(): RegionMapDef {
   hline(base, 13, 20, 10, 'bridge')
   vline(base, 7, 14, 17, 'bridge')
   return {
-    id: 'terras_mortas', background: '/assets/maps/terras-mortas-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'terras_mortas', background: mapAsset('assets/maps/terras-mortas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     locations: [
       { subId: 'mortas_vila', x: 5, y: 3, icon: '🏚️' },
@@ -336,12 +342,12 @@ export function getRegionMap(regionId: string): RegionMapDef | undefined { retur
 // Só existe arte para baixo/cima/direita -- "esquerda" é a mesma arte de "direita" espelhada
 // em CSS (scaleX(-1)), técnica padrão pra não precisar gerar/manter uma arte espelhada à parte.
 const walkFrames = (direction: 'down' | 'up' | 'right') => [
-  `/assets/maps/sprites/adventurer/${direction}_0.png`,
-  `/assets/maps/sprites/adventurer/${direction}_mid_01.png`,
-  `/assets/maps/sprites/adventurer/${direction}_1.png`,
-  `/assets/maps/sprites/adventurer/${direction}_mid_12.png`,
-  `/assets/maps/sprites/adventurer/${direction}_2.png`,
-  `/assets/maps/sprites/adventurer/${direction}_mid_12.png`,
+  mapAsset(`assets/maps/sprites/adventurer/${direction}_0.png`),
+  mapAsset(`assets/maps/sprites/adventurer/${direction}_mid_01.png`),
+  mapAsset(`assets/maps/sprites/adventurer/${direction}_1.png`),
+  mapAsset(`assets/maps/sprites/adventurer/${direction}_mid_12.png`),
+  mapAsset(`assets/maps/sprites/adventurer/${direction}_2.png`),
+  mapAsset(`assets/maps/sprites/adventurer/${direction}_mid_12.png`),
 ]
 const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
   down: { frames: walkFrames('down') },
