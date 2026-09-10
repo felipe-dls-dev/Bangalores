@@ -88,7 +88,18 @@ export const REGION_MAPS: Record<string, RegionMapDef> = {
 }
 export function getRegionMap(regionId: string): RegionMapDef | undefined { return REGION_MAPS[regionId] }
 
-const DIR_ICON: Record<Facing, React.ComponentType<{ size?: number | string }>> = { up: ArrowUp, down: ArrowDown, left: ArrowLeft, right: ArrowRight }
+// Sprite gerado (ChatGPT/gpt-image-1) a partir do prompt em CLAUDE.md-adjacent art
+// brief, cortado e recortado (flood-fill a partir da borda, não threshold global -- os
+// tons acinzentados do capuz/roupa ficavam furados com um corte por distância de cor) em
+// public/assets/maps/sprites/adventurer/*.png. Só existe arte para baixo/cima/direita;
+// "esquerda" é a mesma arte de "direita" espelhada em CSS (scaleX(-1)) -- técnica padrão
+// pra não precisar gerar/manter um sprite espelhado à parte.
+const PLAYER_SPRITE: Record<Facing, { src: string; mirror?: boolean }> = {
+  down: { src: '/assets/maps/sprites/adventurer/down.png' },
+  up: { src: '/assets/maps/sprites/adventurer/up.png' },
+  right: { src: '/assets/maps/sprites/adventurer/right.png' },
+  left: { src: '/assets/maps/sprites/adventurer/right.png', mirror: true },
+}
 
 export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus }: {
   map: RegionMapDef
@@ -140,7 +151,7 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   const viewportH = Math.min(worldH, VIEWPORT_TILES_Y * tilePx)
   const camX = clamp(pos.x * tilePx + tilePx / 2 - viewportW / 2, 0, Math.max(0, worldW - viewportW))
   const camY = clamp(pos.y * tilePx + tilePx / 2 - viewportH / 2, 0, Math.max(0, worldH - viewportH))
-  const DirIcon = DIR_ICON[facing]
+  const sprite = PLAYER_SPRITE[facing]
 
   return <div className="regionmap-frame">
     <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }}>
@@ -157,9 +168,11 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
             <span className="regionmap-location-icon">{loc.icon ?? '◆'}</span>
           </button>
         })}
-        <div className={`regionmap-player facing-${facing}${walking ? ' walking' : ''}`}
+        <div className={`regionmap-player${walking ? ' walking' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
-          <span className="regionmap-player-token"><DirIcon size={14} /></span>
+          <span className="regionmap-player-sprite-wrap" style={sprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
+            <img className="regionmap-player-sprite" src={sprite.src} alt="" />
+          </span>
         </div>
       </div>
     </div>
