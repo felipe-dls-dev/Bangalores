@@ -29,6 +29,7 @@ const WALKABLE = new Set<MapTile>([
 export interface RegionMapLocation { subId: string; x: number; y: number; icon?: string }
 export interface RegionMapDef {
   id: string
+  background?: string
   tileSize: number // tamanho nativo do tile em px (referência da arte-fonte antes do recorte)
   scale: number // fator de ampliação usado na renderização atual
   width: number // largura em tiles
@@ -39,11 +40,48 @@ export interface RegionMapDef {
 }
 
 type Facing = 'up' | 'down' | 'left' | 'right'
-const STEP_MS = 170
-const VIEWPORT_TILES_X = 13
-const VIEWPORT_TILES_Y = 9
+const STEP_MS = 240
+const VIEWPORT_TILES_X = 18
+const VIEWPORT_TILES_Y = 12
 
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)) }
+
+function tileKey(x: number, y: number) { return `${x}:${y}` }
+function nearestWalkable(map: RegionMapDef, target: { x: number; y: number }) {
+  if (WALKABLE.has(map.grid[target.y]?.[target.x])) return target
+  for (let distance = 1; distance < Math.max(map.width, map.height); distance++) {
+    for (let y = target.y - distance; y <= target.y + distance; y++) for (let x = target.x - distance; x <= target.x + distance; x++) {
+      if (Math.abs(x - target.x) + Math.abs(y - target.y) !== distance) continue
+      if (x >= 0 && y >= 0 && x < map.width && y < map.height && WALKABLE.has(map.grid[y][x])) return { x, y }
+    }
+  }
+  return undefined
+}
+function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target: { x: number; y: number }): Array<[number, number]> {
+  const goal = nearestWalkable(map, target)
+  if (!goal || (goal.x === start.x && goal.y === start.y)) return []
+  const queue = [start], previous = new Map<string, { from: { x: number; y: number }; step: [number, number] }>()
+  const steps: Array<[number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]]
+  for (let index = 0; index < queue.length; index++) {
+    const current = queue[index]
+    if (current.x === goal.x && current.y === goal.y) break
+    for (const step of steps) {
+      const next = { x: current.x + step[0], y: current.y + step[1] }, key = tileKey(next.x, next.y)
+      if (next.x < 0 || next.y < 0 || next.x >= map.width || next.y >= map.height || previous.has(key) || tileKey(next.x, next.y) === tileKey(start.x, start.y) || !WALKABLE.has(map.grid[next.y][next.x])) continue
+      previous.set(key, { from: current, step })
+      queue.push(next)
+    }
+  }
+  const route: Array<[number, number]> = []
+  let current = goal
+  while (current.x !== start.x || current.y !== start.y) {
+    const entry = previous.get(tileKey(current.x, current.y))
+    if (!entry) return []
+    route.unshift(entry.step)
+    current = entry.from
+  }
+  return route
+}
 
 function fill(w: number, h: number, tile: BaseTile): BaseTile[][] {
   return Array.from({ length: h }, () => Array.from({ length: w }, () => tile))
@@ -105,6 +143,25 @@ function resolveTerrain(base: BaseTile[][]): MapTile[][] {
   return out
 }
 
+// Verificação reutilizável para a autoria de novas regiões. Ela mantém spawn, pins e
+// colisão coerentes antes de o mapa chegar à tela de exploração.
+export function validateRegionMap(map: RegionMapDef): string[] {
+  const errors: string[] = []
+  const isWalkable = (point: { x: number; y: number }) => WALKABLE.has(map.grid[point.y]?.[point.x])
+  if (!isWalkable(map.spawn)) errors.push(`${map.id}: spawn fora de uma área transitável`)
+  const usedLocations = new Set<string>()
+  for (const location of map.locations) {
+    const key = tileKey(location.x, location.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: pins sobrepostos em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(location)) errors.push(`${map.id}: pin ${location.subId} fora de uma área transitável`)
+    else if (location.x !== map.spawn.x || location.y !== map.spawn.y) {
+      if (!routeBetween(map, map.spawn, location).length) errors.push(`${map.id}: pin ${location.subId} não pode ser alcançado a partir do spawn`)
+    }
+  }
+  return errors
+}
+
 // Planícies de Alvora (campos_dourados) — região de entrada, usada como protótipo.
 // Layout: chegada ao sul, trilha sobe até a estrada, segue por fazendas e moinho a noroeste,
 // atravessa um rio por uma ponte comprida (a própria sub-região "Ponte de Eldrimar") e termina
@@ -129,23 +186,147 @@ function buildCamposDourados(): RegionMapDef {
   // cara de bloco quadrado artificial (sem afunilamento nem borda arredondada). Uma faixa de
   // flores espalhadas cumpre o mesmo papel decorativo sem esse problema, já que é a mesma
   // textura de grama por baixo -- funde com a vizinhança em vez de destoar.
+  // A trilha de colisão acompanha os marcos da nova arte: estrada ao sul,
+  // ruínas no noroeste, ponte no rio central e fazenda/moinho no nordeste.
+  vline(base, 1, 6, 15, 'water')
+  vline(base, 8, 14, 15, 'water')
+  vline(base, 8, 14, 10, 'path')
+  hline(base, 5, 15, 8, 'path')
+  hline(base, 14, 16, 7, 'bridge')
+  hline(base, 16, 18, 8, 'path')
+  vline(base, 4, 8, 18, 'path')
+  vline(base, 1, 4, 20, 'path')
+  hline(base, 18, 20, 4, 'path')
+  vline(base, 2, 8, 5, 'path')
   base[9][10] = 'flower'; base[9][11] = 'flower'; base[10][6] = 'flower'
   base[5][3] = 'flower'; base[6][5] = 'flower'; base[11][16] = 'flower'; base[11][17] = 'flower'
+  // A arte agora é a camada visual; esta malha é exclusivamente a colisão. Reiniciamos
+  // os caminhos do protótipo para que o rio bloqueie a travessia em toda a extensão,
+  // deixando aberta somente a ponte horizontal desenhada no cenário.
+  for (let y = 1; y < height - 1; y++) for (let x = 1; x < width - 1; x++) base[y][x] = 'grass'
+  const riverRows: Array<[number, number, number]> = [
+    [0, 11, 14], [1, 11, 14], [2, 12, 15], [3, 13, 15], [4, 13, 16], [5, 14, 16],
+    [6, 15, 17], [7, 16, 17], [8, 16, 18], [9, 16, 18], [10, 17, 20], [11, 17, 21],
+    [12, 17, 21], [13, 17, 21], [14, 17, 21], [15, 17, 21],
+  ]
+  riverRows.forEach(([y, from, to]) => hline(base, from, to, y, 'water'))
+  // Uma linha extra no topo transforma a entrada da escada em uma plataforma de
+  // aproximação, em vez de exigir que o personagem encontre a borda exata da ponte.
+  hline(base, 14, 17, 5, 'bridge')
+  hline(base, 14, 17, 6, 'bridge')
   return {
-    id: 'campos_dourados', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
-    spawn: { x: 3, y: 14 },
+    id: 'campos_dourados', background: '/assets/maps/campos-dourados-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    // Ponto de chegada na estrada principal. Evita iniciar colado à borda inferior,
+    // onde a câmera precisava acompanhar o primeiro passo para revelar o personagem.
+    spawn: { x: 10, y: 9 },
     locations: [
-      { subId: 'campos_estrada', x: 3, y: 12, icon: '🌾' },
-      { subId: 'campos_fazendas', x: 4, y: 6, icon: '🐐' },
-      { subId: 'campos_moinho', x: 8, y: 3, icon: '🌬️' },
-      { subId: 'campos_ponte', x: 13, y: 7, icon: '🌉' },
-      { subId: 'campos_ruinas', x: 18, y: 5, icon: '🏛️' },
+      { subId: 'campos_estrada', x: 10, y: 13, icon: '🌾' },
+      { subId: 'campos_fazendas', x: 18, y: 4, icon: '🐐' },
+      { subId: 'campos_moinho', x: 20, y: 1, icon: '🌬️' },
+      { subId: 'campos_ponte', x: 16, y: 6, icon: '🌉' },
+      { subId: 'campos_ruinas', x: 5, y: 2, icon: '🏛️' },
+    ],
+  }
+}
+
+// Floresta Lunargenta: a rota central nasce ao sul e bifurca para o lago, a árvore anciã
+// e os passadiços do pântano. A arte é visual; os trechos de água abaixo são a colisão.
+function buildFlorestaLunargenta(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  // Lago do Espelho Lunar e seu córrego de saída; a margem a leste continua acessível.
+  rect(base, 1, 1, 6, 5, 'water')
+  vline(base, 5, 9, 7, 'water')
+  hline(base, 6, 8, 6, 'bridge')
+  // Pântano: as tábuas são o único caminho transitável sobre a água.
+  rect(base, 15, 8, 20, 14, 'water')
+  hline(base, 15, 20, 10, 'bridge')
+  vline(base, 8, 13, 18, 'bridge')
+  return {
+    id: 'floresta_lunargenta', background: '/assets/maps/floresta-lunargenta-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    locations: [
+      { subId: 'lunar_lago', x: 7, y: 4, icon: '🌙' },
+      { subId: 'lunar_raizes', x: 17, y: 3, icon: '🌳' },
+      { subId: 'lunar_pantano', x: 18, y: 10, icon: '🐸' },
+    ],
+  }
+}
+
+// Montanhas Cinzentas: o abismo divide a subida em dois platôs. A ponte no centro-leste
+// é deliberadamente a única passagem para o cume, reproduzindo a leitura da arte.
+function buildMontanhasCinzentas(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  // O vão acompanha o abismo visual e preserva uma entrada ampla na ponte suspensa.
+  rect(base, 14, 3, 17, 11, 'water')
+  hline(base, 13, 18, 7, 'bridge')
+  return {
+    id: 'montanhas_cinzentas', background: '/assets/maps/montanhas-cinzentas-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    locations: [
+      { subId: 'montanhas_forte', x: 5, y: 3, icon: '🏰' },
+      { subId: 'montanhas_abismo', x: 15, y: 7, icon: '🕳️' },
+      { subId: 'montanhas_cume', x: 19, y: 2, icon: '⚡' },
+    ],
+  }
+}
+
+// Pico Escarlate: rios de lava cortam a rota de ascensão. As plataformas de ferro dão
+// passagens amplas, sem obrigar o jogador a encontrar o pixel exato de cada ponte.
+function buildPicoEscarlate(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  // Fenda de lava antes da forja; a ponte central sustenta o acesso ao platô norte.
+  rect(base, 10, 1, 12, 5, 'water')
+  hline(base, 9, 13, 5, 'bridge')
+  // A cratera é perigosa, mas a borda oeste e a plataforma inferior permitem investigá-la.
+  rect(base, 17, 7, 20, 10, 'water')
+  hline(base, 16, 20, 10, 'bridge')
+  return {
+    id: 'pico_escarlate', background: '/assets/maps/pico-escarlate-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    locations: [
+      { subId: 'pico_cinzas', x: 4, y: 3, icon: '🔥' },
+      { subId: 'pico_forja', x: 16, y: 2, icon: '⚒️' },
+      { subId: 'pico_cratera', x: 16, y: 8, icon: '☀️' },
+    ],
+  }
+}
+
+// Terras Mortas: a estrada seca conecta vila e torre. O brejo espectral só aceita passagem
+// pelos tabuleiros e plataformas de pedra, mantendo o risco visual coerente com a colisão.
+function buildTerrasMortas(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 13, 7, 20, 14, 'water')
+  hline(base, 13, 20, 10, 'bridge')
+  vline(base, 7, 14, 17, 'bridge')
+  return {
+    id: 'terras_mortas', background: '/assets/maps/terras-mortas-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    locations: [
+      { subId: 'mortas_vila', x: 5, y: 3, icon: '🏚️' },
+      { subId: 'mortas_brejo', x: 17, y: 10, icon: '🕯️' },
+      { subId: 'mortas_torre', x: 17, y: 2, icon: '🗼' },
     ],
   }
 }
 
 export const REGION_MAPS: Record<string, RegionMapDef> = {
   campos_dourados: buildCamposDourados(),
+  floresta_lunargenta: buildFlorestaLunargenta(),
+  montanhas_cinzentas: buildMontanhasCinzentas(),
+  pico_escarlate: buildPicoEscarlate(),
+  terras_mortas: buildTerrasMortas(),
 }
 export function getRegionMap(regionId: string): RegionMapDef | undefined { return REGION_MAPS[regionId] }
 
@@ -154,13 +335,22 @@ export function getRegionMap(regionId: string): RegionMapDef | undefined { retur
 // <direção>_<quadro>.png, recortados e com fundo removido por flood-fill a partir da borda.
 // Só existe arte para baixo/cima/direita -- "esquerda" é a mesma arte de "direita" espelhada
 // em CSS (scaleX(-1)), técnica padrão pra não precisar gerar/manter uma arte espelhada à parte.
+const walkFrames = (direction: 'down' | 'up' | 'right') => [
+  `/assets/maps/sprites/adventurer/${direction}_0.png`,
+  `/assets/maps/sprites/adventurer/${direction}_mid_01.png`,
+  `/assets/maps/sprites/adventurer/${direction}_1.png`,
+  `/assets/maps/sprites/adventurer/${direction}_mid_12.png`,
+  `/assets/maps/sprites/adventurer/${direction}_2.png`,
+  `/assets/maps/sprites/adventurer/${direction}_mid_12.png`,
+]
 const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
-  down: { frames: [0, 1, 2].map(i => `/assets/maps/sprites/adventurer/down_${i}.png`) },
-  up: { frames: [0, 1, 2].map(i => `/assets/maps/sprites/adventurer/up_${i}.png`) },
-  right: { frames: [0, 1, 2].map(i => `/assets/maps/sprites/adventurer/right_${i}.png`) },
-  left: { frames: [0, 1, 2].map(i => `/assets/maps/sprites/adventurer/right_${i}.png`), mirror: true },
+  down: { frames: walkFrames('down') },
+  up: { frames: walkFrames('up') },
+  right: { frames: walkFrames('right') },
+  left: { frames: walkFrames('right'), mirror: true },
 }
-const IDLE_FRAME = 1 // quadro do meio (passo neutro) -- pose de "parado" entre um passo e outro
+const WALK_FRAME_COUNT = 6
+const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
 export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus }: {
   map: RegionMapDef
@@ -172,27 +362,58 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
   const [facing, setFacing] = React.useState<Facing>('down')
   const [frame, setFrame] = React.useState(IDLE_FRAME)
+  const [walking, setWalking] = React.useState(false)
   const movingRef = React.useRef(false)
+  const movementTimers = React.useRef<number[]>([])
+  const queuedMoves = React.useRef<Array<[number, number]>>([])
+  const runQueuedMove = React.useRef<() => void>(() => {})
+  const posRef = React.useRef(pos)
+
+  React.useEffect(() => { posRef.current = pos }, [pos])
 
   const step = React.useCallback((dx: number, dy: number) => {
     if (movingRef.current || paused) return
     const dir: Facing = dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up'
     setFacing(dir)
-    const tx = pos.x + dx, ty = pos.y + dy
+    const currentPos = posRef.current
+    const tx = currentPos.x + dx, ty = currentPos.y + dy
     if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return
     if (!WALKABLE.has(map.grid[ty][tx])) return
     movingRef.current = true
     // Alterna 0->1->2->0... a cada passo aceito -- é o ciclo de caminhada em si (perna
     // esquerda, neutro, perna direita), não uma animação por tempo separada do movimento.
-    setFrame(f => (f + 1) % 3)
+    setWalking(true)
+    setFrame(0)
+    posRef.current = { x: tx, y: ty }
     setPos({ x: tx, y: ty })
+    movementTimers.current.forEach(window.clearTimeout)
+    movementTimers.current = Array.from({ length: WALK_FRAME_COUNT - 1 }, (_, index) =>
+      window.setTimeout(() => setFrame(index + 1), Math.round(STEP_MS * (index + 1) / WALK_FRAME_COUNT)),
+    )
     window.setTimeout(() => {
       movingRef.current = false
+      setWalking(false)
       setFrame(IDLE_FRAME)
       const loc = map.locations.find(l => l.x === tx && l.y === ty)
       if (loc) onEnterLocation(loc.subId)
+      if (queuedMoves.current.length) runQueuedMove.current()
     }, STEP_MS)
-  }, [pos, paused, map, onEnterLocation])
+  }, [paused, map, onEnterLocation])
+
+  const moveToTile = React.useCallback((target: { x: number; y: number }) => {
+    const route = routeBetween(map, posRef.current, target)
+    if (!route.length) return
+    queuedMoves.current = route
+    runQueuedMove.current = () => {
+      const next = queuedMoves.current.shift()
+      if (next) step(next[0], next[1])
+    }
+    runQueuedMove.current()
+  }, [map, step])
+
+  React.useEffect(() => () => {
+    movementTimers.current.forEach(window.clearTimeout)
+  }, [])
 
   React.useEffect(() => {
     if (paused) return
@@ -220,21 +441,25 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   const frameSrc = sprite.frames[frame]
 
   return <div className="regionmap-frame">
-    <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }}>
+    <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onClick={event => {
+      const bounds = event.currentTarget.getBoundingClientRect()
+      moveToTile({ x: Math.floor((event.clientX - bounds.left + camX) / tilePx), y: Math.floor((event.clientY - bounds.top + camY) / tilePx) })
+    }}>
       <div className="regionmap-world" style={{ width: worldW, height: worldH, transform: `translate3d(${-camX}px,${-camY}px,0)` }}>
-        <div className="regionmap-tiles" style={{ gridTemplateColumns: `repeat(${map.width},${tilePx}px)`, gridAutoRows: `${tilePx}px` }}>
+        {map.background && <div className="regionmap-art" style={{ backgroundImage: `url(${map.background})` }} />}
+        <div className={`regionmap-tiles${map.background ? ' art-backed' : ''}`} style={{ gridTemplateColumns: `repeat(${map.width},${tilePx}px)`, gridAutoRows: `${tilePx}px` }}>
           {map.grid.flatMap((row, y) => row.map((t, x) => <div key={`${x}_${y}`} className={`regionmap-tile tile-${t}`} />))}
         </div>
         {map.locations.map(loc => {
           const status = locationStatus?.(loc.subId) ?? 'default'
           return <button key={loc.subId} type="button" className={`regionmap-location status-${status}`}
             style={{ left: loc.x * tilePx, top: loc.y * tilePx, width: tilePx, height: tilePx }}
-            onClick={() => onEnterLocation(loc.subId)} aria-label={`Explorar ${loc.subId}`}>
+            onClick={event => { event.stopPropagation(); moveToTile({ x: loc.x, y: loc.y }) }} aria-label={`Ir até ${loc.subId}`}>
             <span className="regionmap-location-pulse" />
             <span className="regionmap-location-icon">{loc.icon ?? '◆'}</span>
           </button>
         })}
-        <div className="regionmap-player"
+        <div className={`regionmap-player${walking ? ' is-walking' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
           <span className="regionmap-player-sprite-wrap" style={sprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
             <img className="regionmap-player-sprite" src={frameSrc} alt="" />
