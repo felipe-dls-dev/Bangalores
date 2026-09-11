@@ -34,6 +34,7 @@ const WALKABLE = new Set<MapTile>([
 ])
 
 export interface RegionMapLocation { subId: string; x: number; y: number; icon?: string }
+export interface RegionMapExit { id: 'prev' | 'next' | string; x: number; y: number; icon?: string; targetRegionId?: string }
 export interface RegionMapDef {
   id: string
   background?: string
@@ -44,6 +45,7 @@ export interface RegionMapDef {
   grid: MapTile[][] // [y][x], já resolvido por resolveTerrain()
   spawn: { x: number; y: number }
   locations: RegionMapLocation[]
+  exits?: RegionMapExit[]
   blocked?: Array<{ x: number; y: number }>
 }
 
@@ -248,6 +250,10 @@ function buildCamposDourados(): RegionMapDef {
     // Ponto de chegada na estrada principal. Evita iniciar colado à borda inferior,
     // onde a câmera precisava acompanhar o primeiro passo para revelar o personagem.
     spawn: { x: 10, y: 9 },
+    exits: [
+      { id: 'east_serra', x: 20, y: 7, icon: '➜', targetRegionId: 'montanhas_cinzentas' },
+      { id: 'south_kholgard', x: 10, y: 14, icon: '↓', targetRegionId: 'khar_dur' },
+    ],
     locations: [
       { subId: 'campos_estrada', x: 10, y: 13, icon: '🌾' },
       { subId: 'campos_fazendas', x: 18, y: 4, icon: '🐐' },
@@ -276,6 +282,11 @@ function buildFlorestaLunargenta(): RegionMapDef {
   return {
     id: 'floresta_lunargenta', background: mapAsset('assets/maps/floresta-lunargenta-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([15, 1, 16, 2], [19, 2, 20, 5], [2, 10, 5, 13]),
     spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'west_planicies', x: 1, y: 7, icon: '←', targetRegionId: 'campos_dourados' },
+      { id: 'south_morvath', x: 11, y: 14, icon: '↓', targetRegionId: 'terras_mortas' },
+      { id: 'north_serra', x: 11, y: 1, icon: '↑', targetRegionId: 'montanhas_cinzentas' },
+    ],
     locations: [
       { subId: 'lunar_bosque', x: 10, y: 11, icon: '🌲' },
       { subId: 'lunar_goblins', x: 4, y: 8, icon: '👺' },
@@ -301,6 +312,10 @@ function buildMontanhasCinzentas(): RegionMapDef {
   return {
     id: 'montanhas_cinzentas', background: mapAsset('assets/maps/montanhas-cinzentas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 1, 3, 2], [7, 1, 9, 3], [11, 1, 13, 3], [3, 8, 6, 10], [8, 8, 10, 10]),
     spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'west_planicies', x: 1, y: 7, icon: '←', targetRegionId: 'campos_dourados' },
+      { id: 'next', x: 20, y: 2, icon: '➜' },
+    ],
     locations: [
       { subId: 'montanhas_passagem', x: 11, y: 11, icon: '⛰️' },
       { subId: 'montanhas_mina', x: 9, y: 6, icon: '⛏️' },
@@ -328,6 +343,11 @@ function buildPicoEscarlate(): RegionMapDef {
   return {
     id: 'pico_escarlate', background: mapAsset('assets/maps/pico-escarlate-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 7, 4, 9], [6, 6, 8, 8], [12, 8, 14, 10], [5, 11, 8, 13]),
     spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'west_serra', x: 1, y: 5, icon: '←', targetRegionId: 'montanhas_cinzentas' },
+      { id: 'east_sol_negro', x: 20, y: 5, icon: '➜', targetRegionId: 'coracao_eclipse' },
+      { id: 'south_abdendriel', x: 11, y: 14, icon: '↓', targetRegionId: 'floresta_lunargenta' },
+    ],
     locations: [
       { subId: 'pico_encosta', x: 11, y: 10, icon: '🌋' },
       { subId: 'pico_ninho_dragao', x: 18, y: 4, icon: '🐉' },
@@ -351,6 +371,11 @@ function buildTerrasMortas(): RegionMapDef {
   return {
     id: 'terras_mortas', background: mapAsset('assets/maps/terras-mortas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 1, 3, 3], [7, 1, 9, 3], [11, 1, 13, 4], [3, 9, 5, 11]),
     spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'west_kholgard', x: 1, y: 10, icon: '←', targetRegionId: 'khar_dur' },
+      { id: 'east_sol_negro', x: 20, y: 10, icon: '➜', targetRegionId: 'coracao_eclipse' },
+      { id: 'north_abdendriel', x: 10, y: 1, icon: '↑', targetRegionId: 'floresta_lunargenta' },
+    ],
     locations: [
       { subId: 'mortas_campos', x: 10, y: 12, icon: '🪦' },
       { subId: 'mortas_catacumbas', x: 8, y: 8, icon: '⚰️' },
@@ -365,7 +390,11 @@ function buildKharDur(): RegionMapDef {
   const width = 22, height = 16, base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree'); vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 2, 7, 8, 14, 'water'); hline(base, 2, 8, 10, 'bridge')
-  return { id: 'khar_dur', background: '/assets/maps/khar-dur-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([2, 1, 4, 3], [7, 1, 9, 3], [13, 1, 15, 3], [3, 6, 7, 8], [14, 6, 16, 8]), spawn: { x: 11, y: 13 }, locations: [
+  return { id: 'khar_dur', background: mapAsset('assets/maps/khar-dur-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([2, 1, 4, 3], [7, 1, 9, 3], [13, 1, 15, 3], [3, 6, 7, 8], [14, 6, 16, 8]), spawn: { x: 11, y: 13 }, exits: [
+    { id: 'west_planicies', x: 1, y: 6, icon: '←', targetRegionId: 'campos_dourados' },
+    { id: 'north_abdendriel', x: 10, y: 1, icon: '↑', targetRegionId: 'floresta_lunargenta' },
+    { id: 'east_morvath', x: 20, y: 13, icon: '➜', targetRegionId: 'terras_mortas' },
+  ], locations: [
     { subId: 'khar_galerias', x: 10, y: 9, icon: '🛤️' }, { subId: 'khar_labirinto', x: 9, y: 11, icon: '🌀' }, { subId: 'khar_templo_minotauro', x: 12, y: 10, icon: '🐂' },
     { subId: 'khar_forjas', x: 5, y: 3, icon: '🔥' }, { subId: 'khar_cofre', x: 17, y: 3, icon: '🔐' }, { subId: 'khar_profundezas', x: 17, y: 10, icon: '⛏️' },
   ] }
@@ -385,6 +414,9 @@ function buildCoracaoEclipse(): RegionMapDef {
     id: 'coracao_eclipse', background: mapAsset('assets/maps/coracao-eclipse-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     blocked: blockedRects([1, 1, 2, 3], [6, 1, 8, 3], [13, 1, 15, 3], [2, 11, 5, 13], [9, 7, 11, 9]),
     spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'prev', x: 11, y: 14, icon: '←' },
+    ],
     locations: [
       { subId: 'eclipse_portoes', x: 11, y: 12, icon: '🚪' },
       { subId: 'eclipse_torre', x: 4, y: 3, icon: '🗼' },
@@ -429,12 +461,14 @@ const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
 const WALK_FRAME_COUNT = 6
 const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
-export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange }: {
+export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
   paused?: boolean
   onEnterLocation: (subId: string) => void
   locationStatus?: (subId: string) => 'done' | 'ready' | 'default'
+  exits?: Array<{ id: string; x: number; y: number; label: string; icon?: string }>
+  onEnterExit?: (id: string) => void
   npcs?: NpcDefinition[]
   onInteractNpc?: (npc: NpcDefinition) => void
   npcStatus?: (npc: NpcDefinition) => 'ready' | 'available' | 'default'
@@ -486,11 +520,13 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
       setWalking(false)
       setFrame(IDLE_FRAME)
       const loc = map.locations.find(l => l.x === tx && l.y === ty)
+      const exit = exits.find(l => l.x === tx && l.y === ty)
       if (loc) onEnterLocation(loc.subId)
+      else if (exit) onEnterExit?.(exit.id)
       else if (Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
     }, STEP_MS)
-  }, [paused, map, onEnterLocation, npcBlocked, onAmbush])
+  }, [paused, map, onEnterLocation, exits, onEnterExit, npcBlocked, onAmbush])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
     const route = routeBetween(map, posRef.current, target, npcBlocked)
@@ -502,6 +538,20 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
     }
     runQueuedMove.current()
   }, [map, step, npcBlocked])
+
+  const moveToExit = React.useCallback((exit: { id: string; x: number; y: number }) => {
+    const route = routeBetween(map, posRef.current, exit, npcBlocked)
+    if (!route.length) {
+      if (exit.x === posRef.current.x && exit.y === posRef.current.y) onEnterExit?.(exit.id)
+      return
+    }
+    queuedMoves.current = route
+    runQueuedMove.current = () => {
+      const next = queuedMoves.current.shift()
+      if (next) step(next[0], next[1])
+    }
+    runQueuedMove.current()
+  }, [map, npcBlocked, onEnterExit, step])
 
   const moveToNpc = React.useCallback((npc: NpcDefinition) => {
     const targets = [[0, 1], [1, 0], [0, -1], [-1, 0]]
@@ -573,7 +623,7 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
       // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
       // de um NPC/local nunca disparava o onClick deles, só o fallback de clique-no-tile daqui.
       // Não capturar quando o toque começa num desses botões deixa o clique nativo bubblear normal.
-      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location')) return
+      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit')) return
       event.currentTarget.setPointerCapture(event.pointerId)
       dragRef.current = { x: event.clientX, y: event.clientY, camX, camY, dragged: false }
     }} onPointerMove={event => {
@@ -607,6 +657,16 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
             <span className="regionmap-location-icon">{loc.icon ?? '◆'}</span>
           </button>
         })}
+        {exits.map(exit => (
+          <button key={exit.id} type="button" className="regionmap-exit"
+            style={{ left: exit.x * tilePx, top: exit.y * tilePx, width: tilePx, height: tilePx }}
+            onClick={event => { event.stopPropagation(); if (didDragRef.current) { didDragRef.current = false; return }; moveToExit(exit) }}
+            aria-label={`Viajar para ${exit.label}`} title={exit.label}>
+            <span className="regionmap-exit-ring" />
+            <span className="regionmap-exit-icon">{exit.icon ?? '➜'}</span>
+            <span className="regionmap-exit-label">{exit.label}</span>
+          </button>
+        ))}
         {npcs.map(npc => {
           const status = npcStatus?.(npc) ?? 'default'
           return <button key={npc.id} type="button" className={`regionmap-npc npc-${npc.facing ?? 'down'} status-${status}`}
