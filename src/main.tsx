@@ -938,6 +938,7 @@ function BrennaMissionPanel(){
    const progress=guildMissionProgress(g,m),ready=progress>=m.quantidade,equipmentReward=m.recompensa.tipo==='equipment'
    return <div key={m.id} className={`npc-mission-row${ready?' ready':''}`}>
     <div className="npc-mission-info"><strong>{m.nome}</strong><span>{progress}/{m.quantidade}</span></div>
+    <p className="npc-mission-desc">{m.descricao}</p>
     <div className="xp-track"><div style={{width:`${Math.min(100,progress/m.quantidade*100)}%`}}/></div>
     {ready?<button className="primary" disabled={equipmentReward&&bagFull} onClick={()=>g.claimGuildMission(m.id)}>{equipmentReward&&bagFull?'Bolsa cheia':m.tipo==='delivery'||m.tipo==='material'?'Entregar':'Resgatar'}</button>:<small className="npc-mission-hint">{m.tipo==='delivery'?'Precisa do item na bolsa':m.tipo==='material'?'Colete o material pedido':'Continue avançando'}</small>}
    </div>})}
@@ -945,6 +946,7 @@ function BrennaMissionPanel(){
   </div>}
   {available.length>0&&<div className="npc-mission-group"><small>DISPONÍVEIS</small>{available.slice(0,3).map(m=><div key={m.id} className="npc-mission-row">
     <div className="npc-mission-info"><strong>{m.nome}</strong><span>{m.recompensa.tipo==='gold'?`${m.recompensa.valor} ouro`:'Equipamento'}</span></div>
+    <p className="npc-mission-desc">{m.descricao}</p>
     <button onClick={()=>g.acceptGuildMission(m.id)}>Aceitar</button>
    </div>)}
    {available.length>3&&<small className="npc-mission-more">+{available.length-3} contrato(s) no quadro</small>}
