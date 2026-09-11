@@ -51,8 +51,19 @@ type Facing = 'up' | 'down' | 'left' | 'right'
 const STEP_MS = 320 // 75% da velocidade original (240ms/passo -> 320ms/passo)
 const VIEWPORT_TILES_X = 18
 const VIEWPORT_TILES_Y = 12
+const AMBUSH_CHANCE = 0.05 // chance de emboscada por passo dado (fora de um marcador de local)
 
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)) }
+// Local (marcador de sub-região) mais próximo do ponto dado -- usado pra decidir o nível/tema
+// do inimigo de uma emboscada aleatória, já que ela não nasce de um marcador específico.
+function nearestLocationId(map: RegionMapDef, point: { x: number; y: number }) {
+  let bestId: string | undefined, bestDist = Infinity
+  for (const loc of map.locations) {
+    const dist = Math.abs(loc.x - point.x) + Math.abs(loc.y - point.y)
+    if (dist < bestDist) { bestDist = dist; bestId = loc.subId }
+  }
+  return bestId
+}
 
 function tileKey(x: number, y: number) { return `${x}:${y}` }
 function isMapWalkable(map: RegionMapDef, point: { x: number; y: number }, extraBlocked = new Set<string>()) {
@@ -418,7 +429,7 @@ const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
 const WALK_FRAME_COUNT = 6
 const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
-export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, npcs = [], onInteractNpc, npcStatus }: {
+export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, npcs = [], onInteractNpc, npcStatus, onAmbush }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
   paused?: boolean
@@ -427,6 +438,7 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   npcs?: NpcDefinition[]
   onInteractNpc?: (npc: NpcDefinition) => void
   npcStatus?: (npc: NpcDefinition) => 'ready' | 'available' | 'default'
+  onAmbush?: (nearestSubId: string) => void
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
   const [facing, setFacing] = React.useState<Facing>('down')
@@ -470,9 +482,10 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
       setFrame(IDLE_FRAME)
       const loc = map.locations.find(l => l.x === tx && l.y === ty)
       if (loc) onEnterLocation(loc.subId)
+      else if (Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
     }, STEP_MS)
-  }, [paused, map, onEnterLocation, npcBlocked])
+  }, [paused, map, onEnterLocation, npcBlocked, onAmbush])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
     const route = routeBetween(map, posRef.current, target, npcBlocked)

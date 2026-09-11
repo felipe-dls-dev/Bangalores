@@ -388,9 +388,9 @@ interface GameState {
  inventory:Record<string,number>; equipmentBag:string[]; equipped:Partial<Record<Slot,string>>; territory:string; regionId:string; world:string; subregionId?:string; victories:Record<string,number>; subregionVictories:Record<string,number>; bossesDefeated:string[]; subregionBossesDefeated:string[];
  enemy?:Enemy; enemyHp:number; enemyIntent?:EnemyIntent; combatMinions?:CombatMinion[]; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; combatRoll?:CombatRoll; fleeRoll?:FleeRoll; heroRollBonus:number; enemyRollBonus:number; enemyFearPenalty:number; heroSkillUses:number; itemSkillUsed:boolean; shield:number; combatAttackPct:number; combatDefensePct:number; classRollBonus:number; classBuffTurns:number; summon?:Summon; summonAttackFx?:{types:AttackAnimType[];nonce:number}; lifeWardActive:boolean; phoenixUsed:boolean; extraHeroAttacks:number; guardianTaunt:boolean; groupCriticalBoost:boolean; braced:boolean; braceBonusUsed:boolean; fervor:number; firstStrikeBonus:number; heroStatus?:StatusEffects; enemyStatus?:StatusEffects; supportFx?:{type:'fortificacao'|'cura'|'cura-item'};
  summons?:Summon[];
- loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; activePotionIds:string[]; regenBoostUntil?:number; lastPassiveHealAt?:number; customCards:CustomCard[]; campaigns:Record<string,CampaignSave>; activeCampaignId?:string; guildAccepted:string[]; guildProgress:Record<string,number>; guildClaimed:string[]; guildNotice?:string;
+ loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; ambush?:{enemy:Enemy;subregionId:string}; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; activePotionIds:string[]; regenBoostUntil?:number; lastPassiveHealAt?:number; customCards:CustomCard[]; campaigns:Record<string,CampaignSave>; activeCampaignId?:string; guildAccepted:string[]; guildProgress:Record<string,number>; guildClaimed:string[]; guildNotice?:string;
  difficultyMode:DifficultyMode;talents:string[];specializations:Record<string,string>;materials:Record<string,number>;equipmentUpgrades:Record<string,number>;equipmentGems:Record<string,string[]>;forgedGemLocked:Record<string,boolean>;craftedEffects:Record<string,ForgeEffect>;equipmentElements:Record<string,Element>;equipmentResistances:Record<string,Element>;forgeXp?:number;forgeAttempts?:number;forgeSuccesses?:number;forgeResult?:{success:boolean;message:string;id:number;kind?:'upgrade'};bestiary:Record<string,{encontros:number;vitorias:number}>;discoveredCards:string[];revengeWins:Record<string,number>;consecutiveDefeats:number;lastDefeatKey?:string;dungeonDepth:number;dungeonActive:boolean;dungeonSubregionId?:string;dungeonLastCost?:number;dungeonLastXpReward?:number;dungeonLastGoldReward?:number;storyFlags:string[];storyChapterId:string;storyChoices:Record<string,string>;storyNotice?:string;coopBattlesCompleted:string[];tourStep?:number;
- newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; travelWorld:(world:string)=>void; startCoopCombat:(enemy:Enemy,subregionId:string)=>void; syncCoopEnemyHp:(hp:number)=>void; completeCoopVictory:(battleId:string,subregionId:string,enemy:Enemy,rewardShare:number)=>void; receiveCoopEnemyAttack:(damage:number,roll:any)=>void; receiveCoopHeroAction:(damage:number,roll:any)=>void; receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>void; receiveCoopHeal:(amount:number)=>void; completeCoopDefeat:(battleId:string)=>void; completeCoopFlee:(battleId:string)=>void; continueGame:()=>void; loadCampaign:(id:string)=>void; deleteCampaign:(id:string)=>void; acceptGuildMission:(id:string)=>void; claimGuildMission:(id:string)=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void;
+ newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; travelWorld:(world:string)=>void; startCoopCombat:(enemy:Enemy,subregionId:string)=>void; syncCoopEnemyHp:(hp:number)=>void; completeCoopVictory:(battleId:string,subregionId:string,enemy:Enemy,rewardShare:number)=>void; receiveCoopEnemyAttack:(damage:number,roll:any)=>void; receiveCoopHeroAction:(damage:number,roll:any)=>void; receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>void; receiveCoopHeal:(amount:number)=>void; completeCoopDefeat:(battleId:string)=>void; completeCoopFlee:(battleId:string)=>void; continueGame:()=>void; loadCampaign:(id:string)=>void; deleteCampaign:(id:string)=>void; acceptGuildMission:(id:string)=>void; claimGuildMission:(id:string)=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void; triggerAmbush:(subregionId:string)=>void; fleeAmbush:()=>void; acceptAmbush:()=>void;
  startTour:()=>void; nextTourStep:()=>void; prevTourStep:()=>void; endTour:()=>void;
  attack:(targetMinionId?:string)=>void; heroSkill:()=>void; summonMonster:(tipo:SummonType)=>void; itemSkill:(equipmentId?:string)=>void; useConsumable:(id:string)=>void; flee:()=>void; defend:()=>void; useFervor:()=>void;
  buyConsumable:(id:string)=>void; buyEquipment:(id:string)=>void; sellConsumable:(id:string)=>void; sellEquipment:(id:string)=>void;
@@ -691,6 +691,34 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     const eventRoll=Math.random()
     if(eventRoll<.35){const currentEvent=nextStoryEvent(s)??EVENTS[Math.floor(Math.random()*EVENTS.length)];set({screen:'event',currentEvent,eventResult:undefined});return}
     const lvl=deriveLevel(s.xp).lvl; beginCombat(set,get,difficultyEnemy(buildEnemy(sub,lvl),s.difficultyMode))
+  },
+  // Emboscada ao caminhar pelo mapa navegável (TileWorldExplorer): 5% de chance por passo,
+  // rolada lá no componente. O inimigo já sai pronto aqui (nível/tema do "pin" -- local -- mais
+  // próximo do jogador no momento do passo) pra usar o MESMO inimigo tanto na decisão de fugir
+  // quanto no combate que segue, sem sortear de novo.
+  triggerAmbush:(subregionId:string)=>{
+    const s=get(); if(isNavigationLocked(s)||s.ambush)return
+    const sub=SUBREGIONS.find(x=>x.id===subregionId); if(!sub)return
+    const lvl=deriveLevel(s.xp).lvl
+    set({ambush:{enemy:difficultyEnemy(buildEnemy(sub,lvl),s.difficultyMode),subregionId:sub.id}})
+  },
+  // Mesma mecânica/chance da fuga em combate (dado 1-6, sucesso em 4 e 5): aqui não há "turno"
+  // pra manter, então qualquer coisa abaixo de sucesso pleno (5+) empurra pro combate.
+  fleeAmbush:()=>{
+    const s=get(); if(!s.ambush)return
+    const roll=Math.floor(Math.random()*6)+1
+    if(roll>=5){set({ambush:undefined,explorationNote:`Fuga: dado ${roll}. Você escapou da emboscada!`});return}
+    const sub=SUBREGIONS.find(x=>x.id===s.ambush!.subregionId)
+    set({subregionId:s.ambush!.subregionId,territory:sub?.nome??s.territory,explorationNote:undefined})
+    beginCombat(set,get,s.ambush!.enemy)
+    set({ambush:undefined})
+  },
+  acceptAmbush:()=>{
+    const s=get(); if(!s.ambush)return
+    const sub=SUBREGIONS.find(x=>x.id===s.ambush!.subregionId)
+    set({subregionId:s.ambush!.subregionId,territory:sub?.nome??s.territory,explorationNote:undefined})
+    beginCombat(set,get,s.ambush!.enemy)
+    set({ambush:undefined})
   },
   // BossIntro (startEncounter/startRevenge) já grava o inimigo com a dificuldade aplicada, pra
   // que a prévia mostre exatamente os atributos que o combate vai usar -- aplicar de novo aqui
