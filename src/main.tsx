@@ -970,7 +970,7 @@ function VendorShopPanel({npc}:{npc:NpcDefinition}){
  // a Loja completa só mostra a classe do herói por padrão via filtro de UI. Sem esse filtro
  // aqui, reproduzimos o mesmo recorte na hora de montar a lista -- senão a mini loja mistura
  // armas de todas as classes, a maioria inútil pro herói atual.
- const items:Array<{id:string;preco:number}>=category==='consumivel'
+ const items:Array<{id:string;nome:string;preco:number}>=category==='consumivel'
   ?CONSUMABLES.filter(tierMatch)
   :EQUIPMENT.filter(e=>category==='arma'?e.slot==='mao_direita':e.slot!=='mao_direita').filter(e=>equipmentClassAllowed(e,g.heroId)).filter(e=>category!=='arma'||!equipmentAffinity(e)||equipmentAffinity(e)===g.heroId).filter(tierMatch)
  const lines=Object.entries(cart).filter(([,q])=>q>0).flatMap(([id,qty])=>{const item=items.find(i=>i.id===id);return item?[{id,qty,item}]:[]})
@@ -978,11 +978,21 @@ function VendorShopPanel({npc}:{npc:NpcDefinition}){
  const equipmentCount=category==='consumivel'?0:count
  const valid=count>0&&total<=g.gold&&g.equipmentBag.length+equipmentCount<=equipmentBagCapacity(g)
  const add=(id:string)=>setCart(current=>({...current,[id]:(current[id]??0)+1}))
+ const dec=(id:string)=>setCart(current=>{const next={...current};if((next[id]??0)<=1)delete next[id];else next[id]--;return next})
+ const remove=(id:string)=>setCart(current=>{const next={...current};delete next[id];return next})
  const confirm=()=>{if(!valid)return;lines.forEach(line=>{for(let i=0;i<line.qty;i++)category==='consumivel'?g.buyConsumable(line.id):g.buyEquipment(line.id)});setCart({})}
  if(!items.length)return <p className="npc-shop-empty">Nada em estoque no momento.</p>
  return <div className="npc-shop-panel">
   <div className="npc-shop-items">{items.map(item=>category==='consumivel'?<ShopConsumable key={item.id} id={item.id} onAdd={()=>add(item.id)} quantity={cart[item.id]??0}/>:<ShopEquipment key={item.id} id={item.id} onAdd={()=>add(item.id)} quantity={cart[item.id]??0}/>)}</div>
-  {count>0&&<div className="npc-shop-cart"><span><ShoppingCart size={14}/>{count} {count===1?'item':'itens'} • <b>{total} ouro</b></span><button className="primary" disabled={!valid} onClick={confirm}>Confirmar compra</button></div>}
+  {count>0&&<div className="npc-shop-cart">
+   <div className="npc-shop-cart-lines">{lines.map(line=><div key={line.id} className="npc-shop-cart-line">
+    <span className="npc-shop-cart-name">{line.item.nome}</span>
+    <div className="npc-shop-cart-qty"><button title="Diminuir" onClick={()=>dec(line.id)}><Minus size={12}/></button><b>{line.qty}</b><button title="Aumentar" onClick={()=>add(line.id)}><Plus size={12}/></button></div>
+    <span className="npc-shop-cart-line-total">{line.qty*line.item.preco}</span>
+    <button className="npc-shop-cart-remove" title="Remover" onClick={()=>remove(line.id)}><Trash2 size={13}/></button>
+   </div>)}</div>
+   <div className="npc-shop-cart-footer"><span><ShoppingCart size={14}/>{count} {count===1?'item':'itens'} • <b>{total} ouro</b></span><button className="primary" disabled={!valid} onClick={confirm}>Confirmar compra</button></div>
+  </div>}
  </div>
 }
 function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Subregion[];level:number;selectedSub?:Subregion}){
