@@ -43,6 +43,7 @@ export interface RegionMapDef {
   grid: MapTile[][] // [y][x], já resolvido por resolveTerrain()
   spawn: { x: number; y: number }
   locations: RegionMapLocation[]
+  blocked?: Array<{ x: number; y: number }>
 }
 
 type Facing = 'up' | 'down' | 'left' | 'right'
@@ -53,12 +54,15 @@ const VIEWPORT_TILES_Y = 12
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)) }
 
 function tileKey(x: number, y: number) { return `${x}:${y}` }
+function isMapWalkable(map: RegionMapDef, point: { x: number; y: number }) {
+  return WALKABLE.has(map.grid[point.y]?.[point.x]) && !map.blocked?.some(block => block.x === point.x && block.y === point.y)
+}
 function nearestWalkable(map: RegionMapDef, target: { x: number; y: number }) {
-  if (WALKABLE.has(map.grid[target.y]?.[target.x])) return target
+  if (isMapWalkable(map, target)) return target
   for (let distance = 1; distance < Math.max(map.width, map.height); distance++) {
     for (let y = target.y - distance; y <= target.y + distance; y++) for (let x = target.x - distance; x <= target.x + distance; x++) {
       if (Math.abs(x - target.x) + Math.abs(y - target.y) !== distance) continue
-      if (x >= 0 && y >= 0 && x < map.width && y < map.height && WALKABLE.has(map.grid[y][x])) return { x, y }
+      if (x >= 0 && y >= 0 && x < map.width && y < map.height && isMapWalkable(map, { x, y })) return { x, y }
     }
   }
   return undefined
@@ -73,7 +77,7 @@ function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target
     if (current.x === goal.x && current.y === goal.y) break
     for (const step of steps) {
       const next = { x: current.x + step[0], y: current.y + step[1] }, key = tileKey(next.x, next.y)
-      if (next.x < 0 || next.y < 0 || next.x >= map.width || next.y >= map.height || previous.has(key) || tileKey(next.x, next.y) === tileKey(start.x, start.y) || !WALKABLE.has(map.grid[next.y][next.x])) continue
+      if (next.x < 0 || next.y < 0 || next.x >= map.width || next.y >= map.height || previous.has(key) || tileKey(next.x, next.y) === tileKey(start.x, start.y) || !isMapWalkable(map, next)) continue
       previous.set(key, { from: current, step })
       queue.push(next)
     }
@@ -102,6 +106,13 @@ function vline(grid: BaseTile[][], y0: number, y1: number, x: number, tile: Base
 }
 function rect(grid: BaseTile[][], x0: number, y0: number, x1: number, y1: number, tile: BaseTile) {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (grid[y]?.[x] !== undefined) grid[y][x] = tile
+}
+function blockedRects(...rectangles: Array<[number, number, number, number]>) {
+  return rectangles.flatMap(([x0, y0, x1, y1]) => {
+    const cells: Array<{ x: number; y: number }> = []
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) cells.push({ x, y })
+    return cells
+  })
 }
 
 // Compila o grid de autoria pro grid de renderização. Só existe 1 tile reto de caminho + 4
@@ -153,7 +164,7 @@ function resolveTerrain(base: BaseTile[][]): MapTile[][] {
 // colisão coerentes antes de o mapa chegar à tela de exploração.
 export function validateRegionMap(map: RegionMapDef): string[] {
   const errors: string[] = []
-  const isWalkable = (point: { x: number; y: number }) => WALKABLE.has(map.grid[point.y]?.[point.x])
+  const isWalkable = (point: { x: number; y: number }) => isMapWalkable(map, point)
   if (!isWalkable(map.spawn)) errors.push(`${map.id}: spawn fora de uma área transitável`)
   const usedLocations = new Set<string>()
   for (const location of map.locations) {
@@ -221,7 +232,7 @@ function buildCamposDourados(): RegionMapDef {
   hline(base, 14, 17, 5, 'bridge')
   hline(base, 14, 17, 6, 'bridge')
   return {
-    id: 'campos_dourados', background: mapAsset('assets/maps/campos-dourados-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'campos_dourados', background: mapAsset('assets/maps/campos-dourados-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([3, 1, 4, 1], [18, 2, 21, 3], [2, 8, 5, 10]),
     // Ponto de chegada na estrada principal. Evita iniciar colado à borda inferior,
     // onde a câmera precisava acompanhar o primeiro passo para revelar o personagem.
     spawn: { x: 10, y: 9 },
@@ -251,9 +262,13 @@ function buildFlorestaLunargenta(): RegionMapDef {
   hline(base, 15, 20, 10, 'bridge')
   vline(base, 8, 13, 18, 'bridge')
   return {
-    id: 'floresta_lunargenta', background: mapAsset('assets/maps/floresta-lunargenta-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'floresta_lunargenta', background: mapAsset('assets/maps/floresta-lunargenta-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([15, 1, 16, 2], [19, 2, 20, 5], [2, 10, 5, 13]),
     spawn: { x: 11, y: 13 },
     locations: [
+      { subId: 'lunar_bosque', x: 10, y: 11, icon: '🌲' },
+      { subId: 'lunar_goblins', x: 4, y: 8, icon: '👺' },
+      { subId: 'lunar_monolito', x: 11, y: 5, icon: '🗿' },
+      { subId: 'lunar_aranhas', x: 6, y: 9, icon: '🕷️' },
       { subId: 'lunar_lago', x: 7, y: 4, icon: '🌙' },
       { subId: 'lunar_raizes', x: 17, y: 3, icon: '🌳' },
       { subId: 'lunar_pantano', x: 18, y: 10, icon: '🐸' },
@@ -272,9 +287,12 @@ function buildMontanhasCinzentas(): RegionMapDef {
   rect(base, 14, 3, 17, 11, 'water')
   hline(base, 13, 18, 7, 'bridge')
   return {
-    id: 'montanhas_cinzentas', background: mapAsset('assets/maps/montanhas-cinzentas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'montanhas_cinzentas', background: mapAsset('assets/maps/montanhas-cinzentas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 1, 3, 2], [7, 1, 9, 3], [11, 1, 13, 3], [3, 8, 6, 10], [8, 8, 10, 10]),
     spawn: { x: 11, y: 13 },
     locations: [
+      { subId: 'montanhas_passagem', x: 11, y: 11, icon: '⛰️' },
+      { subId: 'montanhas_mina', x: 9, y: 6, icon: '⛏️' },
+      { subId: 'montanhas_gelo', x: 12, y: 5, icon: '🧊' },
       { subId: 'montanhas_forte', x: 5, y: 3, icon: '🏰' },
       { subId: 'montanhas_abismo', x: 15, y: 7, icon: '🕳️' },
       { subId: 'montanhas_cume', x: 19, y: 2, icon: '⚡' },
@@ -296,9 +314,11 @@ function buildPicoEscarlate(): RegionMapDef {
   rect(base, 17, 7, 20, 10, 'water')
   hline(base, 16, 20, 10, 'bridge')
   return {
-    id: 'pico_escarlate', background: mapAsset('assets/maps/pico-escarlate-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'pico_escarlate', background: mapAsset('assets/maps/pico-escarlate-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 7, 4, 9], [6, 6, 8, 8], [12, 8, 14, 10], [5, 11, 8, 13]),
     spawn: { x: 11, y: 13 },
     locations: [
+      { subId: 'pico_encosta', x: 11, y: 10, icon: '🌋' },
+      { subId: 'pico_ninho_dragao', x: 18, y: 4, icon: '🐉' },
       { subId: 'pico_cinzas', x: 4, y: 3, icon: '🔥' },
       { subId: 'pico_forja', x: 16, y: 2, icon: '⚒️' },
       { subId: 'pico_cratera', x: 16, y: 8, icon: '☀️' },
@@ -317,12 +337,49 @@ function buildTerrasMortas(): RegionMapDef {
   hline(base, 13, 20, 10, 'bridge')
   vline(base, 7, 14, 17, 'bridge')
   return {
-    id: 'terras_mortas', background: mapAsset('assets/maps/terras-mortas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'terras_mortas', background: mapAsset('assets/maps/terras-mortas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 1, 3, 3], [7, 1, 9, 3], [11, 1, 13, 4], [3, 9, 5, 11]),
     spawn: { x: 11, y: 13 },
     locations: [
+      { subId: 'mortas_campos', x: 10, y: 12, icon: '🪦' },
+      { subId: 'mortas_catacumbas', x: 8, y: 8, icon: '⚰️' },
       { subId: 'mortas_vila', x: 5, y: 3, icon: '🏚️' },
       { subId: 'mortas_brejo', x: 17, y: 10, icon: '🕯️' },
       { subId: 'mortas_torre', x: 17, y: 2, icon: '🗼' },
+    ],
+  }
+}
+
+function buildKharDur(): RegionMapDef {
+  const width = 22, height = 16, base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree'); vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 2, 7, 8, 14, 'water'); hline(base, 2, 8, 10, 'bridge')
+  return { id: 'khar_dur', background: '/assets/maps/khar-dur-overworld.png', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([2, 1, 4, 3], [7, 1, 9, 3], [13, 1, 15, 3], [3, 6, 7, 8], [14, 6, 16, 8]), spawn: { x: 11, y: 13 }, locations: [
+    { subId: 'khar_galerias', x: 10, y: 9, icon: '🛤️' }, { subId: 'khar_labirinto', x: 9, y: 11, icon: '🌀' }, { subId: 'khar_templo_minotauro', x: 12, y: 10, icon: '🐂' },
+    { subId: 'khar_forjas', x: 5, y: 3, icon: '🔥' }, { subId: 'khar_cofre', x: 17, y: 3, icon: '🔐' }, { subId: 'khar_profundezas', x: 17, y: 10, icon: '⛏️' },
+  ] }
+}
+
+// Reino do Sol Negro: a estrada ritual conecta os seis marcos, enquanto o vazio arcano
+// só pode ser cruzado pelas pontes de pedra visíveis na arte.
+function buildCoracaoEclipse(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 14, 7, 20, 14, 'water')
+  hline(base, 13, 20, 10, 'bridge')
+  vline(base, 7, 14, 18, 'bridge')
+  return {
+    id: 'coracao_eclipse', background: mapAsset('assets/maps/coracao-eclipse-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    blocked: blockedRects([1, 1, 2, 3], [6, 1, 8, 3], [13, 1, 15, 3], [2, 11, 5, 13], [9, 7, 11, 9]),
+    spawn: { x: 11, y: 13 },
+    locations: [
+      { subId: 'eclipse_portoes', x: 11, y: 12, icon: '🚪' },
+      { subId: 'eclipse_torre', x: 4, y: 3, icon: '🗼' },
+      { subId: 'eclipse_trono', x: 11, y: 2, icon: '👑' },
+      { subId: 'eclipse_jardim', x: 4, y: 8, icon: '✦' },
+      { subId: 'eclipse_arquivo', x: 18, y: 3, icon: '📜' },
+      { subId: 'eclipse_fenda', x: 18, y: 10, icon: '🜏' },
     ],
   }
 }
@@ -333,6 +390,8 @@ export const REGION_MAPS: Record<string, RegionMapDef> = {
   montanhas_cinzentas: buildMontanhasCinzentas(),
   pico_escarlate: buildPicoEscarlate(),
   terras_mortas: buildTerrasMortas(),
+  khar_dur: buildKharDur(),
+  coracao_eclipse: buildCoracaoEclipse(),
 }
 export function getRegionMap(regionId: string): RegionMapDef | undefined { return REGION_MAPS[regionId] }
 
@@ -369,11 +428,14 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   const [facing, setFacing] = React.useState<Facing>('down')
   const [frame, setFrame] = React.useState(IDLE_FRAME)
   const [walking, setWalking] = React.useState(false)
+  const [panOffset, setPanOffset] = React.useState({ x: 0, y: 0 })
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
   const queuedMoves = React.useRef<Array<[number, number]>>([])
   const runQueuedMove = React.useRef<() => void>(() => {})
   const posRef = React.useRef(pos)
+  const dragRef = React.useRef<{ x: number; y: number; camX: number; camY: number; dragged: boolean } | null>(null)
+  const didDragRef = React.useRef(false)
 
   React.useEffect(() => { posRef.current = pos }, [pos])
 
@@ -384,7 +446,7 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
     const currentPos = posRef.current
     const tx = currentPos.x + dx, ty = currentPos.y + dy
     if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return
-    if (!WALKABLE.has(map.grid[ty][tx])) return
+    if (!isMapWalkable(map, { x: tx, y: ty })) return
     movingRef.current = true
     // Alterna 0->1->2->0... a cada passo aceito -- é o ciclo de caminhada em si (perna
     // esquerda, neutro, perna direita), não uma animação por tempo separada do movimento.
@@ -441,13 +503,31 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   const worldW = map.width * tilePx, worldH = map.height * tilePx
   const viewportW = Math.min(worldW, VIEWPORT_TILES_X * tilePx)
   const viewportH = Math.min(worldH, VIEWPORT_TILES_Y * tilePx)
-  const camX = clamp(pos.x * tilePx + tilePx / 2 - viewportW / 2, 0, Math.max(0, worldW - viewportW))
-  const camY = clamp(pos.y * tilePx + tilePx / 2 - viewportH / 2, 0, Math.max(0, worldH - viewportH))
+  const followCamX = clamp(pos.x * tilePx + tilePx / 2 - viewportW / 2, 0, Math.max(0, worldW - viewportW))
+  const followCamY = clamp(pos.y * tilePx + tilePx / 2 - viewportH / 2, 0, Math.max(0, worldH - viewportH))
+  const camX = clamp(followCamX + panOffset.x, 0, Math.max(0, worldW - viewportW))
+  const camY = clamp(followCamY + panOffset.y, 0, Math.max(0, worldH - viewportH))
   const sprite = PLAYER_SPRITE[facing]
   const frameSrc = sprite.frames[frame]
 
   return <div className="regionmap-frame">
-    <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onClick={event => {
+    <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onPointerDown={event => {
+      event.currentTarget.setPointerCapture(event.pointerId)
+      dragRef.current = { x: event.clientX, y: event.clientY, camX, camY, dragged: false }
+    }} onPointerMove={event => {
+      const drag = dragRef.current
+      if (!drag) return
+      const dx = event.clientX - drag.x, dy = event.clientY - drag.y
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.dragged = true
+      if (!drag.dragged) return
+      didDragRef.current = true
+      setPanOffset({ x: clamp(drag.camX - dx, 0, Math.max(0, worldW - viewportW)) - followCamX, y: clamp(drag.camY - dy, 0, Math.max(0, worldH - viewportH)) - followCamY })
+    }} onPointerUp={event => {
+      if (dragRef.current?.dragged) didDragRef.current = true
+      dragRef.current = null
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }} onPointerCancel={() => { dragRef.current = null }} onClick={event => {
+      if (didDragRef.current) { didDragRef.current = false; return }
       const bounds = event.currentTarget.getBoundingClientRect()
       moveToTile({ x: Math.floor((event.clientX - bounds.left + camX) / tilePx), y: Math.floor((event.clientY - bounds.top + camY) / tilePx) })
     }}>
@@ -460,7 +540,7 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
           const status = locationStatus?.(loc.subId) ?? 'default'
           return <button key={loc.subId} type="button" className={`regionmap-location status-${status}`}
             style={{ left: loc.x * tilePx, top: loc.y * tilePx, width: tilePx, height: tilePx }}
-            onClick={event => { event.stopPropagation(); moveToTile({ x: loc.x, y: loc.y }) }} aria-label={`Ir até ${loc.subId}`}>
+            onClick={event => { event.stopPropagation(); if (didDragRef.current) { didDragRef.current = false; return }; moveToTile({ x: loc.x, y: loc.y }) }} aria-label={`Ir até ${loc.subId}`}>
             <span className="regionmap-location-pulse" />
             <span className="regionmap-location-icon">{loc.icon ?? '◆'}</span>
           </button>

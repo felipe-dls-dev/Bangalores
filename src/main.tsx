@@ -900,7 +900,7 @@ function Panel({title,children,className=''}:{title?:string;children:React.React
 function NpcBanner({name,title,line,image,icon}:{name:string;title:string;line:string;image?:string;icon?:React.ReactNode}){
  return <Panel className="npc-banner"><span className="npc-banner-portrait">{image?<img src={assetUrl(image)} alt={name}/>:icon??<UserRound/>}</span><div className="npc-banner-copy"><span className="npc-banner-name">{name}<small>{title}</small></span><p><Quote size={13}/>{line}</p></div></Panel>
 }
-const WORLD_MAPS:Record<string,{base:string;hd:string;label:string}>={havendown:{base:'./assets/maps/eldravar.png',hd:'./assets/maps/eldravar-v2.png',label:'Havendown'},steelmere:{base:'./assets/maps/steelmere.png',hd:'./assets/maps/steelmere.png',label:'Steelmere'}}
+const WORLD_MAPS:Record<string,{base:string;hd:string;label:string}>={havendown:{base:'./assets/maps/eldravar-pixel.png',hd:'./assets/maps/eldravar-pixel.png',label:'Havendown'},steelmere:{base:'./assets/maps/steelmere.png',hd:'./assets/maps/steelmere.png',label:'Steelmere'}}
 // Reúne, num só lugar no mapa, as duas fontes de "missão ativa" da campanha: os contratos da
 // Guilda (já existia) e o objetivo do capítulo atual das Crônicas (StoryCampaignPanel) --
 // antes só aparecia visitando a tela de Crônicas, então não dava pra acompanhar sem sair do mapa.
