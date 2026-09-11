@@ -920,6 +920,37 @@ function MapScreen(){
 }
 
 function dangerFor(level:number,min:number,max:number){if(level<min-2)return {label:'PERIGO EXTREMO',stars:5,cls:'deadly'};if(level<min)return {label:'Difícil',stars:4,cls:'hard'};if(level<=max)return {label:'Adequado',stars:3,cls:'fair'};if(level<=max+3)return {label:'Fácil',stars:2,cls:'easy'};return {label:'Muito fácil',stars:1,cls:'easy'}}
+// Contratos da Guilda direto no diálogo da Brenna no mapa navegável -- os já aceitos (prontos
+// pra resgate ou ainda em progresso) e os disponíveis pro rank atual -- pra aceitar/resgatar
+// sem precisar abrir a tela cheia da Guilda. Mesma fonte de dados que o GuildHerald usa
+// (availableGuildMissions, pura e sempre atual), só que aqui os botões agem direto.
+function BrennaMissionPanel(){
+ const g=useGame()
+ const missions=availableGuildMissions(g.guildClaimed)
+ const reputation=g.guildClaimed.reduce((sum,id)=>sum+(guildMissionById(id)?.dificuldade??0),0)
+ const rankIndex=GUILD_RANKS.findIndex(r=>r.id===guildRankFor(reputation).id)
+ const bagFull=g.equipmentBag.length>=equipmentBagCapacity(g)
+ const active=sortGuildMissionsByRank(missions.filter(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)))
+ const available=sortGuildMissionsByRank(missions.filter(m=>!g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&rankIndex>=GUILD_RANKS.findIndex(r=>r.id===m.rank)))
+ if(!active.length&&!available.length)return null
+ return <div className="npc-mission-panel">
+  {active.length>0&&<div className="npc-mission-group"><small>EM ANDAMENTO</small>{active.slice(0,3).map(m=>{
+   const progress=guildMissionProgress(g,m),ready=progress>=m.quantidade,equipmentReward=m.recompensa.tipo==='equipment'
+   return <div key={m.id} className={`npc-mission-row${ready?' ready':''}`}>
+    <div className="npc-mission-info"><strong>{m.nome}</strong><span>{progress}/{m.quantidade}</span></div>
+    <div className="xp-track"><div style={{width:`${Math.min(100,progress/m.quantidade*100)}%`}}/></div>
+    {ready?<button className="primary" disabled={equipmentReward&&bagFull} onClick={()=>g.claimGuildMission(m.id)}>{equipmentReward&&bagFull?'Bolsa cheia':m.tipo==='delivery'||m.tipo==='material'?'Entregar':'Resgatar'}</button>:<small className="npc-mission-hint">{m.tipo==='delivery'?'Precisa do item na bolsa':m.tipo==='material'?'Colete o material pedido':'Continue avançando'}</small>}
+   </div>})}
+   {active.length>3&&<small className="npc-mission-more">+{active.length-3} contrato(s) em andamento no quadro</small>}
+  </div>}
+  {available.length>0&&<div className="npc-mission-group"><small>DISPONÍVEIS</small>{available.slice(0,3).map(m=><div key={m.id} className="npc-mission-row">
+    <div className="npc-mission-info"><strong>{m.nome}</strong><span>{m.recompensa.tipo==='gold'?`${m.recompensa.valor} ouro`:'Equipamento'}</span></div>
+    <button onClick={()=>g.acceptGuildMission(m.id)}>Aceitar</button>
+   </div>)}
+   {available.length>3&&<small className="npc-mission-more">+{available.length-3} contrato(s) no quadro</small>}
+  </div>}
+ </div>
+}
 function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Subregion[];level:number;selectedSub?:Subregion}){
  const g=useGame()
  const map=getRegionMap(region.id)!
@@ -933,7 +964,7 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
  const handleEnter=(subId:string)=>{const sub=subs.find(s=>s.id===subId);if(sub){setActiveSub(sub);setEncounterPrompt(sub);setShowBattleDetails(false)}}
  const npcs=npcsForRegion(region.id)
  const npcStatus=(npc:NpcDefinition):'ready'|'available'|'default'=>{
-  if(npc.services.includes('guild')){const ready=GUILD_MISSIONS.some(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&guildMissionProgress(g,m)>=m.quantidade);if(ready)return'ready';const available=availableGuildMissions(g.guildClaimed).some(m=>!g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id));return available?'available':'default'}
+  if(npc.services.includes('guild')){const missions=availableGuildMissions(g.guildClaimed),ready=missions.some(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&guildMissionProgress(g,m)>=m.quantidade);if(ready)return'ready';const available=missions.some(m=>!g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id));return available?'available':'default'}
   if(npc.services.includes('forge')){const canUpgrade=Object.values(g.equipped).some(ref=>{if(!ref)return false;const item=equipmentByRef(ref);if(!item)return false;const current=g.equipmentUpgrades[ref]??0;if(current>=3)return false;const target=(current+1)as 1|2|3,goldCost=equipmentUpgradeCost(item,current),materialCost=equipmentUpgradeMaterialCost(item,target);return g.gold>=goldCost&&Object.entries(materialCost).every(([id,qty])=>(g.materials[id]??0)>=qty)});return canUpgrade?'available':'default'}
   if(npc.services.includes('shop')){return g.equipmentBag.length>=equipmentBagCapacity(g)-1?'available':'default'}
   return'default'
@@ -943,7 +974,7 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
  if(!sub)return null
  const wins=g.subregionVictories[sub.id]??0,bossDown=g.subregionBossesDefeated.includes(sub.id),ready=wins>=sub.encontrosNecessarios&&!bossDown,danger=dangerFor(level,sub.nivelMin,sub.nivelMax)
  const encounterDialog=encounterPrompt&&<div className="regionmap-encounter-backdrop" onClick={()=>setEncounterPrompt(undefined)}><section className={`regionmap-encounter-prompt${showBattleDetails?' details':''}`} onClick={event=>event.stopPropagation()}>{showBattleDetails?<><span className="eyebrow">DETALHES DA BATALHA</span><SubregionCard sub={encounterPrompt} level={level}/><button className="regionmap-details-back" onClick={()=>setShowBattleDetails(false)}>Voltar</button></>:<><span className="eyebrow">PONTO DE EXPLORAÇÃO</span><h2>{encounterPrompt.nome}</h2><p>{encounterPrompt.descricao}</p><div><button onClick={()=>setEncounterPrompt(undefined)}>Continuar explorando</button><button className="primary" onClick={()=>setShowBattleDetails(true)}>Ver detalhes da batalha</button></div></>}</section></div>
- const npcDialog=activeNpc&&<div className="regionmap-encounter-backdrop" onClick={()=>setActiveNpc(undefined)}><section className="regionmap-npc-dialog" onClick={event=>event.stopPropagation()}><div className="regionmap-npc-dialog-head"><span className="npc-banner-portrait"><img src={assetUrl(activeNpc.portrait??activeNpc.sprite)} alt={activeNpc.nome}/></span><div><span className="eyebrow">PERSONAGEM</span><h2>{activeNpc.nome}</h2><small>{activeNpc.titulo}</small></div></div><p><Quote size={15}/>{npcDialogueLine(activeNpc)}</p><div><button onClick={()=>setActiveNpc(undefined)}>Continuar explorando</button><button className="primary" onClick={()=>{const screen=activeNpc.screen;setActiveNpc(undefined);g.setScreen(screen)}}>{activeNpc.services.includes('guild')?'Abrir Guilda':activeNpc.services.includes('shop')?'Abrir Loja':activeNpc.services.includes('forge')?'Abrir Forja':'Abrir'}</button></div></section></div>
+ const npcDialog=activeNpc&&<div className="regionmap-encounter-backdrop" onClick={()=>setActiveNpc(undefined)}><section className="regionmap-npc-dialog" onClick={event=>event.stopPropagation()}><div className="regionmap-npc-dialog-head"><span className="npc-banner-portrait"><img src={assetUrl(activeNpc.portrait??activeNpc.sprite)} alt={activeNpc.nome}/></span><div><span className="eyebrow">PERSONAGEM</span><h2>{activeNpc.nome}</h2><small>{activeNpc.titulo}</small></div></div><p><Quote size={15}/>{npcDialogueLine(activeNpc)}</p>{activeNpc.services.includes('guild')&&<BrennaMissionPanel/>}<div><button onClick={()=>setActiveNpc(undefined)}>Continuar explorando</button><button className="primary" onClick={()=>{const screen=activeNpc.screen;setActiveNpc(undefined);g.setScreen(screen)}}>{activeNpc.services.includes('guild')?'Abrir Guilda':activeNpc.services.includes('shop')?'Abrir Loja':activeNpc.services.includes('forge')?'Abrir Forja':'Abrir'}</button></div></section></div>
  return <section className="regionmap-shell">
   <div className="regionmap-stage"><div className="regionmap-stage-title"><Map size={18}/><span>Região de {region.nome}</span></div><TileWorldExplorer map={map} initialPosition={startLoc?{x:startLoc.x,y:startLoc.y}:undefined} paused={Boolean(encounterPrompt||activeNpc)} onEnterLocation={handleEnter} locationStatus={locationStatus} npcs={npcs} npcStatus={npcStatus} onInteractNpc={setActiveNpc}/></div>
   <aside className="regionmap-inspector"><span className="eyebrow">LOCAL ATUAL</span><h2>{sub.nome}</h2><div className="regionmap-inspector-preview" style={{backgroundImage:`url(${map.background})`}}><span>{sub.icone}</span></div><p>{sub.descricao}</p><div className="regionmap-details"><div><small>EXPLORAÇÃO</small><strong>{Math.min(wins,sub.encontrosNecessarios)}/{sub.encontrosNecessarios}</strong></div><div><small>PERIGO</small><strong className={`danger-${danger.cls}`}>{danger.label}</strong></div><div><small>CHEFE</small><strong>{bossDown?'Derrotado':ready?'Disponível':'Oculto'}</strong></div></div><div className="regionmap-loot"><small>RECOMPENSAS</small><span>{sub.temaLoot}</span></div><button className={ready?'primary boss-button':'primary'} onClick={()=>setEncounterPrompt(sub)}>{bossDown?'EXPLORAR NOVAMENTE':ready?'ENFRENTAR CHEFE':'EXPLORAR LOCAL'}</button></aside>
