@@ -10,7 +10,7 @@ import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, E
 import type { Slot, Rarity, Subregion, GameEvent, Equipment, Territory } from './types'
 import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
-import { NPCS, npcsForRegion, type NpcDefinition } from './data/npcs'
+import { npcsForRegion, type NpcDefinition } from './data/npcs'
 import { onlineConfigured } from './online/supabase'
 import { CoopProvider, useCoop } from './online/CoopContext'
 import { playSfx, isAudioMuted, setAudioMuted, type SfxId } from './audio'
@@ -415,7 +415,7 @@ function App(){
    {g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='event'&&g.screen!=='cardCreator'&&<TopBar/>}
    <AnimatePresence mode="wait">
     <motion.main key={g.screen} className="screen" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.22}}>
-      {g.screen==='menu'&&<MainMenu/>}{g.screen==='select'&&<HeroSelect/>}{g.screen==='map'&&<MapScreen/>}{g.screen==='guild'&&<GuildScreen/>}{g.screen==='chronicle'&&<ChronicleScreen/>}{g.screen==='forge'&&<ForgeScreen/>}{g.screen==='region'&&<><RegionScreen/><RegionRevengePanel/></>}{g.screen==='event'&&<EventScreen/>}{g.screen==='character'&&<CharacterScreen/>}{g.screen==='inventory'&&<InventoryScreen/>}{g.screen==='equipment'&&<EquipmentScreen/>}{g.screen==='shop'&&<ShopScreen key={g.shopVendor?.npcId??'geral'}/>}{g.screen==='gallery'&&<GalleryScreen/>}{g.screen==='tutorial'&&<TutorialScreen/>}{g.screen==='coop'&&<PersistentCoopScreen/>}{g.screen==='combat'&&<CombatScreen/>}{g.screen==='bossIntro'&&<BossIntro/>}{g.screen==='loot'&&<LootScreen/>}{g.screen==='cardCreator'&&<CardCreatorScreen/>}
+      {g.screen==='menu'&&<MainMenu/>}{g.screen==='select'&&<HeroSelect/>}{g.screen==='map'&&<MapScreen/>}{g.screen==='guild'&&<GuildScreen/>}{g.screen==='chronicle'&&<ChronicleScreen/>}{g.screen==='forge'&&<ForgeScreen/>}{g.screen==='region'&&<><RegionScreen/><RegionRevengePanel/></>}{g.screen==='event'&&<EventScreen/>}{g.screen==='character'&&<CharacterScreen/>}{g.screen==='inventory'&&<InventoryScreen/>}{g.screen==='equipment'&&<EquipmentScreen/>}{g.screen==='shop'&&<ShopScreen/>}{g.screen==='gallery'&&<GalleryScreen/>}{g.screen==='tutorial'&&<TutorialScreen/>}{g.screen==='coop'&&<PersistentCoopScreen/>}{g.screen==='combat'&&<CombatScreen/>}{g.screen==='bossIntro'&&<BossIntro/>}{g.screen==='loot'&&<LootScreen/>}{g.screen==='cardCreator'&&<CardCreatorScreen/>}
       {g.screen==='inventory'&&g.explorationNote&&/(sucesso|tentativa falhou)/i.test(g.explorationNote)&&<div className="consumable-result"><Sparkles/>{g.explorationNote}</div>}
     </motion.main>
    </AnimatePresence>
@@ -953,6 +953,38 @@ function BrennaMissionPanel(){
   </div>}
  </div>
 }
+// Loja em miniatura direto no diálogo do vendedor especializado no mapa -- em vez de navegar
+// pra tela cheia da Loja, lista os itens da categoria+tier dele (reaproveitando ShopEquipment/
+// ShopConsumable, que já cuidam de preço, bloqueio de nível/classe e raridade) com um carrinho
+// simples embutido. Vender não é suportado aqui -- pra vender de volta, use a Loja do menu.
+function VendorShopPanel({npc}:{npc:NpcDefinition}){
+ const g=useGame()
+ const [cart,setCart]=React.useState<Record<string,number>>({})
+ const category=npc.shopCategory!,tier=npc.shopTier!
+ const tierMatch=(item:{raridade?:Rarity})=>{
+  const r=item.raridade??'comum'
+  if(category==='consumivel')return tier==='simples'?r==='comum':r!=='comum'
+  return tier==='simples'?(r==='comum'||r==='incomum'):r==='raro'
+ }
+ // Armas não são de fato restritas por classe (equipmentClassAllowed deixa passar quase tudo);
+ // a Loja completa só mostra a classe do herói por padrão via filtro de UI. Sem esse filtro
+ // aqui, reproduzimos o mesmo recorte na hora de montar a lista -- senão a mini loja mistura
+ // armas de todas as classes, a maioria inútil pro herói atual.
+ const items:Array<{id:string;preco:number}>=category==='consumivel'
+  ?CONSUMABLES.filter(tierMatch)
+  :EQUIPMENT.filter(e=>category==='arma'?e.slot==='mao_direita':e.slot!=='mao_direita').filter(e=>equipmentClassAllowed(e,g.heroId)).filter(e=>category!=='arma'||!equipmentAffinity(e)||equipmentAffinity(e)===g.heroId).filter(tierMatch)
+ const lines=Object.entries(cart).filter(([,q])=>q>0).flatMap(([id,qty])=>{const item=items.find(i=>i.id===id);return item?[{id,qty,item}]:[]})
+ const count=lines.reduce((sum,line)=>sum+line.qty,0),total=lines.reduce((sum,line)=>sum+line.item.preco*line.qty,0)
+ const equipmentCount=category==='consumivel'?0:count
+ const valid=count>0&&total<=g.gold&&g.equipmentBag.length+equipmentCount<=equipmentBagCapacity(g)
+ const add=(id:string)=>setCart(current=>({...current,[id]:(current[id]??0)+1}))
+ const confirm=()=>{if(!valid)return;lines.forEach(line=>{for(let i=0;i<line.qty;i++)category==='consumivel'?g.buyConsumable(line.id):g.buyEquipment(line.id)});setCart({})}
+ if(!items.length)return <p className="npc-shop-empty">Nada em estoque no momento.</p>
+ return <div className="npc-shop-panel">
+  <div className="npc-shop-items">{items.map(item=>category==='consumivel'?<ShopConsumable key={item.id} id={item.id} onAdd={()=>add(item.id)} quantity={cart[item.id]??0}/>:<ShopEquipment key={item.id} id={item.id} onAdd={()=>add(item.id)} quantity={cart[item.id]??0}/>)}</div>
+  {count>0&&<div className="npc-shop-cart"><span><ShoppingCart size={14}/>{count} {count===1?'item':'itens'} • <b>{total} ouro</b></span><button className="primary" disabled={!valid} onClick={confirm}>Confirmar compra</button></div>}
+ </div>
+}
 function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Subregion[];level:number;selectedSub?:Subregion}){
  const g=useGame()
  const map=getRegionMap(region.id)!
@@ -976,7 +1008,7 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
  if(!sub)return null
  const wins=g.subregionVictories[sub.id]??0,bossDown=g.subregionBossesDefeated.includes(sub.id),ready=wins>=sub.encontrosNecessarios&&!bossDown,danger=dangerFor(level,sub.nivelMin,sub.nivelMax)
  const encounterDialog=encounterPrompt&&<div className="regionmap-encounter-backdrop" onClick={()=>setEncounterPrompt(undefined)}><section className={`regionmap-encounter-prompt${showBattleDetails?' details':''}`} onClick={event=>event.stopPropagation()}>{showBattleDetails?<><span className="eyebrow">DETALHES DA BATALHA</span><SubregionCard sub={encounterPrompt} level={level}/><button className="regionmap-details-back" onClick={()=>setShowBattleDetails(false)}>Voltar</button></>:<><span className="eyebrow">PONTO DE EXPLORAÇÃO</span><h2>{encounterPrompt.nome}</h2><p>{encounterPrompt.descricao}</p><div><button onClick={()=>setEncounterPrompt(undefined)}>Continuar explorando</button><button className="primary" onClick={()=>setShowBattleDetails(true)}>Ver detalhes da batalha</button></div></>}</section></div>
- const npcDialog=activeNpc&&<div className="regionmap-encounter-backdrop" onClick={()=>setActiveNpc(undefined)}><section className="regionmap-npc-dialog" onClick={event=>event.stopPropagation()}><div className="regionmap-npc-dialog-head"><span className="npc-banner-portrait"><img src={assetUrl(activeNpc.portrait??activeNpc.sprite)} alt={activeNpc.nome}/></span><div><span className="eyebrow">PERSONAGEM</span><h2>{activeNpc.nome}</h2><small>{activeNpc.titulo}</small></div></div><p><Quote size={15}/>{npcDialogueLine(activeNpc)}</p>{activeNpc.services.includes('guild')&&<BrennaMissionPanel/>}<div><button onClick={()=>setActiveNpc(undefined)}>Continuar explorando</button><button className="primary" onClick={()=>{const npc=activeNpc;setActiveNpc(undefined);npc.shopCategory?g.openShopVendor(npc.id,npc.shopCategory,npc.shopTier!):g.setScreen(npc.screen)}}>{activeNpc.services.includes('guild')?'Abrir Guilda':activeNpc.services.includes('shop')?'Abrir Loja':activeNpc.services.includes('forge')?'Abrir Forja':'Abrir'}</button></div></section></div>
+ const npcDialog=activeNpc&&<div className="regionmap-encounter-backdrop" onClick={()=>setActiveNpc(undefined)}><section className="regionmap-npc-dialog" onClick={event=>event.stopPropagation()}><div className="regionmap-npc-dialog-head"><span className="npc-banner-portrait"><img src={assetUrl(activeNpc.portrait??activeNpc.sprite)} alt={activeNpc.nome}/></span><div><span className="eyebrow">PERSONAGEM</span><h2>{activeNpc.nome}</h2><small>{activeNpc.titulo}</small></div></div><p><Quote size={15}/>{npcDialogueLine(activeNpc)}</p>{activeNpc.services.includes('guild')&&<BrennaMissionPanel/>}{activeNpc.shopCategory&&<VendorShopPanel npc={activeNpc}/>}<div><button onClick={()=>setActiveNpc(undefined)}>Continuar explorando</button>{!activeNpc.shopCategory&&<button className="primary" onClick={()=>{const npc=activeNpc;setActiveNpc(undefined);g.setScreen(npc.screen)}}>{activeNpc.services.includes('guild')?'Abrir Guilda':activeNpc.services.includes('forge')?'Abrir Forja':'Abrir'}</button>}</div></section></div>
  return <section className="regionmap-shell">
   <div className="regionmap-stage"><div className="regionmap-stage-title"><Map size={18}/><span>Região de {region.nome}</span></div><TileWorldExplorer map={map} initialPosition={startLoc?{x:startLoc.x,y:startLoc.y}:undefined} paused={Boolean(encounterPrompt||activeNpc)} onEnterLocation={handleEnter} locationStatus={locationStatus} npcs={npcs} npcStatus={npcStatus} onInteractNpc={setActiveNpc}/></div>
   <aside className="regionmap-inspector"><span className="eyebrow">LOCAL ATUAL</span><h2>{sub.nome}</h2><div className="regionmap-inspector-preview" style={{backgroundImage:`url(${map.background})`}}><span>{sub.icone}</span></div><p>{sub.descricao}</p><div className="regionmap-details"><div><small>EXPLORAÇÃO</small><strong>{Math.min(wins,sub.encontrosNecessarios)}/{sub.encontrosNecessarios}</strong></div><div><small>PERIGO</small><strong className={`danger-${danger.cls}`}>{danger.label}</strong></div><div><small>CHEFE</small><strong>{bossDown?'Derrotado':ready?'Disponível':'Oculto'}</strong></div></div><div className="regionmap-loot"><small>RECOMPENSAS</small><span>{sub.temaLoot}</span></div><button className={ready?'primary boss-button':'primary'} onClick={()=>setEncounterPrompt(sub)}>{bossDown?'EXPLORAR NOVAMENTE':ready?'ENFRENTAR CHEFE':'EXPLORAR LOCAL'}</button></aside>
@@ -1044,36 +1076,22 @@ function merchantLine(gold:number,cartCount:number,selling:boolean){
 }
 function ShopScreen(){
  const g=useGame()
- // Vendedor especializado (armeiro/couraceiro/boticario, simples ou superior): restringe a
- // aba (categoria) e, na compra, o tier (raridade) do catalogo. Vender continua irrestrito --
- // um vendedor especializado ainda compra de volta qualquer coisa da sua categoria, só não
- // vende itens fora do proprio nivel. Acessar a Loja pelo menu (g.shopVendor undefined)
- // continua mostrando o catalogo completo de sempre.
- const vendor=g.shopVendor
- const vendorNpc=vendor?NPCS.find(n=>n.id===vendor.npcId):undefined
- const vendorTab:ShopTab|undefined=vendor&&(vendor.category==='arma'?'Armas':vendor.category==='equipamento'?'Equipamentos':'Consumíveis')
- const vendorTierMatch=(item:{raridade?:Rarity})=>{
-  if(!vendor||g.shopMode==='sell')return true
-  const r=item.raridade??'comum'
-  if(vendor.category==='consumivel')return vendor.tier==='simples'?r==='comum':r!=='comum'
-  return vendor.tier==='simples'?(r==='comum'||r==='incomum'):r==='raro'
- }
  // Antes o filtro de Armas sempre abria em "Todos" -- misturando espadas, cajados, arcos e
  // adagas de classes que o herói nem pode usar na mesma lista, logo de cara. Equipamentos não
  // sofre disso (já é pré-filtrado por equipmentClassAllowed), então só Armas precisa de um
  // valor padrão diferente de "Todos".
  const armaDefaultFilter=g.heroId&&weaponFilters.some(([id])=>id===g.heroId)?g.heroId:'Todos'
- const [tab,setTab]=React.useState<ShopTab>(vendorTab??'Armas')
- const [filter,setFilter]=React.useState<string>((vendorTab??'Armas')==='Armas'?armaDefaultFilter:'Todos')
+ const [tab,setTab]=React.useState<ShopTab>('Armas')
+ const [filter,setFilter]=React.useState<string>(armaDefaultFilter)
  const [sortBy,setSortBy]=React.useState<typeof sortOptions[number][0]>('padrao')
  const [cart,setCart]=React.useState<Record<string,number>>({})
  const [cartOpen,setCartOpen]=React.useState(false)
  const ownedConsumables=Object.entries(g.inventory).filter(([,n])=>n>0).map(([id])=>CONSUMABLES.find(x=>x.id===id)).filter(Boolean) as typeof CONSUMABLES
  const ownedEquipment=g.equipmentBag.map(id=>{const e=equipmentByRef(id);return e?{...e,id}:undefined}).filter(Boolean) as typeof EQUIPMENT
- const availableConsumables=(g.shopMode==='buy'?CONSUMABLES:ownedConsumables).filter(vendorTierMatch)
+ const availableConsumables=g.shopMode==='buy'?CONSUMABLES:ownedConsumables
  const availableEquipment=g.shopMode==='buy'?EQUIPMENT:ownedEquipment
- const weapons=availableEquipment.filter(e=>e.slot==='mao_direita').filter(vendorTierMatch)
- const gear=availableEquipment.filter(e=>e.slot!=='mao_direita'&&equipmentClassAllowed(e,g.heroId)).filter(vendorTierMatch)
+ const weapons=availableEquipment.filter(e=>e.slot==='mao_direita')
+ const gear=availableEquipment.filter(e=>e.slot!=='mao_direita'&&equipmentClassAllowed(e,g.heroId))
  const tabCount=(target:ShopTab)=>target==='Armas'?weapons.length:target==='Equipamentos'?gear.length:availableConsumables.length
  const filters=tab==='Armas'?weaponFilters:tab==='Equipamentos'?equipmentFilters:consumableFilters
  const matchesWeapon=(e:any,id:string)=>id==='Todos'||(id==='neutra'?!equipmentAffinity(e):equipmentAffinity(e)===id)
@@ -1108,9 +1126,8 @@ function ShopScreen(){
  const confirm=()=>{if(!valid)return;lines.forEach(line=>{for(let i=0;i<line.qty;i++)line.kind==='c'?g.buyConsumable(line.id):g.buyEquipment(line.id)});clear();setCartOpen(false)}
  const changeMode=()=>{g.toggleShopMode();setFilter(tab==='Armas'?armaDefaultFilter:'Todos');clear();setCartOpen(false)}
  return <div><div className="shop-head"><div><h1>Loja de Havendown</h1><p>{g.shopMode==='buy'?'Adicione produtos ao carrinho e confirme antes de recebê-los.':'Venda de itens não concede experiência.'}</p></div><div><span className="gold"><Coins/> {g.gold}</span>{g.shopMode==='buy'&&<button className="shop-cart-button" onClick={()=>setCartOpen(true)}><ShoppingCart/> Carrinho <b>{count}</b></button>}<button onClick={changeMode}>{g.shopMode==='buy'?'Mudar para vender':'Mudar para comprar'}</button></div></div>
-  {vendorNpc?<NpcBanner name={vendorNpc.nome} title={vendorNpc.titulo} line={vendorNpc.dialogue[0]} image={vendorNpc.portrait??vendorNpc.sprite}/>:<NpcBanner name={MERCHANT.nome} title={MERCHANT.titulo} line={merchantLine(g.gold,count,g.shopMode==='sell')} image={MERCHANT.retrato}/>}
-  {vendor&&<p className="shop-vendor-tag">Vendedor especializado • {vendor.category==='arma'?'Armas':vendor.category==='equipamento'?'Equipamentos':'Poções'} • Nível {vendor.tier==='simples'?'Simples':'Superior'}</p>}
-  {!vendor&&<div className="shop-tabs" role="tablist" aria-label="Seções da loja">{shopTabs.map(item=><button key={item} role="tab" aria-selected={tab===item} className={tab===item?'active':''} onClick={()=>chooseTab(item)}>{item}<small>{tabCount(item)}</small></button>)}</div>}
+  <NpcBanner name={MERCHANT.nome} title={MERCHANT.titulo} line={merchantLine(g.gold,count,g.shopMode==='sell')} image={MERCHANT.retrato}/>
+  <div className="shop-tabs" role="tablist" aria-label="Seções da loja">{shopTabs.map(item=><button key={item} role="tab" aria-selected={tab===item} className={tab===item?'active':''} onClick={()=>chooseTab(item)}>{item}<small>{tabCount(item)}</small></button>)}</div>
   <div className="shop-filter-row">
    <label className="shop-filter-select">
     <span>{tab==='Armas'?'Classe':tab==='Equipamentos'?'Categoria':'Tipo'}</span>
