@@ -1590,3 +1590,4 @@ body::after{content:"VERSÃO 0.8.23 • 11/09/2026\A Descricao de cada contrato 
 body::after{content:"VERSÃO 0.8.24 • 11/09/2026\A Mira saiu do mapa; 6 novos vendedores especializados (armas, armaduras e pocoes, simples ou superior) tomam seu lugar -- 3 em Planicies de Alvora e 3 em Pico de Ignaris, cada um vendendo so a propria categoria e nivel"}
 body::after{content:"VERSÃO 0.8.25 • 11/09/2026\A Vendedores especializados agora vendem direto no proprio dialogo (imagem do item, preco e carrinho), em vez de abrir a tela cheia da Loja"}
 body::after{content:"VERSÃO 0.8.26 • 11/09/2026\A Carrinho da mini loja dos vendedores ganhou lista por item, com botoes de diminuir quantidade e remover"}
+body::after{content:"VERSÃO 0.8.27 • 11/09/2026\A Corrigido: sprites do Cassian Draye e do Alaric Thorne (Pico de Ignaris) apareciam maiores que os outros NPCs por causa da arma erguida esticando o canvas da imagem"}
