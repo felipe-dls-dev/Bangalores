@@ -429,7 +429,7 @@ const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
 const WALK_FRAME_COUNT = 6
 const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
-export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, npcs = [], onInteractNpc, npcStatus, onAmbush }: {
+export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
   paused?: boolean
@@ -439,8 +439,13 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   onInteractNpc?: (npc: NpcDefinition) => void
   npcStatus?: (npc: NpcDefinition) => 'ready' | 'available' | 'default'
   onAmbush?: (nearestSubId: string) => void
+  onPositionChange?: (pos: { x: number; y: number }) => void
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
+  // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
+  // permite voltar exatamente aqui depois de uma tela que desmonta este componente (combate,
+  // emboscada), em vez de sempre recomeçar do spawn/marcador.
+  React.useEffect(() => { onPositionChange?.(pos) }, [pos])
   const [facing, setFacing] = React.useState<Facing>('down')
   const [frame, setFrame] = React.useState(IDLE_FRAME)
   const [walking, setWalking] = React.useState(false)
