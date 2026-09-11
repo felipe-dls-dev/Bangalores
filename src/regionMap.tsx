@@ -46,7 +46,7 @@ export interface RegionMapDef {
 }
 
 type Facing = 'up' | 'down' | 'left' | 'right'
-const STEP_MS = 240
+const STEP_MS = 320 // 75% da velocidade original (240ms/passo -> 320ms/passo)
 const VIEWPORT_TILES_X = 18
 const VIEWPORT_TILES_Y = 12
 
