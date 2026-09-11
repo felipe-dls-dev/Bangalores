@@ -1582,3 +1582,4 @@ body::after{content:"VERSÃO 0.8.17 • 10/09/2026\A Corrigido: câmera do mapa 
 body::after{content:"VERSÃO 0.8.18 • 10/09/2026\A NPCs agora são personagens nos mapas navegáveis: Brenna (Guilda), Mira (Loja) e Borin (Forja) ocupam tile, bloqueiam passagem e conversam ao aproximar (clique ou E/Enter). Balões de alerta agora também avisam quando há algo pra forjar ou vender, além de missão disponível/pronta"}
 body::after{content:"VERSÃO 0.8.19 • 10/09/2026\A Corrigido: clicar num NPC (ou marcador de local) no mapa navegável não abria o diálogo -- o clique estava sendo desviado para o mapa em vez do personagem"}
 body::after{content:"VERSÃO 0.8.20 • 11/09/2026\A Sprites de Brenna, Mira e Borin refeitos em pixel art chibi, no mesmo estilo do personagem jogável (antes eram ilustração digital destoante do mapa)"}
+body::after{content:"VERSÃO 0.8.21 • 11/09/2026\A Sprite da Mira trocado para a pose de frente (antes de perfil)"}

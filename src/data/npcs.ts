@@ -44,7 +44,7 @@ export const NPCS: NpcDefinition[] = [
     regionId: 'campos_dourados',
     x: 10,
     y: 7,
-    facing: 'left',
+    facing: 'down',
     sprite: 'assets/npcs/sprites/mira-bellwether-sprite.png',
     portrait: 'assets/npcs/mira-bellwether.webp',
     services: ['shop'],
