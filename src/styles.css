@@ -1594,3 +1594,4 @@ body::after{content:"VERSÃO 0.8.26 • 11/09/2026\A Carrinho da mini loja dos v
 body::after{content:"VERSÃO 0.8.27 • 11/09/2026\A Corrigido: sprites do Cassian Draye e do Alaric Thorne (Pico de Ignaris) apareciam maiores que os outros NPCs por causa da arma erguida esticando o canvas da imagem"}
 body::after{content:"VERSÃO 0.8.28 • 11/09/2026\A Emboscadas aleatorias nos mapas navegaveis: 5% de chance por passo, no nivel do local mais proximo -- escolha entre tentar fugir (mesma chance da fuga em combate) ou aceitar o combate"}
 body::after{content:"VERSÃO 0.8.29 • 11/09/2026\A Corrigido: sair de uma batalha (ou emboscada) no mapa navegavel voltava sempre pro spawn -- agora retoma exatamente de onde o personagem estava"}
+body::after{content:"VERSÃO 0.8.30 • 11/09/2026\A Chance de emboscada por passo aumentada de 5% para 15%"}

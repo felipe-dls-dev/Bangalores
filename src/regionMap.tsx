@@ -51,7 +51,7 @@ type Facing = 'up' | 'down' | 'left' | 'right'
 const STEP_MS = 320 // 75% da velocidade original (240ms/passo -> 320ms/passo)
 const VIEWPORT_TILES_X = 18
 const VIEWPORT_TILES_Y = 12
-const AMBUSH_CHANCE = 0.05 // chance de emboscada por passo dado (fora de um marcador de local)
+const AMBUSH_CHANCE = 0.15 // chance de emboscada por passo dado (fora de um marcador de local)
 
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)) }
 // Local (marcador de sub-região) mais próximo do ponto dado -- usado pra decidir o nível/tema
