@@ -1580,3 +1580,4 @@ body::after{content:"VERSÃO 0.8.15 • 10/09/2026\A Mapa navegável: personagem
 body::after{content:"VERSÃO 0.8.16 • 10/09/2026\A Mapa navegável: balanço do personagem ao caminhar ficou 75% mais sutil"}
 body::after{content:"VERSÃO 0.8.17 • 10/09/2026\A Corrigido: câmera do mapa navegável andava mais rápido que o personagem e o cenário parecia dar saltos; agora os dois se movem no mesmo ritmo. Balanço da caminhada ajustado para 4px"}
 body::after{content:"VERSÃO 0.8.18 • 10/09/2026\A NPCs agora são personagens nos mapas navegáveis: Brenna (Guilda), Mira (Loja) e Borin (Forja) ocupam tile, bloqueiam passagem e conversam ao aproximar (clique ou E/Enter). Balões de alerta agora também avisam quando há algo pra forjar ou vender, além de missão disponível/pronta"}
+body::after{content:"VERSÃO 0.8.19 • 10/09/2026\A Corrigido: clicar num NPC (ou marcador de local) no mapa navegável não abria o diálogo -- o clique estava sendo desviado para o mapa em vez do personagem"}

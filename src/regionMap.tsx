@@ -551,6 +551,11 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
 
   return <div className="regionmap-frame">
     <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onPointerDown={event => {
+      // setPointerCapture no viewport retarget o "click" resultante pra ELE MESMO (não pro
+      // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
+      // de um NPC/local nunca disparava o onClick deles, só o fallback de clique-no-tile daqui.
+      // Não capturar quando o toque começa num desses botões deixa o clique nativo bubblear normal.
+      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location')) return
       event.currentTarget.setPointerCapture(event.pointerId)
       dragRef.current = { x: event.clientX, y: event.clientY, camX, camY, dragged: false }
     }} onPointerMove={event => {
