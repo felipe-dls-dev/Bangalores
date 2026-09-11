@@ -5,6 +5,7 @@
 // (abrir card, checar progresso etc.) é o componente que usa <TileWorldExplorer/>.
 import React from 'react'
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
+import type { NpcDefinition } from './data/npcs'
 
 // GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
 // como '/assets/...' resolvem para a raiz do domínio e quebram (404) em produção -- só
@@ -54,21 +55,21 @@ const VIEWPORT_TILES_Y = 12
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)) }
 
 function tileKey(x: number, y: number) { return `${x}:${y}` }
-function isMapWalkable(map: RegionMapDef, point: { x: number; y: number }) {
-  return WALKABLE.has(map.grid[point.y]?.[point.x]) && !map.blocked?.some(block => block.x === point.x && block.y === point.y)
+function isMapWalkable(map: RegionMapDef, point: { x: number; y: number }, extraBlocked = new Set<string>()) {
+  return WALKABLE.has(map.grid[point.y]?.[point.x]) && !map.blocked?.some(block => block.x === point.x && block.y === point.y) && !extraBlocked.has(tileKey(point.x, point.y))
 }
-function nearestWalkable(map: RegionMapDef, target: { x: number; y: number }) {
-  if (isMapWalkable(map, target)) return target
+function nearestWalkable(map: RegionMapDef, target: { x: number; y: number }, extraBlocked = new Set<string>()) {
+  if (isMapWalkable(map, target, extraBlocked)) return target
   for (let distance = 1; distance < Math.max(map.width, map.height); distance++) {
     for (let y = target.y - distance; y <= target.y + distance; y++) for (let x = target.x - distance; x <= target.x + distance; x++) {
       if (Math.abs(x - target.x) + Math.abs(y - target.y) !== distance) continue
-      if (x >= 0 && y >= 0 && x < map.width && y < map.height && isMapWalkable(map, { x, y })) return { x, y }
+      if (x >= 0 && y >= 0 && x < map.width && y < map.height && isMapWalkable(map, { x, y }, extraBlocked)) return { x, y }
     }
   }
   return undefined
 }
-function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target: { x: number; y: number }): Array<[number, number]> {
-  const goal = nearestWalkable(map, target)
+function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target: { x: number; y: number }, extraBlocked = new Set<string>()): Array<[number, number]> {
+  const goal = nearestWalkable(map, target, extraBlocked)
   if (!goal || (goal.x === start.x && goal.y === start.y)) return []
   const queue = [start], previous = new Map<string, { from: { x: number; y: number }; step: [number, number] }>()
   const steps: Array<[number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]]
@@ -77,7 +78,7 @@ function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target
     if (current.x === goal.x && current.y === goal.y) break
     for (const step of steps) {
       const next = { x: current.x + step[0], y: current.y + step[1] }, key = tileKey(next.x, next.y)
-      if (next.x < 0 || next.y < 0 || next.x >= map.width || next.y >= map.height || previous.has(key) || tileKey(next.x, next.y) === tileKey(start.x, start.y) || !isMapWalkable(map, next)) continue
+      if (next.x < 0 || next.y < 0 || next.x >= map.width || next.y >= map.height || previous.has(key) || tileKey(next.x, next.y) === tileKey(start.x, start.y) || !isMapWalkable(map, next, extraBlocked)) continue
       previous.set(key, { from: current, step })
       queue.push(next)
     }
@@ -417,12 +418,15 @@ const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
 const WALK_FRAME_COUNT = 6
 const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
-export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus }: {
+export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, npcs = [], onInteractNpc, npcStatus }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
   paused?: boolean
   onEnterLocation: (subId: string) => void
   locationStatus?: (subId: string) => 'done' | 'ready' | 'default'
+  npcs?: NpcDefinition[]
+  onInteractNpc?: (npc: NpcDefinition) => void
+  npcStatus?: (npc: NpcDefinition) => 'ready' | 'available' | 'default'
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
   const [facing, setFacing] = React.useState<Facing>('down')
@@ -436,6 +440,8 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   const posRef = React.useRef(pos)
   const dragRef = React.useRef<{ x: number; y: number; camX: number; camY: number; dragged: boolean } | null>(null)
   const didDragRef = React.useRef(false)
+  const npcBlocked = React.useMemo(() => new Set(npcs.map(npc => tileKey(npc.x, npc.y))), [npcs])
+  const adjacentNpc = React.useMemo(() => npcs.find(npc => Math.abs(npc.x - pos.x) + Math.abs(npc.y - pos.y) === 1), [npcs, pos])
 
   React.useEffect(() => { posRef.current = pos }, [pos])
 
@@ -446,7 +452,7 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
     const currentPos = posRef.current
     const tx = currentPos.x + dx, ty = currentPos.y + dy
     if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return
-    if (!isMapWalkable(map, { x: tx, y: ty })) return
+    if (!isMapWalkable(map, { x: tx, y: ty }, npcBlocked)) return
     movingRef.current = true
     // Alterna 0->1->2->0... a cada passo aceito -- é o ciclo de caminhada em si (perna
     // esquerda, neutro, perna direita), não uma animação por tempo separada do movimento.
@@ -466,10 +472,10 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
       if (loc) onEnterLocation(loc.subId)
       if (queuedMoves.current.length) runQueuedMove.current()
     }, STEP_MS)
-  }, [paused, map, onEnterLocation])
+  }, [paused, map, onEnterLocation, npcBlocked])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
-    const route = routeBetween(map, posRef.current, target)
+    const route = routeBetween(map, posRef.current, target, npcBlocked)
     if (!route.length) return
     queuedMoves.current = route
     runQueuedMove.current = () => {
@@ -477,7 +483,28 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
       if (next) step(next[0], next[1])
     }
     runQueuedMove.current()
-  }, [map, step])
+  }, [map, step, npcBlocked])
+
+  const moveToNpc = React.useCallback((npc: NpcDefinition) => {
+    const targets = [[0, 1], [1, 0], [0, -1], [-1, 0]]
+      .map(([dx, dy]) => ({ x: npc.x + dx, y: npc.y + dy }))
+      .filter(point => point.x >= 0 && point.y >= 0 && point.x < map.width && point.y < map.height && isMapWalkable(map, point, npcBlocked))
+      .map(point => ({ point, route: routeBetween(map, posRef.current, point, npcBlocked) }))
+      .filter(entry => entry.route.length || (entry.point.x === posRef.current.x && entry.point.y === posRef.current.y))
+      .sort((a, b) => a.route.length - b.route.length)
+    const best = targets[0]
+    if (!best) return
+    if (!best.route.length) onInteractNpc?.(npc)
+    else {
+      queuedMoves.current = best.route
+      runQueuedMove.current = () => {
+        const next = queuedMoves.current.shift()
+        if (next) step(next[0], next[1])
+      }
+      runQueuedMove.current()
+      window.setTimeout(() => onInteractNpc?.(npc), best.route.length * STEP_MS + 20)
+    }
+  }, [map, npcBlocked, onInteractNpc, step])
 
   React.useEffect(() => () => {
     movementTimers.current.forEach(window.clearTimeout)
@@ -498,6 +525,18 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [step, paused])
+
+  React.useEffect(() => {
+    if (paused || !onInteractNpc) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'e' && e.key !== 'E' && e.key !== 'Enter') return
+      if (!adjacentNpc) return
+      e.preventDefault()
+      onInteractNpc(adjacentNpc)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [adjacentNpc, onInteractNpc, paused])
 
   const tilePx = map.tileSize * map.scale
   const worldW = map.width * tilePx, worldH = map.height * tilePx
@@ -545,6 +584,17 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
             <span className="regionmap-location-icon">{loc.icon ?? '◆'}</span>
           </button>
         })}
+        {npcs.map(npc => {
+          const status = npcStatus?.(npc) ?? 'default'
+          return <button key={npc.id} type="button" className={`regionmap-npc npc-${npc.facing ?? 'down'} status-${status}`}
+            style={{ left: npc.x * tilePx, top: npc.y * tilePx, width: tilePx, height: tilePx }}
+            onClick={event => { event.stopPropagation(); if (didDragRef.current) { didDragRef.current = false; return }; moveToNpc(npc) }} aria-label={`Conversar com ${npc.nome}`}>
+            {status !== 'default' && <span className="regionmap-npc-alert">{status === 'ready' ? '?' : '!'}</span>}
+            <span className="regionmap-npc-sprite-wrap">
+              <img className="regionmap-npc-sprite" src={mapAsset(npc.sprite)} alt="" />
+            </span>
+          </button>
+        })}
         <div className={`regionmap-player${walking ? ' is-walking' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
           <span className="regionmap-player-sprite-wrap" style={sprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
@@ -554,7 +604,7 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
       </div>
     </div>
     <div className="regionmap-controls">
-      <p className="regionmap-hint">Use as setas (ou WASD) e ande até um marcador para explorar o local.</p>
+      <p className="regionmap-hint">{adjacentNpc ? `Pressione E ou Enter para falar com ${adjacentNpc.nome}.` : 'Use as setas (ou WASD) e ande ate um marcador ou personagem.'}</p>
       <div className="regionmap-dpad" role="group" aria-label="Controles de movimento">
         <button type="button" className="dpad-up" onClick={() => step(0, -1)} aria-label="Mover para cima"><ArrowUp size={16} /></button>
         <button type="button" className="dpad-left" onClick={() => step(-1, 0)} aria-label="Mover para esquerda"><ArrowLeft size={16} /></button>
