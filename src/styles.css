@@ -1696,4 +1696,52 @@ body::after{content:"VERSÃO 0.9.0 • 12/09/2026\A Modo História com missões 
 .story-journal-completed-item strong{display:block;font-size:.82rem;color:#e2e8f0}
 .story-journal-completed-item small{color:#a0aec0;font-size:.72rem}
 
+/* Batch 1: Combat Tactics & Inventory Management */
+.daily-reward-panel { margin-top: 14px; }
+.daily-reward-box { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: linear-gradient(135deg, rgba(45,35,20,.8), rgba(20,16,10,.8)); border: 1px solid rgba(212,180,134,.3); border-radius: 10px; padding: 14px 18px; }
+.daily-reward-info { display: flex; align-items: center; gap: 14px; }
+.daily-reward-info svg { color: #f6e05e; flex-shrink: 0; }
+.daily-reward-info strong { display: block; font-size: 0.95rem; color: #fef0d2; }
+.daily-reward-info p { margin: 2px 0 0; font-size: 0.8rem; color: #cbd5e0; }
+
+.inventory-search-bar { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 6px 12px; margin-bottom: 12px; flex: 1; }
+.inventory-search-bar input { background: transparent; border: none; outline: none; color: #f7fafc; font-size: 0.85rem; width: 100%; }
+.inventory-search-bar input::placeholder { color: #718096; }
+.inventory-search-bar .clear-search { background: transparent; border: none; color: #a0aec0; cursor: pointer; font-size: 1rem; padding: 0 4px; }
+.inventory-search-bar .clear-search:hover { color: #fff; }
+
+.equipment-bag-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.equipment-bag-toolbar .inventory-search-bar { margin-bottom: 0; }
+.sort-bag-btn { display: flex; align-items: center; gap: 6px; background: rgba(212,180,134,.15); border: 1px solid rgba(212,180,134,.3); color: #fef0d2; padding: 7px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background .2s; white-space: nowrap; }
+.sort-bag-btn:hover { background: rgba(212,180,134,.25); }
+
+.item-title-actions { display: flex; align-items: center; gap: 6px; }
+.item-lock-btn { background: transparent; border: none; color: #718096; cursor: pointer; padding: 2px 4px; display: flex; align-items: center; border-radius: 4px; transition: color .2s; }
+.item-lock-btn:hover { color: #f6e05e; }
+.item-lock-btn.locked { color: #f6ad55; }
+.item-stat-diff { display: flex; gap: 6px; font-size: 0.68rem; font-weight: 700; margin-top: 2px; }
+.stat-better { color: #48bb78; background: rgba(72,187,120,.12); padding: 1px 4px; border-radius: 3px; }
+.stat-worse { color: #f56565; background: rgba(245,101,101,.12); padding: 1px 4px; border-radius: 3px; }
+
+.combat-controls-strip { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(18,14,10,.7); border: 1px solid rgba(212,180,134,.2); border-radius: 8px; padding: 6px 14px; margin-bottom: 10px; }
+.combat-speed-group { display: flex; align-items: center; gap: 8px; }
+.combat-speed-group .speed-label { font-size: 0.72rem; color: #a0aec0; font-weight: 700; letter-spacing: 0.05em; }
+.speed-pills { display: flex; gap: 4px; }
+.speed-pill { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: #cbd5e0; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: all .15s; }
+.speed-pill.active { background: #d4af37; border-color: #f6e05e; color: #1a160d; box-shadow: 0 0 8px rgba(212,175,55,.4); }
+.combat-auto-toggle { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: #cbd5e0; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all .2s; }
+.combat-auto-toggle.active { background: linear-gradient(135deg, #b7791f, #d69e2e); border-color: #f6e05e; color: #1a160d; box-shadow: 0 0 10px rgba(237,137,54,.5); animation: pulse-auto 2s infinite; }
+@keyframes pulse-auto { 0%,100%{opacity:1;} 50%{opacity:.85;} }
+
+.stagger-meter { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+.stagger-text { display: flex; justify-content: space-between; font-size: 0.7rem; color: #f6ad55; font-weight: 600; }
+.stagger-track { width: 100%; height: 5px; background: rgba(0,0,0,.5); border-radius: 4px; overflow: hidden; border: 1px solid rgba(246,173,85,.3); }
+.stagger-track div { height: 100%; background: linear-gradient(90deg, #dd6b20, #f6ad55); border-radius: 4px; }
+.stagger-track.broken { border-color: #fc8181; box-shadow: 0 0 8px #e53e3e; }
+.stagger-track.broken div { background: linear-gradient(90deg, #e53e3e, #feb2b2); }
+
+.enemy-weakness-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.15); padding: 3px 8px; border-radius: 5px; font-size: 0.72rem; color: #e2e8f0; margin-top: 6px; }
+.enemy-weakness-badge strong { color: #63b3ed; }
+
+
 

@@ -39,6 +39,15 @@ export const BESTIARY_MILESTONES=[{wins:1,label:'Atributos revelados'},{wins:3,l
 // antigas ("por algumas rodadas") eram vagas o bastante pra soar como vários turnos.
 export const STATUS_INFO=[['Envenenado (natureza)','Dano leve por 3 turnos; pressiona combates longos.'],['Pegando fogo (fogo)','Explosão intensa de dano durante 1 turno.'],['Sangrando (físico)','Dura 2 turnos e acumula dano em novas aplicações.'],['Congelado (gelo)','Penaliza ataque e defesa por 2 turnos.'],['Agarrado (sombra)','Penaliza as rolagens por 2 turnos.'],['Cego (luz)','Penaliza as rolagens durante 1 turno.'],['Atordoado (arcano)','Cancela a próxima defesa ou ação do afetado.']] as const
 export const ELEMENTS:Element[]=['fisico','fogo','gelo','natureza','sombra','luz','arcano']
+export const ELEMENT_ADVANTAGES: Record<Element, { strongAgainst: Element[]; weakAgainst: Element[] }> = {
+  fogo: { strongAgainst: ['natureza'], weakAgainst: ['gelo'] },
+  natureza: { strongAgainst: ['gelo'], weakAgainst: ['fogo'] },
+  gelo: { strongAgainst: ['fogo'], weakAgainst: ['natureza'] },
+  luz: { strongAgainst: ['sombra'], weakAgainst: ['arcano'] },
+  sombra: { strongAgainst: ['arcano'], weakAgainst: ['luz'] },
+  arcano: { strongAgainst: ['luz'], weakAgainst: ['sombra'] },
+  fisico: { strongAgainst: [], weakAgainst: [] },
+}
 export const FORGE_MATERIALS=[{id:'fragmento_fisico',nome:'Fragmento Físico',texto:'Metal, couro e madeira recuperados.'},{id:'essencia_magica',nome:'Essência Mágica',texto:'Energia extraída de itens encantados.'}] as const
 export const FORGE_GEMS=[
  {id:'rubi_forja',nome:'Rubi da Forja',stat:'ataque' as const,value:2,texto:'+2 de Ataque'},

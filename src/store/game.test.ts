@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked } from './game'
-import { REGION_MATERIALS } from '../data/expansion'
+import { REGION_MATERIALS, ELEMENT_ADVANTAGES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
 
@@ -1060,5 +1060,105 @@ describe('Sistema de Missões de História (Story Quests & NPCs)', () => {
     expect(useGame.getState().xp).toBeGreaterThan(3000)
   })
 })
+
+describe('Batch 1: Táticas de Combate & Gestão de Inventário', () => {
+  it('Item 50 & 51: velocidade de combate e auto-combate funcionam e alternam estados', () => {
+    useGame.getState().newGame('guerreiro')
+    expect(useGame.getState().combatSpeed).toBe(1)
+    expect(useGame.getState().autoCombat).toBe(false)
+
+    useGame.getState().setCombatSpeed(2)
+    expect(useGame.getState().combatSpeed).toBe(2)
+
+    useGame.getState().setCombatSpeed(3)
+    expect(useGame.getState().combatSpeed).toBe(3)
+
+    useGame.getState().toggleAutoCombat()
+    expect(useGame.getState().autoCombat).toBe(true)
+
+    useGame.getState().toggleAutoCombat()
+    expect(useGame.getState().autoCombat).toBe(false)
+  })
+
+  it('Item 41 & 53: fraquezas e vantagens elementais respeitam a tabela de relações', () => {
+    expect(ELEMENT_ADVANTAGES.fogo.strongAgainst).toContain('natureza')
+    expect(ELEMENT_ADVANTAGES.fogo.weakAgainst).toContain('gelo')
+
+    expect(ELEMENT_ADVANTAGES.natureza.strongAgainst).toContain('gelo')
+    expect(ELEMENT_ADVANTAGES.natureza.weakAgainst).toContain('fogo')
+
+    expect(ELEMENT_ADVANTAGES.gelo.strongAgainst).toContain('fogo')
+    expect(ELEMENT_ADVANTAGES.gelo.weakAgainst).toContain('natureza')
+
+    expect(ELEMENT_ADVANTAGES.luz.strongAgainst).toContain('sombra')
+    expect(ELEMENT_ADVANTAGES.luz.weakAgainst).toContain('arcano')
+
+    expect(ELEMENT_ADVANTAGES.sombra.strongAgainst).toContain('arcano')
+    expect(ELEMENT_ADVANTAGES.sombra.weakAgainst).toContain('luz')
+
+    expect(ELEMENT_ADVANTAGES.arcano.strongAgainst).toContain('luz')
+    expect(ELEMENT_ADVANTAGES.arcano.weakAgainst).toContain('sombra')
+  })
+
+  it('Item 92: trava de proteção de itens impede venda e desmonte de equipamentos travados', () => {
+    useGame.getState().newGame('guerreiro')
+    const itemRef = 'lamina_sentinela@@test_lock'
+    useGame.setState({ equipmentBag: [itemRef], lockedEquipment: {} })
+
+    // Travar o equipamento
+    useGame.getState().toggleLockEquipment(itemRef)
+    expect(useGame.getState().lockedEquipment?.[itemRef]).toBe(true)
+
+    // Tentar vender item travado
+    const initialGold = useGame.getState().gold
+    useGame.getState().sellEquipment(itemRef)
+    expect(useGame.getState().equipmentBag).toContain(itemRef)
+    expect(useGame.getState().gold).toBe(initialGold)
+
+    // Tentar desmontar item travado
+    useGame.getState().dismantleEquipment(itemRef)
+    expect(useGame.getState().equipmentBag).toContain(itemRef)
+
+    // Destravar o equipamento
+    useGame.getState().toggleLockEquipment(itemRef)
+    expect(useGame.getState().lockedEquipment?.[itemRef]).toBe(false)
+
+    // Venda agora é permitida
+    useGame.getState().sellEquipment(itemRef)
+    expect(useGame.getState().equipmentBag).not.toContain(itemRef)
+    expect(useGame.getState().gold).toBeGreaterThan(initialGold)
+  })
+
+  it('Item 91: auto-organização da mochila ordena equipamentos', () => {
+    useGame.getState().newGame('guerreiro')
+    const itemEpico = EQUIPMENT.find(e => e.raridade === 'epico' || e.raridade === 'lendario')!
+    const itemComum = EQUIPMENT.find(e => e.raridade === 'comum')!
+    const items = [`${itemComum.id}@@1`, `${itemEpico.id}@@2`]
+    useGame.setState({ equipmentBag: items })
+
+    useGame.getState().sortEquipmentBag('rarity')
+    const sorted = useGame.getState().equipmentBag
+    expect(sorted).toHaveLength(2)
+    expect(sorted[0]).toContain(itemEpico.id)
+    expect(sorted[1]).toContain(itemComum.id)
+  })
+
+  it('Item 139: recompensa diária concede ouro, materiais e aplica tempo de recarga', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ dailyRewardClaimedAt: undefined })
+    const initialGold = useGame.getState().gold
+
+    const result = useGame.getState().claimDailyReward()
+    expect(result).not.toBeNull()
+    expect(result?.gold).toBe(35)
+    expect(useGame.getState().gold).toBe(initialGold + 35)
+    expect(useGame.getState().dailyRewardClaimedAt).toBeDefined()
+
+    // Tentar resgatar imediatamente em seguida retorna null
+    const secondClaim = useGame.getState().claimDailyReward()
+    expect(secondClaim).toBeNull()
+  })
+})
+
 
 
