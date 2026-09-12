@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked } from './game'
 import { REGION_MATERIALS } from '../data/expansion'
+import { NPCS } from '../data/npcs'
+import { STORY_QUESTS } from '../data/storyQuests'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -1020,5 +1022,43 @@ describe('Sistema de Missões de História (Story Quests & NPCs)', () => {
     const unlocked = worldUnlocked(useGame.getState(), 'steelmere')
     expect(unlocked).toBe(true)
   })
+
+  it('todos os 14 territórios (Havendown e Steelmere) possuem NPCs residentes', () => {
+    const territoriesHavendown = ['campos_dourados', 'floresta_lunargenta', 'montanhas_cinzentas', 'pico_escarlate', 'terras_mortas', 'khar_dur', 'coracao_eclipse']
+    const territoriesSteelmere = ['frostgard', 'engrenverde', 'trilhouro', 'vulcannis', 'ferrujal', 'coroferro', 'aetherium']
+    const all = [...territoriesHavendown, ...territoriesSteelmere]
+
+    for (const territoryId of all) {
+      const npcs = useGame.getState() ? NPCS.filter(n => n.regionId === territoryId) : []
+      expect(npcs.length, `Território ${territoryId} deve ter ao menos um NPC`).toBeGreaterThan(0)
+    }
+  })
+
+  it('o roteiro de 13 missões conecta uma cadeia contínua e sem quebras do Ato 1 ao 7', () => {
+    useGame.getState().newGame('guerreiro')
+    let currentQuestId: string | undefined = 'q_alvora_intro'
+    let count = 0
+
+    while (currentQuestId && count < 20) {
+      const q = STORY_QUESTS.find(quest => quest.id === currentQuestId)
+      expect(q).toBeDefined()
+      if (!q) break
+
+      useGame.getState().acceptStoryQuest(q.id)
+      expect(useGame.getState().activeStoryQuests[q.id]).toBeDefined()
+
+      useGame.getState().turnInStoryQuest(q.id)
+      expect(useGame.getState().completedStoryQuests).toContain(q.id)
+
+      currentQuestId = q.nextQuestId
+      count++
+    }
+
+    expect(count).toBe(13)
+    expect(useGame.getState().completedStoryQuests.length).toBe(13)
+    expect(useGame.getState().gold).toBeGreaterThan(1500)
+    expect(useGame.getState().xp).toBeGreaterThan(3000)
+  })
 })
+
 
