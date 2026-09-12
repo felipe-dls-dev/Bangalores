@@ -10,7 +10,8 @@ import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, E
 import type { Slot, Rarity, Subregion, GameEvent, Equipment, Territory } from './types'
 import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
-import { npcsForRegion, type NpcDefinition } from './data/npcs'
+import { npcsForRegion, npcById, type NpcDefinition } from './data/npcs'
+import { STORY_QUESTS, questById, questsOfferedByNpc, questsDeliverableToNpc, type StoryQuest } from './data/storyQuests'
 import { onlineConfigured } from './online/supabase'
 import { CoopProvider, useCoop } from './online/CoopContext'
 import { playSfx, isAudioMuted, setAudioMuted, type SfxId } from './audio'
@@ -402,6 +403,13 @@ function App(){
     </motion.main>
    </AnimatePresence>
    {fleeConfirm&&<div className="escape-confirm-overlay" role="presentation" onClick={()=>setFleeConfirm(false)}><section className="escape-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="escape-flee-title" onClick={event=>event.stopPropagation()}><Footprints/><small>ATALHO ESC DURANTE O COMBATE</small><h2 id="escape-flee-title">Tentar fugir?</h2><p>Um dado amarelo será rolado: <b>5–6</b> permite escapar, <b>4</b> mantém sua ação e <b>1–3</b> encerra seu turno.</p>{(!g.playerTurn||g.animating)&&<span>Aguarde o seu turno para tentar fugir.</span>}<div><button onClick={()=>setFleeConfirm(false)}>Continuar combate</button><button className="primary" disabled={!g.playerTurn||g.animating} onClick={()=>{setFleeConfirm(false);g.flee()}}><Footprints/>Rolar dado de fuga</button></div></section></div>}
+   {g.storyNotice && (
+     <aside className="story-toast-banner" onClick={() => useGame.setState({ storyNotice: undefined })}>
+       <Sparkles size={16} />
+       <span>{g.storyNotice}</span>
+       <button aria-label="Fechar aviso"><X size={14} /></button>
+     </aside>
+   )}
    <TourOverlay/>
    {hero&&g.screen!=='menu'&&g.screen!=='select'&&g.screen!=='cardCreator'&&<footer className="footer-tip">Bangalore's • Auto-save ativo • A aventura continua no próximo acesso.</footer>}
  </div>
@@ -889,7 +897,46 @@ function regionListSort(a:Territory,b:Territory){return (REGION_LIST_ORDER[a.id]
 // Reúne, num só lugar no mapa, as duas fontes de "missão ativa" da campanha: os contratos da
 // Guilda (já existia) e o objetivo do capítulo atual das Crônicas (StoryCampaignPanel) --
 // antes só aparecia visitando a tela de Crônicas, então não dava pra acompanhar sem sair do mapa.
-function MapGuildMissions(){const g=useGame();const missions=GUILD_MISSIONS.filter(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id));const chapter=STORY_CHAPTERS.find(c=>c.id===g.storyChapterId)??STORY_CHAPTERS[0];const storyProgress=chapter.requirement?storyRequirementProgress(g):undefined;const total=missions.length+(storyProgress?1:0);if(!total)return <section className="map-mission-empty"><strong>Missão ativa</strong><Trophy/><p>Nenhum contrato ativo.</p><button onClick={()=>g.setScreen('guild')}>Visitar a Guilda</button></section>;return <section className="map-active-missions"><div className="map-mission-title"><strong>Missões ativas</strong><span>{total}</span></div>{storyProgress&&<article className={storyProgress.complete?'ready':''}><header><History/><div><small>{storyProgress.complete?'OBJETIVO CONCLUÍDO':`CRÔNICAS • ATO ${chapter.act}`}</small><strong>{chapter.requirement!.label}</strong></div></header><p>{chapter.title} — {chapter.region}</p><div className="map-mission-progress"><span>Progresso <b>{storyProgress.current}/{storyProgress.required}</b></span><div className="xp-track"><div style={{width:`${Math.min(100,storyProgress.current/storyProgress.required*100)}%`}}/></div></div><footer><span>{storyProgress.complete?'Pronto para decidir o rumo':'Campanha narrativa'}</span><button onClick={()=>g.setScreen('chronicle')}>{storyProgress.complete?'Escolher rumo':'Ver em Crônicas'}</button></footer></article>}{missions.map(m=>{const progress=guildMissionProgress(g,m),ready=progress>=m.quantidade;return <article className={ready?'ready':''} key={m.id}><header><Trophy/><div><small>{ready?'OBJETIVO CONCLUÍDO':'CONTRATO DA GUILDA'}</small><strong>{m.nome}</strong></div></header><p>{m.descricao}</p><div className="map-mission-progress"><span>{m.tipo==='delivery'?'Entrega':m.tipo==='material'?'Coleta':'Progresso'} <b>{progress}/{m.quantidade}</b></span><div className="xp-track"><div style={{width:`${Math.min(100,progress/m.quantidade*100)}%`}}/></div></div><footer><span>{m.recompensa.tipo==='gold'?`${m.recompensa.valor} ouro`:'Equipamento compatível'}</span>{ready&&<button onClick={()=>g.setScreen('guild')}>Resgatar na Guilda</button>}</footer></article>})}<button className="map-mission-guild-link" onClick={()=>g.setScreen('guild')}>Abrir Guilda</button></section>}
+function MapGuildMissions(){
+  const g=useGame()
+  const missions=GUILD_MISSIONS.filter(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id))
+  const chapter=STORY_CHAPTERS.find(c=>c.id===g.storyChapterId)??STORY_CHAPTERS[0]
+  const storyProgress=chapter.requirement?storyRequirementProgress(g):undefined
+  const activeQuests=Object.keys(g.activeStoryQuests??{}).map(id=>questById(id)).filter((q):q is StoryQuest=>Boolean(q))
+  const total=missions.length+(storyProgress?1:0)+activeQuests.length
+
+  if(!total)return <section className="map-mission-empty"><strong>Missão ativa</strong><Trophy/><p>Nenhum contrato ativo.</p><button onClick={()=>g.setScreen('guild')}>Visitar a Guilda</button></section>
+
+  return <section className="map-active-missions">
+    <div className="map-mission-title"><strong>Missões ativas</strong><span>{total}</span></div>
+    {activeQuests.map(q=>{
+      const targetRegion=TERRITORIES.find(t=>t.id===q.targetRegionId)
+      const targetNpc=npcById(q.targetNpcId)
+      const hasItem=q.questItem?(g.questItems?.[q.questItem.id]??0)>=q.questItem.quantity:true
+      return <article className={`story-active-quest ${hasItem?'ready':''}`} key={q.id}>
+        <header>
+          <Mail/>
+          <div>
+            <small>{hasItem?'ENCOMENDA PRONTA PARA ENTREGA':`HISTÓRIA • ATO ${q.act}`}</small>
+            <strong>{q.title}</strong>
+          </div>
+        </header>
+        <p>{q.summary}</p>
+        <div className="map-mission-progress">
+          <span>Destino: <b>{targetRegion?.nome??q.targetRegionId}</b> ({targetNpc?.nome??'Destinatário'})</span>
+        </div>
+        {q.questItem&&<span className="quest-tracker-item">{q.questItem.icon??'📦'} {q.questItem.name} — {hasItem?'✓ Em posse':'✗ Item ausente'}</span>}
+        <footer>
+          <span>+{q.reward.gold} ouro • +{q.reward.xp} XP</span>
+          {targetRegion&&<button onClick={()=>g.openRegion(targetRegion)}>Ir para {targetRegion.nome}</button>}
+        </footer>
+      </article>
+    })}
+    {storyProgress&&<article className={storyProgress.complete?'ready':''}><header><History/><div><small>{storyProgress.complete?'OBJETIVO CONCLUÍDO':`CRÔNICAS • ATO ${chapter.act}`}</small><strong>{chapter.requirement!.label}</strong></div></header><p>{chapter.title} — {chapter.region}</p><div className="map-mission-progress"><span>Progresso <b>{storyProgress.current}/{storyProgress.required}</b></span><div className="xp-track"><div style={{width:`${Math.min(100,storyProgress.current/storyProgress.required*100)}%`}}/></div></div><footer><span>{storyProgress.complete?'Pronto para decidir o rumo':'Campanha narrativa'}</span><button onClick={()=>g.setScreen('chronicle')}>{storyProgress.complete?'Escolher rumo':'Ver em Crônicas'}</button></footer></article>}
+    {missions.map(m=>{const progress=guildMissionProgress(g,m),ready=progress>=m.quantidade;return <article className={ready?'ready':''} key={m.id}><header><Trophy/><div><small>{ready?'OBJETIVO CONCLUÍDO':'CONTRATO DA GUILDA'}</small><strong>{m.nome}</strong></div></header><p>{m.descricao}</p><div className="map-mission-progress"><span>{m.tipo==='delivery'?'Entrega':m.tipo==='material'?'Coleta':'Progresso'} <b>{progress}/{m.quantidade}</b></span><div className="xp-track"><div style={{width:`${Math.min(100,progress/m.quantidade*100)}%`}}/></div></div><footer><span>{m.recompensa.tipo==='gold'?`${m.recompensa.valor} ouro`:'Equipamento compatível'}</span>{ready&&<button onClick={()=>g.setScreen('guild')}>Resgatar na Guilda</button>}</footer></article>})}
+    <button className="map-mission-guild-link" onClick={()=>g.setScreen('guild')}>Abrir Guilda</button>
+  </section>
+}
 
 function MapScreen(){
  const g=useGame()
@@ -981,6 +1028,190 @@ function VendorShopPanel({npc}:{npc:NpcDefinition}){
   </div>}
  </div>
 }
+function NpcStoryQuestSection({ npc, onClose }: { npc: NpcDefinition; onClose: () => void }) {
+  const g = useGame()
+  const deliverable = questsDeliverableToNpc(npc.id, g.activeStoryQuests ?? {})
+  const offered = questsOfferedByNpc(npc.id, g.completedStoryQuests ?? [], g.activeStoryQuests ?? {})
+  const activeFromSource = STORY_QUESTS.filter(q => q.sourceNpcId === npc.id && g.activeStoryQuests?.[q.id])
+
+  if (!deliverable.length && !offered.length && !activeFromSource.length) return null
+
+  return (
+    <div className="npc-quest-container">
+      {deliverable.map(quest => {
+        const hasItem = quest.questItem ? (g.questItems?.[quest.questItem.id] ?? 0) >= quest.questItem.quantity : true
+        return (
+          <div key={quest.id} className={`npc-quest-card deliverable ${hasItem ? 'ready' : 'waiting'}`}>
+            <div className="npc-quest-badge">
+              {hasItem ? '📦 PRONTO PARA ENTREGA' : '⏳ AGUARDANDO PRODUTO'}
+            </div>
+            <h3 className="npc-quest-title">{quest.title}</h3>
+            <p className="npc-quest-speech">“{hasItem ? quest.dialogue.targetWelcome : quest.dialogue.inProgress}”</p>
+            {quest.questItem && (
+              <div className="npc-quest-item-req">
+                <span>{quest.questItem.icon ?? '📦'} {quest.questItem.name}</span>
+                <b>{hasItem ? '✓ Na mochila de crônicas' : '✗ Item ausente'}</b>
+              </div>
+            )}
+            <div className="npc-quest-reward-preview">
+              <small>RECOMPENSA:</small>
+              <span>+{quest.reward.gold} Ouro • +{quest.reward.xp} XP {quest.reward.loreTitle ? `• Título: ${quest.reward.loreTitle}` : ''}</span>
+            </div>
+            {hasItem && (
+              <button
+                className="npc-quest-turnin-btn"
+                onClick={() => {
+                  g.turnInStoryQuest(quest.id)
+                  playSfx('levelup')
+                  playSfx('coin')
+                }}
+              >
+                Entregar Encomenda e Concluir
+              </button>
+            )}
+          </div>
+        )
+      })}
+
+      {offered.map(quest => {
+        const targetTerritory = TERRITORIES.find(t => t.id === quest.targetRegionId)
+        const targetNpc = npcById(quest.targetNpcId)
+        return (
+          <div key={quest.id} className="npc-quest-card offered">
+            <div className="npc-quest-badge">
+              ✨ NOVA MISSÃO (ATO {quest.act})
+            </div>
+            <h3 className="npc-quest-title">{quest.title}</h3>
+            <p className="npc-quest-speech">“{quest.dialogue.offer}”</p>
+            <div className="npc-quest-travel-target">
+              <Footprints size={14} />
+              <span><b>Destino:</b> {targetTerritory?.nome ?? quest.targetRegionId} ({targetNpc?.nome ?? 'Destinatário'})</span>
+            </div>
+            {quest.questItem && (
+              <div className="npc-quest-item-req">
+                <small>RECEBERÁ:</small>
+                <span>{quest.questItem.icon ?? '📦'} {quest.questItem.name} ({quest.questItem.description})</span>
+              </div>
+            )}
+            <div className="npc-quest-reward-preview">
+              <small>RECOMPENSA AO ENTREGAR:</small>
+              <span>+{quest.reward.gold} Ouro • +{quest.reward.xp} XP</span>
+            </div>
+            <button
+              className="npc-quest-accept-btn"
+              onClick={() => {
+                g.acceptStoryQuest(quest.id)
+                playSfx('coin')
+              }}
+            >
+              Aceitar Missão
+            </button>
+          </div>
+        )
+      })}
+
+      {activeFromSource.map(quest => {
+        const targetTerritory = TERRITORIES.find(t => t.id === quest.targetRegionId)
+        const targetNpc = npcById(quest.targetNpcId)
+        return (
+          <div key={quest.id} className="npc-quest-card in-progress">
+            <div className="npc-quest-badge">EM ANDAMENTO</div>
+            <h3 className="npc-quest-title">{quest.title}</h3>
+            <p className="npc-quest-speech">“{quest.dialogue.inProgress}”</p>
+            <small className="npc-quest-reminder">
+              Lembrete: Viaje até <b>{targetTerritory?.nome ?? quest.targetRegionId}</b> e procure por <b>{targetNpc?.nome ?? quest.targetNpcId}</b>.
+            </small>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function NpcDialog({ npc, onClose }: { npc: NpcDefinition; onClose: () => void }) {
+  const g = useGame()
+  const deliverable = questsDeliverableToNpc(npc.id, g.activeStoryQuests ?? {})
+  const offered = questsOfferedByNpc(npc.id, g.completedStoryQuests ?? [], g.activeStoryQuests ?? {})
+  const status = deliverable.length > 0 ? 'ready' : offered.length > 0 ? 'available' : 'default'
+  const dialogueIndex = status === 'ready' ? 2 : status === 'available' ? 1 : 0
+  const speech = npc.dialogue[dialogueIndex] ?? npc.dialogue[0]
+  const territory = TERRITORIES.find(t => t.id === npc.regionId)
+
+  return (
+    <div className="regionmap-encounter-backdrop" onClick={onClose}>
+      <section className="regionmap-npc-dialog story-npc-dialog" onClick={event => event.stopPropagation()}>
+        <div className="regionmap-npc-dialog-head">
+          <span className="npc-banner-portrait">
+            <img src={assetUrl(npc.portrait ?? npc.sprite)} alt={npc.nome} />
+          </span>
+          <div>
+            <span className="eyebrow">PERSONAGEM • {territory?.nome.toUpperCase() ?? 'HAVENDOWN'}</span>
+            <h2>{npc.nome}</h2>
+            <small>{npc.titulo}</small>
+          </div>
+          <button className="npc-dialog-close-btn" onClick={onClose} aria-label="Fechar"><X size={18} /></button>
+        </div>
+
+        <NpcStoryQuestSection npc={npc} onClose={onClose} />
+
+        <p className="npc-dialogue-quote"><Quote size={15} />{speech}</p>
+
+        {npc.services.includes('guild') && <BrennaMissionPanel />}
+        {npc.shopCategory && <VendorShopPanel npc={npc} />}
+
+        <div className="npc-dialog-footer-actions">
+          <button onClick={onClose}>Continuar explorando</button>
+          {!npc.shopCategory && npc.services.some(s => s !== 'quest') && (
+            <button className="primary" onClick={() => { onClose(); g.setScreen(npc.screen) }}>
+              {npc.services.includes('guild') ? 'Abrir Guilda' : npc.services.includes('forge') ? 'Abrir Forja' : 'Abrir'}
+            </button>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function RegionNpcBar({ regionId, onSelectNpc }: { regionId: string; onSelectNpc: (npc: NpcDefinition) => void }) {
+  const g = useGame()
+  const npcs = npcsForRegion(regionId)
+  if (!npcs.length) return null
+
+  return (
+    <div className="region-npcs-bar">
+      <div className="region-npcs-header">
+        <Users size={16} />
+        <span>Personagens na Região ({npcs.length})</span>
+      </div>
+      <div className="region-npcs-chips">
+        {npcs.map(npc => {
+          const hasDeliverable = questsDeliverableToNpc(npc.id, g.activeStoryQuests ?? {}).some(q => {
+            if (q.questItem) return (g.questItems?.[q.questItem.id] ?? 0) >= q.questItem.quantity
+            return true
+          })
+          const hasOffered = questsOfferedByNpc(npc.id, g.completedStoryQuests ?? [], g.activeStoryQuests ?? {}).length > 0
+          const statusClass = hasDeliverable ? 'chip-ready' : hasOffered ? 'chip-available' : ''
+          const badgeText = hasDeliverable ? 'Entregar!' : hasOffered ? 'Nova Missão!' : npc.services.includes('guild') ? 'Guilda' : npc.services.includes('forge') ? 'Forja' : npc.services.includes('shop') ? 'Loja' : undefined
+
+          return (
+            <button key={npc.id} className={`region-npc-chip ${statusClass}`} onClick={() => onSelectNpc(npc)}>
+              <div className="region-npc-avatar">
+                <img src={assetUrl(npc.portrait ?? npc.sprite)} alt={npc.nome} />
+                {hasDeliverable && <span className="npc-chip-indicator ready">!</span>}
+                {!hasDeliverable && hasOffered && <span className="npc-chip-indicator available">!</span>}
+              </div>
+              <div className="region-npc-info">
+                <strong>{npc.nome}</strong>
+                <small>{badgeText ?? npc.titulo}</small>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Subregion[];level:number;selectedSub?:Subregion}){
  const g=useGame()
  const map=getRegionMap(region.id)!
@@ -990,9 +1221,6 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
  const [showBattleDetails,setShowBattleDetails]=React.useState(false)
  React.useEffect(()=>setActiveSub(selectedSub??subs[0]),[region.id,selectedSub,subs])
  const startLoc=selectedSub&&map.locations.find(l=>l.subId===selectedSub.id)
- // Retomar exatamente onde o jogador parou (se já andou por essa região antes) tem prioridade
- // sobre cair no marcador da sub-região selecionada -- essa última só serve de ponto de partida
- // na primeira vez, antes de existir uma posição salva.
  const savedPos=g.regionMapPositions?.[region.id]
   const initialPos=savedPos??(startLoc?{x:startLoc.x,y:startLoc.y}:undefined)
   const locationStatus=(subId:string):'done'|'ready'|'default'=>{const sub=subs.find(s=>s.id===subId);if(!sub)return 'default';if(g.subregionBossesDefeated.includes(sub.id))return 'done';const wins=g.subregionVictories[sub.id]??0;return wins>=sub.encontrosNecessarios?'ready':'default'}
@@ -1002,18 +1230,24 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
   const handleExit=(exitId:string)=>{const exit=regionExits.find(item=>item.id===exitId);if(exit)g.openRegion(exit.region)}
   const npcs=npcsForRegion(region.id)
  const npcStatus=(npc:NpcDefinition):'ready'|'available'|'default'=>{
+  const hasDeliverable=questsDeliverableToNpc(npc.id,g.activeStoryQuests??{}).some(q=>{
+    if(q.questItem)return (g.questItems?.[q.questItem.id]??0)>=q.questItem.quantity
+    return true
+  })
+  if(hasDeliverable)return 'ready'
+  const hasOffered=questsOfferedByNpc(npc.id,g.completedStoryQuests??[],g.activeStoryQuests??{}).length>0
+  if(hasOffered)return 'available'
   if(npc.services.includes('guild')){const missions=availableGuildMissions(g.guildClaimed),ready=missions.some(m=>g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id)&&guildMissionProgress(g,m)>=m.quantidade);if(ready)return'ready';const available=missions.some(m=>!g.guildAccepted.includes(m.id)&&!g.guildClaimed.includes(m.id));return available?'available':'default'}
   if(npc.services.includes('forge')){const canUpgrade=Object.values(g.equipped).some(ref=>{if(!ref)return false;const item=equipmentByRef(ref);if(!item)return false;const current=g.equipmentUpgrades[ref]??0;if(current>=3)return false;const target=(current+1)as 1|2|3,goldCost=equipmentUpgradeCost(item,current),materialCost=equipmentUpgradeMaterialCost(item,target);return g.gold>=goldCost&&Object.entries(materialCost).every(([id,qty])=>(g.materials[id]??0)>=qty)});return canUpgrade?'available':'default'}
   if(npc.services.includes('shop')&&npc.shopCategory!=='consumivel'){return g.equipmentBag.length>=equipmentBagCapacity(g)-1?'available':'default'}
   return'default'
  }
- const npcDialogueLine=(npc:NpcDefinition)=>{const status=npcStatus(npc),index=status==='ready'?2:status==='available'?1:0;return npc.dialogue[index]??npc.dialogue[npc.dialogue.length-1]??npc.dialogue[0]}
  const sub=activeSub??subs[0]
  if(!sub)return null
  const wins=g.subregionVictories[sub.id]??0,bossDown=g.subregionBossesDefeated.includes(sub.id),ready=wins>=sub.encontrosNecessarios&&!bossDown,danger=dangerFor(level,sub.nivelMin,sub.nivelMax)
  const encounterDialog=encounterPrompt&&<div className="regionmap-encounter-backdrop" onClick={()=>setEncounterPrompt(undefined)}><section className={`regionmap-encounter-prompt${showBattleDetails?' details':''}`} onClick={event=>event.stopPropagation()}>{showBattleDetails?<><span className="eyebrow">DETALHES DA BATALHA</span><SubregionCard sub={encounterPrompt} level={level}/><button className="regionmap-details-back" onClick={()=>setShowBattleDetails(false)}>Voltar</button></>:<><span className="eyebrow">PONTO DE EXPLORAÇÃO</span><h2>{encounterPrompt.nome}</h2><p>{encounterPrompt.descricao}</p><div><button onClick={()=>setEncounterPrompt(undefined)}>Continuar explorando</button><button className="primary" onClick={()=>setShowBattleDetails(true)}>Ver detalhes da batalha</button></div></>}</section></div>
  const ambushDialog=g.ambush&&<div className="regionmap-encounter-backdrop"><section className="regionmap-ambush-prompt"><span className="eyebrow">EMBOSCADA</span><h2>Você foi atacado!</h2><div className="regionmap-ambush-enemy"><img src={assetUrl(cardArt(g.ambush.enemy))} alt={g.ambush.enemy.nome}/><div><strong>{g.ambush.enemy.nome}</strong><small>Nível {g.ambush.enemy.nivel??g.ambush.enemy.dificuldade}</small></div></div><p>Um inimigo surge do nada e bloqueia seu caminho. Fugir usa a mesma chance de uma fuga em combate.</p><div><button onClick={()=>g.fleeAmbush()}>Tentar fugir</button><button className="primary" onClick={()=>g.acceptAmbush()}>Aceitar o desafio</button></div></section></div>
- const npcDialog=activeNpc&&<div className="regionmap-encounter-backdrop" onClick={()=>setActiveNpc(undefined)}><section className="regionmap-npc-dialog" onClick={event=>event.stopPropagation()}><div className="regionmap-npc-dialog-head"><span className="npc-banner-portrait"><img src={assetUrl(activeNpc.portrait??activeNpc.sprite)} alt={activeNpc.nome}/></span><div><span className="eyebrow">PERSONAGEM</span><h2>{activeNpc.nome}</h2><small>{activeNpc.titulo}</small></div></div><p><Quote size={15}/>{npcDialogueLine(activeNpc)}</p>{activeNpc.services.includes('guild')&&<BrennaMissionPanel/>}{activeNpc.shopCategory&&<VendorShopPanel npc={activeNpc}/>}<div><button onClick={()=>setActiveNpc(undefined)}>Continuar explorando</button>{!activeNpc.shopCategory&&<button className="primary" onClick={()=>{const npc=activeNpc;setActiveNpc(undefined);g.setScreen(npc.screen)}}>{activeNpc.services.includes('guild')?'Abrir Guilda':activeNpc.services.includes('forge')?'Abrir Forja':'Abrir'}</button>}</div></section></div>
+ const npcDialog=activeNpc&&<NpcDialog npc={activeNpc} onClose={()=>setActiveNpc(undefined)}/>
  return <section className="regionmap-shell">
   <div className="regionmap-stage"><div className="regionmap-stage-title"><Map size={18}/><span>Região de {region.nome}</span></div><TileWorldExplorer map={map} initialPosition={initialPos} paused={Boolean(encounterPrompt||activeNpc||g.ambush)} onEnterLocation={handleEnter} locationStatus={locationStatus} exits={regionExits} onEnterExit={handleExit} npcs={npcs} npcStatus={npcStatus} onInteractNpc={setActiveNpc} onAmbush={subId=>g.triggerAmbush(subId)} onPositionChange={pos=>g.setRegionMapPosition(region.id,pos)}/></div>
   <aside className="regionmap-inspector"><span className="eyebrow">LOCAL ATUAL</span><h2>{sub.nome}</h2><div className="regionmap-inspector-preview" style={{backgroundImage:`url(${map.background})`}}><span>{sub.icone}</span></div><p>{sub.descricao}</p><div className="regionmap-details"><div><small>EXPLORAÇÃO</small><strong>{Math.min(wins,sub.encontrosNecessarios)}/{sub.encontrosNecessarios}</strong></div><div><small>PERIGO</small><strong className={`danger-${danger.cls}`}>{danger.label}</strong></div><div><small>CHEFE</small><strong>{bossDown?'Derrotado':ready?'Disponível':'Oculto'}</strong></div></div><div className="regionmap-loot"><small>RECOMPENSAS</small><span>{sub.temaLoot}</span></div><button className={ready?'primary boss-button':'primary'} onClick={()=>setEncounterPrompt(sub)}>{bossDown?'EXPLORAR NOVAMENTE':ready?'ENFRENTAR CHEFE':'EXPLORAR LOCAL'}</button></aside>
@@ -1024,7 +1258,7 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
   {ambushDialog}
  </section>
 }
-function RegionScreen(){const g=useGame();const progression=[...TERRITORIES].sort(regionListSort);const region=progression.find(t=>t.id===g.regionId)??progression[0],world=region.mundo??'havendown',worldProgression=progression.filter(t=>(t.mundo??'havendown')===world),regionIndex=worldProgression.findIndex(t=>t.id===region.id),weaker=worldProgression[regionIndex-1],stronger=worldProgression[regionIndex+1],worldLabel=WORLD_MAPS[world].label,otherWorld=world==='havendown'?'steelmere':'havendown',otherUnlocked=worldUnlocked(g,otherWorld);const lvl=levelInfo(g.xp).lvl;const subs=SUBREGIONS.filter(s=>s.regionId===region.id);const selectedSub=g.subregionId?subs.find(s=>s.id===g.subregionId):undefined;const visibleSubs=selectedSub?[selectedSub]:subs;const hasMap=Boolean(getRegionMap(region.id));return <div className={`region-page${hasMap?' region-page-mapview':''}`}><Panel className="region-head"><button className="region-back" onClick={()=>g.setScreen('map')}><ArrowLeft/>Mapa</button><div><span className="eyebrow">REGIÃO • {worldLabel.toUpperCase()} • DIFICULDADE {region.dificuldade}</span><h1>{region.nome}</h1><p>{region.descricao}</p></div><div className="region-side-actions"><div className="region-level"><small>Nível recomendado</small><strong>{region.nivelMin}–{region.nivelMax}</strong><span>Seu nível: {lvl}</span></div>{otherUnlocked&&<button className="region-world-button" onClick={()=>g.travelWorld(otherWorld)}><Plane size={15}/>Ir para {WORLD_MAPS[otherWorld].label}</button>}</div></Panel><motion.nav {...rarityMotionProps('raro',.04)} className="region-step-nav" aria-label="Navegação entre regiões do mesmo mundo"><button disabled={!weaker} onClick={()=>weaker&&g.openRegion(weaker)}><ArrowLeft/><span><small>REGIÃO ANTERIOR</small><strong>{weaker?.nome??'Primeira região'}</strong>{weaker&&<em>Nível {weaker.nivelMin}–{weaker.nivelMax}</em>}</span></button><button disabled={!stronger} onClick={()=>stronger&&g.openRegion(stronger)}><span><small>PRÓXIMA REGIÃO</small><strong>{stronger?.nome??'Última região'}</strong>{stronger&&<em>Nível {stronger.nivelMin}–{stronger.nivelMax}</em>}</span><ArrowRight/></button></motion.nav>{selectedSub&&!hasMap&&<button className="subregion-list-back" onClick={()=>g.openRegion(region)}><ArrowLeft/>Ver todas as sub-regiões de {region.nome}</button>}{g.explorationNote&&<div className="exploration-note"><Sparkles/>{g.explorationNote}</div>}{hasMap?<RegionMapView key={region.id} region={region} subs={subs} level={lvl} selectedSub={selectedSub}/>:<div className={`subregion-grid${selectedSub?' selected':''}`}>{visibleSubs.map((sub,index)=><SubregionCard key={sub.id} sub={sub} level={lvl} index={index}/>)}</div>}</div>}
+function RegionScreen(){const g=useGame();const [selectedNpc,setSelectedNpc]=React.useState<NpcDefinition|undefined>();const progression=[...TERRITORIES].sort(regionListSort);const region=progression.find(t=>t.id===g.regionId)??progression[0],world=region.mundo??'havendown',worldProgression=progression.filter(t=>(t.mundo??'havendown')===world),regionIndex=worldProgression.findIndex(t=>t.id===region.id),weaker=worldProgression[regionIndex-1],stronger=worldProgression[regionIndex+1],worldLabel=WORLD_MAPS[world].label,otherWorld=world==='havendown'?'steelmere':'havendown',otherUnlocked=worldUnlocked(g,otherWorld);const lvl=levelInfo(g.xp).lvl;const subs=SUBREGIONS.filter(s=>s.regionId===region.id);const selectedSub=g.subregionId?subs.find(s=>s.id===g.subregionId):undefined;const visibleSubs=selectedSub?[selectedSub]:subs;const hasMap=Boolean(getRegionMap(region.id));return <div className={`region-page${hasMap?' region-page-mapview':''}`}><Panel className="region-head"><button className="region-back" onClick={()=>g.setScreen('map')}><ArrowLeft/>Mapa</button><div><span className="eyebrow">REGIÃO • {worldLabel.toUpperCase()} • DIFICULDADE {region.dificuldade}</span><h1>{region.nome}</h1><p>{region.descricao}</p></div><div className="region-side-actions"><div className="region-level"><small>Nível recomendado</small><strong>{region.nivelMin}–{region.nivelMax}</strong><span>Seu nível: {lvl}</span></div>{otherUnlocked&&<button className="region-world-button" onClick={()=>g.travelWorld(otherWorld)}><Plane size={15}/>Ir para {WORLD_MAPS[otherWorld].label}</button>}</div></Panel><motion.nav {...rarityMotionProps('raro',.04)} className="region-step-nav" aria-label="Navegação entre regiões do mesmo mundo"><button disabled={!weaker} onClick={()=>weaker&&g.openRegion(weaker)}><ArrowLeft/><span><small>REGIÃO ANTERIOR</small><strong>{weaker?.nome??'Primeira região'}</strong>{weaker&&<em>Nível {weaker.nivelMin}–{weaker.nivelMax}</em>}</span></button><button disabled={!stronger} onClick={()=>stronger&&g.openRegion(stronger)}><span><small>PRÓXIMA REGIÃO</small><strong>{stronger?.nome??'Última região'}</strong>{stronger&&<em>Nível {stronger.nivelMin}–{stronger.nivelMax}</em>}</span><ArrowRight/></button></motion.nav><RegionNpcBar regionId={region.id} onSelectNpc={setSelectedNpc}/>{selectedSub&&!hasMap&&<button className="subregion-list-back" onClick={()=>g.openRegion(region)}><ArrowLeft/>Ver todas as sub-regiões de {region.nome}</button>}{g.explorationNote&&<div className="exploration-note"><Sparkles/>{g.explorationNote}</div>}{hasMap?<RegionMapView key={region.id} region={region} subs={subs} level={lvl} selectedSub={selectedSub}/>:<div className={`subregion-grid${selectedSub?' selected':''}`}>{visibleSubs.map((sub,index)=><SubregionCard key={sub.id} sub={sub} level={lvl} index={index}/>)}</div>}{selectedNpc&&<NpcDialog npc={selectedNpc} onClose={()=>setSelectedNpc(undefined)}/>}</div>}
 function EventScreen(){const g=useGame();const event=g.currentEvent??EVENTS[0];const result=g.eventResult;const mission=eventMission(event);const hero=HEROES.find(h=>h.id===g.heroId);return <div className="event-page"><div className="event-backdrop"/><Panel className="event-card-panel"><span className="eyebrow">ENCONTRO DE EXPLORAÇÃO</span><div className="event-layout"><div className="event-art"><img src={'./'+(event.arte??event.imagem)} alt={event.nome}/><span>MISSÃO</span></div><div className="event-copy"><ScrollText className="event-icon"/><h1>{event.nome}</h1><p className="event-description">{event.descricao}</p>{!result?<><section className="event-briefing"><div><small>HISTÓRIA</small><p>{mission.setting}</p></div><div><small>SUA MISSÃO</small><p>{mission.objective}</p></div><div className="event-stakes"><span><Coins/><em>RECOMPENSA</em><strong>{mission.reward}</strong></span><span className={mission.risky?'risk':''}><Dices/><em>RISCO</em><strong>{mission.risk}</strong></span></div></section><div className={`event-warning${mission.risky?' risk':''}`}><Dices/><div><strong>{mission.risky?'Esta missão exige uma rolagem':'Decisão sem rolagem de sucesso'}</strong><small>{mission.risky?'Resultados de 4 a 6 representam sucesso. Confira o risco acima antes de aceitar.':'Ao aceitar, o efeito descrito será aplicado diretamente.'}</small></div></div><div className="event-actions"><button className="primary" onClick={()=>g.resolveEvent(true)}>ACEITAR MISSÃO</button><button onClick={()=>g.resolveEvent(true,'class')}>ABORDAGEM: {hero?.nome.toLocaleUpperCase('pt-BR')??'HERÓI'} (+1)</button><button onClick={()=>g.resolveEvent(false)}>SEGUIR VIAGEM</button></div></>:<div className={`event-result ${result.tone}`}>{result.roll&&<div className="event-die"><Dices/><span>{result.roll}</span></div>}<div><small>RESULTADO</small><strong>{result.message}</strong></div><button className="primary" onClick={g.finishEvent}>CONTINUAR EXPLORAÇÃO</button></div>}</div></div></Panel></div>}
 function SubregionCard({sub,level,index=0}:{sub:Subregion;level:number;index?:number}){const g=useGame();const wins=g.subregionVictories[sub.id]??0;const bossDown=g.subregionBossesDefeated.includes(sub.id);const danger=dangerFor(level,sub.nivelMin,sub.nivelMax);const ready=wins>=sub.encontrosNecessarios&&!bossDown;const rarity:Rarity=ready?'lendario':bossDown?'incomum':danger.cls==='deadly'?'epico':danger.cls==='hard'?'raro':'comum';return <motion.article {...rarityMotionProps(rarity,index*.04)} whileHover={rarityHoverLift(rarity)} whileTap={effectsReduced()?undefined:{scale:.988}} className={`subregion-card danger-${danger.cls}`}><div className="subregion-top"><span className="subregion-icon">{sub.icone}</span><div><h2>{sub.nome}</h2><p>Nível {sub.nivelMin}–{sub.nivelMax}</p></div><span className={`danger-badge ${danger.cls}`}>{danger.label}</span></div><p className="subregion-desc">{sub.descricao}</p><div className="subregion-progress"><div><span>Exploração</span><strong>{Math.min(wins,sub.encontrosNecessarios)}/{sub.encontrosNecessarios}</strong></div><div className="xp-track"><div style={{width:`${Math.min(100,wins/sub.encontrosNecessarios*100)}%`}}/></div></div><div className="subregion-meta"><span>★{'★'.repeat(Math.max(0,danger.stars-1))}{'☆'.repeat(Math.max(0,5-danger.stars))}</span><span>{bossDown?'✓ Chefe derrotado':ready?'CHEFE DISPONÍVEL':'Chefe oculto'}</span></div><div className="subregion-details"><small><b>Loot:</b> {sub.temaLoot}</small><small><b>Desafios:</b> {sub.desafios.slice(0,3).join(' • ')}</small></div><button className={ready?'primary boss-button':'primary'} onClick={()=>g.startEncounter(sub.id)}>{bossDown?'Explorar novamente':ready?'ENFRENTAR CHEFE':'EXPLORAR'}</button>{bossDown&&<button className="revenge-button" onClick={()=>g.startRevenge(sub.id)}>VINGANÇA • NÍVEL {(g.revengeWins[sub.id]??0)+1}</button>}</motion.article>}
 
@@ -1032,9 +1266,130 @@ function Stat({label,value}:{label:string;value:React.ReactNode}){return <div cl
 function consumableBonusActive(item:{id:string;tipo:string},state:any){return item.tipo==='regen_boost'?Number(state.regenBoostUntil??0)>Date.now():(state.activePotionIds??[]).includes(item.id)&&((item.tipo==='ataque'&&state.pendingAttackBonus>0)||(item.tipo==='escudo'&&state.shield>0))}
 function CharacterScreen(){const g=useGame();const h=HEROES.find(x=>x.id===g.heroId)!;const li=levelInfo(g.xp),permanentLife=Math.max(0,g.attr.vida-g.allocatedAttr.vida);const ability=heroAbilityParts(h.habilidade);return <><div className="char-grid"><Panel className="portrait-panel"><ArtPreview className="portrait" image={cardArt(h)} name={h.nome} text={h.habilidade} stats={`Ataque ${attackValue(g)} • Defesa ${defenseValue(g)} • Vida ${maxHp(g)}`}/><h1>{h.nome}</h1><p>{h.habilidade}</p><div className="points-box">Pontos disponíveis <strong>{g.attributePoints}</strong></div></Panel><Panel title="Atributos"><p className={`attr-points-callout${g.attributePoints?' hot':''}`}><Plus size={15}/>{g.attributePoints?<>Você tem <strong>{g.attributePoints}</strong> {g.attributePoints===1?'ponto':'pontos'} de atributo para distribuir abaixo.</>:'Nenhum ponto de atributo disponível agora — suba de nível para ganhar mais.'}</p><AttrRow label="Vida" value={`${g.hp}/${maxHp(g)}`} n={g.allocatedAttr.vida} detail={permanentLife?`+${permanentLife} de bônus permanente`:undefined} onPlus={()=>g.addAttribute('vida')} disabled={!g.attributePoints}/><AttrRow label="Ataque" value={attackValue(g)} n={g.allocatedAttr.ataque} detail={g.pendingAttackBonus?`+${g.pendingAttackBonus} temporário até o fim do combate`:undefined} onPlus={()=>g.addAttribute('ataque')} disabled={!g.attributePoints}/><AttrRow label="Defesa" value={defenseValue(g)} n={g.allocatedAttr.defesa} onPlus={()=>g.addAttribute('defesa')} disabled={!g.attributePoints}/><h3 className="subhead">Progressão</h3><Stat label="Nível" value={li.lvl}/><div className="xp-track"><div style={{width:`${Math.min(100,li.progress/li.next*100)}%`}}/></div><Stat label="XP do nível" value={`${li.progress}/${li.next}`}/><Stat label="XP necessária para o próximo nível" value={li.next-li.progress}/><Stat label="Experiência total" value={g.xp}/><Stat label="Ouro" value={g.gold}/></Panel><TalentPanel/></div><Panel className="char-mechanics" title="Mecânicas do personagem"><div className="mechanics-grid">{ability.passivo&&<div className="mechanics-card"><small>PASSIVO</small><p>{ability.passivo}</p></div>}<div className="mechanics-card"><small>ATIVO • {heroSkillNames[h.id]??'Habilidade do herói'}</small><p>{ability.ativo}</p><span className="mechanics-hint">Uso único por batalha no modo solo.</span></div></div><h3 className="subhead">Como os atributos funcionam</h3><div className="mechanics-attr-list"><div><Heart size={16} className="heart"/><div><strong>Vida</strong><span>Total de pontos de vida do herói. Chegar a 0 encerra a batalha em derrota.</span></div></div><div><Sword size={16}/><div><strong>Ataque</strong><span>Base usada nas suas rolagens de dano ao acertar um golpe no combate.</span></div></div><div><ShieldHalf size={16}/><div><strong>Defesa</strong><span>Reduz o dano das rolagens de ataque que você recebe do inimigo.</span></div></div></div><h3 className="subhead">Talentos</h3><p className="mechanics-note">Cada talento da Árvore de Talentos ao lado é desbloqueado permanentemente ao atingir o nível exigido e concede um bônus fixo — eles se acumulam e nunca expiram, mesmo trocando de equipamento.</p></Panel></>}
 function BestiaryPanel(){const g=useGame();return <Panel title="Bestiário"><p className="muted">Marcos: 1 vitória revela atributos, 3 revelam afinidade e 5 concedem +1 de dano contra a criatura.</p><div className="bestiary-list">{Object.entries(g.bestiary).length?Object.entries(g.bestiary).map(([name,r])=>{const next=BESTIARY_MILESTONES.find(m=>r.vitorias<m.wins);return <span key={name}><strong>{name}</strong><small>{r.encontros} encontros • {r.vitorias} vitórias • {next?`próximo: ${next.wins} — ${next.label}`:'domínio completo (+1 dano)'}</small></span>}):<p className="muted">Enfrente criaturas para revelar seus registros.</p>}</div></Panel>}
-function ChronicleScreen(){const g=useGame(),identity=CLASS_IDENTITIES[g.heroId as keyof typeof CLASS_IDENTITIES];return <div className="chronicle-page"><Panel className="chronicle-hero"><span className="eyebrow">CRÔNICAS DA CAMPANHA</span><h1>Crônicas de Havendown</h1><p>{identity?.nome}: {identity?.texto}</p><div className="difficulty-row">{Object.entries(DIFFICULTIES).map(([id,d])=><button className={g.difficultyMode===id?'active':''} onClick={()=>g.setDifficulty(id as DifficultyMode)} key={id}><strong>{d.nome}</strong><small>Inimigos ×{d.enemy} • recompensas ×{d.reward}</small></button>)}</div></Panel><div className="moved-systems"><StoryCampaignPanel/><DungeonPanel/><BestiaryPanel/><EquipmentRulesPanel/></div></div>}
+function StoryQuestsJournalPanel() {
+  const g = useGame()
+  const activeQuests = Object.keys(g.activeStoryQuests ?? {}).map(id => questById(id)).filter((q): q is StoryQuest => Boolean(q))
+  const completed = (g.completedStoryQuests ?? []).map(id => questById(id)).filter((q): q is StoryQuest => Boolean(q))
+
+  return (
+    <Panel title="Diário de Missões & Entregas" className="story-journal-panel">
+      <div className="story-journal-section">
+        <div className="story-journal-head">
+          <Mail size={16} />
+          <strong>MISSÕES ATIVAS ({activeQuests.length})</strong>
+        </div>
+        {activeQuests.length === 0 ? (
+          <p className="muted">Nenhuma missão ativa no momento. Converse com os personagens nas regiões para aceitar novas tarefas de história.</p>
+        ) : (
+          <div className="story-journal-list">
+            {activeQuests.map(q => {
+              const targetTerritory = TERRITORIES.find(t => t.id === q.targetRegionId)
+              const targetNpc = npcById(q.targetNpcId)
+              const sourceNpc = npcById(q.sourceNpcId)
+              const hasItem = q.questItem ? (g.questItems?.[q.questItem.id] ?? 0) >= q.questItem.quantity : true
+              return (
+                <article key={q.id} className={`story-journal-card ${hasItem ? 'ready' : 'in-progress'}`}>
+                  <header>
+                    <span className="eyebrow">ATO {q.act} • {q.type === 'delivery' ? 'ENTREGA' : 'MISSÃO'}</span>
+                    <h4>{q.title}</h4>
+                  </header>
+                  <p className="story-journal-summary">{q.summary}</p>
+                  <div className="story-journal-meta">
+                    <div>
+                      <small>MANDANTE:</small>
+                      <span>{sourceNpc?.nome ?? q.sourceNpcId}</span>
+                    </div>
+                    <div>
+                      <small>DESTINATÁRIO:</small>
+                      <strong>{targetNpc?.nome ?? q.targetNpcId} ({targetTerritory?.nome ?? q.targetRegionId})</strong>
+                    </div>
+                  </div>
+                  {q.questItem && (
+                    <div className="story-journal-item">
+                      <span>{q.questItem.icon ?? '📦'} {q.questItem.name}</span>
+                      <b className={hasItem ? 'item-ready' : 'item-missing'}>
+                        {hasItem ? '✓ Na mochila para entrega' : '✗ Aguardando obtenção'}
+                      </b>
+                    </div>
+                  )}
+                  <footer className="story-journal-footer">
+                    <span className="story-journal-rewards">
+                      +{q.reward.gold} Ouro • +{q.reward.xp} XP {q.reward.loreTitle ? `• "${q.reward.loreTitle}"` : ''}
+                    </span>
+                    {targetTerritory && (
+                      <button className="primary" onClick={() => g.openRegion(targetTerritory)}>
+                        <Footprints size={14} />
+                        Viajar para {targetTerritory.nome}
+                      </button>
+                    )}
+                  </footer>
+                </article>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {completed.length > 0 && (
+        <div className="story-journal-section completed-section">
+          <div className="story-journal-head">
+            <CheckCircle2 size={16} />
+            <strong>MISSÕES CONCLUÍDAS ({completed.length})</strong>
+          </div>
+          <div className="story-journal-completed-list">
+            {completed.map(q => (
+              <div key={q.id} className="story-journal-completed-item">
+                <span className="check-icon">✓</span>
+                <div>
+                  <strong>{q.title} (Ato {q.act})</strong>
+                  <small>{q.reward.loreTitle ? `Título: ${q.reward.loreTitle} • ` : ''}Entregue para {npcById(q.targetNpcId)?.nome ?? q.targetNpcId}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Panel>
+  )
+}
+
+function ChronicleScreen(){const g=useGame(),identity=CLASS_IDENTITIES[g.heroId as keyof typeof CLASS_IDENTITIES];return <div className="chronicle-page"><Panel className="chronicle-hero"><span className="eyebrow">CRÔNICAS DA CAMPANHA</span><h1>Crônicas de Havendown</h1><p>{identity?.nome}: {identity?.texto}</p><div className="difficulty-row">{Object.entries(DIFFICULTIES).map(([id,d])=><button className={g.difficultyMode===id?'active':''} onClick={()=>g.setDifficulty(id as DifficultyMode)} key={id}><strong>{d.nome}</strong><small>Inimigos ×{d.enemy} • recompensas ×{d.reward}</small></button>)}</div></Panel><div className="moved-systems"><StoryQuestsJournalPanel/><StoryCampaignPanel/><DungeonPanel/><BestiaryPanel/><EquipmentRulesPanel/></div></div>}
 function AttrRow({label,value,n,detail,onPlus,disabled}:{label:string;value:any;n:number;detail?:string;onPlus:()=>void;disabled:boolean}){return <div className="attr-row"><div><span>{label}</span><strong>{value}</strong><small>Pontos distribuídos: {n}</small>{detail&&<small className="attr-detail">{detail}</small>}</div><button disabled={disabled} onClick={onPlus}><Plus/></button></div>}
-function InventoryScreen(){const g=useGame();const entries=Object.entries(g.inventory).filter(([,n])=>n>0);const capacity=equipmentBagCapacity(g);const backpack=equipmentByRef(g.equipped.bolsa);return <div className="two-col"><Panel title="Consumíveis">{entries.length===0?<Empty text="Nenhum consumível na mochila."/>:<div className="item-grid">{entries.map(([id,n])=>{const it=CONSUMABLES.find(x=>x.id===id)!,active=consumableBonusActive(it,g);return <ItemCard key={id} image={cardArt(it)} rarity={cardRarity(it,'Consumível')} name={it.nome} subtitle={`Quantidade: ${n}`} footer={consumableDescription(it,g)}><button disabled={active} title={active?'Esta poção já está ativa. Poções diferentes ainda podem ser combinadas.':undefined} onClick={()=>g.useConsumable(id)}>{active?'Efeito ativo':'Usar'}</button></ItemCard>})}</div>}</Panel><Panel title="Capacidade"><div className="capacity"><Package/><strong>{g.equipmentBag.length}/{capacity} equipamentos guardados</strong></div><p><b>{backpack?.nome??'Mochila Pequena'}:</b> {capacity} espaços. Consumíveis e equipamentos vestidos não ocupam esse limite.</p></Panel></div>}
+function InventoryScreen(){
+  const g=useGame()
+  const entries=Object.entries(g.inventory).filter(([,n])=>n>0)
+  const capacity=equipmentBagCapacity(g)
+  const backpack=equipmentByRef(g.equipped.bolsa)
+  const questItemEntries=Object.entries(g.questItems??{}).filter(([,n])=>n>0)
+
+  return <div className="two-col">
+    <Panel title="Consumíveis">
+      {entries.length===0?<Empty text="Nenhum consumível na mochila."/>:<div className="item-grid">{entries.map(([id,n])=>{const it=CONSUMABLES.find(x=>x.id===id)!,active=consumableBonusActive(it,g);return <ItemCard key={id} image={cardArt(it)} rarity={cardRarity(it,'Consumível')} name={it.nome} subtitle={`Quantidade: ${n}`} footer={consumableDescription(it,g)}><button disabled={active} title={active?'Esta poção já está ativa. Poções diferentes ainda podem ser combinadas.':undefined} onClick={()=>g.useConsumable(id)}>{active?'Efeito ativo':'Usar'}</button></ItemCard>})}</div>}
+    </Panel>
+    <div style={{display:'flex',flexDirection:'column',gap:'14px',minHeight:0}}>
+      <Panel title="Itens de Missão & Encomendas">
+        {questItemEntries.length===0?<Empty text="Nenhum item ou encomenda de missão na bolsa."/>:<div className="quest-items-list">{questItemEntries.map(([itemId,qty])=>{
+          const quest=STORY_QUESTS.find(q=>q.questItem?.id===itemId)
+          const itemDef=quest?.questItem
+          const targetTerritory=quest?TERRITORIES.find(t=>t.id===quest.targetRegionId):undefined
+          const targetNpc=quest?npcById(quest.targetNpcId):undefined
+          return <div key={itemId} className="quest-item-chip">
+            <span className="quest-item-ico">{itemDef?.icon??'📦'}</span>
+            <div className="quest-item-text">
+              <strong>{itemDef?.name??itemId} (x{qty})</strong>
+              <p>{itemDef?.description??'Item chave para entrega de história.'}</p>
+              {quest&&<small>Destino: <b>{targetTerritory?.nome??quest.targetRegionId}</b> ({targetNpc?.nome??quest.targetNpcId})</small>}
+            </div>
+          </div>
+        })}</div>}
+      </Panel>
+      <Panel title="Capacidade">
+        <div className="capacity"><Package/><strong>{g.equipmentBag.length}/{capacity} equipamentos guardados</strong></div>
+        <p><b>{backpack?.nome??'Mochila Pequena'}:</b> {capacity} espaços. Consumíveis, itens de missão e equipamentos vestidos não ocupam esse limite.</p>
+      </Panel>
+    </div>
+  </div>
+}
 function EquipmentScreen(){const g=useGame();const capacity=equipmentBagCapacity(g);const dualWielding=equipmentWeaponClass(equipmentByRef(g.equipped.mao_direita))==='facas'
  const itemBonus=equipmentStatBonus(g)
  const elementalEntries=(Object.values(g.equipped) as (string|undefined)[]).filter((id):id is string=>Boolean(id)).map(id=>{const e=equipmentByRef(id),el=g.equipmentElements[id],res=g.equipmentResistances[id];if(!e||(!el&&!res))return null;const level=attunementItemLevel(g,id);return el?{id,name:e.nome,kind:'Elemento' as const,value:ELEMENT_LABELS[el],detail:`${Math.round(attunementStatusChance(g,id)*100)}% de condição em críticos • nível ${level}`}:{id,name:e.nome,kind:'Resistência' as const,value:ELEMENT_LABELS[res!],detail:`Reduz ${attunementResistanceReduction(g,id)} dano elemental • nível ${level}`}}).filter((x):x is {id:string;name:string;kind:'Elemento'|'Resistência';value:string;detail:string}=>Boolean(x))

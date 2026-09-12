@@ -1600,4 +1600,100 @@ body::after{content:"VERSÃO 0.8.28 • 11/09/2026\A Emboscadas aleatorias nos m
 body::after{content:"VERSÃO 0.8.29 • 11/09/2026\A Corrigido: sair de uma batalha (ou emboscada) no mapa navegavel voltava sempre pro spawn -- agora retoma exatamente de onde o personagem estava"}
 body::after{content:"VERSÃO 0.8.30 • 11/09/2026\A Chance de emboscada por passo aumentada de 5% para 15%"}
 body::after{content:"VERSÃO 0.8.31 • 11/09/2026\A Mapas navegaveis agora tem saidas que levam direto para a regiao vizinha (sem voltar ao mapa-mundi); ordem das regioes no mapa e na Masmorra segue a progressao correta, e o mapa-mundi de Havendown ganhou nova arte com os marcadores reposicionados"}
-body::after{content:"VERSÃO 0.8.32 • 11/09/2026\A Viagem rapida pelo mapa-mundi agora exige ter derrotado todos os chefes da regiao (Planicies de Alvora sempre liberada); as demais regioes de Havendown so sao alcancadas caminhando pelas passagens entre os mapas até serem conquistadas"}
+body::after{content:"VERSÃO 0.9.0 • 12/09/2026\A Modo História com missões conectadas entre regiões e continentes, novos NPCs interativos e sistema de entrega de encomendas e mensagens"}
+
+/* ==========================================
+   MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
+   ========================================== */
+.story-npc-dialog{position:relative;max-width:560px;width:95vw;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;background:#181512;border:1px solid rgba(212,180,134,.35);box-shadow:0 12px 36px rgba(0,0,0,.75);border-radius:12px;padding:18px}
+.regionmap-npc-dialog-head{display:flex;align-items:center;gap:14px;position:relative;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px}
+.npc-banner-portrait{width:56px;height:56px;border-radius:10px;overflow:hidden;border:2px solid #c8a364;background:#241e17;flex-shrink:0}
+.npc-banner-portrait img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
+.npc-dialog-close-btn{position:absolute;top:0;right:0;background:transparent;border:none;color:#a89a88;cursor:pointer;padding:4px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.npc-dialog-close-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
+.npc-dialogue-quote{margin:0;font-style:italic;color:#e8d8c2;line-height:1.5;display:flex;gap:8px;background:rgba(0,0,0,.25);padding:12px;border-radius:8px;border-left:3px solid #c8a364}
+.npc-dialogue-quote svg{flex-shrink:0;color:#c8a364;margin-top:2px}
+
+/* Quest Cards inside Dialogue */
+.npc-quest-container{display:flex;flex-direction:column;gap:12px}
+.npc-quest-card{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(25,22,18,.9)}
+.npc-quest-card.deliverable{border-color:#38a169;background:linear-gradient(180deg,rgba(40,75,50,.35),rgba(20,35,25,.45));box-shadow:0 0 15px rgba(56,161,105,.15)}
+.npc-quest-card.offered{border-color:#d4af37;background:linear-gradient(180deg,rgba(70,55,25,.35),rgba(35,28,15,.45));box-shadow:0 0 15px rgba(212,175,55,.15)}
+.npc-quest-card.in-progress{border-color:#4a7bb0;background:rgba(20,30,45,.35)}
+.npc-quest-badge{font-size:.65rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;width:fit-content;background:rgba(56,161,105,.25);color:#68d391;border:1px solid rgba(104,211,145,.3)}
+.npc-quest-card.offered .npc-quest-badge{background:rgba(212,175,55,.25);color:#f6e05e;border-color:rgba(246,224,94,.3)}
+.npc-quest-card.in-progress .npc-quest-badge{background:rgba(74,123,176,.25);color:#90cdf4;border-color:rgba(144,205,244,.3)}
+.npc-quest-title{margin:0;font-size:1.05rem;color:#fff;font-weight:700}
+.npc-quest-speech{margin:0;font-size:.88rem;color:#cbd5e0;line-height:1.45;font-style:italic}
+.npc-quest-item-req{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.82rem;background:rgba(0,0,0,.3);padding:6px 10px;border-radius:6px}
+.npc-quest-item-req b{color:#68d391}
+.npc-quest-travel-target{display:flex;align-items:center;gap:6px;font-size:.82rem;color:#e2e8f0;background:rgba(0,0,0,.25);padding:6px 10px;border-radius:6px}
+.npc-quest-travel-target svg{color:#f6e05e}
+.npc-quest-reward-preview{display:flex;align-items:center;gap:8px;font-size:.8rem;color:#ecc94b}
+.npc-quest-reward-preview small{color:#a0aec0;font-weight:700}
+.npc-quest-turnin-btn{background:linear-gradient(180deg,#38a169,#276749);color:#fff;font-weight:700;padding:10px 16px;border-radius:8px;border:1px solid #48bb78;cursor:pointer;font-size:.9rem;box-shadow:0 4px 12px rgba(56,161,105,.35);transition:all .15s ease}
+.npc-quest-turnin-btn:hover{background:linear-gradient(180deg,#48bb78,#2f855a);transform:translateY(-1px)}
+.npc-quest-accept-btn{background:linear-gradient(180deg,#d69e2e,#b7791f);color:#fff;font-weight:700;padding:10px 16px;border-radius:8px;border:1px solid #ecc94b;cursor:pointer;font-size:.9rem;box-shadow:0 4px 12px rgba(214,158,46,.35);transition:all .15s ease}
+.npc-quest-accept-btn:hover{background:linear-gradient(180deg,#ecc94b,#d69e2e);transform:translateY(-1px)}
+.npc-quest-reminder{color:#a0aec0;font-size:.78rem}
+.npc-dialog-footer-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:4px}
+
+/* Region Inhabitants Bar */
+.region-npcs-bar{margin:10px 0;background:rgba(20,17,14,.75);border:1px solid rgba(212,180,134,.2);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.region-npcs-header{display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:800;color:#c8a364;letter-spacing:.08em;text-transform:uppercase}
+.region-npcs-chips{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.region-npc-chip{display:flex;align-items:center;gap:10px;background:rgba(35,30,24,.85);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 12px;cursor:pointer;transition:all .15s ease;text-align:left;flex-shrink:0}
+.region-npc-chip:hover{background:rgba(50,42,33,.95);border-color:#c8a364;transform:translateY(-1px)}
+.region-npc-chip.chip-ready{border-color:#38a169;background:linear-gradient(180deg,rgba(40,75,50,.35),rgba(20,35,25,.5))}
+.region-npc-chip.chip-available{border-color:#d4af37;background:linear-gradient(180deg,rgba(70,55,25,.35),rgba(35,28,15,.5))}
+.region-npc-avatar{position:relative;width:38px;height:38px;border-radius:6px;overflow:hidden;border:1px solid #c8a364;background:#181512;flex-shrink:0}
+.region-npc-avatar img{width:100%;height:100%;object-fit:cover}
+.npc-chip-indicator{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:#fff}
+.npc-chip-indicator.ready{background:#38a169;border:1px solid #fff}
+.npc-chip-indicator.available{background:#d69e2e;border:1px solid #fff}
+.region-npc-info{display:flex;flex-direction:column}
+.region-npc-info strong{font-size:.84rem;color:#f7fafc;white-space:nowrap}
+.region-npc-info small{font-size:.7rem;color:#a0aec0;white-space:nowrap}
+
+/* Quest Items in Inventory & Tracker */
+.quest-items-list{display:flex;flex-direction:column;gap:8px}
+.quest-item-chip{display:flex;align-items:center;gap:10px;background:rgba(30,26,20,.8);border:1px solid rgba(212,180,134,.25);border-radius:8px;padding:8px 12px}
+.quest-item-ico{font-size:1.3rem;flex-shrink:0}
+.quest-item-text strong{font-size:.85rem;color:#f6e05e;display:block}
+.quest-item-text p{margin:2px 0;font-size:.76rem;color:#e2e8f0;line-height:1.3}
+.quest-item-text small{font-size:.68rem;color:#a0aec0}
+.quest-tracker-item{display:block;margin-top:4px;color:#f6e05e;font-size:.78rem}
+.story-active-quest{border-left:3px solid #d4af37}
+.story-active-quest.ready{border-left:3px solid #38a169}
+
+/* Story Toast Banner */
+.story-toast-banner{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;background:linear-gradient(180deg,#2b2214,#18130a);border:1px solid #c8a364;box-shadow:0 8px 30px rgba(0,0,0,.7),0 0 15px rgba(200,163,100,.3);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:12px;color:#fef0d2;cursor:pointer;animation:toast-pop .25s ease-out}
+.story-toast-banner svg{color:#f6e05e;flex-shrink:0}
+.story-toast-banner span{font-size:.9rem;font-weight:600}
+.story-toast-banner button{background:transparent;border:none;color:#a0aec0;cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center}
+.story-toast-banner button:hover{color:#fff}
+@keyframes toast-pop{from{opacity:0;transform:translate(-50%,15px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* Story Quests Journal in Chronicle */
+.story-journal-panel{display:flex;flex-direction:column;gap:16px}
+.story-journal-section{display:flex;flex-direction:column;gap:10px}
+.story-journal-head{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:800;color:#c8a364;letter-spacing:.08em}
+.story-journal-list{display:flex;flex-direction:column;gap:12px}
+.story-journal-card{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(25,20,15,.7)}
+.story-journal-card.ready{border-color:#38a169;background:linear-gradient(180deg,rgba(40,75,50,.3),rgba(20,35,25,.4))}
+.story-journal-card h4{margin:0;font-size:1.05rem;color:#f7fafc}
+.story-journal-summary{margin:0;font-size:.85rem;color:#cbd5e0;line-height:1.4}
+.story-journal-meta{display:flex;gap:20px;flex-wrap:wrap;font-size:.78rem;color:#e2e8f0;background:rgba(0,0,0,.25);padding:8px 12px;border-radius:6px}
+.story-journal-meta small{display:block;color:#a0aec0;font-size:.68rem;font-weight:700}
+.story-journal-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.82rem;background:rgba(0,0,0,.2);padding:6px 10px;border-radius:6px}
+.story-journal-item .item-ready{color:#68d391}
+.story-journal-item .item-missing{color:#fc8181}
+.story-journal-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:4px}
+.story-journal-rewards{font-size:.82rem;color:#f6e05e;font-weight:600}
+.story-journal-completed-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.story-journal-completed-item{display:flex;align-items:center;gap:10px;background:rgba(20,30,22,.6);border:1px solid rgba(72,187,120,.2);border-radius:8px;padding:8px 12px}
+.story-journal-completed-item .check-icon{color:#48bb78;font-weight:900;font-size:1rem}
+.story-journal-completed-item strong{display:block;font-size:.82rem;color:#e2e8f0}
+.story-journal-completed-item small{color:#a0aec0;font-size:.72rem}
+
+

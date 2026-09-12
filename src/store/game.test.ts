@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked } from './game'
 import { REGION_MATERIALS } from '../data/expansion'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
@@ -982,3 +982,43 @@ describe('serviço de sintonia elemental', () => {
     expect(useGame.getState().gold).toBe(200)
   })
 })
+
+describe('Sistema de Missões de História (Story Quests & NPCs)', () => {
+  it('permite aceitar missão e adiciona itens de missão na posse', () => {
+    useGame.getState().newGame('guerreiro')
+    const stateBefore = useGame.getState()
+    expect(stateBefore.activeStoryQuests['q_alvora_intro']).toBeUndefined()
+
+    useGame.getState().acceptStoryQuest('q_alvora_intro')
+    const stateAfter = useGame.getState()
+    expect(stateAfter.activeStoryQuests['q_alvora_intro']).toBeDefined()
+    expect(stateAfter.questItems['antidoto_sela']).toBe(1)
+  })
+
+  it('entrega de missão conclui quest, remove item de entrega e concede recompensas', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.getState().acceptStoryQuest('q_alvora_intro')
+    const initialGold = useGame.getState().gold
+    const initialXp = useGame.getState().xp
+
+    useGame.getState().turnInStoryQuest('q_alvora_intro')
+    const state = useGame.getState()
+    expect(state.activeStoryQuests['q_alvora_intro']).toBeUndefined()
+    expect(state.completedStoryQuests).toContain('q_alvora_intro')
+    expect(state.questItems['antidoto_sela'] ?? 0).toBe(0)
+    expect(state.gold).toBeGreaterThan(initialGold)
+    expect(state.xp).toBeGreaterThan(initialXp)
+  })
+
+  it('completar a travessia dos oceanos (q_cross_oceans) desbloqueia Steelmere', () => {
+    useGame.getState().newGame('guerreiro')
+    const initialUnlocked = worldUnlocked(useGame.getState(), 'steelmere')
+    expect(initialUnlocked).toBe(false)
+
+    useGame.getState().acceptStoryQuest('q_cross_oceans')
+    useGame.getState().turnInStoryQuest('q_cross_oceans')
+    const unlocked = worldUnlocked(useGame.getState(), 'steelmere')
+    expect(unlocked).toBe(true)
+  })
+})
+

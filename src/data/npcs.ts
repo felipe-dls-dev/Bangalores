@@ -1,6 +1,6 @@
 import type { Screen, ShopCategory, ShopTier } from '../types'
 
-export type NpcService = 'guild' | 'shop' | 'forge' | 'chronicle'
+export type NpcService = 'guild' | 'shop' | 'forge' | 'chronicle' | 'quest'
 export type NpcFacing = 'up' | 'down' | 'left' | 'right'
 
 export interface NpcDefinition {
@@ -21,6 +21,9 @@ export interface NpcDefinition {
 }
 
 export const NPCS: NpcDefinition[] = [
+  // ==========================================
+  // HAVENDOWN (O CONTINENTE RÚNICO)
+  // ==========================================
   {
     id: 'brenna_ashcombe',
     nome: 'Brenna Ashcombe',
@@ -31,7 +34,7 @@ export const NPCS: NpcDefinition[] = [
     facing: 'down',
     sprite: 'assets/npcs/sprites/brenna-ashcombe-sprite.png',
     portrait: 'assets/npcs/brenna-ashcombe.webp',
-    services: ['guild'],
+    services: ['guild', 'chronicle'],
     screen: 'guild',
     dialogue: [
       'A Guilda sempre tem os olhos abertos. Volte quando precisar de trabalho.',
@@ -42,39 +45,38 @@ export const NPCS: NpcDefinition[] = [
   {
     id: 'borin_fenrick',
     nome: 'Borin Fenrick',
-    titulo: 'Ferreiro Runico',
+    titulo: 'Ferreiro Rúnico',
     regionId: 'khar_dur',
     x: 11,
     y: 9,
     facing: 'down',
     sprite: 'assets/npcs/sprites/borin-fenrick-sprite.png',
     portrait: 'assets/npcs/borin-fenrick.webp',
-    services: ['forge'],
+    services: ['forge', 'quest'],
     screen: 'forge',
     dialogue: [
       'Metal bom fala baixo. Metal ruim grita quando quebra.',
-      'Traga material, ouro e coragem. A forja cobra os tres.',
+      'Traga material, ouro e coragem. A forja cobra os três.',
+      'Se você trouxer ferro verdadeiro das montanhas, forjarei lendas com você.',
     ],
   },
-  // Planicies de Alvora (regiao inicial, nivel 1-8): trio de vendedores "simples" -- so vendem
-  // equipamento comum/incomum (armas e armaduras) ou pocoes comuns. Substituem a Mira: em vez
-  // de uma unica loja generica, cada um cobre uma categoria, restrita ao proprio tier.
   {
     id: 'toby_harlan',
     nome: 'Toby Harlan',
-    titulo: 'Negociante de Laminas',
+    titulo: 'Negociante de Lâminas',
     regionId: 'campos_dourados',
     x: 9,
     y: 10,
     facing: 'down',
     sprite: 'assets/npcs/sprites/weapon-vendor-simples-sprite.png',
+    portrait: 'assets/heroes/ladino-eldravar-v2.png',
     services: ['shop'],
     screen: 'shop',
     shopCategory: 'arma',
     shopTier: 'simples',
     dialogue: [
-      'Toda lamina que vendo ja provou o proprio aco antes de chegar ate voce.',
-      'Nada raro por aqui -- so ferro confiavel pra quem esta comecando.',
+      'Toda lâmina que vendo já provou o próprio aço antes de chegar até você.',
+      'Nada raro por aqui — só ferro confiável pra quem está começando.',
     ],
   },
   {
@@ -86,35 +88,111 @@ export const NPCS: NpcDefinition[] = [
     y: 10,
     facing: 'down',
     sprite: 'assets/npcs/sprites/armor-vendor-simples-sprite.png',
+    portrait: 'assets/heroes/guardiao-montanhas-v2.png',
     services: ['shop'],
     screen: 'shop',
     shopCategory: 'equipamento',
     shopTier: 'simples',
     dialogue: [
-      'Curo e reforco cada peca com as proprias maos. Nao e bonito, mas aguenta golpe.',
-      'Comece protegido. O resto voce conquista nas estradas.',
+      'Curo e reforço cada peça com as próprias mãos. Não é bonito, mas aguenta golpe.',
+      'Comece protegido. O resto você conquista nas estradas.',
     ],
   },
   {
     id: 'sela_hartwin',
     nome: 'Sela Hartwin',
-    titulo: 'Boticaria de Estrada',
+    titulo: 'Boticária de Estrada',
     regionId: 'campos_dourados',
     x: 10,
     y: 11,
     facing: 'down',
     sprite: 'assets/npcs/sprites/potion-vendor-simples-sprite.png',
-    services: ['shop'],
+    portrait: 'assets/npcs/mira-bellwether.webp',
+    services: ['shop', 'quest'],
     screen: 'shop',
     shopCategory: 'consumivel',
     shopTier: 'simples',
     dialogue: [
-      'Aprendi a destilar antes de aprender a ler. Minhas pocoes nao falham.',
+      'Aprendi a destilar antes de aprender a ler. Minhas poções não falham.',
       'Cura simples, mas cura de verdade. Leve quantas precisar.',
+      'As águas das planícies andam turvas... precisamos de ajuda rápida.',
     ],
   },
-  // Pico de Ignaris (regiao vulcanica, nivel 18-36): trio "superior" -- equipamento raro e
-  // pocoes incomuns/raras/epicas, condizente com o nivel de quem ja chegou tao longe.
+  // Floresta de Abdendriel
+  {
+    id: 'lyriel_noite',
+    nome: 'Mestra Lyriel',
+    titulo: 'Guardiã dos Bosques',
+    regionId: 'floresta_lunargenta',
+    x: 10,
+    y: 6,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/chibi/alchemist-superior-potions-chibi.png',
+    portrait: 'assets/heroes/druida-lunargenta.png',
+    services: ['quest', 'chronicle'],
+    screen: 'chronicle',
+    dialogue: [
+      'A floresta respira devagar, mas suas raízes sentem cada gota de veneno que escorre da terra.',
+      'Se você busca as bênçãos de Abdendriel, honre o pacto das árvores antigas.',
+      'Traga esperança aos nossos batedores e a floresta abrirá seus caminhos para você.',
+    ],
+  },
+  {
+    id: 'kip_ligeiro',
+    nome: 'Kip Pé-Ligeiro',
+    titulo: 'Batedor da Fronteira',
+    regionId: 'floresta_lunargenta',
+    x: 3,
+    y: 7,
+    facing: 'right',
+    sprite: 'assets/npcs/sprites/weapon-vendor-simples-sprite.png',
+    portrait: 'assets/heroes/ladino-eldravar-v2.png',
+    services: ['quest'],
+    screen: 'chronicle',
+    dialogue: [
+      'Shh! Fale baixo... tem coisas metálicas se mexendo entre os arbustos.',
+      'Eu corro rápido, mas uma lâmina na mão sempre ajuda a acalmar os nervos.',
+      'Se tiver notícias da Mestra Lyriel, por favor me diga que posso recuar!',
+    ],
+  },
+  // Serra de Kaldrum
+  {
+    id: 'torvald_barbaneve',
+    nome: 'Torvald Barbaneve',
+    titulo: 'Superintendente das Minas',
+    regionId: 'montanhas_cinzentas',
+    x: 10,
+    y: 7,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/borin-fenrick-sprite.png',
+    portrait: 'assets/heroes/guardiao-montanhas-v2.png',
+    services: ['quest'],
+    screen: 'chronicle',
+    dialogue: [
+      'O frio congela o suor, mas não congela a vontade de cavar!',
+      'Estas montanhas escondem veios de ferro estelar que nenhuma outra terra possui.',
+      'Cuidado com as fendas profundas. As picaretas andam batendo em algo oco lá embaixo.',
+    ],
+  },
+  {
+    id: 'astrid_reclusa',
+    nome: 'Irmã Astrid',
+    titulo: 'Astróloga do Vento Alto',
+    regionId: 'montanhas_cinzentas',
+    x: 18,
+    y: 3,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/chibi/alchemist-superior-potions-chibi.png',
+    portrait: 'assets/heroes/sacerdotisa-khardur-v2.png',
+    services: ['chronicle', 'quest'],
+    screen: 'chronicle',
+    dialogue: [
+      'As constelações estão desalinhadas. Um eclipse de ferro cobre o horizonte leste.',
+      'O vento traz cheiro de óleo e fuligem... algo nunca antes visto nestes cumes sagrados.',
+      'Observe os céus, andarilho. As estrelas não mentem quando o perigo se aproxima.',
+    ],
+  },
+  // Pico de Ignaris
   {
     id: 'cassian_draye',
     nome: 'Cassian Draye',
@@ -124,13 +202,14 @@ export const NPCS: NpcDefinition[] = [
     y: 13,
     facing: 'down',
     sprite: 'assets/npcs/sprites/weapon-vendor-superior-sprite.png',
+    portrait: 'assets/heroes/guerreiro-eldravar-v2.png',
     services: ['shop'],
     screen: 'shop',
     shopCategory: 'arma',
     shopTier: 'superior',
     dialogue: [
-      'Cada lamina aqui ja sobreviveu ao Pico. Isso diz mais que qualquer selo de qualidade.',
-      'Nao vendo pra qualquer um. Mas voce ja chegou longe o bastante.',
+      'Cada lâmina aqui já sobreviveu ao Pico. Isso diz mais que qualquer selo de qualidade.',
+      'Não vendo pra qualquer um. Mas você já chegou longe o bastante.',
     ],
   },
   {
@@ -142,13 +221,15 @@ export const NPCS: NpcDefinition[] = [
     y: 13,
     facing: 'down',
     sprite: 'assets/npcs/sprites/armor-vendor-superior-sprite.png',
-    services: ['shop'],
+    portrait: 'assets/heroes/monge-ignaris-v2.png',
+    services: ['shop', 'quest'],
     screen: 'shop',
     shopCategory: 'equipamento',
     shopTier: 'superior',
     dialogue: [
-      'Forjo cada peca perto da lava. O calor separa o aco fraco do forte.',
-      'Isso aqui nao e pra iniciante. E pra quem pretende voltar vivo do proximo chefe.',
+      'Forjo cada peça perto da lava. O calor separa o aço fraco do forte.',
+      'Isso aqui não é pra iniciante. É pra quem pretende voltar vivo do próximo chefe.',
+      'Traga materiais purificados e temperarei sua armadura contra o próprio fogo cósmico.',
     ],
   },
   {
@@ -157,16 +238,206 @@ export const NPCS: NpcDefinition[] = [
     titulo: 'Alquimista de Ignaris',
     regionId: 'pico_escarlate',
     x: 11,
-    y: 14,
+    y: 11,
     facing: 'down',
     sprite: 'assets/npcs/sprites/potion-vendor-superior-sprite.png',
+    portrait: 'assets/heroes/arcanista-conclave-v2.png',
     services: ['shop'],
     screen: 'shop',
     shopCategory: 'consumivel',
     shopTier: 'superior',
     dialogue: [
-      'Destilo com cinzas vulcanicas. O efeito e mais forte, o preco tambem.',
-      'Pocoes simples nao bastam mais na sua altura. Estas sim.',
+      'Destilo com cinzas vulcânicas. O efeito é mais forte, o preço também.',
+      'Poções simples não bastam mais na sua altura. Estas sim.',
+    ],
+  },
+  // Terras de Morvath
+  {
+    id: 'padre_lucian',
+    nome: 'Padre Lucian',
+    titulo: 'Coveiro das Almas Perdidas',
+    regionId: 'terras_mortas',
+    x: 6,
+    y: 4,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/potion-vendor-superior-sprite.png',
+    portrait: 'assets/heroes/cacador-terras-mortas.png',
+    services: ['quest', 'chronicle'],
+    screen: 'chronicle',
+    dialogue: [
+      'Que a paz encontre os que já partiram... e que os vivos não perturbem o silêncio.',
+      'As catacumbas andam inquietas desde que a drenagem de energia começou.',
+      'Se você veio trazer preces ou aço purificado, sua presença é bem-vinda neste solo aflito.',
+    ],
+  },
+  {
+    id: 'gideon_mascarado',
+    nome: 'Gideon Mascarado',
+    titulo: 'Mercador de Relíquias',
+    regionId: 'terras_mortas',
+    x: 12,
+    y: 11,
+    facing: 'left',
+    sprite: 'assets/npcs/sprites/armor-vendor-superior-sprite.png',
+    portrait: 'assets/heroes/arcanista-conclave-v2.png',
+    services: ['shop'],
+    screen: 'shop',
+    shopCategory: 'equipamento',
+    shopTier: 'superior',
+    dialogue: [
+      'Nem tudo o que foi enterrado merece ser esquecido... especialmente se tiver valor de troca.',
+      'Ouro antigo brilha no escuro, sabia? Dê uma olhada no meu estoque proibido.',
+    ],
+  },
+  // Reino do Sol Negro
+  {
+    id: 'oraculo_danika',
+    nome: 'Oráculo Danika',
+    titulo: 'Guardiã do Véu Cósmico',
+    regionId: 'coracao_eclipse',
+    x: 10,
+    y: 4,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/chibi/alchemist-superior-potions-chibi.png',
+    portrait: 'assets/heroes/conjurador-soltnegro-v2.png',
+    services: ['chronicle', 'quest'],
+    screen: 'chronicle',
+    dialogue: [
+      'Eu fechei meus olhos carnais para enxergar o rasgo que consome nossa realidade.',
+      'Havendown não está morrendo por velhice. Nossa alma está sendo puxada por cabos oceânicos.',
+      'O destino de dois continentes repousa nos ombros de quem ousar atravessar o mar revolto.',
+    ],
+  },
+
+  // ==========================================
+  // STEELMERE (O NOVO IMPÉRIO A VAPOR)
+  // ==========================================
+  {
+    id: 'vanya_mar',
+    nome: 'Capitã Vanya',
+    titulo: 'Comandante da Rota do Gelo',
+    regionId: 'frostgard',
+    x: 10,
+    y: 10,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/weapon-vendor-superior-sprite.png',
+    portrait: 'assets/heroes/ladino-eldravar-hd.webp',
+    services: ['quest', 'chronicle'],
+    screen: 'chronicle',
+    dialogue: [
+      'O quebra-gelos não desiste por causa de nevasca, e eu também não.',
+      'Em Steelmere você aprende rápido: ou você é a engrenagem ou é o operário esmagado por ela.',
+      'Se veio de Havendown, guarde segredo. Os patrulheiros do Sindicato prendem qualquer forasteiro rúnico.',
+    ],
+  },
+  {
+    id: 'silas_sterling',
+    nome: 'Inspetor Silas Sterling',
+    titulo: 'Despachante da Malha Férrea',
+    regionId: 'trilhouro',
+    x: 8,
+    y: 8,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/armor-vendor-simples-sprite.png',
+    portrait: 'assets/heroes/guardiao-montanhas-v2.png',
+    services: ['quest', 'chronicle'],
+    screen: 'chronicle',
+    dialogue: [
+      'Trinta segundos de atraso e o comboio perde a conexão com a Caldeira de Vulcannis!',
+      'Tudo nesta terra é medido em pressão de vapor, toneladas de latão e relógios pontuais.',
+      'Se você tem documentos em ordem, podemos conversar. Se não tem... fale bem rápido.',
+    ],
+  },
+  {
+    id: 'maeve_faisca',
+    nome: 'Maeve Faísca',
+    titulo: 'Voz dos Trabalhadores',
+    regionId: 'trilhouro',
+    x: 12,
+    y: 10,
+    facing: 'left',
+    sprite: 'assets/npcs/sprites/brenna-ashcombe-sprite.png',
+    portrait: 'assets/npcs/brenna-ashcombe.webp',
+    services: ['quest', 'chronicle'],
+    screen: 'chronicle',
+    dialogue: [
+      'Eles ficam com o lucro do Aetherium e nós ficamos com a fumaça preta nos pulmões.',
+      'Uma faísca bem colocada no lugar certo queima uma ferrovia inteira de opressão.',
+      'Se você luta pelos que não têm voz, nós temos um lugar para você na linha de frente.',
+    ],
+  },
+  {
+    id: 'ignatius_drake',
+    nome: 'Mestre Ignatius Drake',
+    titulo: 'Controlador da Grande Fornalha',
+    regionId: 'vulcannis',
+    x: 10,
+    y: 8,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/borin-fenrick-sprite.png',
+    portrait: 'assets/heroes/monge-ignaris-v2.png',
+    services: ['quest', 'forge'],
+    screen: 'forge',
+    dialogue: [
+      'Calor, pressão e carvão! É assim que se forja o progresso de Steelmere!',
+      'Se uma tubulação estourar, não corra... apenas reze para os parafusos segurarem o tranco.',
+      'Traga metal resistente e nós faremos essas chapas suportarem o próprio inferno.',
+    ],
+  },
+  {
+    id: 'unidade_73',
+    nome: 'Unidade 73 (Rust)',
+    titulo: 'Patriarca dos Autômatos',
+    regionId: 'ferrujal',
+    x: 11,
+    y: 9,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/armor-vendor-superior-sprite.png',
+    portrait: 'assets/heroes/guardiao-montanhas-v2.png',
+    services: ['quest', 'chronicle'],
+    screen: 'chronicle',
+    dialogue: [
+      '[BIP... SISTEMA OPERACIONAL ATIVO. DETECTANDO BATIMENTOS CARDÍACOS.]',
+      '[HOMENS DE CARNE CONSTRUÍRAM NOSSAS CARCAÇAS E NOS JOGARAM NA LAMA QUANDO AS ENGRENAGENS FALHARAM.]',
+      '[NÓS NÃO BUSCAMOS VINGANÇA. BUSCAMOS RECONHECIMENTO E SOBREVIVÊNCIA.]',
+    ],
+  },
+  {
+    id: 'hamilton_cross',
+    nome: 'Lorde Hamilton Cross',
+    titulo: 'Magnata de Coroferro',
+    regionId: 'coroferro',
+    x: 8,
+    y: 8,
+    facing: 'down',
+    sprite: 'assets/npcs/sprites/weapon-vendor-superior-sprite.png',
+    portrait: 'assets/heroes/guerreiro-eldravar-v2.png',
+    services: ['shop', 'chronicle'],
+    screen: 'shop',
+    shopCategory: 'arma',
+    shopTier: 'superior',
+    dialogue: [
+      'O dinheiro move o mundo, meu caro. Aetherium é apenas a forma mais pura e brilhante dele.',
+      'Se você tem relíquias do continente selvagem, meu cofre está sempre aberto para negócios.',
+      'Em Coroferro, quem tem capital tem o poder de ditar o próprio horário dos relógios.',
+    ],
+  },
+  {
+    id: 'elian_vance',
+    nome: 'Dra. Elian Vance',
+    titulo: 'Arquiteta do Éter',
+    regionId: 'coroferro',
+    x: 14,
+    y: 10,
+    facing: 'left',
+    sprite: 'assets/npcs/sprites/chibi/alchemist-superior-potions-chibi.png',
+    portrait: 'assets/npcs/mira-bellwether.webp',
+    services: ['quest', 'chronicle'],
+    screen: 'chronicle',
+    dialogue: [
+      'Eu criei os cálculos do Núcleo acreditando que traria prosperidade sem fim... que erro terrível.',
+      'O Sindicato não se importa se Havendown desmoronar no mar, desde que as máquinas continuem girando.',
+      'Se unirmos a ciência de Steelmere e os mistérios de Havendown, ainda há tempo de consertar o mundo.',
     ],
   },
 ]
@@ -174,3 +445,8 @@ export const NPCS: NpcDefinition[] = [
 export function npcsForRegion(regionId: string) {
   return NPCS.filter(npc => npc.regionId === regionId)
 }
+
+export function npcById(npcId: string) {
+  return NPCS.find(npc => npc.id === npcId)
+}
+

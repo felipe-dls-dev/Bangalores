@@ -8,3 +8,6 @@ tmp/
 .env.local
 .env.*.local
 Bangalores/
+swishes.zip
+swishes_extract/
+*.pdf
