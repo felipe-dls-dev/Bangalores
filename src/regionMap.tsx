@@ -251,7 +251,7 @@ function buildCamposDourados(): RegionMapDef {
     // onde a câmera precisava acompanhar o primeiro passo para revelar o personagem.
     spawn: { x: 10, y: 9 },
     exits: [
-      { id: 'west_serra', x: 1, y: 7, icon: '←', targetRegionId: 'montanhas_cinzentas' },
+      { id: 'west_serra', x: 1, y: 4, icon: '←', targetRegionId: 'montanhas_cinzentas' },
       { id: 'east_abdendriel', x: 20, y: 7, icon: '➜', targetRegionId: 'floresta_lunargenta' },
       { id: 'south_kholgard', x: 10, y: 14, icon: '↓', targetRegionId: 'khar_dur' },
     ],
