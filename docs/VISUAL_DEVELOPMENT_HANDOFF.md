@@ -56,10 +56,12 @@ Read it before starting work. Update it in the same change that delivers or cons
 | Havendown regional maps | Available | Existing playable 2D maps. |
 | Steelmere regional maps | 7 of 7 done | All 7 territories have background + collision pass (ART-001, 005-010). None visually double-checked live yet (only automated reachability). |
 | Player movement sprites | Available | Nine class sets, 15 frames each. |
-| Chests and campfires | Available | Existing map entities on all 14 regions; expand only when new states are requested. |
-| Fog of war | In progress (code only) | Claude Code is shipping a flat-color tile mask for v1, no new art needed. Will file a follow-up request if we want a softer mist/vignette texture. |
+| Chests and campfires | Available | Real art integrated (ART-011, ART-021), emoji kept only as a broken-image fallback. |
+| Fog of war | Shipped (code only) | Flat-color tile mask, no art needed. Will file a follow-up request if we want a softer mist/vignette texture. |
 | Mini-map / radar HUD | Removed | Product decision 2026-09-13: dropped in favor of fog of war (showing the full layout on a radar defeated the point of hiding it). No art impact — it only used inline SVG shapes. |
-| Weather effects | Needs art | Region-specific particles and overlays. |
+| Weather + day/night effects | Available | ART-012/ART-013 integrated: weather on Frostgard/Vulcannis/Ferrujal/Coroferro, day/night cycle global (cosmetic only). |
+| Boss portraits | 15 unique, rest shared | ART-016 through ART-020 integrated; remaining bosses still reuse a shared portrait until a future request covers them. |
+| Story cinematics | Available | ART-015 integrated: one banner per act plus both endings. |
 
 ## Production Queue
 
@@ -67,12 +69,15 @@ Read it before starting work. Update it in the same change that delivers or cons
 | --- | --- | --- | --- | --- |
 | P0 | Steelmere all 7 territory maps | — | DONE | All delivered and integrated, see ART-001 and ART-005 through ART-010. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
-| P1 | Treasure chest variants | Codex | PLANNED | Common, locked, rare, opened and secret states. |
-| P1 | Terrain states | Shared | Frostgard ready | Claude Code defines effects; Frostgard `ice`, `snow-drift` and `steam-vent` textures are delivered in ART-004. Mud and conveyor remain pending for later regions. |
+| P1 | Treasure chest variants | — | DONE | `common`/`opened` integrated (ART-011); `locked`/`rare`/`secret` delivered but unused until a chest-gating mechanic exists. |
+| P1 | Campfire map prop | — | DONE | Integrated (ART-021), existing rest/respawn flow unchanged. |
+| P1 | Terrain states | — | DONE | Frostgard (ART-004) plus Ferrujal mud, Coroferro conveyor and Vulcannis ash-lava-rock (ART-014) all integrated with a movement rule each. |
+| P1 | Story cinematic panels | — | DONE | All 4 act banners plus both endings integrated in `StoryCampaignPanel` (ART-015). |
+| P1 | Unique boss portraits | — | DONE | 15 unique portraits integrated (ART-016 through ART-020); other bosses still reuse a shared portrait. |
 | P1 | Overworld visible monsters | — | DONE | Patrol AI + collision-to-combat (existing ambush flow) + real sprites from ART-003, all integrated. Blind step-ambush chance lowered 15%→7% since visible monsters now cover most encounters. |
-| P2 | Map camera zoom/pan | Claude Code | SHIPPED | Mouse wheel + on-screen buttons, 60%-180%. Pure CSS scale on the existing world container — no art impact, works with any background at any resolution. |
-| P2 | Weather layer | Codex | PLANNED | Snow, rain, ash and smoke particle sets. |
-| P2 | Day/night layer | Shared | PLANNED | Claude Code defines time model; Codex supplies color and light overlays. |
+| P2 | Map camera zoom/pan | — | DONE | Mouse wheel + on-screen buttons, 60%-180%. Pure CSS scale on the existing world container — no art impact, works with any background at any resolution. |
+| P2 | Weather layer | — | DONE | Integrated on Frostgard/Vulcannis/Ferrujal/Coroferro (ART-012), drift respects the reduced-effects toggle. |
+| P2 | Day/night layer | — | DONE | Integrated globally as a cosmetic-only cycle (ART-013), no gameplay consequence yet. |
 
 ## ART REQUEST Template
 
@@ -232,7 +237,150 @@ Integration: `buildAetherium()` in `src/regionMap.tsx` now sets `background` to 
 Collision read: the upper aether pool x8-13/y4-6 is impassable except for its vertical bridge along x10/y3-7. The broken outer platforms, void, crystal masses, vortex, galleries, observatory, reactor and ring structures should block movement where solid. Preserve connected stone routes for all exits: west (x1, y8), east (x20, y8), south (x11, y14) and north (x11, y1), plus every existing entity coordinate.
 Collision pass (Claude Code): pool/bridge unchanged from the placeholder (already matched, x8-13/y4-6, vertical bridge x10/y3-7); blocked rects for the NW vortex corner, the NE reactor-ring corner, the western mechanical gallery (y8 corridor + west exit left open) and the eastern observatory (y8 corridor + east exit left open). The central ceremonial ring and lower plaza are open platforms in the art, left unblocked. All entities reachable across all 4 exits, `npm test` 75/75 green. Not yet eyeballed live in a browser.
 
-**All 7 Steelmere territories now have background art + an authored, tested collision pass (ART-001, 005-010).** Remaining Steelmere work is polish, not coverage: a live in-browser look at each map (none of the 7 has been visually double-checked yet, only BFS-verified), the terrain-state textures/mechanics from ART-004 (currently Frostgard-only), and whatever P1/P2 items are still open below (chest variants, weather, day/night).
+**All 7 Steelmere territories now have background art + an authored, tested collision pass (ART-001, 005-010), and every P1/P2 item below is DONE (ART-011 through ART-021).** The one thing still outstanding across all of this: a live in-browser look at each map and each new visual layer -- everything so far has only been verified by the automated reachability test (`npm test`) plus typecheck/lint/build, never eyeballed in a running browser session.
+
+### ART-011 - Treasure chest variants
+Status: INTEGRATED
+Owner: Codex; integration: Claude Code
+Gameplay purpose: replace emoji chest markers with readable map props and provide visual states for future locked, rare and secret rewards.
+Delivered paths:
+- `public/assets/maps/objects/treasure-chest/common.png`
+- `public/assets/maps/objects/treasure-chest/locked.png`
+- `public/assets/maps/objects/treasure-chest/rare.png`
+- `public/assets/maps/objects/treasure-chest/secret.png`
+- `public/assets/maps/objects/treasure-chest/opened.png`
+Dimensions and format: all 128x128 PNG RGBA, transparent background, intended to render inside a 16px map-tile footprint using the existing object-image sizing convention.
+State guidance: `common` is the default closed chest; `opened` is the direct replacement for all currently opened chests; `locked`, `rare` and `secret` are visual-only variants until an explicit chest metadata/interaction request defines their rules.
+Integration note: render an image instead of the current emoji inside `.regionmap-chest`, map the current `openedChests[chest.id]` state to `opened`, and retain the emoji as a fallback only when the image fails to load.
+Integration (Claude Code): `MapPropIcon` in `src/regionMap.tsx` renders `common.png`/`opened.png` by `openedChests[chest.id]`, falling back to the original emoji via `onError`. `locked`/`rare`/`secret` are delivered but unused -- no chest metadata/gating exists yet to key off, per the note above. `npm test` 75/75 green.
+
+### ART-012 - Regional weather overlays
+Status: INTEGRATED
+Owner: Codex; integration: Claude Code
+Gameplay purpose: give the map-weather system lightweight transparent visual layers without coupling art to its timing or story rules.
+Delivered paths:
+- `public/assets/maps/fx/snow/soft.png`
+- `public/assets/maps/fx/rain/soft.png`
+- `public/assets/maps/fx/ash/soft.png`
+- `public/assets/maps/fx/smoke/soft.png`
+Dimensions and format: all 704x512 PNG RGBA, matching the 22x16 Steelmere background footprint. Alpha is included; the renderer should place the layer absolute over the world, with `pointer-events:none`.
+Suggested regional mapping: `snow` for Frostgard and Kaldrum; `rain` for Abdendriel; `ash` for Ignaris and Vulcannis; `smoke` for Coroferro and Ferrujal. These are suggested visuals only, not gameplay restrictions.
+Integration note: preserve opacity control in CSS, animate the layer with a small repeating translation rather than moving individual particles, and allow the code layer to disable it for accessibility or reduced-motion settings.
+Integration (Claude Code): new optional `weather` field on `RegionMapDef`, rendered as `.regionmap-weather` (full-map `background-size:cover`, `pointer-events:none`) inside `TileWorldExplorer`. Assigned by fit rather than the exact suggested list (only Frostgard/Vulcannis/Ferrujal/Coroferro exist as coded Steelmere maps so far): `snow` on Frostgard, `ash` on Vulcannis, `smoke` on Ferrujal and Coroferro. Drift animation gated by `html:not(.reduce-effects)` (existing global reduced-motion class, no new JS check needed). `npm test` 75/75 green.
+
+### ART-013 - Day and night lighting overlays
+Status: INTEGRATED
+Owner: Codex; integration: Claude Code
+Gameplay purpose: add an atmospheric light transition above regional maps while keeping the day-cycle model and all gameplay effects in code.
+Delivered paths:
+- `public/assets/maps/fx/lighting/twilight.png`
+- `public/assets/maps/fx/lighting/night.png`
+Dimensions and format: both 704x512 PNG RGBA, built to cover a 22x16 regional-map background. `twilight` uses a warm amber-to-violet edge wash; `night` uses a blue-black vignette and sparse upper-sky stars.
+Integration note: place as an absolute, non-interactive image above map art and below gameplay markers. Keep a CSS opacity variable so the time controller can cross-fade day -> twilight -> night. Do not animate this overlay under reduced-motion; it is intentionally static.
+Integration (Claude Code): applied globally (all regions, not just Steelmere) as a purely cosmetic effect with no gameplay consequence, per the gameplay-purpose note above. `TileWorldExplorer` keeps a local 5-minute day/night clock (resets each time a region mounts) and cross-fades `.regionmap-daynight.twilight`/`.night` opacity via a sine-based curve; the art itself is static, only the code-driven opacity transitions. `npm test` 75/75 green.
+
+### ART-014 - Steelmere terrain-state tiles
+Status: INTEGRATED
+Owner: Codex; integration and rules: Claude Code
+Gameplay purpose: complete the next three terrain visuals planned for Steelmere without prescribing their effects.
+Delivered paths:
+- `public/assets/maps/tiles/ferrujal/mud.png`
+- `public/assets/maps/tiles/coroferro/conveyor.png`
+- `public/assets/maps/tiles/vulcannis/ash-lava-rock.png`
+Dimensions and format: all 128x128 PNG RGBA, matching existing terrain texture resolution. Each represents a single 16px-native map tile and should use the existing tile CSS sizing/image-rendering conventions.
+Visual use: `mud` is toxic industrial sludge for Ferrujal; `conveyor` is a vertical belt texture for Coroferro (the renderer may rotate it for horizontal routes); `ash-lava-rock` is traversable cracked volcanic basalt for Vulcannis.
+Integration note: add the corresponding ids to `BaseTile`, `MapTile`, the walkability set and CSS asset mapping only when their movement/damage rules are approved. Keep this delivery visual-only; no existing map grid is changed by it.
+Integration (Claude Code): added `mud`/`conveyor`/`ash_lava_rock` to `BaseTile`/`MapTile`/`WALKABLE` and wired the CSS, same pattern as ART-004. Movement rules (a code decision, since none were specified): `conveyor` pushes the player automatically like `ice` (reuses the exact same auto-slide branch in `step()`); `mud` slows the arrival at that tile to 1.6x `STEP_MS` (a "stuck in the sludge" feel, no new status system); `ash_lava_rock` is purely decorative, no rule, same as `snow_drift`. Placed one illustrative patch of each in their respective map (Ferrujal mud, Coroferro conveyor, Vulcannis ash-lava-rock) -- not checked pixel-for-pixel against the art, same caveat as the ART-004 ice patch. `npm test` 75/75 green.
+
+### ART-015 - Story campaign cinematic panels
+Status: INTEGRATED
+Owner: Codex; integration: Claude Code
+Gameplay purpose: visually introduce the existing narrative acts and differentiate the two campaign endings without embedding text in art.
+Delivered paths:
+- `public/assets/story/cinematics/act-01-havendown.webp`
+- `public/assets/story/cinematics/act-02-forge.webp`
+- `public/assets/story/cinematics/act-03-flame-crown.webp`
+- `public/assets/story/cinematics/act-04-black-sun.webp`
+- `public/assets/story/cinematics/ending-dawn.webp`
+- `public/assets/story/cinematics/ending-throne.webp`
+Dimensions and format: 1280x720 WebP RGB, landscape 16:9. The text-free left side of every panel is reserved for accessible story UI copy.
+State mapping: use `act-01-havendown` for the first chapter; `act-02-forge` for Act 2; `act-03-flame-crown` for Act 3; `act-04-black-sun` for Act 4; `ending-dawn` for `epilogo_luz`; and `ending-throne` for `epilogo_sombra`.
+Integration note: in `StoryCampaignPanel`, render the matching image as a background or an adjacent full-width illustration with the existing title/dialogue over it. Keep actual narrative text in HTML; respect reduced-motion by avoiding required text animation.
+Integration (Claude Code): `StoryCinematic` in `src/main.tsx` renders a full-width banner above the chapter title, mapped by `chapter.act` (1-4) with the two epilogue ids (`epilogo_luz`/`epilogo_sombra`) special-cased to the ending art. Fails silently (renders nothing) if the image 404s, no broken-image fallback needed for a purely illustrative banner. `npm test` 75/75 green.
+
+### ART-016 - Unique boss portraits, first replacement set
+Status: INTEGRATED
+Owner: Codex; data-path integration: Claude Code
+Gameplay purpose: eliminate the most conspicuous reuse of `boss_minotauro.webp` across unrelated bosses while retaining the current boss data and combat behavior.
+Delivered paths:
+- `public/assets/art/bosses/boss-mestre-ferreiro-caido.webp`
+- `public/assets/art/bosses/boss-guardiao-caldeira.webp`
+- `public/assets/art/bosses/boss-rei-esquecido-kholgard.webp`
+- `public/assets/art/bosses/boss-asterion.webp`
+Dimensions and format: each 768x1152 WebP RGB, vertical card portrait.
+Required data replacements in `src/data/subregioes.json`: set the `arte` field for `Mestre Ferreiro Caído`, `Guardião da Caldeira`, `Rei Esquecido de Kholgard`, and `Asterion, Guardião do Sol Negro` to their matching paths above. Do not alter their stats, phases or rewards.
+Visual mapping: fallen dwarven smith; magma forge construct; undead dwarven king; black-sun celestial knight, respectively.
+Integration (Claude Code): all 4 `arte` fields swapped in `src/data/subregioes.json`, no stat/phase/reward changes. `npm test` 75/75 green.
+
+### ART-017 - Unique boss portraits, second replacement set
+Status: INTEGRATED
+Owner: Codex; data-path integration: Claude Code
+Gameplay purpose: eliminate the shared `boss_troll.webp` portrait from four distinct boss encounters while retaining their current boss data and combat behavior.
+Delivered paths:
+- `public/assets/art/bosses/boss-guardiao-runico-ancestral.webp`
+- `public/assets/art/bosses/boss-tita-da-passagem.webp`
+- `public/assets/art/bosses/boss-yeti-alfa-gelo-eterno.webp`
+- `public/assets/art/bosses/boss-sentinela-pedra-kholgard.webp`
+Dimensions and format: each 768x1152 WebP RGB, vertical card portrait.
+Required data replacements in `src/data/subregioes.json`: set the `arte` field for `Guardião Rúnico Ancestral`, `Titã da Passagem`, `Yeti Alfa de Gelo Eterno`, and `Sentinela de Pedra de Kholgard` to their matching paths above. Do not alter their stats, phases or rewards.
+Visual mapping: ancient rune-bound forest guardian; mountain pass stone titan; icebound alpha yeti; dwarven-carved Kholgard stone sentinel, respectively.
+Integration (Claude Code): all 4 `arte` fields swapped in `src/data/subregioes.json`, no stat/phase/reward changes. `npm test` 75/75 green.
+
+### ART-018 - Unique boss portraits, road and forest set
+Status: INTEGRATED
+Owner: Codex; data-path integration: Claude Code
+Gameplay purpose: give the three bosses previously sharing `boss_bandoleiro.webp` their own visual identities while retaining their current boss data and combat behavior.
+Delivered paths:
+- `public/assets/art/bosses/boss-capitao-bandoleiros.webp`
+- `public/assets/art/bosses/boss-mestre-pedagio.webp`
+- `public/assets/art/bosses/boss-rei-goblin-abdendriel.webp`
+Dimensions and format: each 768x1152 WebP RGB, vertical card portrait.
+Required data replacements in `src/data/subregioes.json`: set the `arte` field for `Capitão dos Bandoleiros`, `Mestre do Pedágio`, and `Rei Goblin de Abdendriel` to their matching paths above. Do not alter their stats, phases or rewards.
+Visual mapping: highwayman field captain; corrupt bridge tollmaster; cunning goblin monarch of Abdendriel, respectively.
+Integration (Claude Code): all 3 `arte` fields swapped in `src/data/subregioes.json`, no stat/phase/reward changes. `npm test` 75/75 green.
+
+### ART-019 - Unique boss portraits, Morvath veil set
+Status: INTEGRATED
+Owner: Codex; data-path integration: Claude Code
+Gameplay purpose: distinguish the two Morvath bosses previously sharing `boss_necromante.webp` from the Necromante Supremo while retaining their current boss data and combat behavior.
+Delivered paths:
+- `public/assets/art/bosses/boss-lorde-espectral-morvath.webp`
+- `public/assets/art/bosses/boss-vaelora-senhora-veu.webp`
+Dimensions and format: each 768x1152 WebP RGB, vertical card portrait.
+Required data replacements in `src/data/subregioes.json`: set the `arte` field for `Lorde Espectral de Morvath` and `Vaelora, Senhora do Véu` to their matching paths above. Do not alter their stats, phases or rewards.
+Visual mapping: aristocratic spectral warlord; poised veil-weaving death sorceress, respectively.
+Integration (Claude Code): both `arte` fields swapped in `src/data/subregioes.json`; `Necromante Supremo` deliberately keeps `boss_necromante.webp` (not part of this request), no stat/phase/reward changes. `npm test` 75/75 green.
+
+### ART-020 - Unique boss portraits, abyss and web set
+Status: INTEGRATED
+Owner: Codex; data-path integration: Claude Code
+Gameplay purpose: separate the final two cross-theme portrait reuses while retaining their current boss data and combat behavior.
+Delivered paths:
+- `public/assets/art/bosses/boss-nihraz-imperador-vazio.webp`
+- `public/assets/art/bosses/boss-rainha-aracnidea.webp`
+Dimensions and format: each 768x1152 WebP RGB, vertical card portrait.
+Required data replacements in `src/data/subregioes.json`: set the `arte` field for `Nihraz, Imperador do Vazio` and `Rainha Aracnídea` to their matching paths above. Do not alter their stats, phases or rewards.
+Visual mapping: aetheric void emperor; predatory arachnid queen, respectively.
+Integration (Claude Code): both `arte` fields swapped in `src/data/subregioes.json`, no stat/phase/reward changes. `npm test` 75/75 green.
+
+### ART-021 - Campfire map prop
+Status: INTEGRATED
+Owner: Codex; integration: Claude Code
+Gameplay purpose: replace the campfire emoji with a readable terrain-neutral checkpoint prop while preserving existing rest and respawn behavior.
+Delivered path: `public/assets/maps/objects/campfire/idle.png`
+Dimensions and format: 128x128 PNG RGBA with real transparent background.
+Integration note: in `TileWorldExplorer`, replace the visual content of `.regionmap-campfire-icon` with an `img` using this path. Keep the enclosing button, `onRestCampfire`, label, aura and all current state logic intact. Size the image to the current tile bounds with `object-fit: contain`; retain the fire emoji only as an image-load fallback.
+Integration (Claude Code): same `MapPropIcon` fallback component used for ART-011 (see there), all existing button/aura/rest logic untouched. `npm test` 75/75 green.
 
 ## Handoff Log
 

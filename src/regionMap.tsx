@@ -15,10 +15,10 @@ function mapAsset(path: string) { return `${import.meta.env.BASE_URL}${path.repl
 
 // Grid "de autoria" -- o que se desenha à mão em build*() usando fill/hline/vline/rect.
 // Tipos genéricos: não sabem (nem precisam saber) qual variante de arte existe pra cada caso.
-// 'ice'/'snow_drift'/'steam_vent' são terrenos especiais de bioma (ver ART-004 no
-// VISUAL_DEVELOPMENT_HANDOFF.md) -- sem auto-tiling de vizinhança como path/bridge/bank, são
-// tile únicos (igual flower/tree/water), então passam direto por resolveTerrain().
-type BaseTile = 'grass' | 'flower' | 'tree' | 'water' | 'path' | 'bridge' | 'ice' | 'snow_drift' | 'steam_vent'
+// 'ice'/'snow_drift'/'steam_vent' (ART-004) e 'mud'/'conveyor'/'ash_lava_rock' (ART-014) são
+// terrenos especiais de bioma -- sem auto-tiling de vizinhança como path/bridge/bank, são tile
+// únicos (igual flower/tree/water), então passam direto por resolveTerrain().
+type BaseTile = 'grass' | 'flower' | 'tree' | 'water' | 'path' | 'bridge' | 'ice' | 'snow_drift' | 'steam_vent' | 'mud' | 'conveyor' | 'ash_lava_rock'
 
 // Grid "de renderização" -- variante exata de arte, resolvida a partir do grid de autoria por
 // resolveTerrain() olhando os vizinhos de cada célula. É o que TileWorldExplorer de fato desenha
@@ -29,6 +29,7 @@ export type MapTile =
   | 'path_v' | 'path_h' | 'path_corner_br' | 'path_corner_bl' | 'path_corner_tr' | 'path_corner_tl'
   | 'bridge_cap_top' | 'bridge_mid' | 'bridge_cap_bottom'
   | 'ice' | 'snow_drift' | 'steam_vent'
+  | 'mud' | 'conveyor' | 'ash_lava_rock'
 
 const WALKABLE = new Set<MapTile>([
   'grass', 'flower',
@@ -36,6 +37,7 @@ const WALKABLE = new Set<MapTile>([
   'path_v', 'path_h', 'path_corner_br', 'path_corner_bl', 'path_corner_tr', 'path_corner_tl',
   'bridge_cap_top', 'bridge_mid', 'bridge_cap_bottom',
   'ice', 'snow_drift', 'steam_vent',
+  'mud', 'conveyor', 'ash_lava_rock',
 ])
 
 export interface RegionMapLocation { subId: string; x: number; y: number; icon?: string }
@@ -73,6 +75,7 @@ export interface RegionMapDef {
   chests?: RegionMapChest[]
   campfires?: RegionMapCampfire[]
   blocked?: Array<{ x: number; y: number }>
+  weather?: 'snow' | 'rain' | 'ash' | 'smoke' // camada atmosférica opcional (ART-012) -- só nas regiões onde faz sentido, não é universal
 }
 
 type Facing = 'up' | 'down' | 'left' | 'right'
@@ -242,7 +245,7 @@ function resolveTerrain(base: BaseTile[][]): MapTile[][] {
         else if (at(x, y - 1) === 'water') resolved = 'bank_h_r'
         else resolved = 'grass'
       } else {
-        resolved = t // 'flower' | 'tree' | 'water' | 'ice' | 'snow_drift' | 'steam_vent'
+        resolved = t // 'flower' | 'tree' | 'water' | 'ice' | 'snow_drift' | 'steam_vent' | 'mud' | 'conveyor' | 'ash_lava_rock'
       }
       row.push(resolved)
     }
@@ -591,7 +594,7 @@ function buildFrostgard(): RegionMapDef {
   rect(base, 9, 11, 9, 11, 'snow_drift')
   base[4][4] = 'steam_vent' // respiro perto da caldeira noroeste
   return {
-    id: 'frostgard', background: mapAsset('assets/maps/steelmere/frostgard.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'frostgard', background: mapAsset('assets/maps/steelmere/frostgard.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'snow',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'south_engrenverde', x: 11, y: 14, icon: '↓', targetRegionId: 'engrenverde' },
@@ -713,8 +716,12 @@ function buildVulcannis(): RegionMapDef {
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 9, 2, 12, 5, 'water')
   hline(base, 8, 13, 4, 'bridge')
+  // Basalto rachado (ART-014): faixa decorativa no corredor aberto entre aqueduto e fundição --
+  // sem regra de movimento própria, só reveste o chão (placement ilustrativo, como o gelo do
+  // Frostgard em ART-004).
+  rect(base, 8, 9, 10, 10, 'ash_lava_rock')
   return {
-    id: 'vulcannis', background: mapAsset('assets/maps/steelmere/vulcannis.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'vulcannis', background: mapAsset('assets/maps/steelmere/vulcannis.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'ash',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'west_frostgard', x: 1, y: 7, icon: '←', targetRegionId: 'frostgard' },
@@ -755,8 +762,11 @@ function buildFerrujal(): RegionMapDef {
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 2, 7, 4, 13, 'water')
   hline(base, 1, 5, 10, 'bridge')
+  // Lama tóxica (ART-014): faixa a leste da poça (ferro_pocas), atolando quem passar por ali --
+  // placement ilustrativo, como o gelo do Frostgard em ART-004.
+  rect(base, 6, 11, 8, 12, 'mud')
   return {
-    id: 'ferrujal', background: mapAsset('assets/maps/steelmere/ferrujal.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'ferrujal', background: mapAsset('assets/maps/steelmere/ferrujal.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'smoke',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_engrenverde', x: 10, y: 1, icon: '↑', targetRegionId: 'engrenverde' },
@@ -796,8 +806,12 @@ function buildCoroferro(): RegionMapDef {
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 8, 5, 12, 7, 'water')
   hline(base, 7, 13, 6, 'bridge')
+  // Esteira industrial (ART-014): faixa vertical junto à praça do relógio (coro_praca) --
+  // empurra automaticamente quem pisar (mesma regra de deslize do gelo, ver step() em
+  // TileWorldExplorer); placement ilustrativo, como o gelo do Frostgard em ART-004.
+  vline(base, 9, 11, 16, 'conveyor')
   return {
-    id: 'coroferro', background: mapAsset('assets/maps/steelmere/coroferro.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'coroferro', background: mapAsset('assets/maps/steelmere/coroferro.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'smoke',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'west_ferrujal', x: 1, y: 8, icon: '←', targetRegionId: 'ferrujal' },
@@ -911,6 +925,16 @@ const playerSpriteFrames = (spriteId: string): Record<Facing, { frames: string[]
 const WALK_FRAME_COUNT = 6
 const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
+// Ícone de objeto de mapa (fogueira/baú, ART-011/ART-021) com fallback pro emoji original --
+// "asset ausente vira fallback seguro em vez de imagem quebrada" é exigência do próprio contrato
+// de handoff (Definition of Done), não só capricho: se o Codex ainda não entregou (ou o nome do
+// arquivo mudar), o jogador vê o emoji de sempre em vez de um ícone quebrado.
+function MapPropIcon({ src, fallback, className }: { src: string; fallback: string; className?: string }) {
+  const [failed, setFailed] = React.useState(false)
+  if (failed) return <span className={className}>{fallback}</span>
+  return <img className={className} src={src} alt="" onError={() => setFailed(true)} />
+}
+
 const FOG_REVEAL_RADIUS = 3
 
 export function TileWorldExplorer({
@@ -972,6 +996,18 @@ export function TileWorldExplorer({
     }
     if (newly.length) onExplore(newly)
   }, [pos.x, pos.y])
+
+  // Ciclo dia/noite (ART-013): puramente estético -- não afeta combate, spawn nem emboscada, só
+  // a opacidade dos overlays de luz. Relógio local ao componente (reinicia a cada entrada na
+  // região), suficiente pro efeito ambiente pedido; a arte em si é estática, só a opacidade anima.
+  const DAY_CYCLE_MS = 5 * 60 * 1000 // 5min por ciclo completo dia->noite->dia
+  const [dayT, setDayT] = React.useState(() => (Date.now() % DAY_CYCLE_MS) / DAY_CYCLE_MS)
+  React.useEffect(() => {
+    const id = window.setInterval(() => setDayT((Date.now() % DAY_CYCLE_MS) / DAY_CYCLE_MS), 1000)
+    return () => window.clearInterval(id)
+  }, [])
+  const nightOpacity = Math.max(0, Math.sin(dayT * Math.PI * 2 - Math.PI / 2)) * 0.82
+  const twilightOpacity = Math.max(0, 1 - Math.abs(dayT - 0.25) * 8, 1 - Math.abs(dayT - 0.75) * 8) * 0.55
 
   // Monstros visíveis: um passeio aleatório limitado (WANDER_RADIUS) em torno de um ponto de
   // origem derivado dos marcadores do mapa (deriveWanderers). Encostar no jogador dispara o
@@ -1038,6 +1074,9 @@ export function TileWorldExplorer({
     if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return
     if (!isMapWalkable(map, { x: tx, y: ty }, npcBlocked)) return
     movingRef.current = true
+    // Lama (ART-014) atrasa a chegada no tile -- é a "sensação" de atolar, sem inventar um
+    // sistema de status novo; some assim que o jogador sai da lama, não é acumulativo.
+    const arrivalDelay = map.grid[ty]?.[tx] === 'mud' ? Math.round(STEP_MS * 1.6) : STEP_MS
     // Alterna 0->1->2->0... a cada passo aceito -- é o ciclo de caminhada em si (perna
     // esquerda, neutro, perna direita), não uma animação por tempo separada do movimento.
     setWalking(true)
@@ -1046,7 +1085,7 @@ export function TileWorldExplorer({
     setPos({ x: tx, y: ty })
     movementTimers.current.forEach(window.clearTimeout)
     movementTimers.current = Array.from({ length: WALK_FRAME_COUNT - 1 }, (_, index) =>
-      window.setTimeout(() => setFrame(index + 1), Math.round(STEP_MS * (index + 1) / WALK_FRAME_COUNT)),
+      window.setTimeout(() => setFrame(index + 1), Math.round(arrivalDelay * (index + 1) / WALK_FRAME_COUNT)),
     )
     window.setTimeout(() => {
       movingRef.current = false
@@ -1056,21 +1095,23 @@ export function TileWorldExplorer({
       const exit = exits.find(l => l.x === tx && l.y === ty)
       const chest = (map.chests ?? []).find(c => c.x === tx && c.y === ty)
       const campfire = (map.campfires ?? []).find(c => c.x === tx && c.y === ty)
+      const landedTile = map.grid[ty]?.[tx]
       if (loc) onEnterLocation(loc.subId)
       else if (exit) onEnterExit?.(exit.id)
       else if (chest && !openedChests?.[chest.id]) onOpenChest?.(chest)
       else if (campfire) onRestCampfire?.(campfire)
-      else if (map.grid[ty]?.[tx] === 'ice' && isMapWalkable(map, { x: tx + dx, y: ty + dy }, npcBlocked)) {
-        // Gelo escorregadio (ART-004): continua deslizando na mesma direção até sair do gelo ou
-        // esbarrar em algo -- cancela um caminho clicado em andamento, já que o jogador perde o
-        // controle da direção enquanto desliza.
+      else if ((landedTile === 'ice' || landedTile === 'conveyor') && isMapWalkable(map, { x: tx + dx, y: ty + dy }, npcBlocked)) {
+        // Gelo (ART-004) e esteira industrial (ART-014, Coroferro) empurram do mesmo jeito:
+        // continua deslizando na mesma direção até sair do terreno especial ou esbarrar em algo --
+        // cancela um caminho clicado em andamento, já que o jogador perde o controle da direção
+        // enquanto desliza.
         queuedMoves.current = []
         step(dx, dy, true)
         return
       }
       else if (!auto && Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
-    }, STEP_MS)
+    }, arrivalDelay)
   }, [paused, map, onEnterLocation, exits, onEnterExit, npcBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
@@ -1207,6 +1248,9 @@ export function TileWorldExplorer({
         <div className={`regionmap-tiles${map.background ? ' art-backed' : ''}`} style={{ gridTemplateColumns: `repeat(${map.width},${tilePx}px)`, gridAutoRows: `${tilePx}px` }}>
           {map.grid.flatMap((row, y) => row.map((t, x) => <div key={`${x}_${y}`} className={`regionmap-tile tile-${t}`} />))}
         </div>
+        {twilightOpacity > 0.02 && <div className="regionmap-daynight twilight" style={{ opacity: twilightOpacity }} />}
+        {nightOpacity > 0.02 && <div className="regionmap-daynight night" style={{ opacity: nightOpacity }} />}
+        {map.weather && <div className={`regionmap-weather regionmap-weather-${map.weather}`} />}
         {map.locations.map(loc => {
           const status = locationStatus?.(loc.subId) ?? 'default'
           return <button key={loc.subId} type="button" className={`regionmap-location status-${status}`}
@@ -1237,7 +1281,7 @@ export function TileWorldExplorer({
             }}
             aria-label={`Descansar na fogueira ${campfire.name}`} title={`Fogueira: ${campfire.name}`}>
             <span className="regionmap-campfire-aura" />
-            <span className="regionmap-campfire-icon">🔥</span>
+            <MapPropIcon className="regionmap-campfire-icon" src={mapAsset('assets/maps/objects/campfire/idle.png')} fallback="🔥" />
           </button>
         ))}
         {(map.chests ?? []).map(chest => {
@@ -1252,7 +1296,7 @@ export function TileWorldExplorer({
                 if (!opened) onOpenChest?.(chest)
               }}
               aria-label={chest.name} title={opened ? `${chest.name} (Aberto)` : `${chest.name} (Fechado)`}>
-              <span className="regionmap-chest-icon">{opened ? '📭' : '📦'}</span>
+              <MapPropIcon className="regionmap-chest-icon" src={mapAsset(`assets/maps/objects/treasure-chest/${opened ? 'opened' : 'common'}.png`)} fallback={opened ? '📭' : '📦'} />
             </button>
           )
         })}

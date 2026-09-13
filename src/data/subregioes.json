@@ -6,7 +6,7 @@
       {"nome":"Lobo dos Campos","ataque":4,"vida":16,"ouro":4,"habilidade":"Mordida veloz","arte":"assets/art/monsters/cabra_malgor.webp"},
       {"nome":"Cobrador Goblin","ataque":6,"vida":14,"ouro":6,"habilidade":"Pedágio ou sangue","arte":"assets/art/monsters/grumnak.webp"}
     ],
-    "chefe":{"nome":"Capitão dos Bandoleiros","ataque":10,"vida":56,"ouro":36,"habilidade":"Tiro Duplo a cada 3º turno","arte":"assets/art/bosses/boss_bandoleiro.webp","maxFases":2,"raridade":"epico"}
+    "chefe":{"nome":"Capitão dos Bandoleiros","ataque":10,"vida":56,"ouro":36,"habilidade":"Tiro Duplo a cada 3º turno","arte":"assets/art/bosses/boss-capitao-bandoleiros.webp","maxFases":2,"raridade":"epico"}
   },
   {
     "id":"campos_ponte","regionId":"campos_dourados","nome":"Ponte de Eldrimar","descricao":"A passagem mais disputada entre os campos e as rotas comerciais do reino.","nivelMin":4,"nivelMax":8,"encontrosNecessarios":4,"icone":"🌉","temaLoot":"Ouro, escudos e consumíveis","desafios":["Escolta de mercador","Guardas corrompidos","Emboscada na ponte"],
@@ -15,7 +15,7 @@
       {"nome":"Guarda Corrompido","ataque":8,"vida":24,"ouro":8,"habilidade":"Postura defensiva","arte":"assets/art/monsters/fanatico_orgulho.webp"},
       {"nome":"Ilusionista da Travessia","ataque":8,"vida":20,"ouro":8,"habilidade":"Miragem","arte":"assets/art/monsters/ilusionista_areias.webp"}
     ],
-    "chefe":{"nome":"Mestre do Pedágio","ataque":12,"vida":68,"ouro":48,"habilidade":"Cobra ouro e contra-ataca","arte":"assets/art/bosses/boss_bandoleiro.webp","maxFases":2,"raridade":"epico"}
+    "chefe":{"nome":"Mestre do Pedágio","ataque":12,"vida":68,"ouro":48,"habilidade":"Cobra ouro e contra-ataca","arte":"assets/art/bosses/boss-mestre-pedagio.webp","maxFases":2,"raridade":"epico"}
   },
 
   {
@@ -34,7 +34,7 @@
       {"nome":"Goblin Xamã","ataque":10,"vida":28,"ouro":10,"habilidade":"Maldição tribal","arte":"assets/art/monsters/ilusionista_areias.webp"},
       {"nome":"Goblin Bombeiro","ataque":12,"vida":26,"ouro":12,"habilidade":"Frasco explosivo","arte":"assets/art/monsters/corvo_ignaroth.webp"}
     ],
-    "chefe":{"nome":"Rei Goblin de Abdendriel","ataque":16,"vida":88,"ouro":64,"habilidade":"Convoca capangas ao perder metade da vida","arte":"assets/art/bosses/boss_bandoleiro.webp","maxFases":2,"raridade":"lendario"}
+    "chefe":{"nome":"Rei Goblin de Abdendriel","ataque":16,"vida":88,"ouro":64,"habilidade":"Convoca capangas ao perder metade da vida","arte":"assets/art/bosses/boss-rei-goblin-abdendriel.webp","maxFases":2,"raridade":"lendario"}
   },
   {
     "id":"lunar_monolito","regionId":"floresta_lunargenta","nome":"Círculo Monolítico","descricao":"Pedras rúnicas despertam espíritos e distorcem a magia da floresta.","nivelMin":10,"nivelMax":14,"encontrosNecessarios":4,"icone":"🗿","temaLoot":"Runas e itens arcanos","desafios":["Enigma rúnico","Teste de sabedoria","Portal instável"],
@@ -43,7 +43,7 @@
       {"nome":"Sentinela Monolítica","ataque":12,"vida":40,"ouro":12,"habilidade":"Pele de pedra","arte":"assets/art/monsters/sentinela_runas.webp"},
       {"nome":"Fanático das Runas","ataque":14,"vida":34,"ouro":14,"habilidade":"Orgulho inabalável","arte":"assets/art/monsters/fanatico_orgulho.webp"}
     ],
-    "chefe":{"nome":"Guardião Rúnico Ancestral","ataque":18,"vida":100,"ouro":76,"habilidade":"Escudo de runas e descarga arcana","arte":"assets/art/bosses/boss_troll.webp","maxFases":2,"raridade":"lendario"}
+    "chefe":{"nome":"Guardião Rúnico Ancestral","ataque":18,"vida":100,"ouro":76,"habilidade":"Escudo de runas e descarga arcana","arte":"assets/art/bosses/boss-guardiao-runico-ancestral.webp","maxFases":2,"raridade":"lendario"}
   },
   {
     "id":"lunar_aranhas","regionId":"floresta_lunargenta","nome":"Ninho da Aranha Gigante","descricao":"Túneis cobertos por seda, ovos pulsantes e veneno por toda parte.","nivelMin":12,"nivelMax":16,"encontrosNecessarios":5,"icone":"🕷️","temaLoot":"Venenos, seda e botas raras","desafios":["Ovos da colônia","Ponte de teias","Câmara venenosa"],
@@ -52,7 +52,7 @@
       {"nome":"Viúva de Abdendriel","ataque":16,"vida":36,"ouro":16,"habilidade":"Veneno acumulativo","arte":"assets/art/monsters/cabra_malgor.webp"},
       {"nome":"Aranha Guardiã","ataque":14,"vida":48,"ouro":16,"habilidade":"Carapaça espessa","arte":"assets/art/monsters/sentinela_runas.webp"}
     ],
-    "chefe":{"nome":"Rainha Aracnídea","ataque":20,"vida":116,"ouro":92,"habilidade":"Invoca filhotes e aplica veneno","arte":"assets/art/bosses/boss_seiva.webp","maxFases":3,"raridade":"lendario"}
+    "chefe":{"nome":"Rainha Aracnídea","ataque":20,"vida":116,"ouro":92,"habilidade":"Invoca filhotes e aplica veneno","arte":"assets/art/bosses/boss-rainha-aracnidea.webp","maxFases":3,"raridade":"lendario"}
   },
 
   {
@@ -62,7 +62,7 @@
       {"nome":"Bode Amaldiçoado","ataque":14,"vida":42,"ouro":14,"habilidade":"Investida","arte":"assets/art/monsters/cabra_malgor.webp"},
       {"nome":"Sentinela das Rochas","ataque":12,"vida":54,"ouro":16,"habilidade":"Muralha de pedra","arte":"assets/art/monsters/sentinela_runas.webp"}
     ],
-    "chefe":{"nome":"Titã da Passagem","ataque":20,"vida":124,"ouro":96,"habilidade":"Pisotear e quebrar defesa","arte":"assets/art/bosses/boss_troll.webp","maxFases":2,"raridade":"lendario"}
+    "chefe":{"nome":"Titã da Passagem","ataque":20,"vida":124,"ouro":96,"habilidade":"Pisotear e quebrar defesa","arte":"assets/art/bosses/boss-tita-da-passagem.webp","maxFases":2,"raridade":"lendario"}
   },
   {
     "id":"montanhas_mina","regionId":"montanhas_cinzentas","nome":"Mina dos Anões Caídos","descricao":"Uma mina ancestral tomada por anões corrompidos, mortos-vivos e construtos.","nivelMin":14,"nivelMax":20,"encontrosNecessarios":5,"icone":"⛏️","temaLoot":"Machados, martelos, runas e armadura pesada","desafios":["Carrinho desgovernado","Explosivos antigos","Desmoronamento","Cristal mágico"],
@@ -71,7 +71,7 @@
       {"nome":"Golem de Minério","ataque":16,"vida":64,"ouro":18,"habilidade":"Corpo metálico","arte":"assets/art/monsters/sentinela_runas.webp"},
       {"nome":"Morcego de Cristal","ataque":18,"vida":46,"ouro":16,"habilidade":"Estilhaço cristalino","arte":"assets/art/monsters/corvo_ignaroth.webp"}
     ],
-    "chefe":{"nome":"Mestre Ferreiro Caído","ataque":24,"vida":144,"ouro":116,"habilidade":"Forja em combate e martelo sísmico","arte":"assets/art/bosses/boss_minotauro.webp","maxFases":3,"raridade":"lendario"}
+    "chefe":{"nome":"Mestre Ferreiro Caído","ataque":24,"vida":144,"ouro":116,"habilidade":"Forja em combate e martelo sísmico","arte":"assets/art/bosses/boss-mestre-ferreiro-caido.webp","maxFases":3,"raridade":"lendario"}
   },
   {
     "id":"montanhas_gelo","regionId":"montanhas_cinzentas","nome":"Caverna de Gelo","descricao":"Cavernas congeladas onde o frio é tão perigoso quanto as criaturas.","nivelMin":16,"nivelMax":22,"encontrosNecessarios":5,"icone":"❄️","temaLoot":"Armadura glacial, amuletos e resistência","desafios":["Piso congelado","Nevasca subterrânea","Cristal de gelo","Lago congelado"],
@@ -80,7 +80,7 @@
       {"nome":"Elemental Glacial","ataque":18,"vida":66,"ouro":20,"habilidade":"Congelamento","arte":"assets/art/monsters/espectro_rainha.webp"},
       {"nome":"Yeti das Profundezas","ataque":20,"vida":72,"ouro":20,"habilidade":"Rugido do inverno","arte":"assets/art/monsters/sentinela_runas.webp"}
     ],
-    "chefe":{"nome":"Yeti Alfa de Gelo Eterno","ataque":26,"vida":164,"ouro":132,"habilidade":"Nevasca, congelamento e fúria","arte":"assets/art/bosses/boss_troll.webp","maxFases":3,"raridade":"lendario"}
+    "chefe":{"nome":"Yeti Alfa de Gelo Eterno","ataque":26,"vida":164,"ouro":132,"habilidade":"Nevasca, congelamento e fúria","arte":"assets/art/bosses/boss-yeti-alfa-gelo-eterno.webp","maxFases":3,"raridade":"lendario"}
   },
 
   {
@@ -90,7 +90,7 @@
       {"nome":"Corvo de Ignaroth","ataque":22,"vida":60,"ouro":22,"habilidade":"Farejador de riqueza","arte":"assets/art/monsters/corvo_ignaroth.webp"},
       {"nome":"Elemental de Magma","ataque":22,"vida":78,"ouro":24,"habilidade":"Explosão vulcânica","arte":"assets/art/monsters/fanatico_orgulho.webp"}
     ],
-    "chefe":{"nome":"Guardião da Caldeira","ataque":28,"vida":176,"ouro":144,"habilidade":"Erupção e armadura de magma","arte":"assets/art/bosses/boss_minotauro.webp","maxFases":3,"raridade":"lendario"}
+    "chefe":{"nome":"Guardião da Caldeira","ataque":28,"vida":176,"ouro":144,"habilidade":"Erupção e armadura de magma","arte":"assets/art/bosses/boss-guardiao-caldeira.webp","maxFases":3,"raridade":"lendario"}
   },
   {
     "id":"pico_ninho_dragao","regionId":"pico_escarlate","nome":"Ninho do Dragão Vermelho","descricao":"Uma incursão de alto risco no covil de Ignaroth, entre lava, draconatos e tesouros antigos.","nivelMin":24,"nivelMax":36,"encontrosNecessarios":6,"icone":"🐉","temaLoot":"Equipamentos épicos, lendários e tesouros","desafios":["Rio de lava","Filhotes de dragão","Tesouro amaldiçoado","Golem dourado","Covil exterior"],
@@ -109,7 +109,7 @@
       {"nome":"Fanático de Malgor","ataque":24,"vida":80,"ouro":26,"habilidade":"Fé sombria","arte":"assets/art/monsters/fanatico_orgulho.webp"},
       {"nome":"Cabra Amaldiçoada de Malgor","ataque":24,"vida":72,"ouro":24,"habilidade":"Capricho sombrio","arte":"assets/art/monsters/cabra_malgor.webp"}
     ],
-    "chefe":{"nome":"Lorde Espectral de Morvath","ataque":30,"vida":188,"ouro":156,"habilidade":"Luto eterno e forma espectral","arte":"assets/art/bosses/boss_necromante.webp","maxFases":3,"raridade":"lendario"}
+    "chefe":{"nome":"Lorde Espectral de Morvath","ataque":30,"vida":188,"ouro":156,"habilidade":"Luto eterno e forma espectral","arte":"assets/art/bosses/boss-lorde-espectral-morvath.webp","maxFases":3,"raridade":"lendario"}
   },
   {
     "id":"mortas_catacumbas","regionId":"terras_mortas","nome":"Catacumbas de Morvath","descricao":"Corredores funerários onde necromantes despertam antigos soldados.","nivelMin":24,"nivelMax":30,"encontrosNecessarios":5,"icone":"⚰️","temaLoot":"Relíquias, foices e artefatos","desafios":["Sarcófago selado","Corredor de ossos","Ritual interrompido"],
@@ -128,7 +128,7 @@
       {"nome":"Golem Rachado","ataque":14,"vida":50,"ouro":14,"habilidade":"Rachadura nas runas","arte":"assets/art/monsters/sentinela_runas.webp"},
       {"nome":"Morcego das Galerias","ataque":14,"vida":36,"ouro":12,"habilidade":"Eco ensurdecedor","arte":"assets/art/monsters/corvo_ignaroth.webp"}
     ],
-    "chefe":{"nome":"Sentinela de Pedra de Kholgard","ataque":20,"vida":116,"ouro":88,"habilidade":"Muralha rúnica e esmagamento","arte":"assets/art/bosses/boss_troll.webp","maxFases":2,"raridade":"epico"}
+    "chefe":{"nome":"Sentinela de Pedra de Kholgard","ataque":20,"vida":116,"ouro":88,"habilidade":"Muralha rúnica e esmagamento","arte":"assets/art/bosses/boss-sentinela-pedra-kholgard.webp","maxFases":2,"raridade":"epico"}
   },
   {
     "id":"khar_labirinto","regionId":"khar_dur","nome":"Labirinto de Kholgard","descricao":"Um emaranhado de corredores, armadilhas e salas secretas sob a antiga cidade.","nivelMin":12,"nivelMax":18,"encontrosNecessarios":5,"icone":"🧭","temaLoot":"Escudos rúnicos e armas anãs","desafios":["Encruzilhada móvel","Sala das runas","Cofre secreto","Armadilha de lâminas"],
@@ -137,7 +137,7 @@
       {"nome":"Espectro de Kholgard","ataque":16,"vida":50,"ouro":16,"habilidade":"Luto eterno","arte":"assets/art/monsters/espectro_rainha.webp"},
       {"nome":"Fanático do Labirinto","ataque":18,"vida":52,"ouro":18,"habilidade":"Orgulho inabalável","arte":"assets/art/monsters/fanatico_orgulho.webp"}
     ],
-    "chefe":{"nome":"Rei Esquecido de Kholgard","ataque":24,"vida":148,"ouro":116,"habilidade":"Comando ancestral e lâmina rúnica","arte":"assets/art/bosses/boss_minotauro.webp","maxFases":3,"raridade":"lendario"}
+    "chefe":{"nome":"Rei Esquecido de Kholgard","ataque":24,"vida":148,"ouro":116,"habilidade":"Comando ancestral e lâmina rúnica","arte":"assets/art/bosses/boss-rei-esquecido-kholgard.webp","maxFases":3,"raridade":"lendario"}
   },
   {
     "id":"khar_templo_minotauro","regionId":"khar_dur","nome":"Templo do Minotauro","descricao":"Santuário proibido onde cultistas treinam guerreiros taurinos para proteger o altar.","nivelMin":16,"nivelMax":22,"encontrosNecessarios":5,"icone":"🐂","temaLoot":"Machados, martelos e itens cerimoniais","desafios":["Alavancas antigas","Labirinto ritual","Arena dos cultistas","Altar vermelho"],
@@ -156,7 +156,7 @@
       {"nome":"Sentinela do Véu","ataque":32,"vida":136,"ouro":42,"habilidade":"Barreira do vazio","arte":"assets/art/monsters/sentinela_runas.webp"},
       {"nome":"Devorador de Luz","ataque":36,"vida":108,"ouro":44,"habilidade":"Extinguir esperança","arte":"assets/art/monsters/espectro_rainha.webp"}
     ],
-    "chefe":{"nome":"Asterion, Guardião do Sol Negro","ataque":44,"vida":312,"ouro":270,"habilidade":"Muralha absoluta, lâmina astral e julgamento do Véu","arte":"assets/art/bosses/boss_minotauro.webp","maxFases":3,"raridade":"mitico"}
+    "chefe":{"nome":"Asterion, Guardião do Sol Negro","ataque":44,"vida":312,"ouro":270,"habilidade":"Muralha absoluta, lâmina astral e julgamento do Véu","arte":"assets/art/bosses/boss-asterion.webp","maxFases":3,"raridade":"mitico"}
   },
   {
     "id":"eclipse_torre","regionId":"coracao_eclipse","nome":"Torre do Véu Partido","descricao":"Uma torre impossível ergue-se sobre a fenda central, distorcendo espaço, magia e memória.","nivelMin":38,"nivelMax":44,"encontrosNecessarios":7,"icone":"🜁","temaLoot":"Grimórios míticos, armas do vazio e relíquias arcanas","desafios":["Escadaria infinita","Biblioteca sem tempo","Sala dos reflexos","Observatório partido"],
@@ -165,7 +165,7 @@
       {"nome":"Espectro do Tempo Partido","ataque":42,"vida":124,"ouro":50,"habilidade":"Atraso temporal","arte":"assets/art/monsters/espectro_rainha.webp"},
       {"nome":"Golem de Cristal Negro","ataque":38,"vida":164,"ouro":52,"habilidade":"Reflexão arcana","arte":"assets/art/monsters/sentinela_runas.webp"}
     ],
-    "chefe":{"nome":"Vaelora, Senhora do Véu","ataque":52,"vida":408,"ouro":350,"habilidade":"Dobra temporal, tempestade arcana e reflexo da morte","arte":"assets/art/bosses/boss_necromante.webp","maxFases":4,"raridade":"mitico"}
+    "chefe":{"nome":"Vaelora, Senhora do Véu","ataque":52,"vida":408,"ouro":350,"habilidade":"Dobra temporal, tempestade arcana e reflexo da morte","arte":"assets/art/bosses/boss-vaelora-senhora-veu.webp","maxFases":4,"raridade":"mitico"}
   },
   {
     "id":"eclipse_trono","regionId":"coracao_eclipse","nome":"Trono do Vazio","descricao":"No coração exato do continente, uma entidade anterior aos reinos aguarda o aventureiro mais poderoso de Havendown.","nivelMin":44,"nivelMax":52,"encontrosNecessarios":8,"icone":"♛","temaLoot":"Tesouros míticos, equipamentos finais e artefatos únicos","desafios":["Mar de sombras","Coro dos derrotados","Ponte do fim","Salão dos sete selos","O último juramento"],
@@ -174,6 +174,6 @@
       {"nome":"Dragão do Vazio","ataque":48,"vida":172,"ouro":62,"habilidade":"Sopro de matéria negra","arte":"assets/art/monsters/corvo_ignaroth.webp"},
       {"nome":"Titã Sem Nome","ataque":44,"vida":204,"ouro":64,"habilidade":"Corpo além da realidade","arte":"assets/art/monsters/sentinela_runas.webp"}
     ],
-    "chefe":{"nome":"Nihraz, Imperador do Vazio","ataque":62,"vida":560,"ouro":520,"habilidade":"Quatro fases, colapso do Véu, corrupção crescente e golpe do fim","arte":"assets/art/bosses/boss_malgor.webp","maxFases":4,"raridade":"mitico"}
+    "chefe":{"nome":"Nihraz, Imperador do Vazio","ataque":62,"vida":560,"ouro":520,"habilidade":"Quatro fases, colapso do Véu, corrupção crescente e golpe do fim","arte":"assets/art/bosses/boss-nihraz-imperador-vazio.webp","maxFases":4,"raridade":"mitico"}
   }
 ]
