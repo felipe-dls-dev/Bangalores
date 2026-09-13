@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked } from './game'
-import { REGION_MATERIALS, ELEMENT_ADVANTAGES } from '../data/expansion'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES } from './game'
+import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
 
@@ -1157,6 +1157,87 @@ describe('Batch 1: Táticas de Combate & Gestão de Inventário', () => {
     // Tentar resgatar imediatamente em seguida retorna null
     const secondClaim = useGame.getState().claimDailyReward()
     expect(secondClaim).toBeNull()
+  })
+
+  it('Item 61: Subclasses de nível 30 concedem bônus para todos os 9 heróis', () => {
+    const heroes = Object.keys(HERO_SUBCLASSES)
+    expect(heroes).toHaveLength(9)
+
+    for (const heroId of heroes) {
+      const subclasses = HERO_SUBCLASSES[heroId]
+      expect(subclasses).toHaveLength(2)
+
+      useGame.getState().newGame(heroId)
+      // Definir nível >= 30 através de XP
+      useGame.setState({ xp: 50000 })
+      const baseAtk = attackValue(useGame.getState())
+
+      // Escolhe a primeira subclasse de nível 30
+      const sub1 = subclasses[0]
+      useGame.getState().chooseSpecialization(30, sub1.id)
+      expect(useGame.getState().specializations?.['30']).toBe(sub1.id)
+
+      if (sub1.stats?.ataque) {
+        expect(attackValue(useGame.getState())).toBe(baseAtk + sub1.stats.ataque)
+      }
+    }
+  })
+
+  it('Item 62: Respec de Atributos e Talentos devolve pontos e é gratuito', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ attributePoints: 5, gold: 50, xp: 50000 })
+
+    // Adiciona atributos
+    useGame.getState().addAttribute('vida')
+    useGame.getState().addAttribute('ataque')
+    useGame.getState().addAttribute('defesa')
+
+    expect(useGame.getState().attributePoints).toBe(2)
+    expect(useGame.getState().allocatedAttr.vida).toBe(1)
+    expect(useGame.getState().allocatedAttr.ataque).toBe(1)
+    expect(useGame.getState().allocatedAttr.defesa).toBe(1)
+
+    // Respec de atributos
+    useGame.getState().resetAttributes()
+    expect(useGame.getState().attributePoints).toBe(5)
+    expect(useGame.getState().allocatedAttr.vida).toBe(0)
+    expect(useGame.getState().allocatedAttr.ataque).toBe(0)
+    expect(useGame.getState().allocatedAttr.defesa).toBe(0)
+
+    // Respec de talentos/especializações gratuito
+    useGame.getState().chooseSpecialization(30, HERO_SUBCLASSES.guerreiro[0].id)
+    expect(Object.keys(useGame.getState().specializations ?? {})).toHaveLength(1)
+
+    useGame.getState().resetSpecializations()
+    expect(Object.keys(useGame.getState().specializations ?? {})).toHaveLength(0)
+    expect(useGame.getState().gold).toBe(50) // Ouro não foi gasto
+  })
+
+  it('Item 65: Golpe Supremo e carregamento da barra de Ultimate', () => {
+    useGame.getState().newGame('guerreiro')
+    expect(HERO_ULTIMATES.guerreiro).toBeDefined()
+    expect(useGame.getState().ultimateGauge).toBe(0)
+
+    // Criar um inimigo para combate usando SUBREGIONS[0]
+    const enemy = buildEnemy(SUBREGIONS[0], 1)
+    useGame.setState({
+      screen: 'combat',
+      enemy,
+      enemyHp: 100,
+      playerTurn: true,
+      ultimateGauge: 100
+    })
+
+    // Disparar Ultimate Attack
+    useGame.getState().ultimateAttack()
+
+    // Gauge deve ter sido consumido para 0
+    expect(useGame.getState().ultimateGauge).toBe(0)
+    // Dano massivo causado
+    expect(useGame.getState().lastDamage).toBeGreaterThan(15)
+    // Mensagem de log registrada com Golpe Supremo
+    const logs = useGame.getState().combatLog
+    expect(logs.some(l => l.includes('GOLPE SUPREMO'))).toBe(true)
   })
 })
 

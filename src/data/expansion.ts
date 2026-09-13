@@ -24,9 +24,190 @@ export const REGION_MATERIALS:Record<string,{id:string;nome:string;elemento:Elem
 // vitórias em qualquer região de Steelmere caíam no fallback (Fibra Dourada, de Havendown).
 frostgard:{id:'cristal_glacial',nome:'Cristal Glacial',elemento:'gelo'},engrenverde:{id:'seiva_encanada',nome:'Seiva Encanada',elemento:'natureza'},trilhouro:{id:'latao_ferroviario',nome:'Latão Ferroviário',elemento:'fisico'},vulcannis:{id:'escoria_vulcanica',nome:'Escória Vulcânica',elemento:'fogo'},ferrujal:{id:'oleo_corrosivo',nome:'Óleo Corrosivo',elemento:'sombra'},coroferro:{id:'engrenagem_real',nome:'Engrenagem Real',elemento:'luz'},aetherium:{id:'nucleo_etereo',nome:'Núcleo Etéreo',elemento:'arcano'}}
 export const SET_BONUSES=[{key:'lua',nome:'Regalia de Abdendriel',two:'+1 defesa',four:'+4 vida'},{key:'cinza',nome:'Arsenal das Cinzas',two:'+1 ataque',four:'primeiro ataque causa +2 de dano'},{key:'kh ar|khar|runa|bronze',nome:'Legado de Kholgard',two:'+3 vida',four:'+3 escudo inicial'},{key:'eclipse|véu|vazio',nome:'Vestes do Sol Negro',two:'+1 ataque',four:'+1 em rolagens contra chefes'}]
+export interface SubclassChoice {
+  id: string
+  nome: string
+  titulo: string
+  texto: string
+  passiva: string
+  stats: {
+    ataque?: number
+    defesa?: number
+    vida?: number
+    crit?: number
+    bossDamage?: number
+  }
+}
+
+export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
+  guerreiro: [
+    {
+      id: 'berserker',
+      nome: 'Berserker',
+      titulo: 'Fúria Desenfreada',
+      texto: 'Abandona a cautela em favor de poder bruto e golpes vorazes.',
+      passiva: '+4 de Ataque e +8% de chance crítica.',
+      stats: { ataque: 4, crit: 0.08 }
+    },
+    {
+      id: 'gladiador',
+      nome: 'Gladiador',
+      titulo: 'Mestre da Arena',
+      texto: 'Especialista em combate tático equilibrado, resistência e contra-ataques.',
+      passiva: '+2 de Ataque, +2 de Defesa e +6 de Vida.',
+      stats: { ataque: 2, defesa: 2, vida: 6 }
+    }
+  ],
+  guardiao: [
+    {
+      id: 'paladino',
+      nome: 'Paladino',
+      titulo: 'Arauto da Luz',
+      texto: 'Canaliza poder sagrado para purificar inimigos e sustentar batalhas.',
+      passiva: '+2 de Ataque, +2 de Defesa e +12 de Vida.',
+      stats: { ataque: 2, defesa: 2, vida: 12 }
+    },
+    {
+      id: 'colosso',
+      nome: 'Colosso',
+      titulo: 'Muralha Viva',
+      texto: 'Armadura pesada impenetrável e resiliência lendária contra qualquer impacto.',
+      passiva: '+4 de Defesa e +16 de Vida.',
+      stats: { defesa: 4, vida: 16 }
+    }
+  ],
+  cacadora: [
+    {
+      id: 'assassina',
+      nome: 'Assassina',
+      titulo: 'Lâmina Letal',
+      texto: 'Foco total em ataques furtivos devastadores e pontos vitais.',
+      passiva: '+5 de Ataque e +12% de chance crítica.',
+      stats: { ataque: 5, crit: 0.12 }
+    },
+    {
+      id: 'ladra_fantasma',
+      nome: 'Ladra Fantasma',
+      titulo: 'Sombra Ilusória',
+      texto: 'Movimentos imprevisíveis, evasão impecável e golpes oportunistas.',
+      passiva: '+2 de Ataque, +2 de Defesa e +6% de chance crítica.',
+      stats: { ataque: 2, defesa: 2, crit: 0.06 }
+    }
+  ],
+  arcanista: [
+    {
+      id: 'mago_elemental',
+      nome: 'Mago Elemental',
+      titulo: 'Senhor dos Elementos',
+      texto: 'Manipula forças destrutivas puras para incinerar e desintegrar oponentes.',
+      passiva: '+4 de Ataque e +3 de dano contra chefes.',
+      stats: { ataque: 4, bossDamage: 3 }
+    },
+    {
+      id: 'cronoturgo',
+      nome: 'Cronoturgo',
+      titulo: 'Tecelão do Tempo',
+      texto: 'Dobra o fluxo temporal para mitigar impactos e encontrar aberturas perfeitas.',
+      passiva: '+2 de Ataque, +2 de Defesa e +8 de Vida.',
+      stats: { ataque: 2, defesa: 2, vida: 8 }
+    }
+  ],
+  druida: [
+    {
+      id: 'guardiao_bosque',
+      nome: 'Guardião do Bosque',
+      titulo: 'Protetor Ancestral',
+      texto: 'Sintonizado com a casca ancestral de Abdendriel para suportar golpes severos.',
+      passiva: '+2 de Ataque, +2 de Defesa e +14 de Vida.',
+      stats: { ataque: 2, defesa: 2, vida: 14 }
+    },
+    {
+      id: 'predador_selvagem',
+      nome: 'Predador Selvagem',
+      titulo: 'Garras da Matilha',
+      texto: 'Adota a fúria das feras predadoras para dilacerar a guarda inimiga.',
+      passiva: '+4 de Ataque e +8% de chance crítica.',
+      stats: { ataque: 4, crit: 0.08 }
+    }
+  ],
+  cacador: [
+    {
+      id: 'atirador_elite',
+      nome: 'Atirador de Elite',
+      titulo: 'Olho de Falcão',
+      texto: 'Disparos cirúrgicos de longa distância que encontram brechas milimétricas.',
+      passiva: '+5 de Ataque e +10% de chance crítica.',
+      stats: { ataque: 5, crit: 0.1 }
+    },
+    {
+      id: 'mestre_feras',
+      nome: 'Mestre das Feras',
+      titulo: 'Líder da Alcateia',
+      texto: 'Combate harmonioso em dupla, fortalecendo a si e sua resistência física.',
+      passiva: '+2 de Ataque, +2 de Defesa e +10 de Vida.',
+      stats: { ataque: 2, defesa: 2, vida: 10 }
+    }
+  ],
+  monge: [
+    {
+      id: 'mestre_chi',
+      nome: 'Mestre do Chi',
+      titulo: 'Harmonia Interior',
+      texto: 'Canalização perfeita de energia espiritual tanto para ataque quanto contenção.',
+      passiva: '+3 de Ataque, +2 de Defesa e +8 de Vida.',
+      stats: { ataque: 3, defesa: 2, vida: 8 }
+    },
+    {
+      id: 'punho_dragao',
+      nome: 'Punho do Dragão',
+      titulo: 'Fúria Flamejante',
+      texto: 'Estilo agressivo de ataques explosivos que incendeiam a arena de combate.',
+      passiva: '+5 de Ataque e +10% de chance crítica.',
+      stats: { ataque: 5, crit: 0.1 }
+    }
+  ],
+  sacerdotisa: [
+    {
+      id: 'inquisidora',
+      nome: 'Inquisidora da Luz',
+      titulo: 'Chama Purgadora',
+      texto: 'Zelo inflexível que converte preces em dano punitivo contra o mal.',
+      passiva: '+4 de Ataque, +8% de chance crítica e +2 de dano contra chefes.',
+      stats: { ataque: 4, crit: 0.08, bossDamage: 2 }
+    },
+    {
+      id: 'alta_cleriga',
+      nome: 'Alta Clériga',
+      titulo: 'Bênção Radiante',
+      texto: 'Dedicação sagrada à vida e proteção inabalável para si e seus aliados.',
+      passiva: '+3 de Defesa e +16 de Vida.',
+      stats: { defesa: 3, vida: 16 }
+    }
+  ],
+  conjurador: [
+    {
+      id: 'necromante',
+      nome: 'Necromante',
+      titulo: 'Colhedor de Almas',
+      texto: 'Comanda energias sombrias que ceifam a essência vital dos adversários.',
+      passiva: '+4 de Ataque, +8 de Vida e +3 de dano contra chefes.',
+      stats: { ataque: 4, vida: 8, bossDamage: 3 }
+    },
+    {
+      id: 'invocador_abissal',
+      nome: 'Invocador Abissal',
+      titulo: 'Arauto do Éter',
+      texto: 'Comunhão profunda com o plano astral que amplifica resistência e presença.',
+      passiva: '+2 de Ataque, +3 de Defesa e +10 de Vida.',
+      stats: { ataque: 2, defesa: 3, vida: 10 }
+    }
+  ]
+}
+
 export const SPECIALIZATION_CHOICES=[
  {level:10,options:[{id:'ofensiva',nome:'Caminho da Ruína',texto:'+5% de chance crítica.'},{id:'defensiva',nome:'Caminho da Guarda',texto:'+1 de defesa.'},{id:'utilidade',nome:'Caminho do Destino',texto:'+5 de vida máxima.'}]},
  {level:25,options:[{id:'elemental',nome:'Domínio Elemental',texto:'Condições elementais duram um turno adicional.'},{id:'vital',nome:'Vontade Inabalável',texto:'+10 de vida máxima.'},{id:'tesouro',nome:'Olhar do Explorador',texto:'+10% de chance de espólio.'}]},
+ {level:30,options:[{id:'subclasse_1',nome:'Subclasse Especializada A',texto:'Especialização heroica de Nível 30.'},{id:'subclasse_2',nome:'Subclasse Especializada B',texto:'Especialização heroica de Nível 30.'}]},
  {level:50,options:[{id:'carrasco',nome:'Carrasco de Tiranos',texto:'+3 de dano contra chefes.'},{id:'baluarte',nome:'Baluarte Vivo',texto:'+2 de defesa.'},{id:'alquimia',nome:'Mestre Alquimista',texto:'Consumíveis recebem +2 de valor.'}]},
  {level:75,options:[{id:'lenda',nome:'Lenda de Havendown',texto:'+2 ataque e +2 defesa.'},{id:'fênix',nome:'Pacto da Fênix',texto:'Sobrevive uma vez por combate com 20% da vida.'},{id:'fortuna',nome:'Fortuna Real',texto:'+20% de ouro e materiais.'}]}
 ] as const

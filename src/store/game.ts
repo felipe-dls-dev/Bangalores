@@ -24,7 +24,7 @@ import { STEELMERE_SUBREGIONS } from '../data/subregioesSteelmere'
 import monsterArt from '../data/monsterArt.json'
 import eventArt from '../data/eventArt.json'
 import bossArt from '../data/bossArt.json'
-import { BESTIARY_MILESTONES, CLASS_ELEMENT, DIFFICULTIES, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, REGION_MATERIALS, SPECIALIZATION_CHOICES, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element, type ForgeBonus, type ForgeChoice, type ForgeEffect } from '../data/expansion'
+import { BESTIARY_MILESTONES, CLASS_ELEMENT, DIFFICULTIES, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, HERO_SUBCLASSES, REGION_MATERIALS, SPECIALIZATION_CHOICES, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element, type ForgeBonus, type ForgeChoice, type ForgeEffect } from '../data/expansion'
 import { questById, STORY_QUESTS } from '../data/storyQuests'
 import { buildForgeRecipes } from '../data/forgeRecipes'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard, EquipmentActiveEffect, EquipmentSetId } from '../types'
@@ -384,6 +384,18 @@ const guildRankForDifficulty=(difficulty:number):GuildRankId=>difficulty>=9?'cam
 function evolvedGuildMission(base:GuildMission,generation:number):GuildMission{if(generation<=1)return base;const step=Math.min(9,generation-1),difficulty=Math.min(10,base.dificuldade+step),quantity=base.tipo==='delivery'?1:base.quantidade+step*(base.tipo==='boss'?1:2),gold=base.recompensa.tipo==='gold'?Math.round(base.recompensa.valor*(1+step*.65)):base.recompensa.valor;return{...base,id:`${base.id}__${generation}`,nome:`${base.nome} ${['','II','III','IV','V','VI','VII','VIII','IX','X'][Math.min(9,generation-1)]??`+${step}`}`,descricao:base.tipo==='delivery'?base.descricao:`${/\d+/.test(base.descricao)?base.descricao.replace(/\d+/,String(quantity)):`${base.descricao} Desta vez são necessárias ${quantity} vitórias.`} A ameaça está mais perigosa nesta nova etapa.`,quantidade:quantity,dificuldade:difficulty,recompensa:{...base.recompensa,valor:gold}}}
 export function guildMissionById(id:string){const [baseId,generationText]=id.split('__'),base=BASE_GUILD_MISSIONS.find(m=>m.id===baseId);return base?evolvedGuildMission(base,Number(generationText)||1):undefined}
 export function availableGuildMissions(claimed:string[]=[]){return BASE_GUILD_MISSIONS.map(base=>{let generation=1;while(claimed.includes(generation===1?base.id:`${base.id}__${generation}`))generation++;return evolvedGuildMission(base,generation)})}
+export const HERO_ULTIMATES: Record<string, { nome: string; descricao: string }> = {
+  guerreiro: { nome: 'Fúria do Vendaval', descricao: 'Desfere uma sequência brutal de golpes com 250% do dano base (+4 de bônus esmagador).' },
+  guardiao: { nome: 'Bastião Sagrado', descricao: 'Golpe de escudo maciço com 250% do dano base e ergue 8 de escudo impenetrável.' },
+  cacadora: { nome: 'Lâminas da Meia-Noite', descricao: 'Ataque fatal das sombras com 250% do dano base e perfuração (+6 de bônus mortal).' },
+  arcanista: { nome: 'Cataclismo Rúnico', descricao: 'Explosão cósmica de pura energia com 250% do dano base (+5 de sobrecarga arcana).' },
+  druida: { nome: 'Despertar da Natureza', descricao: 'Fúria ancestral com 250% do dano base e restaura 15 pontos de vida.' },
+  cacador: { nome: 'Chuva de Flechas Perfurantes', descricao: 'Torrente de projéteis velozes com 250% do dano base (+5 de penetração).' },
+  monge: { nome: 'Mil Golpes Celestiais', descricao: 'Tempestade de palmas de chi com 250% do dano base (+4 de bônus e +1 Fervor).' },
+  sacerdotisa: { nome: 'Julgamento da Aurora', descricao: 'Pilar divino que causa 250% do dano base, cura 10 de vida e concede 6 de escudo.' },
+  conjurador: { nome: 'Invocação do Titã Astral', descricao: 'Dano supremo de 250% do dano base e fortalece a presença cósmica (+6 de dano).' }
+}
+
 interface GameState {
  screen:Screen; heroId?:string; hp:number; gold:number; xp:number; attributePoints:number; attr:{vida:number;ataque:number;defesa:number}; allocatedAttr:{vida:number;ataque:number;defesa:number}; balanceVersion:number;
  inventory:Record<string,number>; equipmentBag:string[]; equipped:Partial<Record<Slot,string>>; territory:string; regionId:string; world:string; subregionId?:string; victories:Record<string,number>; subregionVictories:Record<string,number>; bossesDefeated:string[]; subregionBossesDefeated:string[]; regionMapPositions?:Record<string,{x:number;y:number}>;
@@ -392,10 +404,10 @@ interface GameState {
  loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; ambush?:{enemy:Enemy;subregionId:string}; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; activePotionIds:string[]; regenBoostUntil?:number; lastPassiveHealAt?:number; customCards:CustomCard[]; campaigns:Record<string,CampaignSave>; activeCampaignId?:string; guildAccepted:string[]; guildProgress:Record<string,number>; guildClaimed:string[]; guildNotice?:string;
  difficultyMode:DifficultyMode;talents:string[];specializations:Record<string,string>;materials:Record<string,number>;equipmentUpgrades:Record<string,number>;equipmentUpgradeFails?:Record<string,number>;progressHistory?:{at:number;level:number;gold:number;bosses:number}[];selectedTitle?:string;equipmentGems:Record<string,string[]>;forgedGemLocked:Record<string,boolean>;craftedEffects:Record<string,ForgeEffect>;equipmentElements:Record<string,Element>;equipmentResistances:Record<string,Element>;forgeXp?:number;forgeAttempts?:number;forgeSuccesses?:number;forgeResult?:{success:boolean;message:string;id:number;kind?:'upgrade'};bestiary:Record<string,{encontros:number;vitorias:number}>;discoveredCards:string[];revengeWins:Record<string,number>;consecutiveDefeats:number;lastDefeatKey?:string;dungeonDepth:number;dungeonActive:boolean;dungeonSubregionId?:string;dungeonLastCost?:number;dungeonLastXpReward?:number;dungeonLastGoldReward?:number;storyFlags:string[];storyChapterId:string;storyChoices:Record<string,string>;storyNotice?:string;coopBattlesCompleted:string[];tourStep?:number;
  activeStoryQuests:Record<string,{step:'in_progress'|'ready_to_turn_in'|'completed';progress:number}>;completedStoryQuests:string[];questItems:Record<string,number>;
- combatSpeed?: 1 | 2 | 3; autoCombat?: boolean; staggerCurrent?: number; staggerMax?: number; isStaggered?: boolean; heroSkillCooldown?: number; highestDamageDealt?: number; lockedEquipment?: Record<string, boolean>; dailyRewardClaimedAt?: number;
+ combatSpeed?: 1 | 2 | 3; autoCombat?: boolean; staggerCurrent?: number; staggerMax?: number; isStaggered?: boolean; heroSkillCooldown?: number; highestDamageDealt?: number; lockedEquipment?: Record<string, boolean>; dailyRewardClaimedAt?: number; ultimateGauge?: number;
  newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; travelWorld:(world:string)=>void; startCoopCombat:(enemy:Enemy,subregionId:string)=>void; syncCoopEnemyHp:(hp:number)=>void; completeCoopVictory:(battleId:string,subregionId:string,enemy:Enemy,rewardShare:number)=>void; receiveCoopEnemyAttack:(damage:number,roll:any)=>void; receiveCoopHeroAction:(damage:number,roll:any)=>void; receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>void; receiveCoopHeal:(amount:number)=>void; completeCoopDefeat:(battleId:string)=>void; completeCoopFlee:(battleId:string)=>void; continueGame:()=>void; loadCampaign:(id:string)=>void; deleteCampaign:(id:string)=>void; acceptGuildMission:(id:string)=>void; claimGuildMission:(id:string)=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void; triggerAmbush:(subregionId:string)=>void; fleeAmbush:()=>void; acceptAmbush:()=>void; setRegionMapPosition:(regionId:string,pos:{x:number;y:number})=>void;
  startTour:()=>void; nextTourStep:()=>void; prevTourStep:()=>void; endTour:()=>void;
- attack:(targetMinionId?:string)=>void; heroSkill:()=>void; summonMonster:(tipo:SummonType)=>void; itemSkill:(equipmentId?:string)=>void; useConsumable:(id:string)=>void; flee:()=>void; defend:()=>void; useFervor:()=>void;
+ attack:(targetMinionId?:string)=>void; heroSkill:()=>void; ultimateAttack:()=>void; resetAttributes:()=>void; summonMonster:(tipo:SummonType)=>void; itemSkill:(equipmentId?:string)=>void; useConsumable:(id:string)=>void; flee:()=>void; defend:()=>void; useFervor:()=>void;
  buyConsumable:(id:string)=>void; buyEquipment:(id:string)=>void; sellConsumable:(id:string)=>void; sellEquipment:(id:string)=>void;
  equip:(id:string)=>void; unequip:(slot:Slot)=>void; addAttribute:(k:'vida'|'ataque'|'defesa')=>void; setSelectedGallery:(n:number)=>void; toggleShopMode:()=>void; resolveEvent:(accept:boolean,approach?:'class')=>void; finishEvent:()=>void; finishLoot:()=>void; clearSave:()=>void;
  addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>void; removeCustomCard:(id:string)=>void;
@@ -421,7 +433,23 @@ function nextStoryEvent(s:GameState){for(const chain of EVENT_CHAINS){for(let i=
 // frase raramente descreve o efeito mecânico real. Esta função devolve o efeito de fato.
 export function itemSkillEffectText(item:Pick<Equipment,'habilidade'|'activeEffect'>){return item.activeEffect?`Ativa: ${item.activeEffect.description} Uso único por batalha.`:'Este equipamento não possui efeito ativo.'}
 export function equipmentSetCounts(s:GameState){const ids=Object.values(s.equipped).map(id=>eqById(id)?.setId);return{lua:ids.filter(id=>id==='lua').length,cinzas:ids.filter(id=>id==='cinzas').length,khar:ids.filter(id=>id==='khar').length,eclipse:ids.filter(id=>id==='eclipse').length}}
-export function specializationBonuses(s:GameState){const choices=Object.values(s.specializations??{});return{attack:(choices.includes('lenda')?2:0),defense:(choices.includes('defensiva')?1:0)+(choices.includes('baluarte')?2:0)+(choices.includes('lenda')?2:0),life:(choices.includes('vital')?10:0)+(choices.includes('utilidade')?5:0),crit:choices.includes('ofensiva') ? .05 : 0,bossDamage:choices.includes('carrasco')?3:0,loot:choices.includes('tesouro') ? .1 : 0,reward:choices.includes('fortuna') ? .2 : 0,elemental:choices.includes('elemental'),fenix:choices.includes('fênix')}}
+export function specializationBonuses(s:GameState){
+  const choices=Object.values(s.specializations??{})
+  const subId=s.specializations?.['30']
+  const sub=(subId&&s.heroId)?HERO_SUBCLASSES[s.heroId]?.find(sc=>sc.id===subId):undefined
+  const subStats=sub?.stats??{}
+  return{
+    attack:(choices.includes('lenda')?2:0)+(subStats.ataque??0),
+    defense:(choices.includes('defensiva')?1:0)+(choices.includes('baluarte')?2:0)+(choices.includes('lenda')?2:0)+(subStats.defesa??0),
+    life:(choices.includes('vital')?10:0)+(choices.includes('utilidade')?5:0)+(subStats.vida??0),
+    crit:(choices.includes('ofensiva') ? .05 : 0)+(subStats.crit??0),
+    bossDamage:(choices.includes('carrasco')?3:0)+(subStats.bossDamage??0),
+    loot:choices.includes('tesouro') ? .1 : 0,
+    reward:choices.includes('fortuna') ? .2 : 0,
+    elemental:choices.includes('elemental'),
+    fenix:choices.includes('fênix')
+  }
+}
 export function storyModifiers(s:GameState){const choices=Object.values(s.storyChoices??{});return{attack:choices.includes('tomar')?2:choices.includes('roubo')?1:0,defense:(choices.includes('selar')||choices.includes('luz'))?1:0,reward:(choices.includes('pagamento')||choices.includes('vender')) ? .1 : 0,drop:choices.includes('trofeu') ? .08 : 0,forge:(choices.includes('guilda')||choices.includes('ritual')) ? .05 : 0}}
 // Normaliza o nome exibido de um inimigo para a chave "real" da criatura usada no bestiário/
 // coleção -- precisa remover TODOS os prefixos decorativos (masmorra, vingança, variante),
@@ -699,8 +727,8 @@ function normalizeAttributes(source:any){if(source?.balanceVersion>=2&&source?.a
 export const useGame = create<GameState>()(persist((set,get)=>({
   coopBattlesCompleted:[],
   enemyIntent:undefined,
-  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},allocatedAttr:{vida:0,ataque:0,defesa:0},balanceVersion:2,inventory:{},equipmentBag:[],equipped:{},territory:'Planícies de Alvora',regionId:'campos_dourados',world:'havendown',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:0,classRollBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,heroStatus:{},enemyStatus:{},selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,activePotionIds:[],customCards:[],campaigns:{},activeCampaignId:undefined,guildAccepted:[],guildProgress:{},guildClaimed:[],guildNotice:undefined,difficultyMode:'veterano',talents:[],specializations:{},materials:{},equipmentUpgrades:{},equipmentGems:{},forgedGemLocked:{},craftedEffects:{},equipmentElements:{},equipmentResistances:{},forgeResult:undefined,bestiary:{},discoveredCards:[],revengeWins:{},consecutiveDefeats:0,lastDefeatKey:undefined,dungeonDepth:0,dungeonActive:false,dungeonSubregionId:undefined,storyFlags:[],storyChapterId:'prologo',storyChoices:{},storyNotice:undefined,activeStoryQuests:{},completedStoryQuests:[],questItems:{},  combatSpeed:1,autoCombat:false,staggerCurrent:0,staggerMax:15,isStaggered:false,heroSkillCooldown:0,highestDamageDealt:0,lockedEquipment:{},dailyRewardClaimedAt:undefined,openedChests:{},lastCampfire:undefined,
-  newGame:(heroId:string)=>{const previous=get();const h=HEROES.find(x=>x.id===heroId)!;const st=starter[heroId]??starter.guerreiro;const initialHp=h.vida+Object.values(st.equipped).reduce((sum,id)=>sum+(eqById(id)?.vida??0),0);const equipped=Object.fromEntries(Object.entries(st.equipped).map(([slot,id])=>[slot,createEquipmentInstance(id)]));const activeCampaignId=`campaign_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;const discoveredCards=[`hero:${heroId}`,...Object.values(st.equipped).map(id=>`equipment:${id}`),...Object.keys(st.items).map(id=>`consumable:${id}`)];const next:any={screen:'map',heroId,hp:initialHp,gold:st.gold,xp:0,attributePoints:1,attr:{vida:0,ataque:0,defesa:0},allocatedAttr:{vida:0,ataque:0,defesa:0},balanceVersion:2,inventory:{...st.items},equipmentBag:[],equipped,territory:'Planícies de Alvora',regionId:'campos_dourados',world:'havendown',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemy:undefined,enemyHp:0,combatTurn:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:0,classRollBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false,loot:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,explorationNote:undefined,selectedGallery:0,shopMode:'buy',guildAccepted:[],guildProgress:{},guildClaimed:[],difficultyMode:previous.difficultyMode??'veterano',talents:[],materials:{},equipmentUpgrades:{},equipmentGems:{},forgedGemLocked:{},craftedEffects:{},equipmentElements:{},equipmentResistances:{},forgeResult:undefined,bestiary:{},discoveredCards,revengeWins:{},dungeonDepth:0,dungeonActive:false,dungeonSubregionId:undefined,storyFlags:[],storyChapterId:'prologo',storyChoices:{},storyNotice:undefined,activeStoryQuests:{},completedStoryQuests:[],questItems:{},tourStep:0,combatSpeed:previous.combatSpeed??1,autoCombat:false,staggerCurrent:0,staggerMax:15,isStaggered:false,heroSkillCooldown:0,highestDamageDealt:previous.highestDamageDealt??0,lockedEquipment:{},dailyRewardClaimedAt:previous.dailyRewardClaimedAt,openedChests:{},lastCampfire:undefined};const campaigns={...saveActiveCampaign(previous),[activeCampaignId]:campaignSnapshot(next)};set({...next,campaigns,activeCampaignId})},
+  screen:'menu',hp:0,gold:0,xp:0,attributePoints:0,attr:{vida:0,ataque:0,defesa:0},allocatedAttr:{vida:0,ataque:0,defesa:0},balanceVersion:2,inventory:{},equipmentBag:[],equipped:{},territory:'Planícies de Alvora',regionId:'campos_dourados',world:'havendown',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemyHp:0,combatTurn:0,combatLog:[],playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:0,classRollBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,heroStatus:{},enemyStatus:{},selectedGallery:0,shopMode:'buy',explorationNote:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,activePotionIds:[],customCards:[],campaigns:{},activeCampaignId:undefined,guildAccepted:[],guildProgress:{},guildClaimed:[],guildNotice:undefined,difficultyMode:'veterano',talents:[],specializations:{},materials:{},equipmentUpgrades:{},equipmentGems:{},forgedGemLocked:{},craftedEffects:{},equipmentElements:{},equipmentResistances:{},forgeResult:undefined,bestiary:{},discoveredCards:[],revengeWins:{},consecutiveDefeats:0,lastDefeatKey:undefined,dungeonDepth:0,dungeonActive:false,dungeonSubregionId:undefined,storyFlags:[],storyChapterId:'prologo',storyChoices:{},storyNotice:undefined,activeStoryQuests:{},completedStoryQuests:[],questItems:{},  combatSpeed:1,autoCombat:false,staggerCurrent:0,staggerMax:15,isStaggered:false,heroSkillCooldown:0,highestDamageDealt:0,lockedEquipment:{},dailyRewardClaimedAt:undefined,openedChests:{},lastCampfire:undefined,ultimateGauge:0,
+  newGame:(heroId:string)=>{const previous=get();const h=HEROES.find(x=>x.id===heroId)!;const st=starter[heroId]??starter.guerreiro;const initialHp=h.vida+Object.values(st.equipped).reduce((sum,id)=>sum+(eqById(id)?.vida??0),0);const equipped=Object.fromEntries(Object.entries(st.equipped).map(([slot,id])=>[slot,createEquipmentInstance(id)]));const activeCampaignId=`campaign_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;const discoveredCards=[`hero:${heroId}`,...Object.values(st.equipped).map(id=>`equipment:${id}`),...Object.keys(st.items).map(id=>`consumable:${id}`)];const next:any={screen:'map',heroId,hp:initialHp,gold:st.gold,xp:0,attributePoints:1,attr:{vida:0,ataque:0,defesa:0},allocatedAttr:{vida:0,ataque:0,defesa:0},balanceVersion:2,inventory:{...st.items},equipmentBag:[],equipped,territory:'Planícies de Alvora',regionId:'campos_dourados',world:'havendown',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],enemy:undefined,enemyHp:0,combatTurn:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:0,classRollBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false,loot:undefined,currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,explorationNote:undefined,selectedGallery:0,shopMode:'buy',guildAccepted:[],guildProgress:{},guildClaimed:[],difficultyMode:previous.difficultyMode??'veterano',talents:[],specializations:{},materials:{},equipmentUpgrades:{},equipmentGems:{},forgedGemLocked:{},craftedEffects:{},equipmentElements:{},equipmentResistances:{},forgeResult:undefined,bestiary:{},discoveredCards,revengeWins:{},dungeonDepth:0,dungeonActive:false,dungeonSubregionId:undefined,storyFlags:[],storyChapterId:'prologo',storyChoices:{},storyNotice:undefined,activeStoryQuests:{},completedStoryQuests:[],questItems:{},tourStep:0,combatSpeed:previous.combatSpeed??1,autoCombat:false,staggerCurrent:0,staggerMax:15,isStaggered:false,heroSkillCooldown:0,highestDamageDealt:previous.highestDamageDealt??0,lockedEquipment:{},dailyRewardClaimedAt:previous.dailyRewardClaimedAt,openedChests:{},lastCampfire:undefined,ultimateGauge:0};const campaigns={...saveActiveCampaign(previous),[activeCampaignId]:campaignSnapshot(next)};set({...next,campaigns,activeCampaignId})},
   setScreen:(screen:Screen)=>{const state=get();if(isNavigationLocked(state))return;set({screen,campaigns:saveActiveCampaign(state)})},
   travelWorld:(world:string)=>{const state=get();if(!worldUnlocked(state,world))return;const first=[...TERRITORIES].filter(t=>(t.mundo??'havendown')===world).sort((a,b)=>a.dificuldade-b.dificuldade)[0];if(!first)return;set({world,regionId:first.id,territory:first.nome,subregionId:undefined,screen:'map',campaigns:saveActiveCampaign(state)})},
   startCoopCombat:(enemy:Enemy,subregionId:string)=>{const sub=SUBREGIONS.find(item=>item.id===subregionId),region=sub&&TERRITORIES.find(item=>item.id===sub.regionId),s=get() as GameState;if(!sub||!region)return;const warriorLuck=s.heroId==='guerreiro'&&Math.random()<.5,sets=equipmentSetCounts(s),setShield=sets.khar>=4?3:0,setRoll=enemy.boss&&sets.eclipse>=4?1:0,setStrike=sets.cinzas>=4?2:0;set({screen:'combat',regionId:region.id,territory:region.nome,subregionId,enemy,enemyHp:enemy.vida,combatTurn:1,combatLog:['Batalha cooperativa iniciada. A iniciativa foi sorteada para todo o grupo.',...(warriorLuck?['Fortuna do Guerreiro: +1 em todos os dados nesta batalha.']:[]),...(setShield?[`Conjunto de Kholgard: +${setShield} de escudo inicial.`]:[]),...(setRoll?['Conjunto do Sol Negro: +1 nas rolagens contra chefes.']:[]),...(setStrike?[`Arsenal das Cinzas: +${setStrike} de dano no primeiro ataque.`]:[])],playerTurn:false,animating:false,combatRoll:undefined,lastDamage:undefined,shield:s.shield+setShield,heroSkillUses:0,itemSkillUsed:false,heroRollBonus:(s.talents.includes('destino')?1:0)+setRoll+(warriorLuck?1:0)+equipmentRollBonus(s),classRollBonus:warriorLuck?1:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:setStrike,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false})},
@@ -822,19 +850,46 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   sellEquipment:(id:string)=>{const s=get(),idx=s.equipmentBag.indexOf(id),e=eqById(id);if(idx<0||!e||s.lockedEquipment?.[id])return;const bag=[...s.equipmentBag];bag.splice(idx,1);const equipmentUpgrades={...s.equipmentUpgrades},equipmentGems={...s.equipmentGems},forgedGemLocked={...s.forgedGemLocked},craftedEffects={...s.craftedEffects},equipmentElements={...s.equipmentElements},equipmentResistances={...s.equipmentResistances};delete equipmentUpgrades[id];delete equipmentGems[id];delete forgedGemLocked[id];delete craftedEffects[id];delete equipmentElements[id];delete equipmentResistances[id];set({equipmentBag:bag,equipmentUpgrades,equipmentGems,forgedGemLocked,craftedEffects,equipmentElements,equipmentResistances,gold:s.gold+Math.max(1,Math.floor(e.preco/2))})},
   equip:(id:string)=>{const s=get(),e=eqById(id);if(!e||!equipmentClassAllowed(e,s.heroId)||!equipmentLevelAllowed(e,s.xp))return;const idx=s.equipmentBag.indexOf(id);if(idx<0)return;let slot=e.slot; if(slot==='anel_1'&&s.equipped.anel_1) slot='anel_2'; if(slot==='mao_esquerda'&&equipmentWeaponClass(eqById(s.equipped.mao_direita))==='facas')return; const old=s.equipped[slot]; const bag=[...s.equipmentBag];bag.splice(idx,1);if(old)bag.push(old);const equipped={...s.equipped,[slot]:id};if(slot==='mao_direita'&&equipmentWeaponClass(e)==='facas'&&equipped.mao_esquerda){bag.push(equipped.mao_esquerda);delete equipped.mao_esquerda}if(slot==='bolsa'&&bag.length>(e.capacidade??8))return;set({equipmentBag:bag,equipped})},
   unequip:(slot:Slot)=>{const s=get(),id=s.equipped[slot];if(!id||slot==='bolsa'||s.equipmentBag.length>=equipmentBagCapacity(s))return;const eq={...s.equipped};delete eq[slot];set({equipped:eq,equipmentBag:[...s.equipmentBag,id]})},
-  addAttribute:(k:'vida'|'ataque'|'defesa')=>{const s=get();if(s.attributePoints<=0)return;set({attributePoints:s.attributePoints-1,attr:{...s.attr,[k]:s.attr[k]+1},allocatedAttr:{...s.allocatedAttr,[k]:s.allocatedAttr[k]+1},hp:k==='vida'?s.hp+1:s.hp})},
-  setSelectedGallery:(selectedGallery:number)=>set({selectedGallery}),
-  toggleShopMode:()=>set({shopMode:get().shopMode==='buy'?'sell':'buy'}),
-  resolveEvent:(accept:boolean,approach?:'class')=>{const s=get(),known=s.discoveredCards??[],key=s.currentEvent&&`event:${s.currentEvent.id}`;if(key&&!known.includes(key))set({discoveredCards:[...known,key]});resolveExplorationEvent(set,get,accept,approach)},
-  finishEvent:()=>{const result=get().eventResult;set({screen:'region',currentEvent:undefined,eventResult:undefined,explorationNote:result?.message})},
-  finishLoot:()=>set({screen:get().subregionId?'region':'map',subregionId:undefined,explorationNote:undefined,enemy:undefined,enemyHp:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,groupCriticalBoost:false,heroStatus:{},enemyStatus:{},dungeonActive:false,dungeonDepth:0}),
-  clearSave:()=>set({screen:'menu',heroId:undefined,hp:0,gold:0,xp:0,inventory:{},equipmentBag:[],equipped:{},territory:'Planícies de Alvora',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,campaigns:{},activeCampaignId:undefined}),
-  addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>{const s=get();set({customCards:[...s.customCards,{...card,id:`custom_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,criadoEm:Date.now()}]})},
-  removeCustomCard:(id:string)=>{const s=get();set({customCards:s.customCards.filter((c:CustomCard)=>c.id!==id)})}
-  ,setDifficulty:(difficultyMode:DifficultyMode)=>set({difficultyMode})
-  ,unlockTalent:(id:string)=>{const s=get(),talent=TALENTS.find(t=>t.id===id),level=deriveLevel(s.xp).lvl;if(!talent||level<talent.level||s.talents.includes(id))return;set({talents:[...s.talents,id]})}
-  ,chooseSpecialization:(level:number,id:string)=>{const s=get(),tier=SPECIALIZATION_CHOICES.find(t=>t.level===level),option=tier?.options.find(o=>o.id===id);if(!tier||!option||deriveLevel(s.xp).lvl<level||(s.specializations??{})[String(level)])return;set({specializations:{...(s.specializations??{}),[String(level)]:id},explorationNote:`Especialização escolhida: ${option.nome}.`})}
-  ,resetSpecializations:()=>{const s=get(),cost=100+Object.keys(s.specializations??{}).length*75;if(s.gold<cost)return;set({gold:s.gold-cost,specializations:{},explorationNote:`Especializações redefinidas por ${cost} ouro.`})}
+   addAttribute:(k:'vida'|'ataque'|'defesa')=>{const s=get();if(s.attributePoints<=0)return;set({attributePoints:s.attributePoints-1,attr:{...s.attr,[k]:s.attr[k]+1},allocatedAttr:{...s.allocatedAttr,[k]:s.allocatedAttr[k]+1},hp:k==='vida'?s.hp+1:s.hp})},
+   resetAttributes:()=>{
+    const s=get()
+    const totalAllocated=(s.allocatedAttr?.vida??0)+(s.allocatedAttr?.ataque??0)+(s.allocatedAttr?.defesa??0)
+    if(totalAllocated<=0)return
+    const newAttr={
+      vida:Math.max(0,s.attr.vida-(s.allocatedAttr?.vida??0)),
+      ataque:Math.max(0,s.attr.ataque-(s.allocatedAttr?.ataque??0)),
+      defesa:Math.max(0,s.attr.defesa-(s.allocatedAttr?.defesa??0))
+    }
+    set({
+      attributePoints:s.attributePoints+totalAllocated,
+      attr:newAttr,
+      allocatedAttr:{vida:0,ataque:0,defesa:0},
+      hp:Math.min(s.hp,maxHp({...s,attr:newAttr})),
+      explorationNote:`Atributos redefinidos! ${totalAllocated} pontos devolvidos para redistribuição livre.`
+    })
+   },
+   ultimateAttack:()=>playerUltimateAttack(set,get),
+   setSelectedGallery:(selectedGallery:number)=>set({selectedGallery}),
+   toggleShopMode:()=>set({shopMode:get().shopMode==='buy'?'sell':'buy'}),
+   resolveEvent:(accept:boolean,approach?:'class')=>{const s=get(),known=s.discoveredCards??[],key=s.currentEvent&&`event:${s.currentEvent.id}`;if(key&&!known.includes(key))set({discoveredCards:[...known,key]});resolveExplorationEvent(set,get,accept,approach)},
+   finishEvent:()=>{const result=get().eventResult;set({screen:'region',currentEvent:undefined,eventResult:undefined,explorationNote:result?.message})},
+   finishLoot:()=>set({screen:get().subregionId?'region':'map',subregionId:undefined,explorationNote:undefined,enemy:undefined,enemyHp:0,combatLog:[],coin:undefined,playerTurn:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,groupCriticalBoost:false,heroStatus:{},enemyStatus:{},dungeonActive:false,dungeonDepth:0}),
+   clearSave:()=>set({screen:'menu',heroId:undefined,hp:0,gold:0,xp:0,inventory:{},equipmentBag:[],equipped:{},territory:'Planícies de Alvora',regionId:'campos_dourados',subregionId:undefined,victories:{},subregionVictories:{},bossesDefeated:[],subregionBossesDefeated:[],currentEvent:undefined,eventResult:undefined,pendingAttackBonus:0,campaigns:{},activeCampaignId:undefined}),
+   addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>{const s=get();set({customCards:[...s.customCards,{...card,id:`custom_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,criadoEm:Date.now()}]})},
+   removeCustomCard:(id:string)=>{const s=get();set({customCards:s.customCards.filter((c:CustomCard)=>c.id!==id)})}
+   ,setDifficulty:(difficultyMode:DifficultyMode)=>set({difficultyMode})
+   ,unlockTalent:(id:string)=>{const s=get(),talent=TALENTS.find(t=>t.id===id),level=deriveLevel(s.xp).lvl;if(!talent||level<talent.level||s.talents.includes(id))return;set({talents:[...s.talents,id]})}
+   ,chooseSpecialization:(level:number,id:string)=>{
+    const s=get(),heroSubs=(level===30&&s.heroId)?HERO_SUBCLASSES[s.heroId]:undefined,tier=SPECIALIZATION_CHOICES.find(t=>t.level===level)
+    const option=heroSubs?.find(o=>o.id===id)??tier?.options.find(o=>o.id===id)
+    if(!option||deriveLevel(s.xp).lvl<level||(s.specializations??{})[String(level)])return
+    set({specializations:{...(s.specializations??{}),[String(level)]:id},explorationNote:`Especialização escolhida: ${option.nome}.`})
+   }
+   ,resetSpecializations:()=>{
+    const s=get()
+    if(!Object.keys(s.specializations??{}).length)return
+    set({specializations:{},explorationNote:'Especializações e subclasse redefinidas com sucesso.'})
+   }
   ,attuneEquipment:(id:string,element:Element)=>{
    const s=get(),item=eqById(id),material=Object.values(REGION_MATERIALS).find(m=>m.elemento===element),cost=80
    if(!item||!material||!Object.values(s.equipped).includes(id)||s.gold<cost||(s.materials[material.id]??0)<3)return
@@ -1196,6 +1251,7 @@ export function runAutoCombatTurn(set:any,get:any){
   const s=get() as GameState
   if(s.screen!=='combat'||!s.playerTurn||s.animating||!s.enemy||!s.autoCombat)return
   if(heroStunned(set,get))return
+  if((s.ultimateGauge??0)>=100){s.ultimateAttack();return}
   if(s.hp<maxHp(s)*.35&&(s.inventory['pocao_cura']??0)>0){s.useConsumable('pocao_cura');return}
   if((s.heroSkillCooldown??0)===0&&s.heroId!=='conjurador'){s.heroSkill();return}
   if((s.fervor??0)>=3){s.useFervor();return}
@@ -1204,7 +1260,7 @@ export function runAutoCombatTurn(set:any,get:any){
   s.attack()
 }
 
-function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState,key=enemyDisplayKey(enemy.nome),discovery=`${enemy.boss?'boss':enemy.elite?'elite':'monster'}:${key}`,discoveries=s.discoveredCards??[];const known=s.bestiary[key]??{encontros:0,vitorias:0},sets=equipmentSetCounts(s),setShield=sets.khar>=4?3:0,setRoll=enemy.boss&&sets.eclipse>=4?1:0,setStrike=sets.cinzas>=4?2:0,warriorLuck=s.heroId==='guerreiro'&&Math.random()<.5;const enemyElement=enemy.elemento??(enemy.boss?'sombra':'fisico');const enemyWeakness=ELEMENT_ADVANTAGES[enemyElement]?.weakAgainst?.[0];const staggerMax=Math.max(12,Math.ceil(enemy.vida*.35));set({screen:'combat',enemy:{...enemy,fraqueza:enemyWeakness},enemyHp:enemy.vida,staggerCurrent:0,staggerMax,isStaggered:false,heroSkillCooldown:0,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Afinidade elemental: ${enemyElement}.${enemyWeakness?` Fraqueza: ${enemyWeakness} (+35% dano).`:''}`,...(warriorLuck?['Fortuna do Guerreiro ativada: +1 em todos os dados nesta batalha.']:[]),...(setShield?[`Conjunto de Kholgard: +${setShield} de escudo inicial.`]:[]),...(setRoll?[`Conjunto do Sol Negro: +1 nas rolagens contra chefes.`]:[]),...(setStrike?[`Arsenal das Cinzas: +${setStrike} de dano no primeiro ataque.`]:[]),`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:(s.talents.includes('destino')?1:0)+setRoll+(warriorLuck?1:0)+equipmentRollBonus(s),enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:s.shield+setShield,classRollBonus:warriorLuck?1:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:setStrike,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false,bestiary:{...s.bestiary,[key]:{...known,encontros:known.encontros+1}},discoveredCards:discoveries.includes(discovery)?discoveries:[...discoveries,discovery]});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),getCombatDelay(s,800));else if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(s,500))}
+function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState,key=enemyDisplayKey(enemy.nome),discovery=`${enemy.boss?'boss':enemy.elite?'elite':'monster'}:${key}`,discoveries=s.discoveredCards??[];const known=s.bestiary[key]??{encontros:0,vitorias:0},sets=equipmentSetCounts(s),setShield=sets.khar>=4?3:0,setRoll=enemy.boss&&sets.eclipse>=4?1:0,setStrike=sets.cinzas>=4?2:0,warriorLuck=s.heroId==='guerreiro'&&Math.random()<.5;const enemyElement=enemy.elemento??(enemy.boss?'sombra':'fisico');const enemyWeakness=ELEMENT_ADVANTAGES[enemyElement]?.weakAgainst?.[0];const staggerMax=Math.max(12,Math.ceil(enemy.vida*.35));set({screen:'combat',enemy:{...enemy,fraqueza:enemyWeakness},enemyHp:enemy.vida,ultimateGauge:0,staggerCurrent:0,staggerMax,isStaggered:false,heroSkillCooldown:0,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Afinidade elemental: ${enemyElement}.${enemyWeakness?` Fraqueza: ${enemyWeakness} (+35% dano).`:''}`,...(warriorLuck?['Fortuna do Guerreiro ativada: +1 em todos os dados nesta batalha.']:[]),...(setShield?[`Conjunto de Kholgard: +${setShield} de escudo inicial.`]:[]),...(setRoll?[`Conjunto do Sol Negro: +1 nas rolagens contra chefes.`]:[]),...(setStrike?[`Arsenal das Cinzas: +${setStrike} de dano no primeiro ataque.`]:[]),`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:(s.talents.includes('destino')?1:0)+setRoll+(warriorLuck?1:0)+equipmentRollBonus(s),enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:s.shield+setShield,classRollBonus:warriorLuck?1:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:setStrike,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false,bestiary:{...s.bestiary,[key]:{...known,encontros:known.encontros+1}},discoveredCards:discoveries.includes(discovery)?discoveries:[...discoveries,discovery]});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),getCombatDelay(s,800));else if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(s,500))}
 function addLog(set:any,msg:string){set((s:GameState)=>({combatLog:[...s.combatLog.slice(-12),msg]}))}
 function triggerSupportFx(set:any,get:any,type:'fortificacao'|'cura'|'cura-item'){set({supportFx:{type}});setTimeout(()=>{if((get() as GameState).supportFx?.type===type)set({supportFx:undefined})},1600)}
 export function summonBossMinions(enemy:Enemy,phase:number):CombatMinion[]{const count=Math.min(2,phase),level=enemy.nivel??enemy.dificuldade??1,hp=Math.max(4,Math.ceil(enemy.vida*.14)),attack=Math.max(2,Math.ceil(enemy.ataque*.45));return Array.from({length:count},(_,index)=>({id:`minion_${phase}_${index}_${Date.now()}`,nome:index?'Capanga veterano':'Capanga do chefe',hp,maxHp:hp,ataque:attack+Math.floor(level/8)}))}
@@ -1414,7 +1470,7 @@ function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
   const respawnPositions = s.lastCampfire
     ? { ...s.regionMapPositions, [s.lastCampfire.regionId]: { x: s.lastCampfire.x, y: s.lastCampfire.y } }
     : s.regionMapPositions
-  set({screen:s.subregionId?'region':'map',subregionId:undefined,explorationNote:penalty,gold:s.gold-goldLost,equipped,equipmentBag,equipmentUpgrades,equipmentGems,forgedGemLocked,craftedEffects,equipmentElements,equipmentResistances,hp:recoveredHp,regionMapPositions:respawnPositions,enemy:undefined,enemyHp:0,combatMinions:[],pendingAttackBonus:0,shield:0,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,groupCriticalBoost:false,heroStatus:{},enemyStatus:{},combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,dungeonActive:false,dungeonDepth:0,consecutiveDefeats:priorLosses+1,lastDefeatKey:defeatKey})
+  set({screen:s.subregionId?'region':'map',subregionId:undefined,explorationNote:penalty,gold:s.gold-goldLost,equipped,equipmentBag,equipmentUpgrades,equipmentGems,forgedGemLocked,craftedEffects,equipmentElements,equipmentResistances,hp:recoveredHp,regionMapPositions:respawnPositions,enemy:undefined,enemyHp:0,ultimateGauge:0,combatMinions:[],pendingAttackBonus:0,shield:0,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,groupCriticalBoost:false,heroStatus:{},enemyStatus:{},combatRoll:undefined,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,enemyFearPenalty:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,dungeonActive:false,dungeonDepth:0,consecutiveDefeats:priorLosses+1,lastDefeatKey:defeatKey})
 }
 function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=false,targetMinionId?:string,forceCrit=false,forceStatusElement?:Element){
  const s=get() as GameState
@@ -1467,7 +1523,9 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  const weaponRef=s.equipped.mao_direita
  const statusChance=attunementStatusChance(s,weaponRef)
  const statusResult=!target&&damage>0&&!selfDamage&&(Boolean(forceStatusElement)||naturalAttackRoll===6)?applyElementalStatus(enemyStun.status,forceStatusElement??heroWeaponElement(s),attackBase,Boolean(forceStatusElement),spec.elemental,statusChance):{status:enemyStun.status,appliedKind:undefined as string|undefined}
- set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,firstStrikeBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus,enemyStatus:statusResult.status,hp:healAmount>0?s.hp+healAmount:s.hp,fervor,staggerCurrent,isStaggered,highestDamageDealt})
+ const gainedGauge=attackRoll===6||naturalAttackRoll===6?30:15
+ const ultimateGauge=Math.min(100,(s.ultimateGauge??0)+gainedGauge)
+ set({animating:true,playerTurn:false,animationActor:selfDamage?'enemy':'hero',lastDamage:selfDamage||damage,combatRoll,heroRollBonus:0,firstStrikeBonus:0,enemyRollBonus:attackRoll===2?1:s.enemyRollBonus,enemyStatus:statusResult.status,hp:healAmount>0?s.hp+healAmount:s.hp,fervor,staggerCurrent,isStaggered,highestDamageDealt,ultimateGauge})
  if(healAmount>0)triggerSupportFx(set,get,'cura')
  const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói',weaponName=eqById(s.equipped.mao_direita)?.nome,narration=`${heroApproachPhrase(s.heroId,weaponName)}, ${attackTierPhrase(attackRoll)}`
  const foeName=target?target.nome:s.enemy.nome
@@ -1491,6 +1549,88 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
   if(en.boss&&en.maxFases&&hp>0){const threshold=en.vida*(1-(en.fase??1)/en.maxFases);if((en.fase??1)<en.maxFases&&hp<=threshold){const nf=(en.fase??1)+1,minions=summonBossMinions(en,nf);set({enemy:{...en,fase:nf,ataque:en.ataque+1},enemyHp:Math.max(hp,1),combatMinions:minions});addLog(set,`FASE ${nf}! ${en.nome} invocou ${minions.length} capanga${minions.length>1?'s':''}. Cada um terá seu próprio ataque.`);enemyAfterDelay(set,get);return}}
   if(hp<=0)victory(set,get);else if(grantsExtraTurn){set({enemyHp:hp,extraHeroAttacks:now.extraHeroAttacks-1,animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});addLog(set,'Ataque Duplo: realize o segundo ataque.');if(now.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(now,400))}else{set({enemyHp:hp});enemyAfterDelay(set,get)}
  },getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS))
+}
+function playerUltimateAttack(set:any,get:any){
+  const s=get() as GameState
+  if(!s.enemy||!s.playerTurn||s.animating||(s.ultimateGauge??0)<100)return
+  if(heroStunned(set,get))return
+  const heroClass=s.heroId??'guerreiro'
+  const ultInfo=HERO_ULTIMATES[heroClass]??{nome:'Golpe Supremo',descricao:'Ataque avassalador'}
+  const atk=attackValue(s)
+  let damage=Math.round(atk*2.5+10)
+  let bonusHeal=0
+  let bonusShield=0
+  let extraFervor=0
+  if(heroClass==='guerreiro')damage+=4
+  else if(heroClass==='guardiao'){bonusShield=8;damage+=2}
+  else if(heroClass==='cacadora')damage+=6
+  else if(heroClass==='arcanista')damage+=5
+  else if(heroClass==='druida')bonusHeal=15
+  else if(heroClass==='cacador')damage+=5
+  else if(heroClass==='monge'){damage+=4;extraFervor=1}
+  else if(heroClass==='sacerdotisa'){bonusHeal=10;bonusShield=6}
+  else if(heroClass==='conjurador')damage+=6
+
+  const hpBefore=s.hp
+  const nextHp=bonusHeal>0?Math.min(maxHp(s),hpBefore+bonusHeal):hpBefore
+  const nextShield=bonusShield>0?s.shield+bonusShield:s.shield
+  const nextFervor=extraFervor>0?Math.min(3,(s.fervor??0)+extraFervor):(s.fervor??0)
+  const highestDamageDealt=Math.max(s.highestDamageDealt??0,damage)
+
+  const combatRoll: CombatRoll = {
+    attacker: 'hero',
+    naturalAttackRoll: 6,
+    attackRoll: 6,
+    attackBonus: 0,
+    defenseRoll: 1,
+    attackBase: atk,
+    defenseBase: 0,
+    attackEffect: `SUPREMO: ${ultInfo.nome}`,
+    defenseEffect: 'Indefensável',
+    damage,
+    selfDamage: 0
+  }
+
+  set({
+    ultimateGauge:0,
+    animating:true,
+    playerTurn:false,
+    animationActor:'hero',
+    lastDamage:damage,
+    combatRoll,
+    hp:nextHp,
+    shield:nextShield,
+    fervor:nextFervor,
+    highestDamageDealt
+  })
+
+  if(bonusHeal>0)triggerSupportFx(set,get,'cura')
+  else if(bonusShield>0)triggerSupportFx(set,get,'fortificacao')
+
+  const heroName=HEROES.find(h=>h.id===s.heroId)?.nome??'O herói'
+  addLog(set,`⚡ GOLPE SUPREMO! ${heroName} desencadeou ${ultInfo.nome} causando ${damage} de dano devastador!${bonusHeal?` (+${bonusHeal} de vida)`:''}${bonusShield?` (+${bonusShield} de escudo)`:''}`)
+
+  setTimeout(()=>{
+    const now=get() as GameState
+    if(!now.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
+    const hp=now.enemyHp-damage
+    if(now.enemy.boss&&now.enemy.maxFases&&hp>0){
+      const threshold=now.enemy.vida*(1-(now.enemy.fase??1)/now.enemy.maxFases)
+      if((now.enemy.fase??1)<now.enemy.maxFases&&hp<=threshold){
+        const nf=(now.enemy.fase??1)+1,minions=summonBossMinions(now.enemy,nf)
+        set({enemy:{...now.enemy,fase:nf,ataque:now.enemy.ataque+1},enemyHp:Math.max(hp,1),combatMinions:minions})
+        addLog(set,`FASE ${nf}! ${now.enemy.nome} invocou ${minions.length} capanga${minions.length>1?'s':''}.`)
+        enemyAfterDelay(set,get)
+        return
+      }
+    }
+    if(hp<=0){
+      victory(set,get)
+    }else{
+      set({enemyHp:hp})
+      enemyAfterDelay(set,get)
+    }
+  },getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS))
 }
 function runEnemyAttack(set:any,get:any){const current=get() as GameState;if(!current.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}enemyAttack(set,get)}
 function enemyAfterDelay(set:any,get:any){
@@ -1569,7 +1709,7 @@ function continueEnemyAfterDelay(set:any,get:any){
   const heroSkillCooldown=Math.max(0,(s.heroSkillCooldown??0)-1);set({heroSkillCooldown});
   const enemyId=(get() as GameState).enemy?.id;set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined});setTimeout(()=>runEnemyAttack(set,get),getCombatDelay(s,650));setTimeout(()=>{const stalled=get() as GameState;if(stalled.screen==='combat'&&stalled.enemy?.id===enemyId&&stalled.animating&&!stalled.playerTurn){set({animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined});addLog(set,'Fluxo do combate recuperado. Seu turno continua.');if(stalled.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(stalled,400))}},getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS+1800))
 }
-function resolveMinionAttacks(set:any,get:any,onComplete:()=>void){const start=get() as GameState,minions=(start.combatMinions??[]).filter(minion=>minion.hp>0);if(!minions.length){onComplete();return}let index=0;const strike=()=>{const s=get() as GameState,minion=minions[index++];if(!minion||s.screen!=='combat'||s.hp<=0){onComplete();return}const dodged=((s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2),druidaLuck=s.heroId==='druida'&&Math.random()<.25,attackRoll=Math.max(1,Math.floor(Math.random()*6)+1-(s.enemyFearPenalty??0)-(druidaLuck?1:0)),defenseRoll=Math.floor(Math.random()*6)+1,defenseBase=defenseValue(s)+(s.braced?2:0),resolved=resolveCombatRoll(minion.ataque,defenseBase,attackRoll,defenseRoll),rawDamage=dodged?0:resolved.damage,blocked=Math.min(s.shield,rawDamage),damage=Math.max(0,rawDamage-blocked),hp=Math.max(0,s.hp-damage);set({hp,shield:s.shield-blocked,animationActor:'enemy',lastDamage:damage,combatRoll:{attacker:'enemy',naturalAttackRoll:attackRoll,attackRoll,attackBonus:0,defenseRoll,attackBase:minion.ataque,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage:0}});addLog(set,dodged?`${minion.nome} atacou, mas você esquivou completamente.`:`${minion.nome} atacou e causou ${damage} de dano${blocked?` (${blocked} bloqueado)`:''}.`);if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get,'Você foi derrotado pelos capangas do chefe.'),getCombatDelay(s,700));return}if(index<minions.length)setTimeout(strike,getCombatDelay(s,500));else setTimeout(onComplete,getCombatDelay(s,450))};strike()}
+function resolveMinionAttacks(set:any,get:any,onComplete:()=>void){const start=get() as GameState,minions=(start.combatMinions??[]).filter(minion=>minion.hp>0);if(!minions.length){onComplete();return}let index=0;const strike=()=>{const s=get() as GameState,minion=minions[index++];if(!minion||s.screen!=='combat'||s.hp<=0){onComplete();return}const dodged=((s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2),druidaLuck=s.heroId==='druida'&&Math.random()<.25,attackRoll=Math.max(1,Math.floor(Math.random()*6)+1-(s.enemyFearPenalty??0)-(druidaLuck?1:0)),defenseRoll=Math.floor(Math.random()*6)+1,defenseBase=defenseValue(s)+(s.braced?2:0),resolved=resolveCombatRoll(minion.ataque,defenseBase,attackRoll,defenseRoll),rawDamage=dodged?0:resolved.damage,blocked=Math.min(s.shield,rawDamage),damage=Math.max(0,rawDamage-blocked),hp=Math.max(0,s.hp-damage);const minionGaugeGained=damage>0?8:(blocked>0?5:2);set({hp,shield:s.shield-blocked,ultimateGauge:Math.min(100,(s.ultimateGauge??0)+minionGaugeGained),animationActor:'enemy',lastDamage:damage,combatRoll:{attacker:'enemy',naturalAttackRoll:attackRoll,attackRoll,attackBonus:0,defenseRoll,attackBase:minion.ataque,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage:0}});addLog(set,dodged?`${minion.nome} atacou, mas você esquivou completamente.`:`${minion.nome} atacou e causou ${damage} de dano${blocked?` (${blocked} bloqueado)`:''}.`);if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get,'Você foi derrotado pelos capangas do chefe.'),getCombatDelay(s,700));return}if(index<minions.length)setTimeout(strike,getCombatDelay(s,500));else setTimeout(onComplete,getCombatDelay(s,450))};strike()}
 function enemyAttack(set:any,get:any){
  const pre=get() as GameState
  if(!pre.enemy){set({animating:false,playerTurn:false,animationActor:undefined,lastDamage:undefined});return}
@@ -1613,7 +1753,9 @@ function enemyAttack(set:any,get:any){
  const hp=intercepting?s.hp:Math.min(maxHp(s),Math.max(0,s.hp-raw)+priestDefenseHeal),enemyHp=Math.max(0,s.enemyHp-resolved.selfDamage-counterDamage)
  const combatRoll:CombatRoll={attacker:'enemy',naturalAttackRoll,attackRoll,attackBonus,defenseRoll,attackBase,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage:raw,selfDamage:resolved.selfDamage,shieldBlocked:blocked}
  const summonsAfter=intercepting?summons.map(fera=>fera===summon?{...fera,hp:summonHpAfter}:fera).filter(fera=>fera.hp>0):summons
- set({shield,animating:true,animationActor:resolved.selfDamage?'hero':'enemy',lastDamage:resolved.selfDamage||raw,combatRoll,playerTurn:false,enemyRollBonus:0,heroRollBonus:attackRoll===2?1:s.heroRollBonus,heroStatus:statusResult.status,fervor:defenseRoll===6?Math.min(3,(s.fervor??0)+1):(s.fervor??0),...(intercepting?{summons:summonsAfter,summon:summonsAfter[0],...(!summonsAfter.some(fera=>fera.tipo==='arcano')?{combatAttackPct:0,combatDefensePct:0}:{})}:{})})
+ const enemyGaugeGained=intercepting?0:(raw>0?14:(blocked>0?8:4))
+ const ultimateGauge=Math.min(100,(s.ultimateGauge??0)+enemyGaugeGained)
+ set({shield,ultimateGauge,animating:true,animationActor:resolved.selfDamage?'hero':'enemy',lastDamage:resolved.selfDamage||raw,combatRoll,playerTurn:false,enemyRollBonus:0,heroRollBonus:attackRoll===2?1:s.heroRollBonus,heroStatus:statusResult.status,fervor:defenseRoll===6?Math.min(3,(s.fervor??0)+1):(s.fervor??0),...(intercepting?{summons:summonsAfter,summon:summonsAfter[0],...(!summonsAfter.some(fera=>fera.tipo==='arcano')?{combatAttackPct:0,combatDefensePct:0}:{})}:{})})
  setTimeout(()=>{
   const current=get() as GameState
   if(current.screen!=='combat'||!current.enemy)return
@@ -1655,4 +1797,4 @@ const discoveredCards=[...(s.discoveredCards??[])];const isNewEquipment=Boolean(
 // elites comuns nunca soltam equipamento com essas propriedades.
 let equipmentElements=s.equipmentElements,equipmentResistances=s.equipmentResistances
 if(equipmentRef&&en.boss&&Math.random()<.5){const dropped=eqById(equipmentRef);if(dropped)if(dropped.slot==='mao_direita')equipmentElements={...s.equipmentElements,[equipmentRef]:material.elemento};else equipmentResistances={...s.equipmentResistances,[equipmentRef]:material.elemento}}
-set({gold:s.gold+gold,xp,attributePoints:points,victories,subregionVictories,bossesDefeated:bosses,subregionBossesDefeated:subBosses,guildProgress,equipmentBag,inventory,materials,revengeWins,discoveredCards,equipmentElements,equipmentResistances,bestiary:{...s.bestiary,[baseName]:{...record,vitorias:record.vitorias+1}},consecutiveDefeats:0,lastDefeatKey:undefined,screen:'loot',enemy:undefined,enemyHp:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,pendingAttackBonus:0,shield:0,activePotionIds:[],loot:{gold,xp:en.xpReward??0,itemId,equipmentId,missedEquipmentId,title:en.revenge?'VINGANÇA CONCLUÍDA':en.boss?'CHEFE DERROTADO':en.variante==='Campeão'?'CAMPEÃO DERROTADO':'VITÓRIA',leveledUp:after>before,newLevel:after,levelsGained:after-before,isNewEquipment,isNewItem}})}
+set({gold:s.gold+gold,xp,attributePoints:points,victories,subregionVictories,bossesDefeated:bosses,subregionBossesDefeated:subBosses,guildProgress,equipmentBag,inventory,materials,revengeWins,discoveredCards,equipmentElements,equipmentResistances,bestiary:{...s.bestiary,[baseName]:{...record,vitorias:record.vitorias+1}},consecutiveDefeats:0,lastDefeatKey:undefined,screen:'loot',enemy:undefined,enemyHp:0,ultimateGauge:0,animating:false,animationActor:undefined,lastDamage:undefined,playerTurn:false,pendingAttackBonus:0,shield:0,activePotionIds:[],loot:{gold,xp:en.xpReward??0,itemId,equipmentId,missedEquipmentId,title:en.revenge?'VINGANÇA CONCLUÍDA':en.boss?'CHEFE DERROTADO':en.variante==='Campeão'?'CAMPEÃO DERROTADO':'VITÓRIA',leveledUp:after>before,newLevel:after,levelsGained:after-before,isNewEquipment,isNewItem}})}

@@ -66,21 +66,14 @@ const GROUPS: SharedGroup[] = [
 ]
 
 const ART_FOLDER: Record<string, string> = { capacete: 'shared-headgear', peitoral: 'shared-armor', calcas: 'shared-legwear', botas: 'shared-boots' }
-// A linha da Ordem da Vida ainda não possui todas as artes dedicadas no pacote visual.
-// Mantemos um fallback de calças já existente para evitar imagens quebradas enquanto os
-// tiers específicos são produzidos; isso também corrige imediatamente a Saia de Amanhecer Bento.
 const sharedArtPath = (group: SharedGroup, slot: Slot, id: string) =>
-  group.id === 'ordem_vida'
-    ? slot === 'calcas'
-      ? 'assets/art/hd/shared-legwear/ordem_vida_calcas_t1.png'
-      : slot === 'peitoral'
-        ? 'assets/art/hd/equipment/manto-ordem-vida-hd.webp'
-        : `assets/art/hd/shared-${slot === 'capacete' ? 'headgear' : 'boots'}/andarilhos_${slot === 'capacete' ? 'capacete' : 'botas'}_t1.webp`
-    : group.id === 'circulo_arcano' && id.endsWith('_t0')
+  group.id === 'circulo_arcano' && id.endsWith('_t0')
       // O conjunto começa no tier 0, mas os arquivos entregues começam no tier 1.
       // Reaproveitamos a peça equivalente do próprio Círculo Arcano até as artes t0 existirem.
       ? `assets/art/hd/${ART_FOLDER[slot]}/circulo_arcano_${slot}_t1.webp`
-    : `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`
+    : group.id === 'ordem_vida'
+      ? `assets/art/hd/${ART_FOLDER[slot]}/${id}.png`
+      : `assets/art/hd/${ART_FOLDER[slot]}/${id}.webp`
 // Vida/defesa por slot e índice de tier (0-7), no mesmo padrão de newClassEquipment.ts.
 const slotStats = (slot: Slot, i: number) => {
  const high = Math.floor(i / 2)
