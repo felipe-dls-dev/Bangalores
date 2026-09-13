@@ -1651,6 +1651,7 @@ body::after{content:"VERSÃO 0.8.44 • 13/09/2026\A Revisao: limpa referencia m
 body::after{content:"VERSÃO 0.8.45 • 13/09/2026\A Zoom e pan livre no mapa 2D (roda do mouse ou botoes); Frostgard (Steelmere) ganha arte de fundo e colisao alinhada, primeiro territorio pronto";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.46 • 13/09/2026\A Monstros visiveis no mapa 2D ganham sprites de verdade (automato sentinela, batedor a vapor, elemental de vapor), com animacao de passos";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.47 • 13/09/2026\A Todos os 7 territorios de Steelmere ganham arte de fundo e colisao (Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro, Aetherium); terrenos especiais do Frostgard (gelo escorregadio, neve, respiro de vapor)";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.48 • 13/09/2026\A Corrigido: monstros vagantes nao nascem mais perto do spawn/NPCs/eventos (evita ficar preso em desafios encadeados); Ataque Duplo da Cacadora agora dura 3 turnos (solo e cooperativo), nao so 1";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

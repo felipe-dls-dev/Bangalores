@@ -144,12 +144,12 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   healTarget=(effect==='DRUID_HEAL'||(effect==='PRIEST_REVIVE'&&!downedMember))?membersRef.current.reduce((worst:{member:OnlineMember;vitals:{hp:number;maxHp:number};ratio:number}|null,member)=>{const v=vitals[member.user_id];if(!v||v.hp<=0)return worst;const ratio=v.hp/Math.max(1,v.maxHp);return!worst||ratio<worst.ratio?{member,vitals:v,ratio}:worst},null):(downedMember?{member:downedMember,vitals:vitals[downedMember.user_id]??{hp:0,maxHp:1},ratio:0}:null),
   healAmount=healTarget?(downedMember?Math.max(1,Math.ceil(healTarget.vitals.maxHp*.3)):Math.max(0,Math.min(Math.max(1,Math.ceil(healTarget.vitals.maxHp*.3)),healTarget.vitals.maxHp-healTarget.vitals.hp))):0,
   // Ímpeto Marcial (WARRIOR_BUFF), Ascensão Arcana (ARCANE_GROUP_BUFF), Marca do Predador
-  // (HUNTER_CRITICAL) e Conjurar Fera Espectral (SUMMON_BOND) têm duração máxima em turnos
-  // consecutivos (buffTurnsLeft/fearTurnsLeft/arcaneTurnsLeft/critTurnsLeft), decrementada uma
-  // vez por rodada em resolveEnemyTurn. Reativar a habilidade RENOVA a duração em vez de somar
-  // o bônus de novo (evita empilhar percentuais quando o mesmo herói usa a habilidade mais de
-  // uma vez na mesma batalha).
-  playerBuffs=effect==='WARRIOR_BUFF'?{...(battle.playerBuffs??{}),[userId]:{...(battle.playerBuffs?.[userId]??{}),attackPct:.1,defensePct:.1,buffTurnsLeft:3}}:(effect==='DRUID_HEAL'||effect==='PRIEST_REVIVE')&&healTarget?{...(battle.playerBuffs??{}),[healTarget.member.user_id]:(({bleed,burn,poison,frozen,grabbed,blinded,stunned,...rest})=>rest)(battle.playerBuffs?.[healTarget.member.user_id]??{})}:battle.playerBuffs,
+  // (HUNTER_CRITICAL), Ataque Duplo (DOUBLE_ATTACK) e Conjurar Fera Espectral (SUMMON_BOND) têm
+  // duração máxima em turnos consecutivos (buffTurnsLeft/fearTurnsLeft/arcaneTurnsLeft/
+  // critTurnsLeft/doubleAttackTurnsLeft), decrementada uma vez por rodada em resolveEnemyTurn.
+  // Reativar a habilidade RENOVA a duração em vez de somar o bônus de novo (evita empilhar
+  // percentuais quando o mesmo herói usa a habilidade mais de uma vez na mesma batalha).
+  playerBuffs=effect==='WARRIOR_BUFF'?{...(battle.playerBuffs??{}),[userId]:{...(battle.playerBuffs?.[userId]??{}),attackPct:.1,defensePct:.1,buffTurnsLeft:3}}:effect==='DOUBLE_ATTACK'?{...(battle.playerBuffs??{}),[userId]:{...(battle.playerBuffs?.[userId]??{}),doubleAttackTurnsLeft:3}}:(effect==='DRUID_HEAL'||effect==='PRIEST_REVIVE')&&healTarget?{...(battle.playerBuffs??{}),[healTarget.member.user_id]:(({bleed,burn,poison,frozen,grabbed,blinded,stunned,...rest})=>rest)(battle.playerBuffs?.[healTarget.member.user_id]??{})}:battle.playerBuffs,
   enemyFearPenalty=effect==='WARRIOR_BUFF'?1:battle.enemyFearPenalty,fearTurnsLeft=effect==='WARRIOR_BUFF'?3:battle.fearTurnsLeft,
   enemyStatus=effect==='WARRIOR_BUFF'&&battle.enemyStatus?.bleed?{...battle.enemyStatus,bleed:{...battle.enemyStatus.bleed,turns:3}}:battle.enemyStatus,
   groupBuff=effect==='ARCANE_GROUP_BUFF'?{...(battle.groupBuff??{}),roll:1,attackPct:.1,defensePct:.1,arcaneTurnsLeft:3}:effect==='HUNTER_CRITICAL'?{...(battle.groupBuff??{}),critBoost:true,critTurnsLeft:2}:battle.groupBuff,
@@ -193,6 +193,10 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const workingVitals:Record<string,any>={...startVitals}
   const workingBuffs:Record<string,any>={...(battle.playerBuffs??{})}
   const statusLogs:string[]=[]
+  // Ataque Duplo (DOUBLE_ATTACK) não é um bônus "sticky" como os outros -- extraActions[user] é
+  // consumido a cada ataque (coopAttack), então precisa ser rearmado no início de cada turno
+  // restante do buff, não só na ativação. undefined = nada mudou, herda battle.extraActions.
+  let nextExtraActions:Record<string,number>|undefined
   for(const member of membersRef.current){
    const vitals=workingVitals[member.user_id]
    if(!vitals||vitals.hp<=0)continue
@@ -205,6 +209,11 @@ export function CoopProvider({children}:{children:React.ReactNode}){
     if(turnsLeft<=0){const{attackPct,defensePct,buffTurnsLeft,...rest}=nextBuffs;nextBuffs=rest;statusLogs.push(`${member.display_name}: Ímpeto Marcial se dissipou.`)}
     else nextBuffs={...nextBuffs,buffTurnsLeft:turnsLeft}
    }
+   if(Number(nextBuffs.doubleAttackTurnsLeft??0)>0){
+    const turnsLeft=Number(nextBuffs.doubleAttackTurnsLeft)-1
+    if(turnsLeft<=0){const{doubleAttackTurnsLeft,...rest}=nextBuffs;nextBuffs=rest;statusLogs.push(`${member.display_name}: Ataque Duplo se dissipou.`)}
+    else{nextBuffs={...nextBuffs,doubleAttackTurnsLeft:turnsLeft};nextExtraActions={...(nextExtraActions??battle.extraActions??{}),[member.user_id]:1}}
+   }
    workingBuffs[member.user_id]=nextBuffs
    if(tick.damage>0){
     const hp=Math.max(0,Number(vitals.hp)-tick.damage)
@@ -212,6 +221,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
     for(const m of tick.messages)statusLogs.push(`${member.display_name}: ${m}`)
    }
   }
+  const resolvedExtraActions=nextExtraActions??battle.extraActions
   // Medo (parte de WARRIOR_BUFF) e os bufos de grupo do Arcanista/Caçador também têm
   // duração máxima de turnos consecutivos, controlada por relógios compartilhados na batalha.
   let workingEnemyFearPenalty=Number(battle.enemyFearPenalty??0),fearTurnsLeft=Number(battle.fearTurnsLeft??0)
@@ -249,13 +259,13 @@ export function CoopProvider({children}:{children:React.ReactNode}){
     const survivors=after.filter(fera=>fera.hp>0);workingBuffs[member.user_id]={...buffs,summons:survivors,summon:survivors[0],...(!survivors.some(fera=>fera.tipo==='arcano')?{attackPct:0,defensePct:0}:{})}
    }
   }
-  if(enemyHpNow<=0)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,enemyHp:0,enemyStatus:enemyStatusTick.status,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,status:'won',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs]}}
+  if(enemyHpNow<=0)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,enemyHp:0,enemyStatus:enemyStatusTick.status,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,status:'won',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs]}}
   const wipedByStatus=membersRef.current.length>0&&membersRef.current.every(member=>(workingVitals[member.user_id]?.hp??1)<=0)
-  if(wipedByStatus)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,enemyStatus:enemyStatusTick.status,status:'lost',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs,'A equipe foi derrotada.']}}
+  if(wipedByStatus)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,enemyStatus:enemyStatusTick.status,status:'lost',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs,'A equipe foi derrotada.']}}
   const enemyStun=consumeStun(enemyStatusTick.status)
   if(enemyStun.wasStunned){
    const next=nextInitiative(battle)
-   return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,enemyStatus:enemyStun.status,summonRolls,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),...statusLogs,`${battle.enemy?.nome} está atordoado e perde a ação neste turno.`]}}
+   return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,enemyStatus:enemyStun.status,summonRolls,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),...statusLogs,`${battle.enemy?.nome} está atordoado e perde a ação neste turno.`]}}
   }
   const enemyRollBonusStart=Number(battle.enemyRollBonus??0)
   const enemyFear=workingEnemyFearPenalty-rollPenaltyFrom(enemyStun.status)
@@ -335,7 +345,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    if(r.intercepting)return`${r.summonName} intercepta o golpe de ${r.minionName} destinado a ${targetMember?.display_name}! A fera sofre ${r.damage} de dano${r.summonDied?' e cai em combate!':'.'}`
    return r.rogueDodge?`${targetMember?.display_name} desviou do golpe de ${r.minionName}.`:`${r.minionName} atacou ${targetMember?.display_name} e causou ${r.damage} de dano${blocked}.`
   })
-  return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,enemyHp:enemyHpNow,enemyStatus:enemyStun.status,enemyRollBonus:0,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,fleeRoll:undefined,turn:Number(battle.turn??1)+1,status:wiped?'lost':'playing',activeUserId:wiped?null:next.activeUserId,lastRoll:{attacker:'enemy',naturalAttackRoll:mainStrike.naturalAttackRoll,attackBonus:mainStrike.attackBonus,attackBase:mainStrike.attackBase,defenseBase:mainStrike.defenseBase,attackEffect:attackEffect(mainStrike.attackRoll),defenseEffect:defenseEffect(mainStrike.defenseRoll),attackRoll:mainStrike.attackRoll,defenseRoll:mainStrike.defenseRoll,damage:mainStrike.damage,selfDamage:mainStrike.selfDamage,shieldBlocked:mainStrike.shieldBlocked||undefined,targetUserId:mainStrike.target.user_id,actor:battle.enemy?.nome},minionRolls,summonRolls,log:[...(battle.log??[]).slice(-15),...statusLogs,mainLog,...minionLogs,...(wiped?['A equipe foi derrotada.']:[])]}}
+  return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,enemyHp:enemyHpNow,enemyStatus:enemyStun.status,enemyRollBonus:0,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,fleeRoll:undefined,turn:Number(battle.turn??1)+1,status:wiped?'lost':'playing',activeUserId:wiped?null:next.activeUserId,lastRoll:{attacker:'enemy',naturalAttackRoll:mainStrike.naturalAttackRoll,attackBonus:mainStrike.attackBonus,attackBase:mainStrike.attackBase,defenseBase:mainStrike.defenseBase,attackEffect:attackEffect(mainStrike.attackRoll),defenseEffect:defenseEffect(mainStrike.defenseRoll),attackRoll:mainStrike.attackRoll,defenseRoll:mainStrike.defenseRoll,damage:mainStrike.damage,selfDamage:mainStrike.selfDamage,shieldBlocked:mainStrike.shieldBlocked||undefined,targetUserId:mainStrike.target.user_id,actor:battle.enemy?.nome},minionRolls,summonRolls,log:[...(battle.log??[]).slice(-15),...statusLogs,mainLog,...minionLogs,...(wiped?['A equipe foi derrotada.']:[])]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar o turno inimigo.')}}
  const completeBattle=async()=>{try{await updateState(current=>({...current.shared_state,travelAcceptedBy:[],battle:{...(current.shared_state.battle as any),status:'completed',completedAt:new Date().toISOString()}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível encerrar a batalha cooperativa.')}}
  const safeConfirmTravel=async(enemy?:Record<string,unknown>)=>{const accepted=(roomRef.current?.shared_state?.travelAcceptedBy??[]) as string[];if(accepted.includes(userId)){await updateState(current=>({...current.shared_state,travelAcceptedBy:((current.shared_state.travelAcceptedBy??[]) as string[]).filter(id=>id!==userId)}));return}const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId];if(zero){setNotice(`${zero.display_name} está sem vida e precisa se recuperar antes da caçada.`);return}if(mine&&mine.hp<mine.maxHp*.5){const proceed=await new Promise<boolean>(resolve=>{const overlay=document.createElement('div');overlay.className='coop-risk-overlay';overlay.innerHTML=`<section role="dialog"><small>PREPARAÇÃO DA CAÇADA</small><h2>Caçada arriscada</h2><p>Seu herói possui <b>${mine.hp}/${mine.maxHp}</b> de vida, menos de 50% do total. Deseja continuar?</p><div><button data-action="cancel">Preparar-se primeiro</button><button class="primary" data-action="continue">Continuar mesmo assim</button></div></section>`;overlay.onclick=event=>{const action=(event.target as HTMLElement).closest('button')?.dataset.action;if(!action)return;overlay.remove();resolve(action==='continue')};document.body.appendChild(overlay)});if(!proceed)return}await confirmTravel(enemy)}

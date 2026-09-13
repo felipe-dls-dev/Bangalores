@@ -84,6 +84,7 @@ const ZOOM_MAX = 1.8
 const ZOOM_STEP = 0.2
 const AMBUSH_CHANCE = 0.07 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
 const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
+const WANDER_SPAWN_BUFFER = 3 // raio (em tiles) ao redor do spawn onde nenhum monstro pode nascer ou pisar
 const WANDER_STEP_MS = 1000 // cadência do passeio -- mais lento que o passo do jogador (STEP_MS) de propósito, pra dar tempo de desviar
 const WANDER_MOVE_CHANCE = 0.5 // chance de o monstro dar um passo a cada tick (o resto do tempo ele fica parado)
 const WANDER_STEPS: Array<[number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]]
@@ -96,21 +97,32 @@ const WANDER_SPRITE_FAMILIES = ['automato-sentinela', 'batedor-a-vapor', 'elemen
 const WANDER_FRAMES = ['idle', 'walk_1', 'walk_2']
 function wanderAsset(spriteId: string, frame: string) { return mapAsset(`assets/maps/objects/monster-${spriteId}/${frame}.png`) }
 
+// Um monstro vagante nunca pode nascer, nem andar, em cima de um marcador (local, saída, baú,
+// fogueira, NPC) nem perto demais do spawn -- é o que garante que chegar numa região (ou voltar
+// pra ela depois de um combate) nunca larga o jogador dentro do raio de patrulha de um monstro,
+// o que travava em desafios encadeados sem chance de sair do lugar antes do próximo encontro.
+function wandererForbidden(map: RegionMapDef, npcs: NpcDefinition[], x: number, y: number): boolean {
+  if (Math.max(Math.abs(x - map.spawn.x), Math.abs(y - map.spawn.y)) <= WANDER_SPAWN_BUFFER) return true
+  const key = tileKey(x, y)
+  if (map.locations.some(l => tileKey(l.x, l.y) === key)) return true
+  if ((map.exits ?? []).some(e => tileKey(e.x, e.y) === key)) return true
+  if ((map.chests ?? []).some(c => tileKey(c.x, c.y) === key)) return true
+  if ((map.campfires ?? []).some(c => tileKey(c.x, c.y) === key)) return true
+  if (npcs.some(n => tileKey(n.x, n.y) === key)) return true
+  return false
+}
+
 // Deriva um monstro vagante por marcador de sub-região. Posicionado perto do pin, num tile livre
 // que não colida com nenhuma outra entidade, pra funcionar em qualquer mapa sem dado extra por região.
 interface Wanderer { id: string; subId: string; spriteId: string; home: { x: number; y: number }; x: number; y: number }
-function deriveWanderers(map: RegionMapDef): Wanderer[] {
-  const occupied = new Set<string>([tileKey(map.spawn.x, map.spawn.y)])
-  map.locations.forEach(l => occupied.add(tileKey(l.x, l.y)))
-  ;(map.exits ?? []).forEach(e => occupied.add(tileKey(e.x, e.y)))
-  ;(map.chests ?? []).forEach(c => occupied.add(tileKey(c.x, c.y)))
-  ;(map.campfires ?? []).forEach(c => occupied.add(tileKey(c.x, c.y)))
+function deriveWanderers(map: RegionMapDef, npcs: NpcDefinition[]): Wanderer[] {
+  const occupied = new Set<string>()
   const offsets: Array<[number, number]> = [[2, 0], [-2, 0], [0, 2], [0, -2], [2, 2], [-2, -2], [2, -2], [-2, 2]]
   const out: Wanderer[] = []
   for (const loc of map.locations) {
     for (const [dx, dy] of offsets) {
       const x = loc.x + dx, y = loc.y + dy, key = tileKey(x, y)
-      if (occupied.has(key) || !isMapWalkable(map, { x, y })) continue
+      if (occupied.has(key) || wandererForbidden(map, npcs, x, y) || !isMapWalkable(map, { x, y })) continue
       occupied.add(key)
       const spriteId = WANDER_SPRITE_FAMILIES[out.length % WANDER_SPRITE_FAMILIES.length]
       out.push({ id: `wander_${loc.subId}`, subId: loc.subId, spriteId, home: { x, y }, x, y })
@@ -966,7 +978,12 @@ export function TileWorldExplorer({
   // mesmo fluxo de emboscada de sempre (onAmbush) -- ver ambush prompt em RegionMapView --, mas
   // como o monstro fica visível e mais lento que o jogador (WANDER_STEP_MS > STEP_MS), dá pra
   // desviar dele andando por outro caminho.
-  const wanderTemplate = React.useMemo(() => deriveWanderers(map), [map])
+  // npcs é recriado a cada render (vem de uma função não memoizada em quem chama), então fica
+  // numa ref -- colocar o array direto na dependência do useMemo abaixo resetaria os monstros a
+  // cada render, não só quando o mapa muda de verdade.
+  const npcsRef = React.useRef(npcs)
+  React.useEffect(() => { npcsRef.current = npcs })
+  const wanderTemplate = React.useMemo(() => deriveWanderers(map, npcsRef.current), [map])
   const [wanderers, setWanderers] = React.useState<Wanderer[]>(() => wanderTemplate.map(w => ({ ...w })))
   React.useEffect(() => { setWanderers(wanderTemplate.map(w => ({ ...w }))) }, [wanderTemplate])
   // Ciclo idle/walk_1/walk_2 compartilhado entre todos os monstros visíveis -- não precisa
@@ -995,7 +1012,7 @@ export function TileWorldExplorer({
           const [dx, dy] = WANDER_STEPS[Math.floor(Math.random() * WANDER_STEPS.length)]
           const nx = w.x + dx, ny = w.y + dy
           if (Math.abs(nx - w.home.x) > WANDER_RADIUS || Math.abs(ny - w.home.y) > WANDER_RADIUS) return w
-          if (!isMapWalkable(map, { x: nx, y: ny })) return w
+          if (!isMapWalkable(map, { x: nx, y: ny }) || wandererForbidden(map, npcsRef.current, nx, ny)) return w
           const key = tileKey(nx, ny)
           if (occupied.has(key) && key !== tileKey(w.x, w.y)) return w
           if (nx === posRef.current.x && ny === posRef.current.y) { triggeredSubId = w.subId; return w }
