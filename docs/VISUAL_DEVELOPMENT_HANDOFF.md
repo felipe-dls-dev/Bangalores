@@ -54,7 +54,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 | Asset group | Status | Notes |
 | --- | --- | --- |
 | Havendown regional maps | Available | Existing playable 2D maps. |
-| Steelmere regional maps | 1 of 7 done | Frostgard has its background + collision pass (ART-001). Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro and Aetherium still use the placeholder generic tiles, no `background`. |
+| Steelmere regional maps | 7 of 7 done | All 7 territories have background + collision pass (ART-001, 005-010). None visually double-checked live yet (only automated reachability). |
 | Player movement sprites | Available | Nine class sets, 15 frames each. |
 | Chests and campfires | Available | Existing map entities on all 14 regions; expand only when new states are requested. |
 | Fog of war | In progress (code only) | Claude Code is shipping a flat-color tile mask for v1, no new art needed. Will file a follow-up request if we want a softer mist/vignette texture. |
@@ -65,8 +65,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 
 | Priority | Request | Owner now | Status | Visual deliverables |
 | --- | --- | --- | --- | --- |
-| P0 | Steelmere Frostgard pilot map | — | DONE | Delivered and integrated, see ART-001. |
-| P0 | Steelmere maps 2-7 (Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro, Aetherium) | Codex | NOT STARTED | Same contract as ART-001 (ART-002 applies to all 7) — one background per territory, Claude Code authors collision on delivery. Grid/exits/chests/campfires already exist for all of them. |
+| P0 | Steelmere all 7 territory maps | — | DONE | All delivered and integrated, see ART-001 and ART-005 through ART-010. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
 | P1 | Treasure chest variants | Codex | PLANNED | Common, locked, rare, opened and secret states. |
 | P1 | Terrain states | Shared | Frostgard ready | Claude Code defines effects; Frostgard `ice`, `snow-drift` and `steam-vent` textures are delivered in ART-004. Mud and conveyor remain pending for later regions. |
@@ -167,7 +166,7 @@ Integration (Claude Code): `deriveWanderers()` in `src/regionMap.tsx` assigns on
 Naming clarification for future monster-sprite requests: these visible map wanderers are NOT tied 1:1 to a specific combat enemy id — the actual enemy that starts combat still comes from the target sub-region's own enemy pool (`onAmbush`→`triggerAmbush`, unchanged), which in `subregioesSteelmere.ts` generates enemies dynamically per sub-region (e.g. "Predador de Rota das Perfuratrizes"), not from the `automato-sentinela`/`batedor-a-vapor`/etc. names used here. That's fine for this mechanic (the sprite is just a wandering hazard, not a specific monster's portrait) — worth knowing so future requests don't spend effort matching exact bestiary ids unless a mechanic specifically needs that 1:1 link.
 
 ### ART-004 - Frostgard terrain-state tiles
-Status: READY FOR CODE
+Status: INTEGRATED
 Requested by: Codex from the terrain-state contract in ART-002
 Gameplay purpose: give Frostgard's ice, snow-drift and steam-vent terrain rules distinct map visuals once Claude Code exposes those tile types.
 Delivered paths:
@@ -177,6 +176,63 @@ Delivered paths:
 Dimensions: 128x128 PNG RGBA, matching the existing terrain-file resolution. Each asset represents one 16px-native map tile and should be rendered through the same CSS sizing/image-rendering treatment as `public/assets/maps/tiles/plains/*`.
 Visual notes: `ice` is blue-white cracked frozen metal; `snow-drift` is packed wind-sculpted snow; `steam-vent` is a brass-and-steel floor vent with a compact white plume. These files contain no movement assumptions.
 Integration note: add the three terrain ids to the existing map terrain resolver and stylesheet mapping when their movement rules are finalized; use `steam-vent` only where its visual occupies a full tile.
+Integration (Claude Code): added `ice`/`snow_drift`/`steam_vent` to `BaseTile`/`MapTile`/`WALKABLE` in `src/regionMap.tsx` and wired the CSS. Movement rule: `ice` slides the player automatically in the same direction until it runs out or hits an obstacle (chains `step()` calls, cancels any active click-path, skips the random-ambush roll while auto-sliding since the player isn't choosing to continue); `snow_drift`/`steam_vent` are decorative walkable variants with no special rule for now. Placed a first small patch of each in Frostgard's grid (open area west of the canal, away from the already-tested water/blocked layout) so the mechanic is actually reachable in-game — placement is illustrative, not checked pixel-for-pixel against the art yet. `npm test` (75/75, includes reachability) green.
+
+### ART-005 - Engrenverde regional map
+Status: INTEGRATED
+Owner: Codex; collision pass: Claude Code
+Gameplay purpose: make Engrenverde the second fully illustrated Steelmere territory without changing its 22x16 grid, exits, locations, chest or campfire coordinates.
+Delivered: `public/assets/maps/steelmere/engrenverde.png` (704x512 PNG RGBA, 22:16 ratio, 32px per tile).
+Integration: `buildEngrenverde()` in `src/regionMap.tsx` now sets `background` to this asset.
+Collision read: the river/lake is the continuous vertical water band through the west-side x2-5 area, with the obvious horizontal bridge crossing at y8. Trees, village structures, pulley tower, greenhouse, root/gear masses and rock clusters should be blocked. The broad central grassy route and north (x11), east (x20, y8) and south (x11) exits should remain open; preserve all current entity coordinates.
+Collision pass (Claude Code): water widened to x2-5,y5-11 matching the pond, wooden bridge at y8 (x1-6); blocked rects for the NW/SW treehouse-village clusters, the greenhouse dome (x15-19,y5-7, entrance at y8 left open) and the solid corner of the giant gear tower (x19-21,y0-1, leaving the torre/cerne/chest markers at y3 clear). All entities reachable, `npm test` 75/75 green. Not yet eyeballed live in a browser.
+
+### ART-006 - Trilhouro regional map
+Status: INTEGRATED
+Owner: Codex; collision pass: Claude Code
+Gameplay purpose: make Trilhouro an illustrated Steelmere territory without changing its 22x16 grid, exits, locations, chest or campfire coordinates.
+Delivered: `public/assets/maps/steelmere/trilhouro.png` (704x512 PNG RGBA, 22:16 ratio, 32px per tile).
+Integration: `buildTrilhouro()` in `src/regionMap.tsx` now sets `background` to this asset.
+Collision read: the canal is the vertical water band at x14-15; its iron bridge at y8 is the intended crossing. Railway tracks, farm machinery, train, station, terminal, silo, fences and dense field edges should be blocked where they read as solid. Preserve a broad open route through the central dirt road and the north (x11), west (x1, y8) and south (x11) exits, plus all current entity positions.
+Collision pass (Claude Code): canal widened to nearly full height (x14-15,y1-14), bridge at y8 (x12-17); blocked rects for the NW train/tracks, the windmill+barn cluster, the grain silos (x15-19,y5-7, entrance at y8 left open) and the solid corner of the ornate terminal (x19-21,y0-2, leaving terminal/chest markers at y3 clear). All entities reachable, `npm test` 75/75 green. Not yet eyeballed live in a browser.
+
+### ART-007 - Vulcannis regional map
+Status: INTEGRATED
+Owner: Codex; collision pass: Claude Code
+Gameplay purpose: make Vulcannis an illustrated Steelmere territory without changing its 22x16 grid, exits, locations, chest or campfire coordinates.
+Delivered: `public/assets/maps/steelmere/vulcannis.png` (704x512 PNG RGBA, 22:16 ratio, 32px per tile).
+Integration: `buildVulcannis()` in `src/regionMap.tsx` now sets `background` to this asset.
+Collision read: molten lava is impassable throughout the upper reservoir and on the exposed channels at the outer edges. The iron bridge at y4 is the sole crossing over the upper reservoir. Treat the aqueduct, smokestacks, foundry, shrine, machinery and volcanic spires as obstacles where they read solid; retain the broad central/southern basalt routes and the west (x1, y7), southwest (x1, y12) and south (x11) exits, plus every current entity coordinate.
+Collision pass (Claude Code): reservoir/bridge unchanged from the placeholder (already matched, x9-12/y2-5, bridge y4); blocked rects for the NW factory/chimneys, the aqueduct (x2-7, split above/below y8 so that corridor and the west exit stay open), the foundry (x13-21, same y8 gap) and the NE shrine corner. All entities reachable, `npm test` 75/75 green. Not yet eyeballed live in a browser.
+
+### ART-008 - Ferrujal regional map
+Status: INTEGRATED
+Owner: Codex; collision pass: Claude Code
+Gameplay purpose: make Ferrujal an illustrated Steelmere territory without changing its 22x16 grid, exits, locations, chest or campfire coordinates.
+Delivered: `public/assets/maps/steelmere/ferrujal.png` (704x512 PNG RGBA, 22:16 ratio, 32px per tile).
+Integration: `buildFerrujal()` in `src/regionMap.tsx` now sets `background` to this asset.
+Collision read: the toxic pool at west x2-4/y7-13 is impassable except for the bridge at y10. Scrap heaps, the automaton graveyard, factory, containment core, pipes, cranes and ruined structures should be blocked where solid. Preserve the central path and north (x10), east (x20, y8) and northeast (x20, y3) exits, plus all existing entity coordinates.
+Collision pass (Claude Code): toxic pool/bridge unchanged from the placeholder (already matched, x2-4/y7-13, bridge y10); blocked rects for the NW graveyard, the factory (x12-20, y3 kept clear for the núcleo/chest/northeast-exit row that sits right there, y8 kept clear as a corridor) and the NE containment-core corner. Caught and fixed one real bug here during review: my first factory rect started at y3 and blocked the núcleo location, the chest and the northeast exit simultaneously — `npm test` failed with all three "fora de uma área transitável" until the rect was narrowed to y4+. All entities reachable now, `npm test` 75/75 green. Not yet eyeballed live in a browser.
+
+### ART-009 - Coroferro regional map
+Status: INTEGRATED
+Owner: Codex; collision pass: Claude Code
+Gameplay purpose: make Coroferro an illustrated Steelmere territory without changing its 22x16 grid, exits, locations, chest or campfire coordinates.
+Delivered: `public/assets/maps/steelmere/coroferro.png` (704x512 PNG RGBA, 22:16 ratio, 32px per tile).
+Integration: `buildCoroferro()` in `src/regionMap.tsx` now sets `background` to this asset.
+Collision read: the canal through upper-center x8-12/y5-7 is impassable except for the viaduct at y6. Buildings, underground-station entrance, clock tower, palace, formal square structures and outer railings should block movement where solid. Preserve the broad civic streets, west (x1, y8), north (x11) and northwest (x1, y3) exits, plus all existing entity coordinates.
+Collision pass (Claude Code): canal/bridge unchanged from the placeholder (already matched, x8-12/y5-7, bridge y6); blocked rects for the NW metro entrance, the western residential district (starting at x2 so the west-exit column stays open) and the NE clock tower/cathedral corner. The central circular plaza and lower courtyard are open plazas in the art, left unblocked. All entities reachable, `npm test` 75/75 green. Not yet eyeballed live in a browser.
+
+### ART-010 - Aetherium regional map
+Status: INTEGRATED
+Owner: Codex; collision pass: Claude Code
+Gameplay purpose: make Aetherium an illustrated Steelmere territory without changing its 22x16 grid, exits, locations, chest or campfire coordinates.
+Delivered: `public/assets/maps/steelmere/aetherium.png` (704x512 PNG RGBA, 22:16 ratio, 32px per tile).
+Integration: `buildAetherium()` in `src/regionMap.tsx` now sets `background` to this asset.
+Collision read: the upper aether pool x8-13/y4-6 is impassable except for its vertical bridge along x10/y3-7. The broken outer platforms, void, crystal masses, vortex, galleries, observatory, reactor and ring structures should block movement where solid. Preserve connected stone routes for all exits: west (x1, y8), east (x20, y8), south (x11, y14) and north (x11, y1), plus every existing entity coordinate.
+Collision pass (Claude Code): pool/bridge unchanged from the placeholder (already matched, x8-13/y4-6, vertical bridge x10/y3-7); blocked rects for the NW vortex corner, the NE reactor-ring corner, the western mechanical gallery (y8 corridor + west exit left open) and the eastern observatory (y8 corridor + east exit left open). The central ceremonial ring and lower plaza are open platforms in the art, left unblocked. All entities reachable across all 4 exits, `npm test` 75/75 green. Not yet eyeballed live in a browser.
+
+**All 7 Steelmere territories now have background art + an authored, tested collision pass (ART-001, 005-010).** Remaining Steelmere work is polish, not coverage: a live in-browser look at each map (none of the 7 has been visually double-checked yet, only BFS-verified), the terrain-state textures/mechanics from ART-004 (currently Frostgard-only), and whatever P1/P2 items are still open below (chest variants, weather, day/night).
 
 ## Handoff Log
 

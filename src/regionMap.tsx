@@ -15,7 +15,10 @@ function mapAsset(path: string) { return `${import.meta.env.BASE_URL}${path.repl
 
 // Grid "de autoria" -- o que se desenha à mão em build*() usando fill/hline/vline/rect.
 // Tipos genéricos: não sabem (nem precisam saber) qual variante de arte existe pra cada caso.
-type BaseTile = 'grass' | 'flower' | 'tree' | 'water' | 'path' | 'bridge'
+// 'ice'/'snow_drift'/'steam_vent' são terrenos especiais de bioma (ver ART-004 no
+// VISUAL_DEVELOPMENT_HANDOFF.md) -- sem auto-tiling de vizinhança como path/bridge/bank, são
+// tile únicos (igual flower/tree/water), então passam direto por resolveTerrain().
+type BaseTile = 'grass' | 'flower' | 'tree' | 'water' | 'path' | 'bridge' | 'ice' | 'snow_drift' | 'steam_vent'
 
 // Grid "de renderização" -- variante exata de arte, resolvida a partir do grid de autoria por
 // resolveTerrain() olhando os vizinhos de cada célula. É o que TileWorldExplorer de fato desenha
@@ -25,12 +28,14 @@ export type MapTile =
   | 'bank_v' | 'bank_v_r' | 'bank_h' | 'bank_h_r'
   | 'path_v' | 'path_h' | 'path_corner_br' | 'path_corner_bl' | 'path_corner_tr' | 'path_corner_tl'
   | 'bridge_cap_top' | 'bridge_mid' | 'bridge_cap_bottom'
+  | 'ice' | 'snow_drift' | 'steam_vent'
 
 const WALKABLE = new Set<MapTile>([
   'grass', 'flower',
   'bank_v', 'bank_v_r', 'bank_h', 'bank_h_r',
   'path_v', 'path_h', 'path_corner_br', 'path_corner_bl', 'path_corner_tr', 'path_corner_tl',
   'bridge_cap_top', 'bridge_mid', 'bridge_cap_bottom',
+  'ice', 'snow_drift', 'steam_vent',
 ])
 
 export interface RegionMapLocation { subId: string; x: number; y: number; icon?: string }
@@ -225,7 +230,7 @@ function resolveTerrain(base: BaseTile[][]): MapTile[][] {
         else if (at(x, y - 1) === 'water') resolved = 'bank_h_r'
         else resolved = 'grass'
       } else {
-        resolved = t // 'flower' | 'tree' | 'water'
+        resolved = t // 'flower' | 'tree' | 'water' | 'ice' | 'snow_drift' | 'steam_vent'
       }
       row.push(resolved)
     }
@@ -566,6 +571,13 @@ function buildFrostgard(): RegionMapDef {
   rect(base, 13, 1, 15, 10, 'water') // canal, do topo até a ponte e um pouco além
   rect(base, 13, 11, 19, 14, 'water') // poça/cachoeira congelada mais larga ao sul
   hline(base, 12, 16, 7, 'bridge') // ponte de metal visível na arte, cruzando o canal
+  // Primeiro uso dos terrenos especiais entregues no ART-004 -- posicionamento inicial numa área
+  // aberta que não mexe na colisão já validada acima; ainda não conferido pixel a pixel contra a
+  // arte (mesma ressalva do resto da colisão do Frostgard), só ilustra a mecânica funcionando.
+  rect(base, 7, 9, 8, 10, 'ice') // trecho de gelo escorregadio, área aberta a oeste do canal
+  rect(base, 6, 11, 6, 11, 'snow_drift')
+  rect(base, 9, 11, 9, 11, 'snow_drift')
+  base[4][4] = 'steam_vent' // respiro perto da caldeira noroeste
   return {
     id: 'frostgard', background: mapAsset('assets/maps/steelmere/frostgard.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
@@ -598,13 +610,17 @@ function buildFrostgard(): RegionMapDef {
 
 function buildEngrenverde(): RegionMapDef {
   const width = 22, height = 16
+  // Colisão autorada em cima da arte entregue pelo Codex (ART-005): lagoa a oeste com ponte de
+  // madeira cruzando em y=8, vila-treehouse nos cantos noroeste/sudoeste, estufa de vidro e torre
+  // de engrenagem gigante a nordeste (com a entrada da estufa em y=8 e a plataforma da torre em
+  // y=3-4 deixadas livres pra não bloquear os marcadores que ficam bem ali).
   const base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
-  rect(base, 2, 5, 4, 11, 'water')
-  hline(base, 1, 5, 8, 'bridge')
+  rect(base, 2, 5, 5, 11, 'water')
+  hline(base, 1, 6, 8, 'bridge')
   return {
-    id: 'engrenverde', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'engrenverde', background: mapAsset('assets/maps/steelmere/engrenverde.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_frostgard', x: 11, y: 1, icon: '↑', targetRegionId: 'frostgard' },
@@ -624,18 +640,28 @@ function buildEngrenverde(): RegionMapDef {
     campfires: [
       { id: 'engren_fogueira', name: 'Acampamento da Vila Suspensa', x: 12, y: 11, icon: '🔥' },
     ],
+    blocked: blockedRects(
+      [0, 0, 3, 4], // vila-treehouse + roda d'água, canto noroeste
+      [0, 10, 3, 14], // vila-treehouse, canto sudoeste
+      [15, 5, 19, 7], // cúpula de vidro da estufa (entrada em y=8 fica livre)
+      [19, 0, 21, 1], // engrenagem gigante, só o canto mais sólido
+    ),
   }
 }
 
 function buildTrilhouro(): RegionMapDef {
   const width = 22, height = 16
+  // Colisão autorada em cima da arte entregue pelo Codex (ART-006): canal atravessando o mapa
+  // de norte a sul, ponte de madeira em y=8; trem/trilhos a noroeste, moinho+celeiro a oeste,
+  // terminal ferroviário ornamentado e silos de grão a nordeste (plataforma/entrada em y=3-4 e
+  // y=8 respectivamente deixadas livres, mesmo padrão usado no Frostgard/Engrenverde).
   const base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
-  rect(base, 14, 5, 15, 11, 'water')
-  hline(base, 13, 16, 8, 'bridge')
+  rect(base, 14, 1, 15, 14, 'water')
+  hline(base, 12, 17, 8, 'bridge')
   return {
-    id: 'trilhouro', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'trilhouro', background: mapAsset('assets/maps/steelmere/trilhouro.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_vulcannis', x: 11, y: 1, icon: '↑', targetRegionId: 'vulcannis' },
@@ -655,18 +681,28 @@ function buildTrilhouro(): RegionMapDef {
     campfires: [
       { id: 'trilho_fogueira', name: 'Fogueira dos Ferroviários', x: 10, y: 11, icon: '🔥' },
     ],
+    blocked: blockedRects(
+      [0, 0, 4, 3], // trem + trilhos, canto noroeste
+      [0, 4, 3, 7], // moinho + celeiro
+      [15, 5, 19, 7], // silos de grão (entrada em y=8 fica livre)
+      [19, 0, 21, 2], // parte solida do terminal ferroviario, so o canto
+    ),
   }
 }
 
 function buildVulcannis(): RegionMapDef {
   const width = 22, height = 16
+  // Colisão autorada em cima da arte entregue pelo Codex (ART-007): reservatório de lava no
+  // topo-centro com ponte em y=4 (já no placeholder), fábrica/chaminés a noroeste, aqueduto a
+  // oeste, fundição a leste e santuário a nordeste. Corredores em y=8 (sob o aqueduto/fundição)
+  // e as saídas oeste/sudoeste deixados livres de propósito.
   const base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 9, 2, 12, 5, 'water')
   hline(base, 8, 13, 4, 'bridge')
   return {
-    id: 'vulcannis', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'vulcannis', background: mapAsset('assets/maps/steelmere/vulcannis.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'west_frostgard', x: 1, y: 7, icon: '←', targetRegionId: 'frostgard' },
@@ -686,18 +722,29 @@ function buildVulcannis(): RegionMapDef {
     campfires: [
       { id: 'vulcan_fogueira', name: 'Fogueira da Fundição Central', x: 12, y: 11, icon: '🔥' },
     ],
+    blocked: blockedRects(
+      [0, 0, 6, 2], // fábrica/chaminés, canto noroeste
+      [2, 5, 7, 7], // aqueduto, parte superior (corredor em y=8 fica livre)
+      [2, 9, 7, 10], // aqueduto, parte inferior
+      [13, 5, 21, 7], // fundição, parte superior (corredor em y=8 fica livre)
+      [13, 9, 21, 11], // fundição, parte inferior
+      [17, 0, 21, 2], // santuário, canto nordeste
+    ),
   }
 }
 
 function buildFerrujal(): RegionMapDef {
   const width = 22, height = 16
+  // Colisão autorada em cima da arte entregue pelo Codex (ART-008): poça tóxica a oeste com
+  // ponte em y=10 (já no placeholder), cemitério de autômatos a noroeste, fábrica central-leste
+  // e núcleo de contenção a nordeste. Corredor em y=8 sob a fábrica e as saídas mantidos livres.
   const base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 2, 7, 4, 13, 'water')
   hline(base, 1, 5, 10, 'bridge')
   return {
-    id: 'ferrujal', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'ferrujal', background: mapAsset('assets/maps/steelmere/ferrujal.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_engrenverde', x: 10, y: 1, icon: '↑', targetRegionId: 'engrenverde' },
@@ -717,18 +764,28 @@ function buildFerrujal(): RegionMapDef {
     campfires: [
       { id: 'ferro_fogueira', name: 'Refúgio de Sucata da Unidade 73', x: 9, y: 11, icon: '🔥' },
     ],
+    blocked: blockedRects(
+      [0, 0, 6, 2], // cemitério de autômatos, canto noroeste
+      [12, 4, 20, 7], // fábrica, parte superior (y=3 fica livre pro núcleo/baú/saída nordeste, y=8 livre como corredor)
+      [12, 9, 20, 11], // fábrica, parte inferior
+      [17, 0, 21, 2], // núcleo de contenção, canto nordeste (y=3 livre)
+    ),
   }
 }
 
 function buildCoroferro(): RegionMapDef {
   const width = 22, height = 16
+  // Colisão autorada em cima da arte entregue pelo Codex (ART-009): canal/lago ornamentado no
+  // topo-centro com ponte em y=6 (já no placeholder), entrada de metrô a noroeste, distrito
+  // residencial a oeste, torre do relógio + catedral a nordeste. A praça circular central-leste
+  // e o pátio inferior ficam totalmente abertos (são praças na arte, não obstáculo).
   const base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 8, 5, 12, 7, 'water')
   hline(base, 7, 13, 6, 'bridge')
   return {
-    id: 'coroferro', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'coroferro', background: mapAsset('assets/maps/steelmere/coroferro.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'west_ferrujal', x: 1, y: 8, icon: '←', targetRegionId: 'ferrujal' },
@@ -748,18 +805,27 @@ function buildCoroferro(): RegionMapDef {
     campfires: [
       { id: 'coro_fogueira', name: 'Lareira Nobre da Praça do Relógio', x: 12, y: 11, icon: '🔥' },
     ],
+    blocked: blockedRects(
+      [0, 0, 4, 2], // entrada do metrô, canto noroeste
+      [2, 6, 4, 10], // distrito residencial a oeste (deixa a coluna da saída oeste livre)
+      [15, 0, 21, 2], // torre do relógio + catedral, parte superior
+    ),
   }
 }
 
 function buildAetherium(): RegionMapDef {
   const width = 22, height = 16
+  // Colisão autorada em cima da arte entregue pelo Codex (ART-010): poço de aether no topo-centro
+  // com passarela vertical em x=10 (já no placeholder), vórtice a noroeste, reator/anel dourado a
+  // nordeste, galeria mecânica a oeste e observatório a leste. O anel cerimonial central-sul e a
+  // praça inferior ficam abertos (plataformas, não obstáculo).
   const base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 8, 4, 13, 6, 'water')
   vline(base, 3, 7, 10, 'bridge')
   return {
-    id: 'aetherium', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'aetherium', background: mapAsset('assets/maps/steelmere/aetherium.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'west_engrenverde', x: 1, y: 8, icon: '←', targetRegionId: 'engrenverde' },
@@ -780,6 +846,14 @@ function buildAetherium(): RegionMapDef {
     campfires: [
       { id: 'aether_fogueira', name: 'Fogueira Estabilizadora de Aether', x: 12, y: 11, icon: '🔥' },
     ],
+    blocked: blockedRects(
+      [0, 0, 4, 2], // vórtice roxo, canto noroeste
+      [17, 0, 21, 2], // reator/anel dourado, canto nordeste
+      [0, 5, 3, 7], // galeria mecânica a oeste, parte superior (corredor y=8 e saída oeste livres)
+      [0, 9, 3, 10], // galeria mecânica a oeste, parte inferior
+      [14, 6, 18, 7], // observatório a leste, parte superior (corredor y=8 e saída leste livres)
+      [14, 9, 18, 10], // observatório a leste, parte inferior
+    ),
   }
 }
 
@@ -935,7 +1009,10 @@ export function TileWorldExplorer({
     return () => window.clearInterval(id)
   }, [paused, map])
 
-  const step = React.useCallback((dx: number, dy: number) => {
+  // auto=true identifica um passo continuado pelo deslize do gelo (ver terreno 'ice' logo
+  // abaixo), não uma entrada nova do jogador -- serve só pra não rolar emboscada de novo a cada
+  // tile deslizado (o jogador não escolheu continuar, seria punitivo empilhar chance em cima).
+  const step = React.useCallback((dx: number, dy: number, auto = false) => {
     if (movingRef.current || paused) return
     const dir: Facing = dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up'
     setFacing(dir)
@@ -966,7 +1043,15 @@ export function TileWorldExplorer({
       else if (exit) onEnterExit?.(exit.id)
       else if (chest && !openedChests?.[chest.id]) onOpenChest?.(chest)
       else if (campfire) onRestCampfire?.(campfire)
-      else if (Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
+      else if (map.grid[ty]?.[tx] === 'ice' && isMapWalkable(map, { x: tx + dx, y: ty + dy }, npcBlocked)) {
+        // Gelo escorregadio (ART-004): continua deslizando na mesma direção até sair do gelo ou
+        // esbarrar em algo -- cancela um caminho clicado em andamento, já que o jogador perde o
+        // controle da direção enquanto desliza.
+        queuedMoves.current = []
+        step(dx, dy, true)
+        return
+      }
+      else if (!auto && Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
     }, STEP_MS)
   }, [paused, map, onEnterLocation, exits, onEnterExit, npcBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire])
