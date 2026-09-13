@@ -4,7 +4,7 @@
 // jogador pisa num marcador de sub-região. Quem decide o que acontece ao entrar num marcador
 // (abrir card, checar progresso etc.) é o componente que usa <TileWorldExplorer/>.
 import React from 'react'
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Compass } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
 import type { NpcDefinition } from './data/npcs'
 
 // GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
@@ -74,7 +74,35 @@ type Facing = 'up' | 'down' | 'left' | 'right'
 const STEP_MS = 320 // 75% da velocidade original (240ms/passo -> 320ms/passo)
 const VIEWPORT_TILES_X = 18
 const VIEWPORT_TILES_Y = 12
-const AMBUSH_CHANCE = 0.15 // chance de emboscada por passo dado (fora de um marcador de local)
+const AMBUSH_CHANCE = 0.07 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
+const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
+const WANDER_STEP_MS = 1000 // cadência do passeio -- mais lento que o passo do jogador (STEP_MS) de propósito, pra dar tempo de desviar
+const WANDER_MOVE_CHANCE = 0.5 // chance de o monstro dar um passo a cada tick (o resto do tempo ele fica parado)
+const WANDER_STEPS: Array<[number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]]
+
+// Deriva um monstro vagante por marcador de sub-região (nenhuma arte/posição própria ainda --
+// ver ART-003 no VISUAL_DEVELOPMENT_HANDOFF.md). Posicionado perto do pin, num tile livre que
+// não colida com nenhuma outra entidade, pra funcionar em qualquer mapa sem dado extra por região.
+interface Wanderer { id: string; subId: string; home: { x: number; y: number }; x: number; y: number }
+function deriveWanderers(map: RegionMapDef): Wanderer[] {
+  const occupied = new Set<string>([tileKey(map.spawn.x, map.spawn.y)])
+  map.locations.forEach(l => occupied.add(tileKey(l.x, l.y)))
+  ;(map.exits ?? []).forEach(e => occupied.add(tileKey(e.x, e.y)))
+  ;(map.chests ?? []).forEach(c => occupied.add(tileKey(c.x, c.y)))
+  ;(map.campfires ?? []).forEach(c => occupied.add(tileKey(c.x, c.y)))
+  const offsets: Array<[number, number]> = [[2, 0], [-2, 0], [0, 2], [0, -2], [2, 2], [-2, -2], [2, -2], [-2, 2]]
+  const out: Wanderer[] = []
+  for (const loc of map.locations) {
+    for (const [dx, dy] of offsets) {
+      const x = loc.x + dx, y = loc.y + dy, key = tileKey(x, y)
+      if (occupied.has(key) || !isMapWalkable(map, { x, y })) continue
+      occupied.add(key)
+      out.push({ id: `wander_${loc.subId}`, subId: loc.subId, home: { x, y }, x, y })
+      break
+    }
+  }
+  return out
+}
 
 function clamp(n: number, min: number, max: number) { return Math.min(max, Math.max(min, n)) }
 // Local (marcador de sub-região) mais próximo do ponto dado -- usado pra decidir o nível/tema
@@ -758,26 +786,28 @@ export function getRegionMap(regionId: string): RegionMapDef | undefined { retur
 // <direção>_<quadro>.png, recortados e com fundo removido por flood-fill a partir da borda.
 // Só existe arte para baixo/cima/direita -- "esquerda" é a mesma arte de "direita" espelhada
 // em CSS (scaleX(-1)), técnica padrão pra não precisar gerar/manter uma arte espelhada à parte.
-const walkFrames = (direction: 'down' | 'up' | 'right') => [
-  mapAsset(`assets/maps/sprites/adventurer/${direction}_0.png`),
-  mapAsset(`assets/maps/sprites/adventurer/${direction}_mid_01.png`),
-  mapAsset(`assets/maps/sprites/adventurer/${direction}_1.png`),
-  mapAsset(`assets/maps/sprites/adventurer/${direction}_mid_12.png`),
-  mapAsset(`assets/maps/sprites/adventurer/${direction}_2.png`),
-  mapAsset(`assets/maps/sprites/adventurer/${direction}_mid_12.png`),
+const walkFrames = (spriteId: string, direction: 'down' | 'up' | 'right') => [
+  mapAsset(`assets/maps/sprites/${spriteId}/${direction}_0.png`),
+  mapAsset(`assets/maps/sprites/${spriteId}/${direction}_mid_01.png`),
+  mapAsset(`assets/maps/sprites/${spriteId}/${direction}_1.png`),
+  mapAsset(`assets/maps/sprites/${spriteId}/${direction}_mid_12.png`),
+  mapAsset(`assets/maps/sprites/${spriteId}/${direction}_2.png`),
+  mapAsset(`assets/maps/sprites/${spriteId}/${direction}_mid_12.png`),
 ]
-const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
-  down: { frames: walkFrames('down') },
-  up: { frames: walkFrames('up') },
-  right: { frames: walkFrames('right') },
-  left: { frames: walkFrames('right'), mirror: true },
-}
+const playerSpriteFrames = (spriteId: string): Record<Facing, { frames: string[]; mirror?: boolean }> => ({
+  down: { frames: walkFrames(spriteId, 'down') },
+  up: { frames: walkFrames(spriteId, 'up') },
+  right: { frames: walkFrames(spriteId, 'right') },
+  left: { frames: walkFrames(spriteId, 'right'), mirror: true },
+})
 const WALK_FRAME_COUNT = 6
 const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
+const FOG_REVEAL_RADIUS = 3
+
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
-  openedChests = {}, onOpenChest, onRestCampfire
+  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore
 }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
@@ -794,9 +824,11 @@ export function TileWorldExplorer({
   openedChests?: Record<string, boolean>
   onOpenChest?: (chest: RegionMapChest) => void
   onRestCampfire?: (campfire: RegionMapCampfire) => void
+  playerSprite?: string
+  exploredTiles?: Set<string>
+  onExplore?: (tiles: Array<{ x: number; y: number }>) => void
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
-  const [showMinimap, setShowMinimap] = React.useState(true)
   // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
   // permite voltar exatamente aqui depois de uma tela que desmonta este componente (combate,
   // emboscada), em vez de sempre recomeçar do spawn/marcador.
@@ -816,6 +848,61 @@ export function TileWorldExplorer({
   const adjacentNpc = React.useMemo(() => npcs.find(npc => Math.abs(npc.x - pos.x) + Math.abs(npc.y - pos.y) === 1), [npcs, pos])
 
   React.useEffect(() => { posRef.current = pos }, [pos])
+
+  // Névoa de guerra: a cada posição nova, revela um raio circular ao redor do herói. Só avisa o
+  // chamador dos tiles que AINDA não estavam no set recebido -- quem persiste (RegionMapView)
+  // decide como mesclar, este componente não sabe nada sobre save/store.
+  React.useEffect(() => {
+    if (!onExplore) return
+    const newly: Array<{ x: number; y: number }> = []
+    for (let dy = -FOG_REVEAL_RADIUS; dy <= FOG_REVEAL_RADIUS; dy++) for (let dx = -FOG_REVEAL_RADIUS; dx <= FOG_REVEAL_RADIUS; dx++) {
+      if (Math.hypot(dx, dy) > FOG_REVEAL_RADIUS) continue
+      const x = pos.x + dx, y = pos.y + dy
+      if (x < 0 || y < 0 || x >= map.width || y >= map.height) continue
+      if (!exploredTiles?.has(`${x},${y}`)) newly.push({ x, y })
+    }
+    if (newly.length) onExplore(newly)
+  }, [pos.x, pos.y])
+
+  // Monstros visíveis: um passeio aleatório limitado (WANDER_RADIUS) em torno de um ponto de
+  // origem derivado dos marcadores do mapa (deriveWanderers). Encostar no jogador dispara o
+  // mesmo fluxo de emboscada de sempre (onAmbush) -- ver ambush prompt em RegionMapView --, mas
+  // como o monstro fica visível e mais lento que o jogador (WANDER_STEP_MS > STEP_MS), dá pra
+  // desviar dele andando por outro caminho.
+  const wanderTemplate = React.useMemo(() => deriveWanderers(map), [map])
+  const [wanderers, setWanderers] = React.useState<Wanderer[]>(() => wanderTemplate.map(w => ({ ...w })))
+  React.useEffect(() => { setWanderers(wanderTemplate.map(w => ({ ...w }))) }, [wanderTemplate])
+  const onAmbushRef = React.useRef(onAmbush)
+  React.useEffect(() => { onAmbushRef.current = onAmbush })
+  const wanderTriggeredRef = React.useRef(false)
+  React.useEffect(() => { if (!paused) wanderTriggeredRef.current = false }, [paused])
+  React.useEffect(() => {
+    if (paused) return
+    const id = window.setInterval(() => {
+      setWanderers(prev => {
+        if (wanderTriggeredRef.current || !prev.length) return prev
+        const occupied = new Set(prev.map(w => tileKey(w.x, w.y)))
+        let triggeredSubId: string | undefined
+        const next = prev.map(w => {
+          if (triggeredSubId) return w
+          if (w.x === posRef.current.x && w.y === posRef.current.y) { triggeredSubId = w.subId; return { ...w, x: w.home.x, y: w.home.y } }
+          if (Math.random() > WANDER_MOVE_CHANCE) return w
+          const [dx, dy] = WANDER_STEPS[Math.floor(Math.random() * WANDER_STEPS.length)]
+          const nx = w.x + dx, ny = w.y + dy
+          if (Math.abs(nx - w.home.x) > WANDER_RADIUS || Math.abs(ny - w.home.y) > WANDER_RADIUS) return w
+          if (!isMapWalkable(map, { x: nx, y: ny })) return w
+          const key = tileKey(nx, ny)
+          if (occupied.has(key) && key !== tileKey(w.x, w.y)) return w
+          if (nx === posRef.current.x && ny === posRef.current.y) { triggeredSubId = w.subId; return w }
+          occupied.delete(tileKey(w.x, w.y)); occupied.add(key)
+          return { ...w, x: nx, y: ny }
+        })
+        if (triggeredSubId) { wanderTriggeredRef.current = true; onAmbushRef.current?.(triggeredSubId) }
+        return next
+      })
+    }, WANDER_STEP_MS)
+    return () => window.clearInterval(id)
+  }, [paused, map])
 
   const step = React.useCallback((dx: number, dy: number) => {
     if (movingRef.current || paused) return
@@ -939,7 +1026,7 @@ export function TileWorldExplorer({
   const followCamY = clamp(pos.y * tilePx + tilePx / 2 - viewportH / 2, 0, Math.max(0, worldH - viewportH))
   const camX = clamp(followCamX + panOffset.x, 0, Math.max(0, worldW - viewportW))
   const camY = clamp(followCamY + panOffset.y, 0, Math.max(0, worldH - viewportH))
-  const sprite = PLAYER_SPRITE[facing]
+  const sprite = playerSpriteFrames(playerSprite)[facing]
   const frameSrc = sprite.frames[frame]
 
   return <div className="regionmap-frame">
@@ -1033,50 +1120,21 @@ export function TileWorldExplorer({
             </span>
           </button>
         })}
+        {wanderers.map(w => (
+          <div key={w.id} className="regionmap-wanderer" style={{ left: w.x * tilePx, top: w.y * tilePx, width: tilePx, height: tilePx }} title="Criatura à espreita -- desvie ou lute">
+            <span className="regionmap-wanderer-aura" />
+            <span className="regionmap-wanderer-icon">👹</span>
+          </div>
+        ))}
         <div className={`regionmap-player${walking ? ' is-walking' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
           <span className="regionmap-player-sprite-wrap" style={sprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
             <img className="regionmap-player-sprite" src={frameSrc} alt="" />
           </span>
         </div>
-      </div>
-      <div className={`regionmap-radar-hud${showMinimap ? ' is-open' : ' is-closed'}`}>
-        <button type="button" className="radar-toggle" onClick={event => { event.stopPropagation(); setShowMinimap(v => !v) }} title={showMinimap ? 'Ocultar Radar' : 'Expandir Radar'}>
-          <Compass size={14} />
-          <span>{showMinimap ? 'Minimapa' : 'Radar'}</span>
-        </button>
-        {showMinimap && (
-          <div className="radar-body" onClick={event => event.stopPropagation()}>
-            <svg className="radar-svg" viewBox={`0 0 ${map.width} ${map.height}`}>
-              {map.grid.map((row, y) => row.map((t, x) => (
-                <rect key={`rt_${x}_${y}`} x={x} y={y} width={1} height={1} className={`radar-tile radar-${t}`} />
-              )))}
-              {exits.map(ex => (
-                <rect key={`rex_${ex.id}`} x={ex.x + 0.15} y={ex.y + 0.15} width={0.7} height={0.7} className="radar-pin radar-exit" />
-              ))}
-              {(map.campfires ?? []).map(c => (
-                <circle key={`rc_${c.id}`} cx={c.x + 0.5} cy={c.y + 0.5} r={0.6} className="radar-pin radar-fire" />
-              ))}
-              {(map.chests ?? []).map(ch => (
-                <rect key={`rch_${ch.id}`} x={ch.x + 0.2} y={ch.y + 0.2} width={0.6} height={0.6} className={`radar-pin radar-chest ${openedChests?.[ch.id] ? 'opened' : 'closed'}`} />
-              ))}
-              {map.locations.map(l => (
-                <circle key={`rl_${l.subId}`} cx={l.x + 0.5} cy={l.y + 0.5} r={0.65} className="radar-pin radar-loc" />
-              ))}
-              {npcs.map(n => (
-                <circle key={`rn_${n.id}`} cx={n.x + 0.5} cy={n.y + 0.5} r={0.55} className="radar-pin radar-npc" />
-              ))}
-              <circle cx={pos.x + 0.5} cy={pos.y + 0.5} r={0.85} className="radar-pin radar-player" />
-            </svg>
-            <div className="radar-legend">
-              <span><b className="legend-dot player" /> Você</span>
-              <span><b className="legend-dot loc" /> Sublocal</span>
-              <span><b className="legend-dot fire" /> Fogueira</span>
-              <span><b className="legend-dot chest" /> Baú</span>
-              <span><b className="legend-dot exit" /> Viagem</span>
-            </div>
-          </div>
-        )}
+        {exploredTiles && map.grid.flatMap((row, y) => row.map((_, x) => exploredTiles.has(`${x},${y}`) ? null : (
+          <div key={`fog_${x}_${y}`} className="regionmap-fog-tile" style={{ left: x * tilePx, top: y * tilePx, width: tilePx, height: tilePx }} />
+        )))}
       </div>
     </div>
     <div className="regionmap-controls">

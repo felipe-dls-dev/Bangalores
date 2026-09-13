@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -1264,6 +1264,24 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
  const startLoc=selectedSub&&map.locations.find(l=>l.subId===selectedSub.id)
  const savedPos=g.regionMapPositions?.[region.id]
   const initialPos=savedPos??(startLoc?{x:startLoc.x,y:startLoc.y}:undefined)
+  const mapSpriteId=['guerreiro','guardiao','cacadora','arcanista','druida','cacador','monge','sacerdotisa','conjurador'].includes(g.heroId??'')?g.heroId:undefined
+  // Névoa de guerra: quem já tinha posição salva nesta região andou por ela antes da névoa
+  // existir -- herda o mapa todo revelado (uma vez) em vez de reaparecer no escuro num save
+  // antigo. Regiões nunca visitadas começam totalmente cobertas.
+  const knownTiles=g.exploredMapTiles?.[region.id]
+  const exploredSet=React.useMemo(()=>{
+    if(knownTiles)return new Set(knownTiles)
+    if(!savedPos)return new Set<string>()
+    const all=new Set<string>()
+    for(let y=0;y<map.height;y++)for(let x=0;x<map.width;x++)all.add(`${x},${y}`)
+    return all
+  },[knownTiles,savedPos,map])
+  React.useEffect(()=>{
+    if(knownTiles||!savedPos)return
+    const all:Array<{x:number;y:number}>=[]
+    for(let y=0;y<map.height;y++)for(let x=0;x<map.width;x++)all.push({x,y})
+    g.revealMapTiles(region.id,all)
+  },[knownTiles,savedPos,region.id,map])
   const locationStatus=(subId:string):'done'|'ready'|'default'=>{const sub=subs.find(s=>s.id===subId);if(!sub)return 'default';if(g.subregionBossesDefeated.includes(sub.id))return 'done';const wins=g.subregionVictories[sub.id]??0;return wins>=sub.encontrosNecessarios?'ready':'default'}
   const handleEnter=(subId:string)=>{const sub=subs.find(s=>s.id===subId);if(sub){setActiveSub(sub);setEncounterPrompt(sub);setShowBattleDetails(false)}}
   const world=region.mundo??'havendown',worldProgression=[...TERRITORIES].filter(t=>(t.mundo??'havendown')===world).sort(regionListSort),regionIndex=worldProgression.findIndex(t=>t.id===region.id),exitTargets={prev:worldProgression[regionIndex-1],next:worldProgression[regionIndex+1]} as const
@@ -1290,9 +1308,9 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
  const ambushDialog=g.ambush&&<div className="regionmap-encounter-backdrop"><section className="regionmap-ambush-prompt"><span className="eyebrow">EMBOSCADA</span><h2>Você foi atacado!</h2><div className="regionmap-ambush-enemy"><img src={assetUrl(cardArt(g.ambush.enemy))} alt={g.ambush.enemy.nome}/><div><strong>{g.ambush.enemy.nome}</strong><small>Nível {g.ambush.enemy.nivel??g.ambush.enemy.dificuldade}</small></div></div><p>Um inimigo surge do nada e bloqueia seu caminho. Fugir usa a mesma chance de uma fuga em combate.</p><div><button onClick={()=>g.fleeAmbush()}>Tentar fugir</button><button className="primary" onClick={()=>g.acceptAmbush()}>Aceitar o desafio</button></div></section></div>
  const npcDialog=activeNpc&&<NpcDialog npc={activeNpc} onClose={()=>setActiveNpc(undefined)}/>
  return <section className="regionmap-shell">
-  <div className="regionmap-stage"><div className="regionmap-stage-title"><Map size={18}/><span>Região de {region.nome}</span></div><TileWorldExplorer map={map} initialPosition={initialPos} paused={Boolean(encounterPrompt||activeNpc||g.ambush)} onEnterLocation={handleEnter} locationStatus={locationStatus} exits={regionExits} onEnterExit={handleExit} npcs={npcs} npcStatus={npcStatus} onInteractNpc={setActiveNpc} onAmbush={subId=>g.triggerAmbush(subId)} onPositionChange={pos=>g.setRegionMapPosition(region.id,pos)} openedChests={g.openedChests} onOpenChest={chest=>g.openMapChest(chest.id,chest)} onRestCampfire={campfire=>g.restAtCampfire(region.id,campfire)}/></div>
+  <div className="regionmap-stage"><div className="regionmap-stage-title"><Map size={18}/><span>Região de {region.nome}</span></div><TileWorldExplorer map={map} playerSprite={mapSpriteId} initialPosition={initialPos} paused={Boolean(encounterPrompt||activeNpc||g.ambush)} onEnterLocation={handleEnter} locationStatus={locationStatus} exits={regionExits} onEnterExit={handleExit} npcs={npcs} npcStatus={npcStatus} onInteractNpc={setActiveNpc} onAmbush={subId=>g.triggerAmbush(subId)} onPositionChange={pos=>g.setRegionMapPosition(region.id,pos)} openedChests={g.openedChests} onOpenChest={chest=>g.openMapChest(chest.id,chest)} onRestCampfire={campfire=>g.restAtCampfire(region.id,campfire)} exploredTiles={exploredSet} onExplore={tiles=>g.revealMapTiles(region.id,tiles)}/></div>
   <aside className="regionmap-inspector"><span className="eyebrow">LOCAL ATUAL</span><h2>{sub.nome}</h2><div className="regionmap-inspector-preview" style={{backgroundImage:`url(${map.background})`}}><span>{sub.icone}</span></div><p>{sub.descricao}</p><div className="regionmap-details"><div><small>EXPLORAÇÃO</small><strong>{Math.min(wins,sub.encontrosNecessarios)}/{sub.encontrosNecessarios}</strong></div><div><small>PERIGO</small><strong className={`danger-${danger.cls}`}>{danger.label}</strong></div><div><small>CHEFE</small><strong>{bossDown?'Derrotado':ready?'Disponível':'Oculto'}</strong></div></div><div className="regionmap-loot"><small>RECOMPENSAS</small><span>{sub.temaLoot}</span></div><button className={ready?'primary boss-button':'primary'} onClick={()=>setEncounterPrompt(sub)}>{bossDown?'EXPLORAR NOVAMENTE':ready?'ENFRENTAR CHEFE':'EXPLORAR LOCAL'}</button></aside>
-  <footer className="regionmap-dialogue"><div className="regionmap-dialogue-avatar"><img src={assetUrl('assets/maps/sprites/adventurer/down_1.png')} alt=""/></div><p>{ready?'O caminho à frente ficou silencioso. Algo poderoso aguarda nesta área.':sub.desafios[0]??'Explore a região para descobrir novos desafios.'}</p><span>▼</span></footer>
+  <footer className="regionmap-dialogue"><div className="regionmap-dialogue-avatar"><img src={assetUrl(`assets/maps/sprites/${mapSpriteId??'adventurer'}/down_1.png`)} alt=""/></div><p>{ready?'O caminho à frente ficou silencioso. Algo poderoso aguarda nesta área.':sub.desafios[0]??'Explore a região para descobrir novos desafios.'}</p><span>▼</span></footer>
   <div className="regionmap-navigation"><Footprints size={20}/><div><strong>Exploração livre</strong><small>Use WASD ou as setas para caminhar até os marcadores.</small></div></div>
   {encounterDialog}
   {npcDialog}
