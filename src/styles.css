@@ -1622,6 +1622,7 @@ body::after{content:"VERSÃO 0.8.36 • 13/09/2026\A Chefes de sub-regiao agora 
 body::after{content:"VERSÃO 0.8.37 • 13/09/2026\A Sistema de conquistas com titulo cosmetico e historico de progresso (grafico de nivel ao longo da campanha), na tela de Cronicas";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.38 • 13/09/2026\A Simulador de balanceamento (test:balance) passa a cobrir Steelmere tambem, alem de Havendown, apos completar a campanha";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.39 • 13/09/2026\A Lote 3: Subclasses Heroicas no nivel 30, Respec gratuito, Golpe Supremo com barra de Ultimate e indicadores de dano coloridos";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.40 • 13/09/2026\A Corrigido: regiao ainda bloqueada para viagem rapida travava o proprio jogador que ja estava explorando ela, ao sair pra outra tela (Mochila etc) e tentar voltar pelo Mapa";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
