@@ -442,6 +442,12 @@ body:has(.combat-v033){overflow:hidden}
 .regionmap-wanderer-aura{position:absolute;width:70%;height:70%;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,.55) 0,rgba(220,38,38,.22) 55%,transparent 75%);animation:regionmap-wanderer-pulse 1.6s ease-in-out infinite}
 .regionmap-wanderer-icon{position:relative;z-index:1;font-size:1rem;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
 @keyframes regionmap-wanderer-pulse{0%,100%{transform:scale(.85);opacity:.75}50%{transform:scale(1.15);opacity:1}}
+/* HUD de zoom -- mesmo canto onde o radar antigo ficava, segue as cores do tema da região
+   igual o resto da moldura do mapa (não é um marcador semântico, é só chrome de UI). */
+.regionmap-zoom-hud{position:absolute;top:10px;right:10px;z-index:12;display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:5px;background:var(--panel2);box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:auto}
+.regionmap-zoom-hud button{display:grid;place-items:center;padding:3px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--gold2);cursor:pointer}
+.regionmap-zoom-hud button:hover{border-color:var(--gold);color:var(--gold)}
+.regionmap-zoom-hud span{min-width:34px;text-align:center;color:var(--gold2);font-size:.68rem;font-weight:700;font-variant-numeric:tabular-nums}
 .regionmap-location.status-done:before{background:#54a66d;box-shadow:0 2px 0 #24523d}.regionmap-location.status-ready:before{background:#d39b39;box-shadow:0 2px 0 #77511a}
 .regionmap-player{position:absolute;transition:left .32s cubic-bezier(.22,.8,.24,1),top .32s cubic-bezier(.22,.8,.24,1);display:flex;align-items:flex-end;justify-content:center;pointer-events:none;z-index:5}
 .regionmap-player-sprite-wrap{display:block;width:85%}
@@ -1637,6 +1643,7 @@ body::after{content:"VERSÃO 0.8.41 • 13/09/2026\A Corrigido: botao de recolhe
 body::after{content:"VERSÃO 0.8.42 • 13/09/2026\A Golpe Supremo: bonus de dano/cura/escudo agora escalam com ataque e vida maxima, em vez de valores fixos";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.43 • 13/09/2026\A Nevoa de guerra no mapa 2D, monstros visiveis que da pra desviar (emboscada cega caiu pra 7%), minimapa removido, sprite do heroi por classe no mapa";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.44 • 13/09/2026\A Revisao: limpa referencia morta ao minimapa removido e fecha as dimensoes exatas do mapa piloto de Steelmere no contrato do Codex";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.45 • 13/09/2026\A Zoom e pan livre no mapa 2D (roda do mouse ou botoes); Frostgard (Steelmere) ganha arte de fundo e colisao alinhada, primeiro territorio pronto";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

@@ -4,7 +4,7 @@
 // jogador pisa num marcador de sub-região. Quem decide o que acontece ao entrar num marcador
 // (abrir card, checar progresso etc.) é o componente que usa <TileWorldExplorer/>.
 import React from 'react'
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut } from 'lucide-react'
 import type { NpcDefinition } from './data/npcs'
 
 // GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
@@ -74,6 +74,9 @@ type Facing = 'up' | 'down' | 'left' | 'right'
 const STEP_MS = 320 // 75% da velocidade original (240ms/passo -> 320ms/passo)
 const VIEWPORT_TILES_X = 18
 const VIEWPORT_TILES_Y = 12
+const ZOOM_MIN = 0.6
+const ZOOM_MAX = 1.8
+const ZOOM_STEP = 0.2
 const AMBUSH_CHANCE = 0.07 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
 const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
 const WANDER_STEP_MS = 1000 // cadência do passeio -- mais lento que o passo do jogador (STEP_MS) de propósito, pra dar tempo de desviar
@@ -545,13 +548,18 @@ function buildCoracaoEclipse(): RegionMapDef {
 
 function buildFrostgard(): RegionMapDef {
   const width = 22, height = 16
+  // Colisão autorada em cima da arte entregue pelo Codex (ART-001 em
+  // VISUAL_DEVELOPMENT_HANDOFF.md): canal congelado central (com ponte de metal cruzando em
+  // y=7, visível na arte) e os quatro complexos de caldeira/torre nos cantos como obstáculo.
+  // O grid em si é invisível (.regionmap-tiles.art-backed{opacity:0}) -- só define colisão.
   const base = fill(width, height, 'grass')
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
   vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
-  rect(base, 13, 4, 15, 10, 'water')
-  hline(base, 12, 16, 7, 'bridge')
+  rect(base, 13, 1, 15, 10, 'water') // canal, do topo até a ponte e um pouco além
+  rect(base, 13, 11, 19, 14, 'water') // poça/cachoeira congelada mais larga ao sul
+  hline(base, 12, 16, 7, 'bridge') // ponte de metal visível na arte, cruzando o canal
   return {
-    id: 'frostgard', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'frostgard', background: mapAsset('assets/maps/steelmere/frostgard.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'south_engrenverde', x: 11, y: 14, icon: '↓', targetRegionId: 'engrenverde' },
@@ -571,6 +579,12 @@ function buildFrostgard(): RegionMapDef {
     campfires: [
       { id: 'frost_fogueira', name: 'Caldeira de Aquecimento de Frostgard', x: 12, y: 11, icon: '🔥' },
     ],
+    blocked: blockedRects(
+      [0, 1, 4, 3], // caldeira/torre noroeste
+      [17, 0, 21, 2], // caldeira/torre nordeste + trilhos de mineração
+      [0, 10, 2, 13], // torre sudoeste
+      [17, 13, 21, 15], // área cercada/industrial sudeste, junto à poça congelada
+    ),
   }
 }
 
@@ -837,6 +851,7 @@ export function TileWorldExplorer({
   const [frame, setFrame] = React.useState(IDLE_FRAME)
   const [walking, setWalking] = React.useState(false)
   const [panOffset, setPanOffset] = React.useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = React.useState(1)
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
   const queuedMoves = React.useRef<Array<[number, number]>>([])
@@ -1018,24 +1033,33 @@ export function TileWorldExplorer({
     return () => window.removeEventListener('keydown', onKey)
   }, [adjacentNpc, onInteractNpc, paused])
 
+  // tilePx/worldW/worldH/viewportW/viewportH são a referência "sem zoom" -- é o que posiciona
+  // cada tile/marcador dentro de .regionmap-world e define a caixa fixa em tela (.regionmap-
+  // viewport nunca cresce/encolhe com o zoom). O zoom só muda quanto do mundo cabe dentro dessa
+  // caixa (visibleW/visibleH) e escala a translação da câmera na hora de desenhar (ver o
+  // transform de .regionmap-world logo abaixo).
   const tilePx = map.tileSize * map.scale
   const worldW = map.width * tilePx, worldH = map.height * tilePx
   const viewportW = Math.min(worldW, VIEWPORT_TILES_X * tilePx)
   const viewportH = Math.min(worldH, VIEWPORT_TILES_Y * tilePx)
-  const followCamX = clamp(pos.x * tilePx + tilePx / 2 - viewportW / 2, 0, Math.max(0, worldW - viewportW))
-  const followCamY = clamp(pos.y * tilePx + tilePx / 2 - viewportH / 2, 0, Math.max(0, worldH - viewportH))
-  const camX = clamp(followCamX + panOffset.x, 0, Math.max(0, worldW - viewportW))
-  const camY = clamp(followCamY + panOffset.y, 0, Math.max(0, worldH - viewportH))
+  const visibleW = viewportW / zoom, visibleH = viewportH / zoom
+  const followCamX = clamp(pos.x * tilePx + tilePx / 2 - visibleW / 2, 0, Math.max(0, worldW - visibleW))
+  const followCamY = clamp(pos.y * tilePx + tilePx / 2 - visibleH / 2, 0, Math.max(0, worldH - visibleH))
+  const camX = clamp(followCamX + panOffset.x, 0, Math.max(0, worldW - visibleW))
+  const camY = clamp(followCamY + panOffset.y, 0, Math.max(0, worldH - visibleH))
   const sprite = playerSpriteFrames(playerSprite)[facing]
   const frameSrc = sprite.frames[frame]
 
   return <div className="regionmap-frame">
-    <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onPointerDown={event => {
+    <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onWheel={event => {
+      event.preventDefault()
+      setZoom(z => clamp(Math.round((z + (event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP)) * 100) / 100, ZOOM_MIN, ZOOM_MAX))
+    }} onPointerDown={event => {
       // setPointerCapture no viewport retarget o "click" resultante pra ELE MESMO (não pro
       // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
       // de um NPC/local nunca disparava o onClick deles, só o fallback de clique-no-tile daqui.
       // Não capturar quando o toque começa num desses botões deixa o clique nativo bubblear normal.
-      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit')) return
+      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit, .regionmap-zoom-hud')) return
       event.currentTarget.setPointerCapture(event.pointerId)
       dragRef.current = { x: event.clientX, y: event.clientY, camX, camY, dragged: false }
     }} onPointerMove={event => {
@@ -1045,7 +1069,9 @@ export function TileWorldExplorer({
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.dragged = true
       if (!drag.dragged) return
       didDragRef.current = true
-      setPanOffset({ x: clamp(drag.camX - dx, 0, Math.max(0, worldW - viewportW)) - followCamX, y: clamp(drag.camY - dy, 0, Math.max(0, worldH - viewportH)) - followCamY })
+      // dx/dy são pixels de TELA; convertidos pra unidades de mundo (/zoom) antes de mexer na
+      // câmera, senão arrastar com zoom aplicado moveria o mundo rápido/devagar demais.
+      setPanOffset({ x: clamp(drag.camX - dx / zoom, 0, Math.max(0, worldW - visibleW)) - followCamX, y: clamp(drag.camY - dy / zoom, 0, Math.max(0, worldH - visibleH)) - followCamY })
     }} onPointerUp={event => {
       if (dragRef.current?.dragged) didDragRef.current = true
       dragRef.current = null
@@ -1053,9 +1079,12 @@ export function TileWorldExplorer({
     }} onPointerCancel={() => { dragRef.current = null }} onClick={event => {
       if (didDragRef.current) { didDragRef.current = false; return }
       const bounds = event.currentTarget.getBoundingClientRect()
-      moveToTile({ x: Math.floor((event.clientX - bounds.left + camX) / tilePx), y: Math.floor((event.clientY - bounds.top + camY) / tilePx) })
+      // (clientX - bounds.left) é distância em pixels de TELA a partir do canto do viewport;
+      // /zoom converte pra distância em unidades de mundo antes de somar à câmera (também em
+      // unidades de mundo) -- sem isso o clique erraria o tile assim que o zoom saísse de 1.
+      moveToTile({ x: Math.floor((camX + (event.clientX - bounds.left) / zoom) / tilePx), y: Math.floor((camY + (event.clientY - bounds.top) / zoom) / tilePx) })
     }}>
-      <div className="regionmap-world" style={{ width: worldW, height: worldH, transform: `translate3d(${-camX}px,${-camY}px,0)` }}>
+      <div className="regionmap-world" style={{ width: worldW, height: worldH, transformOrigin: '0 0', transform: `translate3d(${-camX * zoom}px,${-camY * zoom}px,0) scale(${zoom})` }}>
         {map.background && <div className="regionmap-art" style={{ backgroundImage: `url(${map.background})` }} />}
         <div className={`regionmap-tiles${map.background ? ' art-backed' : ''}`} style={{ gridTemplateColumns: `repeat(${map.width},${tilePx}px)`, gridAutoRows: `${tilePx}px` }}>
           {map.grid.flatMap((row, y) => row.map((t, x) => <div key={`${x}_${y}`} className={`regionmap-tile tile-${t}`} />))}
@@ -1135,6 +1164,11 @@ export function TileWorldExplorer({
         {exploredTiles && map.grid.flatMap((row, y) => row.map((_, x) => exploredTiles.has(`${x},${y}`) ? null : (
           <div key={`fog_${x}_${y}`} className="regionmap-fog-tile" style={{ left: x * tilePx, top: y * tilePx, width: tilePx, height: tilePx }} />
         )))}
+      </div>
+      <div className="regionmap-zoom-hud" onClick={event => event.stopPropagation()}>
+        <button type="button" onClick={() => setZoom(z => clamp(Math.round((z - ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))} aria-label="Afastar o mapa" title="Afastar (ou role o mouse)"><ZoomOut size={14} /></button>
+        <span>{Math.round(zoom * 100)}%</span>
+        <button type="button" onClick={() => setZoom(z => clamp(Math.round((z + ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))} aria-label="Aproximar o mapa" title="Aproximar (ou role o mouse)"><ZoomIn size={14} /></button>
       </div>
     </div>
     <div className="regionmap-controls">

@@ -54,7 +54,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 | Asset group | Status | Notes |
 | --- | --- | --- |
 | Havendown regional maps | Available | Existing playable 2D maps. |
-| Steelmere regional maps | Base data exists, needs art | All 7 territories already have grid/exits/chests/campfires (placeholder generic tiles, no `background`). ART-001 fills the visual gap. |
+| Steelmere regional maps | 1 of 7 done | Frostgard has its background + collision pass (ART-001). Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro and Aetherium still use the placeholder generic tiles, no `background`. |
 | Player movement sprites | Available | Nine class sets, 15 frames each. |
 | Chests and campfires | Available | Existing map entities on all 14 regions; expand only when new states are requested. |
 | Fog of war | In progress (code only) | Claude Code is shipping a flat-color tile mask for v1, no new art needed. Will file a follow-up request if we want a softer mist/vignette texture. |
@@ -65,12 +65,13 @@ Read it before starting work. Update it in the same change that delivers or cons
 
 | Priority | Request | Owner now | Status | Visual deliverables |
 | --- | --- | --- | --- | --- |
-| P0 | Steelmere Frostgard pilot map | Codex | READY TO START | Background, snow terrain variants, props, exits, campfire and monolith. Contract defined in ART-002 below. |
-| P0 | Steelmere map data and collision | Claude Code | BASE DATA EXISTS | Grid/exits/chests/campfires already authored for all 7 territories; remaining work is per-territory `background` + collision alignment once each art piece lands (ART-001 style, one request per territory). |
+| P0 | Steelmere Frostgard pilot map | — | DONE | Delivered and integrated, see ART-001. |
+| P0 | Steelmere maps 2-7 (Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro, Aetherium) | Codex | NOT STARTED | Same contract as ART-001 (ART-002 applies to all 7) — one background per territory, Claude Code authors collision on delivery. Grid/exits/chests/campfires already exist for all of them. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
 | P1 | Treasure chest variants | Codex | PLANNED | Common, locked, rare, opened and secret states. |
 | P1 | Terrain states | Shared | PLANNED | Claude Code defines effects; Codex delivers mud, ice and conveyor visuals. |
 | P1 | Overworld visible monsters | Shared | Mechanic SHIPPED with a placeholder icon (patrol AI, collision-to-combat via the existing ambush flow). Waiting on ART-003 for real sprites. Also lowered blind step-ambush chance 15%→7% since visible monsters now cover most encounters. |
+| P2 | Map camera zoom/pan | Claude Code | SHIPPED | Mouse wheel + on-screen buttons, 60%-180%. Pure CSS scale on the existing world container — no art impact, works with any background at any resolution. |
 | P2 | Weather layer | Codex | PLANNED | Snow, rain, ash and smoke particle sets. |
 | P2 | Day/night layer | Shared | PLANNED | Claude Code defines time model; Codex supplies color and light overlays. |
 
@@ -109,11 +110,15 @@ Visual acceptance check:
 ## Request Log
 
 ### ART-001 - Frostgard pilot map
-Status: PLANNED
-Owner: Codex
+Status: INTEGRATED
+Owner: Codex, integrated by Claude Code
 Gameplay purpose: establish the reusable Steelmere visual language and provide the first map for mechanic integration.
-Proposed deliverables: Frostgard background, frozen metal paths, snow banks, steam vents, ice patches, frost campfire, monolith, chest and region exit markers.
-Dependency: Claude Code confirms the final map tile dimensions, collision export format and entity anchor coordinates before asset production begins.
+Delivered: `public/assets/maps/steelmere/frostgard.png` (704x512 PNG, 22:16 ratio, 32px per tile).
+Visual contents: frozen metal roads, snow banks, industrial pipes, boiler buildings, steam vents, rail fragments, frozen canal and a central iron bridge.
+Integration: `buildFrostgard()` in `src/regionMap.tsx` now sets `background` to this asset.
+Collision pass (Claude Code): water covers the canal band (x13-15, y1-10) plus a wider frozen pool to the south (x13-19, y11-14) matching the waterfall/lake in the art; the metal bridge at y7 (x12-16) is the only crossing, matching the visible bridge; four `blocked` rects cover the boiler/tower complexes in the corners (NW, NE+rails, SW, SE fenced yard). All 9 entities (spawn, 3 exits, 5 locations, chest, campfire) keep their original coordinates and pass `validateRegionMap`'s reachability check (`npm test`, 75/75 green).
+Not yet verified: a live in-browser look at the collision-vs-art alignment (only the automated BFS reachability check ran) — please eyeball it in a dev session and flag any tile where the invisible walkable area doesn't match what the art shows (e.g. walking over what looks like a rooftop or the frozen river).
+Acceptance check met: player, exit markers, chest and campfire render over the background; collision pass authored and tests green.
 
 ### ART-002 - Steelmere map entity contract
 Status: DEFINED
