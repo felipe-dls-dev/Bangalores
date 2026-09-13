@@ -340,5 +340,8 @@ describe('balance simulation', () => {
     const outPath = path.resolve(__dirname, 'balance-sim-results.json')
     fs.writeFileSync(outPath, JSON.stringify(results, null, 2))
     console.log('RESULTS_WRITTEN:' + outPath)
-  }, 1800000)
+  // Uma rodada só de Havendown já bateu os 1.8M ms (30min) no limite; com Steelmere
+  // dobrando o conteúdo por herói, 30min deixou de ser suficiente -- resultados eram
+  // gravados a tempo, mas o teste falhava por timeout bem no agregado final.
+  }, 5400000)
 })
