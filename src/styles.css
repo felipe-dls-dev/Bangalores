@@ -1620,6 +1620,7 @@ body::after{content:"VERSÃO 0.8.34 • 12/09/2026\A Indicador de progresso salv
 body::after{content:"VERSÃO 0.8.35 • 12/09/2026\A Tutorial explica o mapa navegavel (WASD, NPCs, saidas, emboscada) e a trava de viagem rapida; modo alto contraste no Menu; busca por nome na Colecao/Bestiario. Auditoria de contraste dourado sobre fundo escuro e de foco por teclado no mapa: ja estavam corretos em todas as 10 paletas";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.36 • 13/09/2026\A Chefes de sub-regiao agora reagem ao poder real do heroi (ataque/defesa/vida), nao so ao nivel da regiao; aprimoramento da Forja ganha piedade -- cada falha seguida no mesmo nivel aumenta a chance de sucesso, corrigindo sequencias de azar sem teto";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.37 • 13/09/2026\A Sistema de conquistas com titulo cosmetico e historico de progresso (grafico de nivel ao longo da campanha), na tela de Cronicas";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.38 • 13/09/2026\A Simulador de balanceamento (test:balance) passa a cobrir Steelmere tambem, alem de Havendown, apos completar a campanha";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

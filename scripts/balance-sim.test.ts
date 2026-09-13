@@ -218,7 +218,15 @@ function clearSubregion(sub: any, heroId: string, counters: Counters, easySubId:
   counters.bossesSkipped.push(sub.id)
 }
 
-function runHero(heroId: string) {
+// Item 8 do Quadro de Contratos: a simulação só cobria Havendown. Steelmere exige nível 40+
+// (frostgard) e só é alcançável de verdade completando o arco de Crônicas (worldUnlocked
+// exige storyChapterId no epílogo ou a quest q_cross_oceans) -- simular esse arco inteiro é
+// um projeto à parte (escolhas de história, requisitos de missão), então aqui o desbloqueio é
+// forçado direto via setState assim que Havendown termina, propositalmente pulando a história
+// pra medir só o combate/economia de Steelmere com a build que sobrou do primeiro mundo. Coop
+// não entrou: precisaria simular sala, presença e sincronização do Supabase em tempo real, uma
+// segunda infraestrutura de teste que este script não tenta reproduzir.
+function runHero(heroId: string, includeSteelmere = false) {
   useGame.getState().newGame(heroId)
   const counters: Counters = { battles: 0, heroActions: 0, hits: 0, totalDamage: 0, deaths: 0, bossesSkipped: [], retriesUsedForCurrentSub: 0, milestones: {} }
   const unsub = useGame.subscribe((state, prev) => {
@@ -229,6 +237,19 @@ function runHero(heroId: string) {
   const subs = SUBREGIONS.filter(s => havendownRegionIds.has(s.regionId)).sort((a, b) => a.nivelMin - b.nivelMin)
   const easySubId = subs[0].id
   for (const sub of subs) clearSubregion(sub, heroId, counters, easySubId)
+  const havendownBossesSkipped = counters.bossesSkipped.length
+
+  let steelmere: { bossesDefeated: number; totalBosses: number; bossesSkipped: string[] } | null = null
+  if (includeSteelmere) {
+    useGame.setState({ storyChapterId: 'epilogo_luz' } as any)
+    useGame.getState().travelWorld('steelmere')
+    const steelmereRegionIds = new Set(TERRITORIES.filter(t => t.mundo === 'steelmere').map(t => t.id))
+    const steelmereSubs = SUBREGIONS.filter(s => steelmereRegionIds.has(s.regionId)).sort((a, b) => a.nivelMin - b.nivelMin)
+    const steelmereEasySubId = steelmereSubs[0]?.id ?? easySubId
+    for (const sub of steelmereSubs) clearSubregion(sub, heroId, counters, steelmereEasySubId)
+    const steelmereBossesSkipped = counters.bossesSkipped.slice(havendownBossesSkipped)
+    steelmere = { bossesDefeated: steelmereSubs.length - steelmereBossesSkipped.length, totalBosses: steelmereSubs.length, bossesSkipped: steelmereBossesSkipped }
+  }
   unsub()
   const finalState = useGame.getState()
   const finalLevel = deriveLevel(finalState.xp).lvl
@@ -246,9 +267,10 @@ function runHero(heroId: string) {
     totalBattles: counters.battles,
     totalHeroActions: counters.heroActions,
     deaths: counters.deaths,
-    bossesDefeated: subs.length - counters.bossesSkipped.length,
+    bossesDefeated: subs.length - havendownBossesSkipped,
     totalBosses: subs.length,
-    bossesSkipped: counters.bossesSkipped,
+    bossesSkipped: counters.bossesSkipped.slice(0, havendownBossesSkipped),
+    steelmere,
     avgDamageOverall: counters.hits > 0 ? counters.totalDamage / counters.hits : 0,
     milestones: Object.fromEntries(MILESTONES.map(m => [m, counters.milestones[m] ?? null])),
     brackets: {
@@ -289,12 +311,13 @@ function aggregateBrackets(runs: ReturnType<typeof runHero>[]) {
 }
 
 describe('balance simulation', () => {
-  it(`plays every hero class through ${RUNS_PER_HERO} full campaigns each, to the last Havendown boss`, () => {
+  it(`plays every hero class through ${RUNS_PER_HERO} full campaigns each, through Havendown and Steelmere`, () => {
     const results = HEROES.map(h => {
       const runs = []
       for (let i = 0; i < RUNS_PER_HERO; i++) {
-        const r = runHero(h.id)
-        console.log(`[${h.id} #${i + 1}] level ${r.finalLevel} | battles ${r.totalBattles} | actions ${r.totalHeroActions} | deaths ${r.deaths} | bosses ${r.bossesDefeated}/${r.totalBosses} | avgDmg ${r.avgDamageOverall.toFixed(2)} | skipped: ${r.bossesSkipped.join(', ') || 'none'}`)
+        const r = runHero(h.id, true)
+        const steelmereLog = r.steelmere ? ` | steelmere ${r.steelmere.bossesDefeated}/${r.steelmere.totalBosses} (skipped: ${r.steelmere.bossesSkipped.join(', ') || 'none'})` : ''
+        console.log(`[${h.id} #${i + 1}] level ${r.finalLevel} | battles ${r.totalBattles} | actions ${r.totalHeroActions} | deaths ${r.deaths} | bosses ${r.bossesDefeated}/${r.totalBosses} | avgDmg ${r.avgDamageOverall.toFixed(2)} | skipped: ${r.bossesSkipped.join(', ') || 'none'}${steelmereLog}`)
         runs.push(r)
       }
       const aggregate = {
@@ -305,6 +328,9 @@ describe('balance simulation', () => {
         bossesDefeated: mean(runs.map(r => r.bossesDefeated)),
         totalBosses: runs[0].totalBosses,
         allBossesDefeatedRuns: runs.filter(r => r.bossesDefeated === r.totalBosses).length,
+        steelmereBossesDefeated: mean(runs.map(r => r.steelmere?.bossesDefeated ?? 0)),
+        steelmereTotalBosses: runs[0].steelmere?.totalBosses ?? 0,
+        steelmereAllBossesDefeatedRuns: runs.filter(r => r.steelmere && r.steelmere.bossesDefeated === r.steelmere.totalBosses).length,
         avgDamageOverall: mean(runs.map(r => r.avgDamageOverall)),
         milestones: aggregateMilestones(runs),
         brackets: aggregateBrackets(runs)
