@@ -69,8 +69,8 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P0 | Steelmere maps 2-7 (Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro, Aetherium) | Codex | NOT STARTED | Same contract as ART-001 (ART-002 applies to all 7) — one background per territory, Claude Code authors collision on delivery. Grid/exits/chests/campfires already exist for all of them. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
 | P1 | Treasure chest variants | Codex | PLANNED | Common, locked, rare, opened and secret states. |
-| P1 | Terrain states | Shared | PLANNED | Claude Code defines effects; Codex delivers mud, ice and conveyor visuals. |
-| P1 | Overworld visible monsters | Shared | Mechanic SHIPPED with a placeholder icon (patrol AI, collision-to-combat via the existing ambush flow). Waiting on ART-003 for real sprites. Also lowered blind step-ambush chance 15%→7% since visible monsters now cover most encounters. |
+| P1 | Terrain states | Shared | Frostgard ready | Claude Code defines effects; Frostgard `ice`, `snow-drift` and `steam-vent` textures are delivered in ART-004. Mud and conveyor remain pending for later regions. |
+| P1 | Overworld visible monsters | — | DONE | Patrol AI + collision-to-combat (existing ambush flow) + real sprites from ART-003, all integrated. Blind step-ambush chance lowered 15%→7% since visible monsters now cover most encounters. |
 | P2 | Map camera zoom/pan | Claude Code | SHIPPED | Mouse wheel + on-screen buttons, 60%-180%. Pure CSS scale on the existing world container — no art impact, works with any background at any resolution. |
 | P2 | Weather layer | Codex | PLANNED | Snow, rain, ash and smoke particle sets. |
 | P2 | Day/night layer | Shared | PLANNED | Claude Code defines time model; Codex supplies color and light overlays. |
@@ -147,7 +147,7 @@ Frostgard pilot footprint: the current placeholder grid is exactly 22 tiles wide
 Acceptance check: Codex can build the Frostgard background (ART-001) at the tile scale above, matching Havendown's visual fidelity, with no gameplay identifier left unspecified.
 
 ### ART-003 - Overworld wandering monster sprites
-Status: REQUESTED
+Status: INTEGRATED
 Requested by: Claude Code
 Gameplay purpose: visible creatures patrol the 2D map and start combat on contact, with room to dodge — replaces most of the old invisible step-chance ambush.
 Required asset ids and states: one small walking sprite per overworld enemy family actually placed on a map (start with whatever family appears in each region's first 1-2 sub-regions is enough for the pilot; more can follow later). States: `idle` + a simple 2-4 frame walk cycle, one direction is enough (flip in code like the player sprite) unless you want it to face travel direction.
@@ -158,6 +158,25 @@ Interaction states: idle (patrolling), no "aggro"/hit state needed — contact h
 Visual references or territory: match the tone of the enemy's existing combat card art if one exists.
 Code dependency: none — Claude Code is building the patrol/collision mechanic now with a placeholder icon and will swap in real sprites the moment they land, same pattern as `SPR-001`.
 Acceptance check: sprite reads clearly at map scale and matches the enemy's established color/silhouette from its card art.
+Delivered paths:
+- `public/assets/maps/objects/monster-automato-sentinela/{idle,walk_1,walk_2}.png`
+- `public/assets/maps/objects/monster-batedor-a-vapor/{idle,walk_1,walk_2}.png`
+- `public/assets/maps/objects/monster-elemental-de-vapor/{idle,walk_1,walk_2}.png`
+Integration note: use these three stable asset ids for Frostgard's first patrol families; each strip is front-facing and can be mirrored by the renderer when needed.
+Integration (Claude Code): `deriveWanderers()` in `src/regionMap.tsx` assigns one of the 3 families round-robin to each wandering monster (purely visual — no mirroring used, sprites already read fine front-facing at map scale); a shared 420ms interval cycles idle→walk_1→walk_2→idle for a simple walk animation. `npm run typecheck`/`lint`/`test`/`build` all pass.
+Naming clarification for future monster-sprite requests: these visible map wanderers are NOT tied 1:1 to a specific combat enemy id — the actual enemy that starts combat still comes from the target sub-region's own enemy pool (`onAmbush`→`triggerAmbush`, unchanged), which in `subregioesSteelmere.ts` generates enemies dynamically per sub-region (e.g. "Predador de Rota das Perfuratrizes"), not from the `automato-sentinela`/`batedor-a-vapor`/etc. names used here. That's fine for this mechanic (the sprite is just a wandering hazard, not a specific monster's portrait) — worth knowing so future requests don't spend effort matching exact bestiary ids unless a mechanic specifically needs that 1:1 link.
+
+### ART-004 - Frostgard terrain-state tiles
+Status: READY FOR CODE
+Requested by: Codex from the terrain-state contract in ART-002
+Gameplay purpose: give Frostgard's ice, snow-drift and steam-vent terrain rules distinct map visuals once Claude Code exposes those tile types.
+Delivered paths:
+- `public/assets/maps/tiles/frostgard/ice.png`
+- `public/assets/maps/tiles/frostgard/snow-drift.png`
+- `public/assets/maps/tiles/frostgard/steam-vent.png`
+Dimensions: 128x128 PNG RGBA, matching the existing terrain-file resolution. Each asset represents one 16px-native map tile and should be rendered through the same CSS sizing/image-rendering treatment as `public/assets/maps/tiles/plains/*`.
+Visual notes: `ice` is blue-white cracked frozen metal; `snow-drift` is packed wind-sculpted snow; `steam-vent` is a brass-and-steel floor vent with a compact white plume. These files contain no movement assumptions.
+Integration note: add the three terrain ids to the existing map terrain resolver and stylesheet mapping when their movement rules are finalized; use `steam-vent` only where its visual occupies a full tile.
 
 ## Handoff Log
 

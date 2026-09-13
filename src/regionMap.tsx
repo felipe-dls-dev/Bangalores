@@ -82,11 +82,18 @@ const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível 
 const WANDER_STEP_MS = 1000 // cadência do passeio -- mais lento que o passo do jogador (STEP_MS) de propósito, pra dar tempo de desviar
 const WANDER_MOVE_CHANCE = 0.5 // chance de o monstro dar um passo a cada tick (o resto do tempo ele fica parado)
 const WANDER_STEPS: Array<[number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]]
+const WANDER_FRAME_MS = 420 // cadência do ciclo idle/walk_1/walk_2 (ver ART-003)
+// Famílias de sprite entregues no ART-003 (VISUAL_DEVELOPMENT_HANDOFF.md). A identidade visual
+// do monstro no mapa é só estética -- o inimigo real do combate continua vindo do pool da
+// sub-região via onAmbush/triggerAmbush, então não precisa (e não dá pra sempre) bater 1:1 com
+// o nome exato do inimigo sorteado. Atribuídas em round-robin só pra dar variedade visual.
+const WANDER_SPRITE_FAMILIES = ['automato-sentinela', 'batedor-a-vapor', 'elemental-de-vapor']
+const WANDER_FRAMES = ['idle', 'walk_1', 'walk_2']
+function wanderAsset(spriteId: string, frame: string) { return mapAsset(`assets/maps/objects/monster-${spriteId}/${frame}.png`) }
 
-// Deriva um monstro vagante por marcador de sub-região (nenhuma arte/posição própria ainda --
-// ver ART-003 no VISUAL_DEVELOPMENT_HANDOFF.md). Posicionado perto do pin, num tile livre que
-// não colida com nenhuma outra entidade, pra funcionar em qualquer mapa sem dado extra por região.
-interface Wanderer { id: string; subId: string; home: { x: number; y: number }; x: number; y: number }
+// Deriva um monstro vagante por marcador de sub-região. Posicionado perto do pin, num tile livre
+// que não colida com nenhuma outra entidade, pra funcionar em qualquer mapa sem dado extra por região.
+interface Wanderer { id: string; subId: string; spriteId: string; home: { x: number; y: number }; x: number; y: number }
 function deriveWanderers(map: RegionMapDef): Wanderer[] {
   const occupied = new Set<string>([tileKey(map.spawn.x, map.spawn.y)])
   map.locations.forEach(l => occupied.add(tileKey(l.x, l.y)))
@@ -100,7 +107,8 @@ function deriveWanderers(map: RegionMapDef): Wanderer[] {
       const x = loc.x + dx, y = loc.y + dy, key = tileKey(x, y)
       if (occupied.has(key) || !isMapWalkable(map, { x, y })) continue
       occupied.add(key)
-      out.push({ id: `wander_${loc.subId}`, subId: loc.subId, home: { x, y }, x, y })
+      const spriteId = WANDER_SPRITE_FAMILIES[out.length % WANDER_SPRITE_FAMILIES.length]
+      out.push({ id: `wander_${loc.subId}`, subId: loc.subId, spriteId, home: { x, y }, x, y })
       break
     }
   }
@@ -887,6 +895,14 @@ export function TileWorldExplorer({
   const wanderTemplate = React.useMemo(() => deriveWanderers(map), [map])
   const [wanderers, setWanderers] = React.useState<Wanderer[]>(() => wanderTemplate.map(w => ({ ...w })))
   React.useEffect(() => { setWanderers(wanderTemplate.map(w => ({ ...w }))) }, [wanderTemplate])
+  // Ciclo idle/walk_1/walk_2 compartilhado entre todos os monstros visíveis -- não precisa
+  // sincronizar com o passo de cada um individualmente, é só textura de "criatura viva".
+  const [wanderFrame, setWanderFrame] = React.useState(0)
+  React.useEffect(() => {
+    if (paused || !wanderers.length) return
+    const id = window.setInterval(() => setWanderFrame(f => (f + 1) % WANDER_FRAMES.length), WANDER_FRAME_MS)
+    return () => window.clearInterval(id)
+  }, [paused, wanderers.length])
   const onAmbushRef = React.useRef(onAmbush)
   React.useEffect(() => { onAmbushRef.current = onAmbush })
   const wanderTriggeredRef = React.useRef(false)
@@ -1152,7 +1168,7 @@ export function TileWorldExplorer({
         {wanderers.map(w => (
           <div key={w.id} className="regionmap-wanderer" style={{ left: w.x * tilePx, top: w.y * tilePx, width: tilePx, height: tilePx }} title="Criatura à espreita -- desvie ou lute">
             <span className="regionmap-wanderer-aura" />
-            <span className="regionmap-wanderer-icon">👹</span>
+            <img className="regionmap-wanderer-sprite" src={wanderAsset(w.spriteId, WANDER_FRAMES[wanderFrame])} alt="" />
           </div>
         ))}
         <div className={`regionmap-player${walking ? ' is-walking' : ''}`}

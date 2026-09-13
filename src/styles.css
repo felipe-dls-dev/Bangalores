@@ -435,12 +435,11 @@ body:has(.combat-v033){overflow:hidden}
    .regionmap-world (acompanha a câmera/transform como qualquer outro elemento do mundo).
    pointer-events:none para não bloquear o clique-para-mover em áreas ainda não vistas. */
 .regionmap-fog-tile{position:absolute;background:#04070d;pointer-events:none;z-index:6;transition:opacity .4s ease}
-/* Monstro visível no mapa 2D (placeholder de ícone -- ver ART-003 no VISUAL_DEVELOPMENT_HANDOFF.md
-   pra troca por sprite de verdade). Cor semântica fixa (vermelho de perigo), igual ao resto dos
-   marcadores do mapa -- não segue o tema da região de propósito. */
-.regionmap-wanderer{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5;transition:left 1s linear,top 1s linear}
-.regionmap-wanderer-aura{position:absolute;width:70%;height:70%;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,.55) 0,rgba(220,38,38,.22) 55%,transparent 75%);animation:regionmap-wanderer-pulse 1.6s ease-in-out infinite}
-.regionmap-wanderer-icon{position:relative;z-index:1;font-size:1rem;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
+/* Monstro visível no mapa 2D (sprite entregue no ART-003). Aura vermelha semântica fixa (perigo),
+   igual ao resto dos marcadores do mapa -- não segue o tema da região de propósito. */
+.regionmap-wanderer{position:absolute;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;z-index:5;transition:left 1s linear,top 1s linear}
+.regionmap-wanderer-aura{position:absolute;bottom:8%;width:60%;height:35%;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,.55) 0,rgba(220,38,38,.22) 55%,transparent 75%);animation:regionmap-wanderer-pulse 1.6s ease-in-out infinite}
+.regionmap-wanderer-sprite{position:relative;z-index:1;width:88%;height:88%;object-fit:contain;object-position:bottom center;image-rendering:pixelated;filter:drop-shadow(0 3px 2px rgba(0,0,0,.6))}
 @keyframes regionmap-wanderer-pulse{0%,100%{transform:scale(.85);opacity:.75}50%{transform:scale(1.15);opacity:1}}
 /* HUD de zoom -- mesmo canto onde o radar antigo ficava, segue as cores do tema da região
    igual o resto da moldura do mapa (não é um marcador semântico, é só chrome de UI). */
@@ -1644,6 +1643,7 @@ body::after{content:"VERSÃO 0.8.42 • 13/09/2026\A Golpe Supremo: bonus de dan
 body::after{content:"VERSÃO 0.8.43 • 13/09/2026\A Nevoa de guerra no mapa 2D, monstros visiveis que da pra desviar (emboscada cega caiu pra 7%), minimapa removido, sprite do heroi por classe no mapa";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.44 • 13/09/2026\A Revisao: limpa referencia morta ao minimapa removido e fecha as dimensoes exatas do mapa piloto de Steelmere no contrato do Codex";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.45 • 13/09/2026\A Zoom e pan livre no mapa 2D (roda do mouse ou botoes); Frostgard (Steelmere) ganha arte de fundo e colisao alinhada, primeiro territorio pronto";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.46 • 13/09/2026\A Monstros visiveis no mapa 2D ganham sprites de verdade (automato sentinela, batedor a vapor, elemental de vapor), com animacao de passos";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
