@@ -4,7 +4,7 @@
 // jogador pisa num marcador de sub-região. Quem decide o que acontece ao entrar num marcador
 // (abrir card, checar progresso etc.) é o componente que usa <TileWorldExplorer/>.
 import React from 'react'
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Compass } from 'lucide-react'
 import type { NpcDefinition } from './data/npcs'
 
 // GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
@@ -35,6 +35,25 @@ const WALKABLE = new Set<MapTile>([
 
 export interface RegionMapLocation { subId: string; x: number; y: number; icon?: string }
 export interface RegionMapExit { id: 'prev' | 'next' | string; x: number; y: number; icon?: string; targetRegionId?: string }
+export interface RegionMapChest {
+  id: string
+  name: string
+  x: number
+  y: number
+  icon?: string
+  contents: {
+    gold: number
+    materials?: Record<string, number>
+    consumables?: Record<string, number>
+  }
+}
+export interface RegionMapCampfire {
+  id: string
+  name: string
+  x: number
+  y: number
+  icon?: string
+}
 export interface RegionMapDef {
   id: string
   background?: string
@@ -46,6 +65,8 @@ export interface RegionMapDef {
   spawn: { x: number; y: number }
   locations: RegionMapLocation[]
   exits?: RegionMapExit[]
+  chests?: RegionMapChest[]
+  campfires?: RegionMapCampfire[]
   blocked?: Array<{ x: number; y: number }>
 }
 
@@ -174,8 +195,6 @@ function resolveTerrain(base: BaseTile[][]): MapTile[][] {
   return out
 }
 
-// Verificação reutilizável para a autoria de novas regiões. Ela mantém spawn, pins e
-// colisão coerentes antes de o mapa chegar à tela de exploração.
 export function validateRegionMap(map: RegionMapDef): string[] {
   const errors: string[] = []
   const isWalkable = (point: { x: number; y: number }) => isMapWalkable(map, point)
@@ -189,6 +208,27 @@ export function validateRegionMap(map: RegionMapDef): string[] {
     else if (location.x !== map.spawn.x || location.y !== map.spawn.y) {
       if (!routeBetween(map, map.spawn, location).length) errors.push(`${map.id}: pin ${location.subId} não pode ser alcançado a partir do spawn`)
     }
+  }
+  for (const exit of map.exits ?? []) {
+    const key = tileKey(exit.x, exit.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: saída sobreposta em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(exit)) errors.push(`${map.id}: saída ${exit.id} fora de uma área transitável`)
+    else if (!routeBetween(map, map.spawn, exit).length) errors.push(`${map.id}: saída ${exit.id} não pode ser alcançada a partir do spawn`)
+  }
+  for (const chest of map.chests ?? []) {
+    const key = tileKey(chest.x, chest.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: baú sobreposto em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(chest)) errors.push(`${map.id}: baú ${chest.id} fora de uma área transitável`)
+    else if (!routeBetween(map, map.spawn, chest).length) errors.push(`${map.id}: baú ${chest.id} não pode ser alcançado a partir do spawn`)
+  }
+  for (const campfire of map.campfires ?? []) {
+    const key = tileKey(campfire.x, campfire.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: fogueira sobreposta em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(campfire)) errors.push(`${map.id}: fogueira ${campfire.id} fora de uma área transitável`)
+    else if (!routeBetween(map, map.spawn, campfire).length) errors.push(`${map.id}: fogueira ${campfire.id} não pode ser alcançada a partir do spawn`)
   }
   return errors
 }
@@ -262,6 +302,12 @@ function buildCamposDourados(): RegionMapDef {
       { subId: 'campos_ponte', x: 16, y: 6, icon: '🌉' },
       { subId: 'campos_ruinas', x: 5, y: 2, icon: '🏛️' },
     ],
+    chests: [
+      { id: 'campos_bau_1', name: 'Baú dos Viajantes', x: 3, y: 5, icon: '📦', contents: { gold: 50, materials: { minerio_ferro: 2 }, consumables: { pocao_cura: 1 } } },
+    ],
+    campfires: [
+      { id: 'campos_fogueira', name: 'Fogueira das Planícies', x: 10, y: 8, icon: '🔥' },
+    ],
   }
 }
 
@@ -297,6 +343,12 @@ function buildFlorestaLunargenta(): RegionMapDef {
       { subId: 'lunar_raizes', x: 17, y: 3, icon: '🌳' },
       { subId: 'lunar_pantano', x: 18, y: 10, icon: '🐸' },
     ],
+    chests: [
+      { id: 'lunar_bau_1', name: 'Arca Escondida dos Druidas', x: 13, y: 8, icon: '📦', contents: { gold: 75, materials: { seiva_pura: 3 }, consumables: { pocao_cura: 2 } } },
+    ],
+    campfires: [
+      { id: 'lunar_fogueira', name: 'Fogueira do Bosque Prateado', x: 9, y: 13, icon: '🔥' },
+    ],
   }
 }
 
@@ -324,6 +376,12 @@ function buildMontanhasCinzentas(): RegionMapDef {
       { subId: 'montanhas_forte', x: 5, y: 3, icon: '🏰' },
       { subId: 'montanhas_abismo', x: 15, y: 7, icon: '🕳️' },
       { subId: 'montanhas_cume', x: 19, y: 2, icon: '⚡' },
+    ],
+    chests: [
+      { id: 'montanhas_bau_1', name: 'Cofre dos Mineradores', x: 5, y: 6, icon: '📦', contents: { gold: 90, materials: { ferro_cinzento: 3 }, consumables: { tonico_regeneracao: 1 } } },
+    ],
+    campfires: [
+      { id: 'montanhas_fogueira', name: 'Fogueira do Pico Cinzento', x: 10, y: 13, icon: '🔥' },
     ],
   }
 }
@@ -356,6 +414,12 @@ function buildPicoEscarlate(): RegionMapDef {
       { subId: 'pico_forja', x: 16, y: 2, icon: '⚒️' },
       { subId: 'pico_cratera', x: 16, y: 8, icon: '☀️' },
     ],
+    chests: [
+      { id: 'pico_bau_1', name: 'Urna da Montanha Flamejante', x: 6, y: 4, icon: '📦', contents: { gold: 110, materials: { pedra_brasa: 3 }, consumables: { tonico_forca: 1 } } },
+    ],
+    campfires: [
+      { id: 'pico_fogueira', name: 'Brasa das Forjas de Ignaris', x: 12, y: 13, icon: '🔥' },
+    ],
   }
 }
 
@@ -384,6 +448,12 @@ function buildTerrasMortas(): RegionMapDef {
       { subId: 'mortas_brejo', x: 17, y: 10, icon: '🕯️' },
       { subId: 'mortas_torre', x: 17, y: 2, icon: '🗼' },
     ],
+    chests: [
+      { id: 'mortas_bau_1', name: 'Relicário dos Esquecidos', x: 4, y: 6, icon: '📦', contents: { gold: 125, materials: { osso_espectral: 3 }, consumables: { pocao_escudo: 1 } } },
+    ],
+    campfires: [
+      { id: 'mortas_fogueira', name: 'Vela Protetora do Ermo', x: 12, y: 13, icon: '🔥' },
+    ],
   }
 }
 
@@ -398,6 +468,12 @@ function buildKharDur(): RegionMapDef {
   ], locations: [
     { subId: 'khar_galerias', x: 10, y: 9, icon: '🛤️' }, { subId: 'khar_labirinto', x: 9, y: 11, icon: '🌀' }, { subId: 'khar_templo_minotauro', x: 12, y: 10, icon: '🐂' },
     { subId: 'khar_forjas', x: 5, y: 3, icon: '🔥' }, { subId: 'khar_cofre', x: 17, y: 3, icon: '🔐' }, { subId: 'khar_profundezas', x: 17, y: 10, icon: '⛏️' },
+  ],
+  chests: [
+    { id: 'khar_bau_1', name: 'Cofre da Fortaleza Subterrânea', x: 18, y: 5, icon: '📦', contents: { gold: 150, materials: { aco_runico: 3 }, consumables: { pocao_cura_superior: 1 } } },
+  ],
+  campfires: [
+    { id: 'khar_fogueira', name: 'Tocha Rúnica das Galerias', x: 12, y: 13, icon: '🔥' },
   ] }
 }
 
@@ -426,10 +502,239 @@ function buildCoracaoEclipse(): RegionMapDef {
       { subId: 'eclipse_arquivo', x: 18, y: 3, icon: '📜' },
       { subId: 'eclipse_fenda', x: 18, y: 10, icon: '🜏' },
     ],
+    chests: [
+      { id: 'eclipse_bau_1', name: 'Arca do Vazio Estelar', x: 16, y: 5, icon: '📦', contents: { gold: 200, materials: { fragmento_eclipse: 4 }, consumables: { tonico_forca: 2 } } },
+    ],
+    campfires: [
+      { id: 'eclipse_fogueira', name: 'Fogueira do Altar Negro', x: 12, y: 13, icon: '🔥' },
+    ],
+  }
+}
+
+// ============================================================================
+// STEELMERE: MAPAS NAVEGÁVEIS 2D
+// ============================================================================
+
+function buildFrostgard(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 13, 4, 15, 10, 'water')
+  hline(base, 12, 16, 7, 'bridge')
+  return {
+    id: 'frostgard', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'south_engrenverde', x: 11, y: 14, icon: '↓', targetRegionId: 'engrenverde' },
+      { id: 'east_vulcannis', x: 20, y: 7, icon: '➜', targetRegionId: 'vulcannis' },
+      { id: 'airship_havendown', x: 1, y: 7, icon: '←', targetRegionId: 'campos_dourados' },
+    ],
+    locations: [
+      { subId: 'frost_rota', x: 10, y: 12, icon: '⚙️' },
+      { subId: 'frost_refinaria', x: 5, y: 8, icon: '🧊' },
+      { subId: 'frost_fenda', x: 17, y: 8, icon: '💨' },
+      { subId: 'frost_estaleiro', x: 5, y: 3, icon: '🎈' },
+      { subId: 'frost_geleira', x: 16, y: 3, icon: '❄️' },
+    ],
+    chests: [
+      { id: 'frost_bau_1', name: 'Baú do Criovapor', x: 19, y: 3, icon: '📦', contents: { gold: 120, materials: { engrenagem_reforcada: 3, latao: 2 }, consumables: { tonico_regeneracao: 1 } } },
+    ],
+    campfires: [
+      { id: 'frost_fogueira', name: 'Caldeira de Aquecimento de Frostgard', x: 12, y: 11, icon: '🔥' },
+    ],
+  }
+}
+
+function buildEngrenverde(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 2, 5, 4, 11, 'water')
+  hline(base, 1, 5, 8, 'bridge')
+  return {
+    id: 'engrenverde', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'north_frostgard', x: 11, y: 1, icon: '↑', targetRegionId: 'frostgard' },
+      { id: 'east_aetherium', x: 20, y: 8, icon: '➜', targetRegionId: 'aetherium' },
+      { id: 'south_ferrujal', x: 11, y: 14, icon: '↓', targetRegionId: 'ferrujal' },
+    ],
+    locations: [
+      { subId: 'engren_trilha', x: 11, y: 12, icon: '⚙️' },
+      { subId: 'engren_vila', x: 6, y: 8, icon: '🌲' },
+      { subId: 'engren_estufa', x: 16, y: 8, icon: '🌿' },
+      { subId: 'engren_torre', x: 5, y: 3, icon: '🎐' },
+      { subId: 'engren_cerne', x: 16, y: 3, icon: '🌳' },
+    ],
+    chests: [
+      { id: 'engren_bau_1', name: 'Cofre Botânico de Engrenverde', x: 18, y: 3, icon: '📦', contents: { gold: 140, materials: { madeira_viva: 3, cobre: 4 }, consumables: { pocao_cura_superior: 1 } } },
+    ],
+    campfires: [
+      { id: 'engren_fogueira', name: 'Acampamento da Vila Suspensa', x: 12, y: 11, icon: '🔥' },
+    ],
+  }
+}
+
+function buildTrilhouro(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 14, 5, 15, 11, 'water')
+  hline(base, 13, 16, 8, 'bridge')
+  return {
+    id: 'trilhouro', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'north_vulcannis', x: 11, y: 1, icon: '↑', targetRegionId: 'vulcannis' },
+      { id: 'west_aetherium', x: 1, y: 8, icon: '←', targetRegionId: 'aetherium' },
+      { id: 'south_coroferro', x: 11, y: 14, icon: '↓', targetRegionId: 'coroferro' },
+    ],
+    locations: [
+      { subId: 'trilho_trilhos', x: 11, y: 12, icon: '🚂' },
+      { subId: 'trilho_fazenda', x: 5, y: 8, icon: '🌾' },
+      { subId: 'trilho_silo', x: 17, y: 8, icon: '🛢️' },
+      { subId: 'trilho_comboio', x: 5, y: 3, icon: '👻' },
+      { subId: 'trilho_terminal', x: 16, y: 3, icon: '🏛️' },
+    ],
+    chests: [
+      { id: 'trilho_bau_1', name: 'Vagão Lacrado de Trilhouro', x: 18, y: 3, icon: '📦', contents: { gold: 160, materials: { latao: 4, engrenagem_reforcada: 2 }, consumables: { pocao_escudo: 1 } } },
+    ],
+    campfires: [
+      { id: 'trilho_fogueira', name: 'Fogueira dos Ferroviários', x: 10, y: 11, icon: '🔥' },
+    ],
+  }
+}
+
+function buildVulcannis(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 9, 2, 12, 5, 'water')
+  hline(base, 8, 13, 4, 'bridge')
+  return {
+    id: 'vulcannis', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'west_frostgard', x: 1, y: 7, icon: '←', targetRegionId: 'frostgard' },
+      { id: 'south_trilhouro', x: 11, y: 14, icon: '↓', targetRegionId: 'trilhouro' },
+      { id: 'southwest_aetherium', x: 1, y: 12, icon: '↙', targetRegionId: 'aetherium' },
+    ],
+    locations: [
+      { subId: 'vulcan_encosta', x: 11, y: 12, icon: '🔥' },
+      { subId: 'vulcan_aqueduto', x: 5, y: 8, icon: '🌋' },
+      { subId: 'vulcan_fundicao', x: 16, y: 8, icon: '⚒️' },
+      { subId: 'vulcan_chamines', x: 6, y: 3, icon: '🏭' },
+      { subId: 'vulcan_camara', x: 16, y: 3, icon: '🌋' },
+    ],
+    chests: [
+      { id: 'vulcan_bau_1', name: 'Urna da Forja Vulcânica', x: 18, y: 3, icon: '📦', contents: { gold: 180, materials: { aco_temperado: 3, nucleo_brasa: 2 }, consumables: { tonico_forca: 1 } } },
+    ],
+    campfires: [
+      { id: 'vulcan_fogueira', name: 'Fogueira da Fundição Central', x: 12, y: 11, icon: '🔥' },
+    ],
+  }
+}
+
+function buildFerrujal(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 2, 7, 4, 13, 'water')
+  hline(base, 1, 5, 10, 'bridge')
+  return {
+    id: 'ferrujal', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'north_engrenverde', x: 10, y: 1, icon: '↑', targetRegionId: 'engrenverde' },
+      { id: 'east_coroferro', x: 20, y: 8, icon: '➜', targetRegionId: 'coroferro' },
+      { id: 'northeast_aetherium', x: 20, y: 3, icon: '↗', targetRegionId: 'aetherium' },
+    ],
+    locations: [
+      { subId: 'ferro_trilha', x: 10, y: 12, icon: '🔩' },
+      { subId: 'ferro_pocas', x: 5, y: 8, icon: '☣️' },
+      { subId: 'ferro_fabrica', x: 16, y: 8, icon: '🏚️' },
+      { subId: 'ferro_cemiterio', x: 5, y: 3, icon: '💀' },
+      { subId: 'ferro_nucleo', x: 16, y: 3, icon: '☢️' },
+    ],
+    chests: [
+      { id: 'ferro_bau_1', name: 'Depósito de Autômatos Desativados', x: 18, y: 3, icon: '📦', contents: { gold: 200, materials: { sucata_blindada: 4, nucleo_residual: 2 }, consumables: { pocao_cura_superior: 2 } } },
+    ],
+    campfires: [
+      { id: 'ferro_fogueira', name: 'Refúgio de Sucata da Unidade 73', x: 9, y: 11, icon: '🔥' },
+    ],
+  }
+}
+
+function buildCoroferro(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 8, 5, 12, 7, 'water')
+  hline(base, 7, 13, 6, 'bridge')
+  return {
+    id: 'coroferro', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'west_ferrujal', x: 1, y: 8, icon: '←', targetRegionId: 'ferrujal' },
+      { id: 'north_trilhouro', x: 11, y: 1, icon: '↑', targetRegionId: 'trilhouro' },
+      { id: 'northwest_aetherium', x: 1, y: 3, icon: '↖', targetRegionId: 'aetherium' },
+    ],
+    locations: [
+      { subId: 'coro_viaduto', x: 11, y: 12, icon: '🚇' },
+      { subId: 'coro_distrito', x: 5, y: 8, icon: '🏙️' },
+      { subId: 'coro_praca', x: 16, y: 8, icon: '🕰️' },
+      { subId: 'coro_subterraneo', x: 5, y: 3, icon: '🚿' },
+      { subId: 'coro_torre', x: 16, y: 3, icon: '👑' },
+    ],
+    chests: [
+      { id: 'coro_bau_1', name: 'Cofre do Sindicato de Coroferro', x: 18, y: 3, icon: '📦', contents: { gold: 250, materials: { engrenagem_ouro: 3, reliquia_vapor: 2 }, consumables: { tonico_regeneracao: 2 } } },
+    ],
+    campfires: [
+      { id: 'coro_fogueira', name: 'Lareira Nobre da Praça do Relógio', x: 12, y: 11, icon: '🔥' },
+    ],
+  }
+}
+
+function buildAetherium(): RegionMapDef {
+  const width = 22, height = 16
+  const base = fill(width, height, 'grass')
+  hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree')
+  vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
+  rect(base, 8, 4, 13, 6, 'water')
+  vline(base, 3, 7, 10, 'bridge')
+  return {
+    id: 'aetherium', tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    spawn: { x: 11, y: 13 },
+    exits: [
+      { id: 'west_engrenverde', x: 1, y: 8, icon: '←', targetRegionId: 'engrenverde' },
+      { id: 'east_trilhouro', x: 20, y: 8, icon: '➜', targetRegionId: 'trilhouro' },
+      { id: 'south_coroferro', x: 11, y: 14, icon: '↓', targetRegionId: 'coroferro' },
+      { id: 'fenda_havendown', x: 11, y: 1, icon: '↑', targetRegionId: 'coracao_eclipse' },
+    ],
+    locations: [
+      { subId: 'aether_anel', x: 11, y: 12, icon: '⭕' },
+      { subId: 'aether_galeria', x: 5, y: 8, icon: '🔧' },
+      { subId: 'aether_ressonancia', x: 16, y: 8, icon: '🔮' },
+      { subId: 'aether_vortice', x: 5, y: 3, icon: '🌀' },
+      { subId: 'aether_coracao', x: 16, y: 3, icon: '⚡' },
+    ],
+    chests: [
+      { id: 'aether_bau_1', name: 'Arca do Reator Primordial', x: 18, y: 3, icon: '📦', contents: { gold: 300, materials: { cristal_aether: 4, nucleo_supremo: 2 }, consumables: { tonico_forca: 2, pocao_escudo: 2 } } },
+    ],
+    campfires: [
+      { id: 'aether_fogueira', name: 'Fogueira Estabilizadora de Aether', x: 12, y: 11, icon: '🔥' },
+    ],
   }
 }
 
 export const REGION_MAPS: Record<string, RegionMapDef> = {
+  // Havendown
   campos_dourados: buildCamposDourados(),
   floresta_lunargenta: buildFlorestaLunargenta(),
   montanhas_cinzentas: buildMontanhasCinzentas(),
@@ -437,6 +742,14 @@ export const REGION_MAPS: Record<string, RegionMapDef> = {
   terras_mortas: buildTerrasMortas(),
   khar_dur: buildKharDur(),
   coracao_eclipse: buildCoracaoEclipse(),
+  // Steelmere
+  frostgard: buildFrostgard(),
+  engrenverde: buildEngrenverde(),
+  trilhouro: buildTrilhouro(),
+  vulcannis: buildVulcannis(),
+  ferrujal: buildFerrujal(),
+  coroferro: buildCoroferro(),
+  aetherium: buildAetherium(),
 }
 export function getRegionMap(regionId: string): RegionMapDef | undefined { return REGION_MAPS[regionId] }
 
@@ -462,7 +775,10 @@ const PLAYER_SPRITE: Record<Facing, { frames: string[]; mirror?: boolean }> = {
 const WALK_FRAME_COUNT = 6
 const IDLE_FRAME = 2 // quadro neutro, com pernas alinhadas, usado quando o herói para
 
-export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange }: {
+export function TileWorldExplorer({
+  map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
+  openedChests = {}, onOpenChest, onRestCampfire
+}: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
   paused?: boolean
@@ -475,8 +791,12 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
   npcStatus?: (npc: NpcDefinition) => 'ready' | 'available' | 'default'
   onAmbush?: (nearestSubId: string) => void
   onPositionChange?: (pos: { x: number; y: number }) => void
+  openedChests?: Record<string, boolean>
+  onOpenChest?: (chest: RegionMapChest) => void
+  onRestCampfire?: (campfire: RegionMapCampfire) => void
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
+  const [showMinimap, setShowMinimap] = React.useState(true)
   // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
   // permite voltar exatamente aqui depois de uma tela que desmonta este componente (combate,
   // emboscada), em vez de sempre recomeçar do spawn/marcador.
@@ -522,12 +842,16 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
       setFrame(IDLE_FRAME)
       const loc = map.locations.find(l => l.x === tx && l.y === ty)
       const exit = exits.find(l => l.x === tx && l.y === ty)
+      const chest = (map.chests ?? []).find(c => c.x === tx && c.y === ty)
+      const campfire = (map.campfires ?? []).find(c => c.x === tx && c.y === ty)
       if (loc) onEnterLocation(loc.subId)
       else if (exit) onEnterExit?.(exit.id)
+      else if (chest && !openedChests?.[chest.id]) onOpenChest?.(chest)
+      else if (campfire) onRestCampfire?.(campfire)
       else if (Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
     }, STEP_MS)
-  }, [paused, map, onEnterLocation, exits, onEnterExit, npcBlocked, onAmbush])
+  }, [paused, map, onEnterLocation, exits, onEnterExit, npcBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
     const route = routeBetween(map, posRef.current, target, npcBlocked)
@@ -668,6 +992,36 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
             <span className="regionmap-exit-label">{exit.label}</span>
           </button>
         ))}
+        {(map.campfires ?? []).map(campfire => (
+          <button key={campfire.id} type="button" className="regionmap-campfire"
+            style={{ left: campfire.x * tilePx, top: campfire.y * tilePx, width: tilePx, height: tilePx }}
+            onClick={event => {
+              event.stopPropagation()
+              if (didDragRef.current) { didDragRef.current = false; return }
+              moveToTile({ x: campfire.x, y: campfire.y })
+              onRestCampfire?.(campfire)
+            }}
+            aria-label={`Descansar na fogueira ${campfire.name}`} title={`Fogueira: ${campfire.name}`}>
+            <span className="regionmap-campfire-aura" />
+            <span className="regionmap-campfire-icon">🔥</span>
+          </button>
+        ))}
+        {(map.chests ?? []).map(chest => {
+          const opened = Boolean(openedChests?.[chest.id])
+          return (
+            <button key={chest.id} type="button" className={`regionmap-chest${opened ? ' opened' : ' closed'}`}
+              style={{ left: chest.x * tilePx, top: chest.y * tilePx, width: tilePx, height: tilePx }}
+              onClick={event => {
+                event.stopPropagation()
+                if (didDragRef.current) { didDragRef.current = false; return }
+                moveToTile({ x: chest.x, y: chest.y })
+                if (!opened) onOpenChest?.(chest)
+              }}
+              aria-label={chest.name} title={opened ? `${chest.name} (Aberto)` : `${chest.name} (Fechado)`}>
+              <span className="regionmap-chest-icon">{opened ? '📭' : '📦'}</span>
+            </button>
+          )
+        })}
         {npcs.map(npc => {
           const status = npcStatus?.(npc) ?? 'default'
           return <button key={npc.id} type="button" className={`regionmap-npc npc-${npc.facing ?? 'down'} status-${status}`}
@@ -685,6 +1039,44 @@ export function TileWorldExplorer({ map, initialPosition, paused, onEnterLocatio
             <img className="regionmap-player-sprite" src={frameSrc} alt="" />
           </span>
         </div>
+      </div>
+      <div className={`regionmap-radar-hud${showMinimap ? ' is-open' : ' is-closed'}`}>
+        <button type="button" className="radar-toggle" onClick={event => { event.stopPropagation(); setShowMinimap(v => !v) }} title={showMinimap ? 'Ocultar Radar' : 'Expandir Radar'}>
+          <Compass size={14} />
+          <span>{showMinimap ? 'Minimapa' : 'Radar'}</span>
+        </button>
+        {showMinimap && (
+          <div className="radar-body" onClick={event => event.stopPropagation()}>
+            <svg className="radar-svg" viewBox={`0 0 ${map.width} ${map.height}`}>
+              {map.grid.map((row, y) => row.map((t, x) => (
+                <rect key={`rt_${x}_${y}`} x={x} y={y} width={1} height={1} className={`radar-tile radar-${t}`} />
+              )))}
+              {exits.map(ex => (
+                <rect key={`rex_${ex.id}`} x={ex.x + 0.15} y={ex.y + 0.15} width={0.7} height={0.7} className="radar-pin radar-exit" />
+              ))}
+              {(map.campfires ?? []).map(c => (
+                <circle key={`rc_${c.id}`} cx={c.x + 0.5} cy={c.y + 0.5} r={0.6} className="radar-pin radar-fire" />
+              ))}
+              {(map.chests ?? []).map(ch => (
+                <rect key={`rch_${ch.id}`} x={ch.x + 0.2} y={ch.y + 0.2} width={0.6} height={0.6} className={`radar-pin radar-chest ${openedChests?.[ch.id] ? 'opened' : 'closed'}`} />
+              ))}
+              {map.locations.map(l => (
+                <circle key={`rl_${l.subId}`} cx={l.x + 0.5} cy={l.y + 0.5} r={0.65} className="radar-pin radar-loc" />
+              ))}
+              {npcs.map(n => (
+                <circle key={`rn_${n.id}`} cx={n.x + 0.5} cy={n.y + 0.5} r={0.55} className="radar-pin radar-npc" />
+              ))}
+              <circle cx={pos.x + 0.5} cy={pos.y + 0.5} r={0.85} className="radar-pin radar-player" />
+            </svg>
+            <div className="radar-legend">
+              <span><b className="legend-dot player" /> Você</span>
+              <span><b className="legend-dot loc" /> Sublocal</span>
+              <span><b className="legend-dot fire" /> Fogueira</span>
+              <span><b className="legend-dot chest" /> Baú</span>
+              <span><b className="legend-dot exit" /> Viagem</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
     <div className="regionmap-controls">
