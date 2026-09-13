@@ -612,6 +612,11 @@ body:has(.combat-v033){overflow-y:auto;overflow-x:hidden}
 /* Categorias da galeria */
 .gallery-page{display:grid;gap:14px}
 .gallery-filters{display:flex;gap:8px;overflow-x:auto;padding:3px 2px 8px;scrollbar-width:thin;scrollbar-color:#6e4b27 transparent}
+.gallery-search{display:flex;align-items:center;gap:8px;margin:0 2px 10px;padding:8px 12px;border:1px solid #5d4020;border-radius:9px;background:#100b08;color:#a99680}
+.gallery-search input{flex:1;border:0;background:transparent;padding:0;color:#ead8b7;font:inherit}
+.gallery-search input:focus{outline:none}
+.gallery-search:focus-within{border-color:var(--gold)}
+.gallery-search-count{margin:-4px 2px 10px;font-size:.72rem}
 .gallery-filters button{display:flex;align-items:center;gap:9px;flex:0 0 auto;padding:.62rem .85rem;border-color:#4d3822;color:#baaa91}
 .gallery-filters button small{display:grid;place-items:center;min-width:23px;height:20px;padding:0 5px;border-radius:999px;background:#0b0806;border:1px solid #49341e;color:#d4aa5c;font-size:.68rem}
 .gallery-filters button.active{color:#f0cf8c;border-color:#c28a3e;background:linear-gradient(#58391a,#24160c);box-shadow:0 0 18px rgba(190,130,50,.14)}
@@ -1612,6 +1617,7 @@ body::after{content:"VERSÃO 0.8.31 • 11/09/2026\A Mapas navegaveis agora tem 
 body::after{content:"VERSÃO 0.9.0 • 12/09/2026\A Modo História com missões conectadas entre regiões e continentes, novos NPCs interativos e sistema de entrega de encomendas e mensagens"}
 body::after{content:"VERSÃO 0.8.33 • 12/09/2026\A CI passa a rodar typecheck, lint e testes antes do deploy; ESLint e Prettier configurados; popup de versao agora e gerado por npm run release";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.34 • 12/09/2026\A Indicador de progresso salvo, link de convite direto pra sala Coop, bonus de especializacao visivel no Coop, titulos em mais botoes desabilitados e ajustes na lista de regioes em telas bem estreitas";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.35 • 12/09/2026\A Tutorial explica o mapa navegavel (WASD, NPCs, saidas, emboscada) e a trava de viagem rapida; modo alto contraste no Menu; busca por nome na Colecao/Bestiario. Auditoria de contraste dourado sobre fundo escuro e de foco por teclado no mapa: ja estavam corretos em todas as 10 paletas";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -1753,6 +1759,17 @@ body::after{content:"VERSÃO 0.8.34 • 12/09/2026\A Indicador de progresso salv
 
 .enemy-weakness-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.15); padding: 3px 8px; border-radius: 5px; font-size: 0.72rem; color: #e2e8f0; margin-top: 6px; }
 .enemy-weakness-badge strong { color: #63b3ed; }
+
+/* Modo alto contraste (item 25 do Quadro de Contratos): a paleta padrão já passa no WCAG AA
+   pro texto dourado principal (auditado -- todas as 10 paletas regionais ficam acima de
+   5:1), mas o texto secundário/apagado (--muted) e as bordas finas ficam bem sutis pra quem
+   precisa de mais contraste. Clareia esses tokens e reforça bordas/foco em vez de mexer no
+   dourado principal, que já está bom. */
+html.high-contrast{--muted:#e6d9bd;--line:#a8823f;--line-soft:#a8823f}
+html.high-contrast .app-shell{--line:#a8823f}
+html.high-contrast button{border-width:2px}
+html.high-contrast :focus-visible{outline:3px solid #fff!important;outline-offset:2px}
+html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-index-region{border-width:2px}
 
 
 
