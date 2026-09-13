@@ -1618,6 +1618,7 @@ body::after{content:"VERSÃO 0.9.0 • 12/09/2026\A Modo História com missões 
 body::after{content:"VERSÃO 0.8.33 • 12/09/2026\A CI passa a rodar typecheck, lint e testes antes do deploy; ESLint e Prettier configurados; popup de versao agora e gerado por npm run release";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.34 • 12/09/2026\A Indicador de progresso salvo, link de convite direto pra sala Coop, bonus de especializacao visivel no Coop, titulos em mais botoes desabilitados e ajustes na lista de regioes em telas bem estreitas";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.35 • 12/09/2026\A Tutorial explica o mapa navegavel (WASD, NPCs, saidas, emboscada) e a trava de viagem rapida; modo alto contraste no Menu; busca por nome na Colecao/Bestiario. Auditoria de contraste dourado sobre fundo escuro e de foco por teclado no mapa: ja estavam corretos em todas as 10 paletas";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.36 • 13/09/2026\A Chefes de sub-regiao agora reagem ao poder real do heroi (ataque/defesa/vida), nao so ao nivel da regiao; aprimoramento da Forja ganha piedade -- cada falha seguida no mesmo nivel aumenta a chance de sucesso, corrigindo sequencias de azar sem teto";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

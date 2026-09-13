@@ -390,7 +390,7 @@ interface GameState {
  enemy?:Enemy; enemyHp:number; enemyIntent?:EnemyIntent; combatMinions?:CombatMinion[]; combatTurn:number; combatLog:string[]; coin?:'cara'|'coroa'; playerTurn:boolean; animating:boolean; animationActor?:'hero'|'enemy'; lastDamage?:number; combatRoll?:CombatRoll; fleeRoll?:FleeRoll; heroRollBonus:number; enemyRollBonus:number; enemyFearPenalty:number; heroSkillUses:number; itemSkillUsed:boolean; shield:number; combatAttackPct:number; combatDefensePct:number; classRollBonus:number; classBuffTurns:number; summon?:Summon; summonAttackFx?:{types:AttackAnimType[];nonce:number}; lifeWardActive:boolean; phoenixUsed:boolean; extraHeroAttacks:number; guardianTaunt:boolean; groupCriticalBoost:boolean; braced:boolean; braceBonusUsed:boolean; fervor:number; firstStrikeBonus:number; heroStatus?:StatusEffects; enemyStatus?:StatusEffects; supportFx?:{type:'fortificacao'|'cura'|'cura-item'};
  summons?:Summon[];
  loot?:Loot; selectedGallery:number; shopMode:'buy'|'sell'; ambush?:{enemy:Enemy;subregionId:string}; explorationNote?:string; currentEvent?:GameEvent; eventResult?:EventResult; pendingAttackBonus:number; activePotionIds:string[]; regenBoostUntil?:number; lastPassiveHealAt?:number; customCards:CustomCard[]; campaigns:Record<string,CampaignSave>; activeCampaignId?:string; guildAccepted:string[]; guildProgress:Record<string,number>; guildClaimed:string[]; guildNotice?:string;
- difficultyMode:DifficultyMode;talents:string[];specializations:Record<string,string>;materials:Record<string,number>;equipmentUpgrades:Record<string,number>;equipmentGems:Record<string,string[]>;forgedGemLocked:Record<string,boolean>;craftedEffects:Record<string,ForgeEffect>;equipmentElements:Record<string,Element>;equipmentResistances:Record<string,Element>;forgeXp?:number;forgeAttempts?:number;forgeSuccesses?:number;forgeResult?:{success:boolean;message:string;id:number;kind?:'upgrade'};bestiary:Record<string,{encontros:number;vitorias:number}>;discoveredCards:string[];revengeWins:Record<string,number>;consecutiveDefeats:number;lastDefeatKey?:string;dungeonDepth:number;dungeonActive:boolean;dungeonSubregionId?:string;dungeonLastCost?:number;dungeonLastXpReward?:number;dungeonLastGoldReward?:number;storyFlags:string[];storyChapterId:string;storyChoices:Record<string,string>;storyNotice?:string;coopBattlesCompleted:string[];tourStep?:number;
+ difficultyMode:DifficultyMode;talents:string[];specializations:Record<string,string>;materials:Record<string,number>;equipmentUpgrades:Record<string,number>;equipmentUpgradeFails?:Record<string,number>;equipmentGems:Record<string,string[]>;forgedGemLocked:Record<string,boolean>;craftedEffects:Record<string,ForgeEffect>;equipmentElements:Record<string,Element>;equipmentResistances:Record<string,Element>;forgeXp?:number;forgeAttempts?:number;forgeSuccesses?:number;forgeResult?:{success:boolean;message:string;id:number;kind?:'upgrade'};bestiary:Record<string,{encontros:number;vitorias:number}>;discoveredCards:string[];revengeWins:Record<string,number>;consecutiveDefeats:number;lastDefeatKey?:string;dungeonDepth:number;dungeonActive:boolean;dungeonSubregionId?:string;dungeonLastCost?:number;dungeonLastXpReward?:number;dungeonLastGoldReward?:number;storyFlags:string[];storyChapterId:string;storyChoices:Record<string,string>;storyNotice?:string;coopBattlesCompleted:string[];tourStep?:number;
  activeStoryQuests:Record<string,{step:'in_progress'|'ready_to_turn_in'|'completed';progress:number}>;completedStoryQuests:string[];questItems:Record<string,number>;
  combatSpeed?: 1 | 2 | 3; autoCombat?: boolean; staggerCurrent?: number; staggerMax?: number; isStaggered?: boolean; heroSkillCooldown?: number; highestDamageDealt?: number; lockedEquipment?: Record<string, boolean>; dailyRewardClaimedAt?: number;
  newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; travelWorld:(world:string)=>void; startCoopCombat:(enemy:Enemy,subregionId:string)=>void; syncCoopEnemyHp:(hp:number)=>void; completeCoopVictory:(battleId:string,subregionId:string,enemy:Enemy,rewardShare:number)=>void; receiveCoopEnemyAttack:(damage:number,roll:any)=>void; receiveCoopHeroAction:(damage:number,roll:any)=>void; receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>void; receiveCoopHeal:(amount:number)=>void; completeCoopDefeat:(battleId:string)=>void; completeCoopFlee:(battleId:string)=>void; continueGame:()=>void; loadCampaign:(id:string)=>void; deleteCampaign:(id:string)=>void; acceptGuildMission:(id:string)=>void; claimGuildMission:(id:string)=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void; triggerAmbush:(subregionId:string)=>void; fleeAmbush:()=>void; acceptAmbush:()=>void; setRegionMapPosition:(regionId:string,pos:{x:number;y:number})=>void;
@@ -626,10 +626,25 @@ export function buildEnemy(sub:Subregion, playerLevel:number):Enemy{
     habilidade:base.habilidade+extra, imagem:base.arte, arte:base.arte, raridade:rarityForVariant(variant), elite:variant==='Elite'||variant==='Campeão', nivel:effectiveLevel, variante:variant, elemento:REGION_MATERIALS[sub.regionId]?.elemento
   })
 }
-export function buildBoss(sub:Subregion):Enemy{
+// Item 1 do Quadro de Contratos: "jogador forte desafia chefe forte". Antes, buildBoss só
+// olhava sub.nivelMax -- um herói muito acima da curva esperada pro próprio nível (build bem
+// otimizada, equipamentos fortes) via chefe sempre igual, sem desafio real; um herói abaixo da
+// curva (ex.: Conjurador nos primeiros chefes, pior taxa de vitória no balance-sim) enfrentava
+// o mesmo chefe calibrado pra um jogador "médio". heroPowerRatio usa a MESMA régua de custo já
+// usada pra todo inimigo do jogo (enemyPointCost/enemyPointBudget) pra comparar o poder atual
+// do herói (ataque+defesa+vida) contra a referência esperada nesse nível, e devolve um
+// multiplicador amortecido (metade do desvio, entre 0.85x e 1.35x) -- não usa o nível sozinho,
+// porque dois heróis do mesmo nível com builds bem diferentes não deveriam enfrentar o mesmo chefe.
+function heroPowerRatio(level:number,atk:number,def:number,hp:number){
+  const cost=hp/2+atk+def,reference=enemyPointBudget({nivel:level,dificuldade:level,boss:false,maxFases:1} as any,1)
+  const rawRatio=cost/Math.max(1,reference)
+  return clamp(1+(rawRatio-1)*.5,.85,1.35)
+}
+export function buildBoss(sub:Subregion,heroPower?:{level:number;atk:number;def:number;hp:number}):Enemy{
   const b=sub.chefe
   const startingRegion=sub.regionId==='campos_dourados'
-  return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*noviceDamping(sub.nivelMax,.58))),vida:Math.max(1,Math.ceil(b.vida*noviceDamping(sub.nivelMax,.55))),ouro:rollGoldReward(sub.nivelMax,{boss:true,maxFases:b.maxFases}),xpReward:xpRewardForLevel(sub.nivelMax,{boss:true,maxFases:b.maxFases}),dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento})
+  const powerMult=heroPower?heroPowerRatio(heroPower.level,heroPower.atk,heroPower.def,heroPower.hp):1
+  return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*noviceDamping(sub.nivelMax,.58)*powerMult)),vida:Math.max(1,Math.ceil(b.vida*noviceDamping(sub.nivelMax,.55)*powerMult)),ouro:rollGoldReward(sub.nivelMax,{boss:true,maxFases:b.maxFases}),xpReward:xpRewardForLevel(sub.nivelMax,{boss:true,maxFases:b.maxFases}),dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento},powerMult)
 }
 function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return balanceEnemyByLevel({...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward),xpReward:enemy.xpReward!=null?Math.min(MAX_ENEMY_XP,Math.round(enemy.xpReward*DIFFICULTIES[mode].reward)):enemy.xpReward},multiplier)}
 export function buildCoopEnemy(subregionId:string,playerLevel:number,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildEnemy(sub,playerLevel),mode):undefined}
@@ -693,7 +708,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     const sub=SUBREGIONS.find(x=>x.id===subregionId); if(!sub)return
     const s=get(); const progress=s.subregionVictories[sub.id]??0
     set({subregionId:sub.id,territory:sub.nome,explorationNote:undefined})
-    if(progress>=sub.encontrosNecessarios && !s.subregionBossesDefeated.includes(sub.id)){ set({screen:'bossIntro',enemy:difficultyEnemy(buildBoss(sub),s.difficultyMode)}); return }
+    if(progress>=sub.encontrosNecessarios && !s.subregionBossesDefeated.includes(sub.id)){ const heroPower={level:deriveLevel(s.xp).lvl,atk:attackValue(s),def:defenseValue(s),hp:maxHp(s)}; set({screen:'bossIntro',enemy:difficultyEnemy(buildBoss(sub,heroPower),s.difficultyMode)}); return }
     // Parte das explorações revela uma carta de missão antes do próximo combate.
     const eventRoll=Math.random()
     if(eventRoll<.35){const currentEvent=nextStoryEvent(s)??EVENTS[Math.floor(Math.random()*EVENTS.length)];set({screen:'event',currentEvent,eventResult:undefined});return}
@@ -735,7 +750,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   // que a prévia mostre exatamente os atributos que o combate vai usar -- aplicar de novo aqui
   // dobraria o multiplicador (ex.: 0.88 vira 0.77) e fazia a prévia (sem dificuldade) e o
   // combate real (com dificuldade aplicada duas vezes) mostrarem números diferentes.
-  startBoss:()=>{const s=get(),sub=currentSubregion(s);if(!sub)return;const enemy=s.enemy?.boss?s.enemy:difficultyEnemy(buildBoss(sub),s.difficultyMode);beginCombat(set,get,enemy)},
+  startBoss:()=>{const s=get(),sub=currentSubregion(s);if(!sub)return;const heroPower={level:deriveLevel(s.xp).lvl,atk:attackValue(s),def:defenseValue(s),hp:maxHp(s)};const enemy=s.enemy?.boss?s.enemy:difficultyEnemy(buildBoss(sub,heroPower),s.difficultyMode);beginCombat(set,get,enemy)},
   attack:(targetMinionId?:string)=>playerAttack(set,get,targetMinionId?'Ataque direcionado':'Ataque',0,false,targetMinionId),
   defend:()=>{const s=get();if(!s.playerTurn||s.animating||!s.enemy)return
    if(heroStunned(set,get))return
@@ -884,11 +899,21 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   ,upgradeEquipment:(id:string)=>{const s=get(),item=eqById(id),level=s.equipmentUpgrades[id]??0;if(!item||level>=3)return
    const targetLevel=(level+1) as 1|2|3,goldCost=equipmentUpgradeCost(item,level),materialCost=equipmentUpgradeMaterialCost(item,targetLevel)
    if(s.gold<goldCost||Object.entries(materialCost).some(([mid,qty])=>(s.materials[mid]??0)<qty))return
-   const success=Math.random()<UPGRADE_SUCCESS_CHANCE[targetLevel]
+   // Item 5 do Quadro de Contratos: auditoria (simulação de Monte Carlo) mostrou que, apesar da
+   // média razoável (~8-9 tentativas até +3), a cauda de má sorte é sem teto -- em 20 mil
+   // tentativas simuladas, o pior caso passou de 50 tentativas pro mesmo aprimoramento. "Piedade"
+   // clássica: cada falha CONSECUTIVA nesse item+nível-alvo específico soma +8% de chance de
+   // sucesso (até 95%), então uma sequência de azar extrema se autocorrige em vez de continuar
+   // infinita. Zera ao suceder; regredir de nível também zera (o alvo em questão muda).
+   const failKey=`${id}:${targetLevel}`,fails=s.equipmentUpgradeFails?.[failKey]??0
+   const effectiveChance=Math.min(.95,UPGRADE_SUCCESS_CHANCE[targetLevel]+fails*.08)
+   const success=Math.random()<effectiveChance
    const materials={...s.materials}
    for(const [mid,qty] of Object.entries(materialCost))materials[mid]=(materials[mid]??0)-(success?qty:Math.max(1,Math.ceil(qty/2)))
    const regressed=!success&&level>0&&Math.random()<UPGRADE_REGRESS_CHANCE[targetLevel]
    const newLevel=success?targetLevel:regressed?level-1:level
+   const equipmentUpgradeFails={...s.equipmentUpgradeFails}
+   if(success||regressed)delete equipmentUpgradeFails[failKey];else equipmentUpgradeFails[failKey]=fails+1
    const message=success?`${item.nome} aprimorado para +${targetLevel}.`:regressed?`O aprimoramento de ${item.nome} falhou e o item regrediu para +${newLevel}! Metade dos materiais foi perdida.`:level>0?`O aprimoramento de ${item.nome} falhou, mas o nível +${level} foi mantido. Metade dos materiais foi perdida.`:`O aprimoramento de ${item.nome} falhou. Metade dos materiais foi perdida.`
    // Aprimorar também concede XP de Forja e conta pro nível de Forjador -- é uma ação da Forja
    // como qualquer outra, e o aviso no topo da tela ("toda tentativa concede XP de Forja") vale
@@ -899,7 +924,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    // Forja não exibe explorationNote em lugar nenhum, então o jogador não teria nenhum aviso
    // (principalmente da regressão, que é uma surpresa desagradável e precisa ficar bem visível).
    const resultId=Date.now()
-   set({gold:s.gold-goldCost,materials,equipmentUpgrades:{...s.equipmentUpgrades,[id]:newLevel},forgeXp:(s.forgeXp??0)+xpGain,forgeAttempts:(s.forgeAttempts??0)+1,forgeSuccesses:(s.forgeSuccesses??0)+(success?1:0),explorationNote:message,forgeResult:{success,message,id:resultId,kind:'upgrade'}})
+   set({gold:s.gold-goldCost,materials,equipmentUpgrades:{...s.equipmentUpgrades,[id]:newLevel},equipmentUpgradeFails,forgeXp:(s.forgeXp??0)+xpGain,forgeAttempts:(s.forgeAttempts??0)+1,forgeSuccesses:(s.forgeSuccesses??0)+(success?1:0),explorationNote:message,forgeResult:{success,message,id:resultId,kind:'upgrade'}})
    setTimeout(()=>{if((get() as GameState).forgeResult?.id===resultId)set({forgeResult:undefined})},FORGE_RESULT_DISPLAY_MS)}
    ,dismantleEquipment:(id:string)=>{const s=get(),index=s.equipmentBag.indexOf(id),item=eqById(id);if(index<0||!item||s.lockedEquipment?.[id])return;const yieldInfo=dismantlePreview(item),materials={...s.materials,fragmento_fisico:(s.materials.fragmento_fisico??0)+yieldInfo.physical,essencia_magica:(s.materials.essencia_magica??0)+yieldInfo.magical},installed=s.equipmentGems[id]??[];for(const gem of installed)materials[gem]=(materials[gem]??0)+1;let gemName='';if(Math.random()<yieldInfo.gemChance){const gem=FORGE_GEMS[Math.floor(Math.random()*FORGE_GEMS.length)];materials[gem.id]=(materials[gem.id]??0)+1;gemName=` • Pedra encontrada: ${gem.nome}`};const bag=[...s.equipmentBag];bag.splice(index,1);const equipmentUpgrades={...s.equipmentUpgrades},equipmentGems={...s.equipmentGems},forgedGemLocked={...s.forgedGemLocked},craftedEffects={...s.craftedEffects},equipmentElements={...s.equipmentElements},equipmentResistances={...s.equipmentResistances};delete equipmentUpgrades[id];delete equipmentGems[id];delete forgedGemLocked[id];delete craftedEffects[id];delete equipmentElements[id];delete equipmentResistances[id];set({equipmentBag:bag,equipmentUpgrades,equipmentGems,forgedGemLocked,craftedEffects,equipmentElements,equipmentResistances,materials,explorationNote:`${item.nome} desmontado: +${yieldInfo.physical} fragmentos físicos, +${yieldInfo.magical} essências mágicas${gemName}.`})}
   ,socketGem:(equipmentId:string,gemId:string)=>{const s=get(),item=eqById(equipmentId),installed=s.equipmentGems[equipmentId]??[];if(!item||!Object.values(s.equipped).includes(equipmentId)||installed.length>=equipmentSocketCount(item)||(s.materials[gemId]??0)<=0||!FORGE_GEMS.some(g=>g.id===gemId))return;set({materials:{...s.materials,[gemId]:s.materials[gemId]-1},equipmentGems:{...s.equipmentGems,[equipmentId]:[...installed,gemId]},explorationNote:`Pedra instalada em ${item.nome}.`})}
