@@ -137,6 +137,8 @@ Spawn/exit schema: unchanged, reuse `RegionMapExit`/`RegionMapLocation` exactly 
 
 Fog-of-war storage key: not an art dependency. Shipping as pure code (`exploredMapTiles` in the save + tile-radius reveal + CSS mask) — see Production Queue.
 
+Frostgard pilot footprint: the current placeholder grid is exactly 22 tiles wide x 16 tall, spawn at tile (11,13) near the south exit. Match this exact footprint so the existing exits/locations/chest/campfire coordinates don't need to move — background native resolution 352x256px minimum (22x16 x 16px). If a different footprint would serve the art better, flag it in the handoff and Claude Code will re-lay the entity coordinates to match; don't assume a size change is a problem, just don't ship one silently (rule 6 above).
+
 Acceptance check: Codex can build the Frostgard background (ART-001) at the tile scale above, matching Havendown's visual fidelity, with no gameplay identifier left unspecified.
 
 ### ART-003 - Overworld wandering monster sprites

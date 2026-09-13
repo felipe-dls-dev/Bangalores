@@ -1636,6 +1636,7 @@ body::after{content:"VERSÃO 0.8.40 • 13/09/2026\A Corrigido: regiao ainda blo
 body::after{content:"VERSÃO 0.8.41 • 13/09/2026\A Corrigido: botao de recolher/expandir o minimapa (radar) nao respondia ao clique; moldura do minimapa agora usa as cores do tema da regiao, como o resto da UI";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.42 • 13/09/2026\A Golpe Supremo: bonus de dano/cura/escudo agora escalam com ataque e vida maxima, em vez de valores fixos";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.43 • 13/09/2026\A Nevoa de guerra no mapa 2D, monstros visiveis que da pra desviar (emboscada cega caiu pra 7%), minimapa removido, sprite do heroi por classe no mapa";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.44 • 13/09/2026\A Revisao: limpa referencia morta ao minimapa removido e fecha as dimensoes exatas do mapa piloto de Steelmere no contrato do Codex";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

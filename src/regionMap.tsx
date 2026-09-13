@@ -1035,7 +1035,7 @@ export function TileWorldExplorer({
       // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
       // de um NPC/local nunca disparava o onClick deles, só o fallback de clique-no-tile daqui.
       // Não capturar quando o toque começa num desses botões deixa o clique nativo bubblear normal.
-      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit, .regionmap-radar-hud')) return
+      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit')) return
       event.currentTarget.setPointerCapture(event.pointerId)
       dragRef.current = { x: event.clientX, y: event.clientY, camX, camY, dragged: false }
     }} onPointerMove={event => {
