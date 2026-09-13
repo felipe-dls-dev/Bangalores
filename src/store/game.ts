@@ -385,15 +385,15 @@ function evolvedGuildMission(base:GuildMission,generation:number):GuildMission{i
 export function guildMissionById(id:string){const [baseId,generationText]=id.split('__'),base=BASE_GUILD_MISSIONS.find(m=>m.id===baseId);return base?evolvedGuildMission(base,Number(generationText)||1):undefined}
 export function availableGuildMissions(claimed:string[]=[]){return BASE_GUILD_MISSIONS.map(base=>{let generation=1;while(claimed.includes(generation===1?base.id:`${base.id}__${generation}`))generation++;return evolvedGuildMission(base,generation)})}
 export const HERO_ULTIMATES: Record<string, { nome: string; descricao: string }> = {
-  guerreiro: { nome: 'Fúria do Vendaval', descricao: 'Desfere uma sequência brutal de golpes com 250% do dano base (+4 de bônus esmagador).' },
-  guardiao: { nome: 'Bastião Sagrado', descricao: 'Golpe de escudo maciço com 250% do dano base e ergue 8 de escudo impenetrável.' },
-  cacadora: { nome: 'Lâminas da Meia-Noite', descricao: 'Ataque fatal das sombras com 250% do dano base e perfuração (+6 de bônus mortal).' },
-  arcanista: { nome: 'Cataclismo Rúnico', descricao: 'Explosão cósmica de pura energia com 250% do dano base (+5 de sobrecarga arcana).' },
-  druida: { nome: 'Despertar da Natureza', descricao: 'Fúria ancestral com 250% do dano base e restaura 15 pontos de vida.' },
-  cacador: { nome: 'Chuva de Flechas Perfurantes', descricao: 'Torrente de projéteis velozes com 250% do dano base (+5 de penetração).' },
-  monge: { nome: 'Mil Golpes Celestiais', descricao: 'Tempestade de palmas de chi com 250% do dano base (+4 de bônus e +1 Fervor).' },
-  sacerdotisa: { nome: 'Julgamento da Aurora', descricao: 'Pilar divino que causa 250% do dano base, cura 10 de vida e concede 6 de escudo.' },
-  conjurador: { nome: 'Invocação do Titã Astral', descricao: 'Dano supremo de 250% do dano base e fortalece a presença cósmica (+6 de dano).' }
+  guerreiro: { nome: 'Fúria do Vendaval', descricao: 'Desfere uma sequência brutal de golpes com 250% do dano base (+16% do seu ataque em bônus esmagador).' },
+  guardiao: { nome: 'Bastião Sagrado', descricao: 'Golpe de escudo maciço com 250% do dano base e ergue um escudo impenetrável (12% da sua vida máxima).' },
+  cacadora: { nome: 'Lâminas da Meia-Noite', descricao: 'Ataque fatal das sombras com 250% do dano base e perfuração (+24% do seu ataque em bônus mortal).' },
+  arcanista: { nome: 'Cataclismo Rúnico', descricao: 'Explosão cósmica de pura energia com 250% do dano base (+20% do seu ataque em sobrecarga arcana).' },
+  druida: { nome: 'Despertar da Natureza', descricao: 'Fúria ancestral com 250% do dano base e restaura 22% da sua vida máxima.' },
+  cacador: { nome: 'Chuva de Flechas Perfurantes', descricao: 'Torrente de projéteis velozes com 250% do dano base (+20% do seu ataque em penetração).' },
+  monge: { nome: 'Mil Golpes Celestiais', descricao: 'Tempestade de palmas de chi com 250% do dano base (+16% do seu ataque e +1 Fervor).' },
+  sacerdotisa: { nome: 'Julgamento da Aurora', descricao: 'Pilar divino que causa 250% do dano base, cura 15% da sua vida máxima e concede um escudo de 9% da sua vida máxima.' },
+  conjurador: { nome: 'Invocação do Titã Astral', descricao: 'Dano supremo de 250% do dano base e fortalece a presença cósmica (+24% do seu ataque em dano).' }
 }
 
 interface GameState {
@@ -1557,19 +1557,20 @@ function playerUltimateAttack(set:any,get:any){
   const heroClass=s.heroId??'guerreiro'
   const ultInfo=HERO_ULTIMATES[heroClass]??{nome:'Golpe Supremo',descricao:'Ataque avassalador'}
   const atk=attackValue(s)
+  const heroMaxHp=maxHp(s)
   let damage=Math.round(atk*2.5+10)
   let bonusHeal=0
   let bonusShield=0
   let extraFervor=0
-  if(heroClass==='guerreiro')damage+=4
-  else if(heroClass==='guardiao'){bonusShield=8;damage+=2}
-  else if(heroClass==='cacadora')damage+=6
-  else if(heroClass==='arcanista')damage+=5
-  else if(heroClass==='druida')bonusHeal=15
-  else if(heroClass==='cacador')damage+=5
-  else if(heroClass==='monge'){damage+=4;extraFervor=1}
-  else if(heroClass==='sacerdotisa'){bonusHeal=10;bonusShield=6}
-  else if(heroClass==='conjurador')damage+=6
+  if(heroClass==='guerreiro')damage+=Math.round(atk*.16)
+  else if(heroClass==='guardiao'){bonusShield=Math.round(heroMaxHp*.12);damage+=Math.round(atk*.08)}
+  else if(heroClass==='cacadora')damage+=Math.round(atk*.24)
+  else if(heroClass==='arcanista')damage+=Math.round(atk*.2)
+  else if(heroClass==='druida')bonusHeal=Math.round(heroMaxHp*.22)
+  else if(heroClass==='cacador')damage+=Math.round(atk*.2)
+  else if(heroClass==='monge'){damage+=Math.round(atk*.16);extraFervor=1}
+  else if(heroClass==='sacerdotisa'){bonusHeal=Math.round(heroMaxHp*.15);bonusShield=Math.round(heroMaxHp*.09)}
+  else if(heroClass==='conjurador')damage+=Math.round(atk*.24)
 
   const hpBefore=s.hp
   const nextHp=bonusHeal>0?Math.min(maxHp(s),hpBefore+bonusHeal):hpBefore
