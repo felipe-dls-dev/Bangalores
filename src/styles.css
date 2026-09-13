@@ -1605,6 +1605,7 @@ body::after{content:"VERSÃO 0.8.29 • 11/09/2026\A Corrigido: sair de uma bata
 body::after{content:"VERSÃO 0.8.30 • 11/09/2026\A Chance de emboscada por passo aumentada de 5% para 15%"}
 body::after{content:"VERSÃO 0.8.31 • 11/09/2026\A Mapas navegaveis agora tem saidas que levam direto para a regiao vizinha (sem voltar ao mapa-mundi); ordem das regioes no mapa e na Masmorra segue a progressao correta, e o mapa-mundi de Havendown ganhou nova arte com os marcadores reposicionados"}
 body::after{content:"VERSÃO 0.9.0 • 12/09/2026\A Modo História com missões conectadas entre regiões e continentes, novos NPCs interativos e sistema de entrega de encomendas e mensagens"}
+body::after{content:"VERSÃO 0.8.33 • 12/09/2026\A CI passa a rodar typecheck, lint e testes antes do deploy; ESLint e Prettier configurados; popup de versao agora e gerado por npm run release";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

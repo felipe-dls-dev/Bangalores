@@ -1711,7 +1711,7 @@ function CombatScreen(){
   const inv={...g.inventory,[id]:(g.inventory[id]??0)-1};if(inv[id]<=0)delete inv[id]
   const persistent=it.tipo==='ataque'||it.tipo==='escudo',activePotionIds=persistent?[...(g.activePotionIds??[]).filter(activeId=>activeId!==id),id]:(g.activePotionIds??[])
   const value=consumableEffectiveValue(it,g)
-  let description=`${it.nome} utilizado`
+  let description:string
   if(it.tipo==='cura'){const healed=Math.min(value,maxHp(g)-g.hp);useGame.setState({inventory:inv,hp:g.hp+healed});description=`recuperou ${healed} de vida`}
   else if(it.tipo==='escudo'){useGame.setState({inventory:inv,shield:g.shield+value,activePotionIds});description=`+${value} de escudo`}
   else if(it.tipo==='vida_max'){const success=Math.random()<(LIFE_CHANCE[id]??.35);if(success){const newMax=maxHp(g)+value,newHp=id==='elixir_fenix'?newMax:Math.min(newMax,g.hp+value);useGame.setState({inventory:inv,attr:{...g.attr,vida:g.attr.vida+value},hp:newHp});description=`vida máxima aumentada permanentemente em ${value}`}else{useGame.setState({inventory:inv});description='a tentativa falhou e a vida máxima não aumentou'}}
