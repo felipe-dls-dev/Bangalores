@@ -67,6 +67,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 
 | Priority | Request | Owner now | Status | Visual deliverables |
 | --- | --- | --- | --- | --- |
+| P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | First story trio delivered in ART-022; 17 identity-placeholder portraits remain queued. |
 | P0 | Steelmere all 7 territory maps | — | DONE | All delivered and integrated, see ART-001 and ART-005 through ART-010. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
 | P1 | Treasure chest variants | — | DONE | `common`/`opened` integrated (ART-011); `locked`/`rare`/`secret` delivered but unused until a chest-gating mechanic exists. |
@@ -381,6 +382,31 @@ Delivered path: `public/assets/maps/objects/campfire/idle.png`
 Dimensions and format: 128x128 PNG RGBA with real transparent background.
 Integration note: in `TileWorldExplorer`, replace the visual content of `.regionmap-campfire-icon` with an `img` using this path. Keep the enclosing button, `onRestCampfire`, label, aura and all current state logic intact. Size the image to the current tile bounds with `object-fit: contain`; retain the fire emoji only as an image-load fallback.
 Integration (Claude Code): same `MapPropIcon` fallback component used for ART-011 (see there), all existing button/aura/rest logic untouched. `npm test` 75/75 green.
+
+### ART-022 - NPC portrait audit and production order
+Status: PARTIAL DELIVERY - READY FOR CODE
+Owner: Codex; data-path integration after delivery: Claude Code
+Audit scope: `src/data/npcs.ts` contains 24 NPC records. All referenced sprite and portrait paths resolve; however, 20 NPCs need a character-specific portrait: 19 currently point at hero artwork and `sela_hartwin` currently points at Mira Bellwether's portrait.
+Delivered, first story trio:
+- `public/assets/npcs/sela_hartwin.webp`
+- `public/assets/npcs/lyriel_noite.webp`
+- `public/assets/npcs/kip_ligeiro.webp`
+Dimensions and format: each 768x1152 WebP RGB, vertical dialogue portrait.
+Required data replacements in `src/data/npcs.ts`: set the `portrait` field for `sela_hartwin`, `lyriel_noite`, and `kip_ligeiro` to their matching paths above. Do not alter their sprites, locations, dialogue, services or gameplay behavior.
+Production priority, story quest chain:
+- `sela_hartwin` - Sela Hartwin, Boticaria de Estrada
+- `lyriel_noite` - Mestra Lyriel
+- `kip_ligeiro` - Kip Pe-Ligeiro
+- `torvald_barbaneve` - Torvald Barbaneve
+- `ophira_vane` - Ophira Vane
+- `cassian_draye` - Cassian Draye
+- `oraculo_danika` - Oraculo Danika
+- `gideon_mascarado` - Gideon Mascarado
+- `diretor_vane` - Corvin Vane
+Second priority, region authority and recurring service NPCs:
+- `colm_aldric`, `toby_harlan`, `garrick_laton`, `silas_sterling`, `unidade_73`, `padre_lucian`, `astrid_reclusa`, `alaric_thorne`, `ignatius_drake`, `hamilton_cross`, `vanya_mar`
+Contract for each future delivery: one character-specific vertical portrait at `public/assets/npcs/<npc-id>.webp`, 768x1152 WebP RGB. Claude Code changes only the matching `portrait` field in `src/data/npcs.ts`; sprites and gameplay services remain untouched.
+Integration (Claude Code): swapped `portrait` for `sela_hartwin` (was reusing Mira Bellwether's portrait), `lyriel_noite` and `kip_ligeiro` (both were reusing hero card art) in `src/data/npcs.ts` to their delivered `.webp` files. No sprite/dialogue/service changes. Remaining 17 NPCs (production order above) still pending Codex delivery -- status stays PARTIAL DELIVERY until those land. `npm test` green.
 
 ## Handoff Log
 

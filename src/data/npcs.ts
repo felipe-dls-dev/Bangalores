@@ -107,7 +107,7 @@ export const NPCS: NpcDefinition[] = [
     y: 11,
     facing: 'down',
     sprite: 'assets/npcs/sprites/potion-vendor-simples-sprite.png',
-    portrait: 'assets/npcs/mira-bellwether.webp',
+    portrait: 'assets/npcs/sela_hartwin.webp',
     services: ['shop', 'quest'],
     screen: 'shop',
     shopCategory: 'consumivel',
@@ -128,7 +128,7 @@ export const NPCS: NpcDefinition[] = [
     y: 6,
     facing: 'down',
     sprite: 'assets/npcs/sprites/chibi/alchemist-superior-potions-chibi.png',
-    portrait: 'assets/heroes/druida-lunargenta.png',
+    portrait: 'assets/npcs/lyriel_noite.webp',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
     dialogue: [
@@ -146,7 +146,7 @@ export const NPCS: NpcDefinition[] = [
     y: 7,
     facing: 'right',
     sprite: 'assets/npcs/sprites/weapon-vendor-simples-sprite.png',
-    portrait: 'assets/heroes/ladino-eldravar-v2.png',
+    portrait: 'assets/npcs/kip_ligeiro.webp',
     services: ['quest'],
     screen: 'chronicle',
     dialogue: [
