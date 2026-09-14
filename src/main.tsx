@@ -1882,7 +1882,6 @@ function CombatScreen(){
   <div className="screen-intro"><small>FOCO DO TURNO</small><p>Olhe primeiro a intenção do inimigo, depois os bônus ativos e os consumíveis. O log continua disponível, mas a ação principal precisa ser lida em um só olhar.</p></div>
   <div className="battle-summary-strip"><span><small>SEU ATAQUE</small><strong>{attackValue(g)}</strong></span><span><small>SUA DEFESA</small><strong>{defenseValue(g)}</strong></span><span><small>INTENÇÃO</small><strong>{intent.label}</strong></span></div>
   <div className="combat-controls-strip">
-    <div className="combat-speed-group"><span className="speed-label">VELOCIDADE:</span>{([1,2,3] as const).map(speed=><button key={speed} className={`speed-pill${g.combatSpeed===speed?' active':''}`} onClick={()=>g.setCombatSpeed(speed)}>{speed}x</button>)}</div>
     <button className={`combat-auto-toggle${g.autoCombat?' active':''}`} onClick={()=>g.toggleAutoCombat()} title="Auto-combate: ações executadas automaticamente no seu turno"><Zap size={14}/><span>AUTO {g.autoCombat?'LIGADO':'DESLIGADO'}</span></button>
   </div>
   <div className="combat-hero-area">
