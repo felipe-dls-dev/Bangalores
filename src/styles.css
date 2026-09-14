@@ -1674,6 +1674,7 @@ body::after{content:"VERSÃO 0.8.46 • 13/09/2026\A Monstros visiveis no mapa 2
 body::after{content:"VERSÃO 0.8.47 • 13/09/2026\A Todos os 7 territorios de Steelmere ganham arte de fundo e colisao (Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro, Aetherium); terrenos especiais do Frostgard (gelo escorregadio, neve, respiro de vapor)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.48 • 13/09/2026\A Corrigido: monstros vagantes nao nascem mais perto do spawn/NPCs/eventos (evita ficar preso em desafios encadeados); Ataque Duplo da Cacadora agora dura 3 turnos (solo e cooperativo), nao so 1";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.49 • 13/09/2026\A Integrado lote de arte do Codex: baus/fogueira com arte real, retratos unicos para 15 chefes, cinematicas de historia, clima regional, ciclo dia/noite e novos terrenos (lama/esteira/basalto) em Steelmere";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.50 • 13/09/2026\A Corrigido: monstros vagantes no mapa agora desaparecem de vez ao serem derrotados, em vez de reaparecer no lugar de sempre";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

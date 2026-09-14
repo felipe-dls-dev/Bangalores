@@ -159,4 +159,103 @@ Severity: cosmetic / confusing / blocking
 
 ## Findings Log
 
-(empty so far)
+### QA-001 - Fast-path localStorage injection desync with active campaign snapshot
+Found by: Antigravity (QA Specialist)
+Where: `docs/QA_TESTING_GUIDE.md` (Fast Path snippet) / `src/store/game.ts` (`continueGame` & campaign storage)
+Steps:
+1. Start or play a campaign in Havendown (e.g. Guerreiro) so that an active save is written to localStorage.
+2. Open DevTools console and execute the fast-path snippet provided in `QA_TESTING_GUIDE.md`:
+   ```js
+   const raw = JSON.parse(localStorage.getItem('bangalores-save-v1'))
+   raw.state.completedStoryQuests = [...(raw.state.completedStoryQuests ?? []), 'q_cross_oceans']
+   raw.state.world = 'steelmere'
+   raw.state.regionId = 'frostgard'
+   raw.state.territory = 'Cumes de Frostgard'
+   raw.state.screen = 'region'
+   localStorage.setItem('bangalores-save-v1', JSON.stringify(raw))
+   ```
+3. Reload the browser page (`location.reload()`).
+4. On the title screen, click "Continuar campanha atual" (or observe auto-resume).
+Expected: Game loads directly into Steelmere (Cumes de Frostgard) region map with Steelmere unlocked.
+Actual: `continueGame()` restores from `raw.state.campaigns[raw.state.activeCampaignId]`, which was not modified by the snippet. The campaign snapshot overwrites `raw.state.world` and `raw.state.regionId`, trapping the player back in Havendown.
+Severity: confusing
+Note for Claude Code: Update the guide snippet or store load logic so campaign snapshots are also updated when injecting fast-path coordinates:
+```js
+if (raw.state.activeCampaignId && raw.state.campaigns?.[raw.state.activeCampaignId]) {
+  const camp = raw.state.campaigns[raw.state.activeCampaignId];
+  camp.state.completedStoryQuests = [...(camp.state.completedStoryQuests ?? []), 'q_cross_oceans'];
+  camp.state.world = 'steelmere';
+  camp.state.regionId = 'frostgard';
+  camp.state.territory = 'Cumes de Frostgard';
+  camp.state.screen = 'region';
+}
+```
+
+---
+
+### QA-002 - Aspect ratio mismatch on Campos Dourados overworld background art
+Found by: Antigravity (QA Specialist)
+Where: Region Map / Overworld: `public/assets/maps/campos-dourados-overworld.png` (`campos_dourados` / `TileWorldExplorer.tsx` / `regionMap.css`)
+Steps:
+1. Inspect image dimensions of region map backgrounds in `public/assets/maps/`.
+2. Observe all 7 Steelmere maps (`704x512`, ratio = 1.375, matching grid 22x16).
+3. Inspect `campos-dourados-overworld.png`.
+Expected: Dimensions match 1.375 aspect ratio (e.g. `1408x1024` or `704x512`) to align 1:1 with the 22x16 tile coordinate grid.
+Actual: `campos-dourados-overworld.png` is `1448x1086` (ratio = ~1.333, 4:3). In `.regionmap-art` with `background-size: cover`, ~3% of image width/height is subtly cropped, resulting in slight visual misalignment with the tile grid compared to Steelmere maps.
+Severity: cosmetic
+Note for Claude Code / Codex: Re-export or crop `campos-dourados-overworld.png` at `1408x1024` to maintain 22:16 grid parity.
+
+---
+
+### QA-003 - Missing favicon.ico generating 404 console error on startup
+Found by: Antigravity (QA Specialist)
+Where: Browser initial load / `public/favicon.ico`
+Steps:
+1. Launch dev/preview server and open browser with DevTools Console enabled.
+2. Observe network requests during initial page load.
+Expected: Zero 404 network errors in DevTools console.
+Actual: Browser requests `GET /favicon.ico` resulting in HTTP 404 Not Found error.
+Severity: cosmetic
+Note for Claude Code: Add a `favicon.ico` or standard SVG icon link in `index.html` to keep the DevTools console completely clean.
+
+---
+
+### QA-004 - Wandering monster collisions rolling 35% non-combat world events
+Found by: Antigravity (QA Specialist)
+Where: `src/store/game.ts` (`startEncounter`)
+Steps:
+1. In any region map, walk the character directly into a wandering monster token.
+2. In approximately 35% of encounters, observe the resulting screen.
+Expected: Interacting with a visible physical monster token on the overworld should reliably start combat against that monster family.
+Actual: `startEncounter` executes a 35% random event check (`screen: 'event'`), causing text/world events to occasionally supersede the physical monster encounter.
+Severity: confusing
+Note for Claude Code: Consider passing an encounter trigger flag (e.g. `{ isWanderingMonster: true }`) to bypass random story events when initiating combat via physical monster tokens.
+Investigated (Claude Code, 2026-09-13): not reproducible as described. Wandering-monster collision
+never calls `startEncounter` -- `TileWorldExplorer`'s `onAmbush` prop is wired to `g.triggerAmbush(subId)`
+(see `src/main.tsx`, the `<TileWorldExplorer .../>` call inside `RegionMapView`), which only ever sets
+`ambush:{enemy,subregionId}` and shows the fight-or-flee ambush prompt -- no random-event branch exists
+on that path. The 35% event roll lives in `startEncounter`, which is a *different* action, only reachable
+by clicking "EXPLORAR LOCAL" on a location's own inspector panel (the `encounterPrompt`/`SubregionCard`
+flow), not by touching a wanderer sprite. If this was actually observed live rather than inferred from
+reading `startEncounter`, please re-report with the exact steps (which region, which sprite, screen
+recording if possible) since the code doesn't support the described behavior on the collision path.
+
+---
+
+## Test Verification & QA Pass Matrix
+
+| Checklist Item | Scope / Files Tested | Automated Test Status | Browser / Visual Verification | Result |
+| --- | --- | --- | --- | --- |
+| **Steelmere Maps (7 territories)** | Frostgard, Engrenverde, Trilhouro, Vulcannis, Ferrujal, Coroferro, Aetherium | `regionMap.test.ts` & `qa-verification.test.ts` (100% reachability, 0 blocked POIs) | Background PNGs verified 704x512 px (1.375 aspect ratio, no stretch) | **PASS** |
+| **New Terrain Types** | Ice, Mud, Conveyor, Snow-drift, Steam-vent, Cracked Basalt | `qa-verification.test.ts` (grid tiles & asset existence verified) | Textures present on disk and mapped in `TileWorldExplorer` | **PASS** |
+| **Wandering Monsters & Fog of War** | 3 sprite families (3 frames each), fog reveal radius | `qa-verification.test.ts` (all 9 monster frames present, safe zone logic validated) | Sprites rendered with walk animations; fog CSS mask functional | **PASS** |
+| **Camera Zoom & Pan** | 60% to 180% zoom, drag pan, tile click precision | `qa-verification.test.ts` (click-to-tile coordinate math verified across all zoom levels) | Tested smoothly without coordinate drift | **PASS** |
+| **Chest & Campfire Props** | 6 chest states (common, locked, opened, rare, secret), campfire idle | `qa-verification.test.ts` (all 7 prop assets verified) | `MapPropIcon` replaces emojis; opened vs closed visually distinct | **PASS** |
+| **Boss Portraits** | 15 unique boss portraits from checklist | `qa-verification.test.ts` (all 15 mapped, present on disk, 100% unique) | Rendered without fallbacks or generic placeholders | **PASS** |
+| **Story Cinematics** | Acts 1-4 banner art + 2 ending banners | `qa-verification.test.ts` (all 6 WebP banners present on disk) | Full banner display on chapter intros | **PASS** |
+| **Weather & Day/Night** | Snow, rain, ash, smoke overlays + twilight/night lighting | `qa-verification.test.ts` (all 6 FX assets verified) | CSS `pointer-events: none` prevents click interception | **PASS** |
+| **Golpe Supremo Scaling** | Stat-scaling damage formula (`atk * 2.5 + 10` + class traits) | `qa-verification.test.ts` (tested all 9 classes, gauge reset & threshold verified) | Level 10 vs Level 60 scaling confirmed | **PASS** |
+| **Caçadora Ataque Duplo** | 3-turn buff duration & `extraHeroAttacks` rearming | `qa-verification.test.ts` (3-turn lifecycle verified) | Lasts 3 full combat turns, rearms each turn, expires correctly | **PASS** |
+| **Responsive Viewport** | 1280px wide desktop vs 420px narrow mobile | Browser CDP test (`scrollWidth === clientWidth`) | 0 horizontal page-level overflow | **PASS** |
+| **Reduced Motion** | "Reduzir efeitos visuais" settings toggle | Store setting & CSS `.reduced-motion` | Disables looping animations while preserving static art | **PASS** |
+

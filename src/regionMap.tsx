@@ -118,11 +118,14 @@ function wandererForbidden(map: RegionMapDef, npcs: NpcDefinition[], x: number, 
 // Deriva um monstro vagante por marcador de sub-região. Posicionado perto do pin, num tile livre
 // que não colida com nenhuma outra entidade, pra funcionar em qualquer mapa sem dado extra por região.
 interface Wanderer { id: string; subId: string; spriteId: string; home: { x: number; y: number }; x: number; y: number }
-function deriveWanderers(map: RegionMapDef, npcs: NpcDefinition[]): Wanderer[] {
+function deriveWanderers(map: RegionMapDef, npcs: NpcDefinition[], defeated?: Record<string, boolean>): Wanderer[] {
   const occupied = new Set<string>()
   const offsets: Array<[number, number]> = [[2, 0], [-2, 0], [0, 2], [0, -2], [2, 2], [-2, -2], [2, -2], [-2, 2]]
   const out: Wanderer[] = []
   for (const loc of map.locations) {
+    // Uma vitória naquele subId (por qualquer via -- esbarrar no monstro ou explorar pelo botão)
+    // limpa a ameaça visível ali de vez, igual a um baú que já foi aberto -- não reaparece.
+    if (defeated?.[loc.subId]) continue
     for (const [dx, dy] of offsets) {
       const x = loc.x + dx, y = loc.y + dy, key = tileKey(x, y)
       if (occupied.has(key) || wandererForbidden(map, npcs, x, y) || !isMapWalkable(map, { x, y })) continue
@@ -939,7 +942,7 @@ const FOG_REVEAL_RADIUS = 3
 
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
-  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore
+  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers
 }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
@@ -959,6 +962,7 @@ export function TileWorldExplorer({
   playerSprite?: string
   exploredTiles?: Set<string>
   onExplore?: (tiles: Array<{ x: number; y: number }>) => void
+  defeatedWanderers?: Record<string, boolean>
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
   // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
@@ -1019,7 +1023,7 @@ export function TileWorldExplorer({
   // cada render, não só quando o mapa muda de verdade.
   const npcsRef = React.useRef(npcs)
   React.useEffect(() => { npcsRef.current = npcs })
-  const wanderTemplate = React.useMemo(() => deriveWanderers(map, npcsRef.current), [map])
+  const wanderTemplate = React.useMemo(() => deriveWanderers(map, npcsRef.current, defeatedWanderers), [map, defeatedWanderers])
   const [wanderers, setWanderers] = React.useState<Wanderer[]>(() => wanderTemplate.map(w => ({ ...w })))
   React.useEffect(() => { setWanderers(wanderTemplate.map(w => ({ ...w }))) }, [wanderTemplate])
   // Ciclo idle/walk_1/walk_2 compartilhado entre todos os monstros visíveis -- não precisa
