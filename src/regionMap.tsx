@@ -1012,10 +1012,19 @@ function MapPropIcon({ src, fallback, className }: { src: string; fallback: stri
 
 const FOG_REVEAL_RADIUS = 3
 const FOG_EDGE_OFFSETS: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]
-// Coop: as 8 células da matriz 3x3 ao redor do líder (o centro é o próprio líder, a
-// .regionmap-player normal) -- baixo/esquerda/direita/cima primeiro (mais visíveis ao lado do
-// personagem), diagonais depois, já que o grupo tem no máximo 3 seguidores (4 jogadores por sala).
-const PARTY_GHOST_OFFSETS: Array<[number, number]> = [[0, 1], [-1, 0], [1, 0], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
+// Coop: posição dos "fantasmas" do grupo é dinâmica, sempre atrás do líder em relação à
+// direção que ele está encarando -- em vez de uma célula fixa da matriz 3x3 (que ficava
+// estranha quando o líder virava pro lado errado), dá a sensação de estar sendo "puxado".
+// back = passo pra trás na direção oposta ao facing; side = perpendicular a back, pra
+// espalhar os até 3 seguidores numa formação em V (direto atrás, atrás-esquerda, atrás-direita).
+const FACING_BACK: Record<Facing, [number, number]> = { down: [0, -1], up: [0, 1], left: [1, 0], right: [-1, 0] }
+const FACING_SIDE: Record<Facing, [number, number]> = { down: [1, 0], up: [1, 0], left: [0, 1], right: [0, 1] }
+const partyGhostOffset = (facing: Facing, index: number): [number, number] => {
+  const [bx, by] = FACING_BACK[facing]
+  const [sx, sy] = FACING_SIDE[facing]
+  const side = index === 1 ? -1 : index === 2 ? 1 : 0
+  return [bx + sx * side, by + sy * side]
+}
 
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
@@ -1656,8 +1665,8 @@ export function TileWorldExplorer({
             <img className="regionmap-wanderer-sprite" style={w.facing === 'left' ? { transform: 'scaleX(-1)' } : undefined} src={wanderAsset(w.spriteId, w.facing, WANDER_FRAMES[wanderFrame])} alt="" />
           </div>
         ))}
-        {(partyGhosts ?? []).slice(0, PARTY_GHOST_OFFSETS.length).map((ghost, index) => {
-          const [dx, dy] = PARTY_GHOST_OFFSETS[index]
+        {(partyGhosts ?? []).slice(0, 3).map((ghost, index) => {
+          const [dx, dy] = partyGhostOffset(facing, index)
           const ghostSprite = playerSpriteFrames(ghost.spriteId)[facing]
           return <div key={ghost.id} className={`regionmap-party-ghost${walking ? ' is-walking' : ''}`}
             style={{ left: (pos.x + dx) * tilePx, top: (pos.y + dy) * tilePx, width: tilePx, height: tilePx }}>

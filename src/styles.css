@@ -1774,6 +1774,7 @@ body::after{content:"VERSÃO 0.8.65 • 14/09/2026\A Corrigido: navegadores com 
 body::after{content:"VERSÃO 0.8.66 • 14/09/2026\A Novo: botao de sair da conta direto na tela inicial, pra trocar de conta sem precisar entrar numa campanha primeiro";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.67 • 14/09/2026\A Coop: sala mostra cards dos participantes com status; navegacao por mapa igual ao solo substitui os botoes de destino -- o lider anda e o grupo o segue, entrando junto em emboscadas e chefes";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.68 • 14/09/2026\A Coop: outros integrantes agora ficam ao redor do lider numa matriz 3x3 durante a caminhada, em vez de empilhados atras dele";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.69 • 14/09/2026\A Coop: formacao dos seguidores agora e dinamica -- ficam sempre atras do lider na direcao que ele esta andando/encarando, em vez de uma celula fixa";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
