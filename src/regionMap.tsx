@@ -157,7 +157,14 @@ const WANDER_FRAME_MS = 420 // cadência do ciclo idle/walk_1/walk_2 (ver ART-00
 // o nome exato do inimigo sorteado. Atribuídas em round-robin só pra dar variedade visual.
 const WANDER_SPRITE_FAMILIES = ['automato-sentinela', 'batedor-a-vapor', 'elemental-de-vapor']
 const WANDER_FRAMES = ['idle', 'walk_1', 'walk_2']
-function wanderAsset(spriteId: string, frame: string) { return mapAsset(`assets/maps/objects/monster-${spriteId}/${frame}.png`) }
+type WanderFacing = 'down' | 'up' | 'right' | 'left'
+// ART-028: down usa os arquivos raiz (idle/walk_1/walk_2), up e right têm pastas próprias
+// (up_idle.png etc.); left reaproveita os frames de right espelhados via CSS (scaleX(-1) só na
+// img, não no tile), então não existe um left_*.png separado -- ver .regionmap-wanderer-sprite.
+function wanderAsset(spriteId: string, facing: WanderFacing, frame: string) {
+  const prefix = facing === 'up' ? 'up_' : facing === 'right' || facing === 'left' ? 'right_' : ''
+  return mapAsset(`assets/maps/objects/monster-${spriteId}/${prefix}${frame}.png`)
+}
 
 // Um monstro vagante nunca pode nascer, nem andar, em cima de um marcador (local, saída, baú,
 // fogueira, NPC) nem perto demais do spawn -- é o que garante que chegar numa região (ou voltar
@@ -176,7 +183,7 @@ function wandererForbidden(map: RegionMapDef, npcs: NpcDefinition[], x: number, 
 
 // Deriva um monstro vagante por marcador de sub-região. Posicionado perto do pin, num tile livre
 // que não colida com nenhuma outra entidade, pra funcionar em qualquer mapa sem dado extra por região.
-interface Wanderer { id: string; subId: string; spriteId: string; home: { x: number; y: number }; x: number; y: number }
+interface Wanderer { id: string; subId: string; spriteId: string; home: { x: number; y: number }; x: number; y: number; facing: WanderFacing }
 function deriveWanderers(map: RegionMapDef, npcs: NpcDefinition[], defeated?: Record<string, boolean>): Wanderer[] {
   const occupied = new Set<string>()
   const offsets: Array<[number, number]> = [[2, 0], [-2, 0], [0, 2], [0, -2], [2, 2], [-2, -2], [2, -2], [-2, 2]]
@@ -190,7 +197,7 @@ function deriveWanderers(map: RegionMapDef, npcs: NpcDefinition[], defeated?: Re
       if (occupied.has(key) || wandererForbidden(map, npcs, x, y) || !isMapWalkable(map, { x, y })) continue
       occupied.add(key)
       const spriteId = WANDER_SPRITE_FAMILIES[out.length % WANDER_SPRITE_FAMILIES.length]
-      out.push({ id: `wander_${loc.subId}`, subId: loc.subId, spriteId, home: { x, y }, x, y })
+      out.push({ id: `wander_${loc.subId}`, subId: loc.subId, spriteId, home: { x, y }, x, y, facing: 'down' })
       break
     }
   }
@@ -1187,7 +1194,8 @@ export function TileWorldExplorer({
           if (occupied.has(key) && key !== tileKey(w.x, w.y)) return w
           if (nx === posRef.current.x && ny === posRef.current.y) { triggeredSubId = w.subId; return w }
           occupied.delete(tileKey(w.x, w.y)); occupied.add(key)
-          return { ...w, x: nx, y: ny }
+          const facing: WanderFacing = dy < 0 ? 'up' : dy > 0 ? 'down' : dx > 0 ? 'right' : 'left'
+          return { ...w, x: nx, y: ny, facing }
         })
         if (triggeredSubId) { wanderTriggeredRef.current = true; onAmbushRef.current?.(triggeredSubId) }
         return next
@@ -1600,7 +1608,7 @@ export function TileWorldExplorer({
         {wanderers.map(w => (
           <div key={w.id} className="regionmap-wanderer" style={{ left: w.x * tilePx, top: w.y * tilePx, width: tilePx, height: tilePx }} title="Criatura à espreita -- desvie ou lute">
             <span className="regionmap-wanderer-aura" />
-            <img className="regionmap-wanderer-sprite" src={wanderAsset(w.spriteId, WANDER_FRAMES[wanderFrame])} alt="" />
+            <img className="regionmap-wanderer-sprite" style={w.facing === 'left' ? { transform: 'scaleX(-1)' } : undefined} src={wanderAsset(w.spriteId, w.facing, WANDER_FRAMES[wanderFrame])} alt="" />
           </div>
         ))}
         <div className={`regionmap-player${walking ? ' is-walking' : ''}${riding ? ' is-riding' : ''}`}

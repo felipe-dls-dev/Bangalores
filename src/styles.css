@@ -1730,6 +1730,8 @@ body::after{content:"VERSÃO 0.8.53 • 14/09/2026\A Novo: mecanica de alavanca 
 body::after{content:"VERSÃO 0.8.54 • 14/09/2026\A Novo: mecanicas de monolito de teletransporte, atalho de barco/carruagem, parede ilusoria e placa de sinalizacao (ainda sem posicionamento em nenhum mapa)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.55 • 14/09/2026\A Corrigido: nevoa de guerra nao corta mais de visao total pra preto solido -- borda de transicao com 50% de opacidade nas extremidades";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.56 • 14/09/2026\A Novo: baus mostram popup com o que foi encontrado ao abrir; fogueira agora e uma area de descanso 3x3 com cronometro, curando 1 de vida a cada 6s (antes era cura total instantanea)";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.57 • 14/09/2026\A Ajuste: chance de emboscada cega reduzida de 7% para 5% por passo, ja que monstros visiveis no mapa cobrem a maior parte dos encontros";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.58 • 14/09/2026\A Novo: monstros vagantes no mapa agora viram de verdade na direcao em que andam (cima, baixo, direita, esquerda espelhada), em vez de sempre olhar de frente";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

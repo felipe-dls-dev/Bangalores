@@ -67,7 +67,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 
 | Priority | Request | Owner now | Status | Visual deliverables |
 | --- | --- | --- | --- | --- |
-| P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | 12 of 20 portraits delivered and integrated in ART-022; 8 second-priority portraits remain queued. |
+| P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | 12 integrated plus Silas delivered in ART-022; 7 portraits remain queued. |
 | P0 | Steelmere all 7 territory maps | — | DONE | All delivered and integrated, see ART-001 and ART-005 through ART-010. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
 | P1 | Treasure chest variants | — | DONE | `common`/`opened` integrated (ART-011); `locked`/`rare`/`secret` delivered but unused until a chest-gating mechanic exists. |
@@ -75,7 +75,8 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P1 | Terrain states | — | DONE | Frostgard (ART-004) plus Ferrujal mud, Coroferro conveyor and Vulcannis ash-lava-rock (ART-014) all integrated with a movement rule each. |
 | P1 | Story cinematic panels | — | DONE | All 4 act banners plus both endings integrated in `StoryCampaignPanel` (ART-015). |
 | P1 | Unique boss portraits | — | DONE | 15 unique portraits integrated (ART-016 through ART-020); other bosses still reuse a shared portrait. |
-| P1 | Overworld visible monsters | — | DONE | Patrol AI + collision-to-combat (existing ambush flow) + real sprites from ART-003, all integrated. Blind step-ambush chance lowered 15%→7% since visible monsters now cover most encounters. |
+| P1 | Overworld visible monsters | — | DONE | Patrol AI + collision-to-combat (existing ambush flow) + real sprites from ART-003, all integrated. Blind step-ambush chance lowered 15%→7%→5% since visible monsters now cover most encounters. |
+| P1 | Overworld monster facing directions | Claude Code | INTEGRATED | ART-028 delivered `up_*` and `right_*` frames for all three existing families; wanderers now face their actual direction of travel (left mirrors right via CSS). |
 | P2 | Map camera zoom/pan | — | DONE | Mouse wheel + on-screen buttons, 60%-180%. Pure CSS scale on the existing world container — no art impact, works with any background at any resolution. |
 | P2 | Weather layer | — | DONE | Integrated on Frostgard/Vulcannis/Ferrujal/Coroferro (ART-012), drift respects the reduced-effects toggle. |
 | P2 | Day/night layer | — | DONE | Integrated globally as a cosmetic-only cycle (ART-013), no gameplay consequence yet. |
@@ -409,8 +410,9 @@ Delivered, first story set:
 - `public/assets/npcs/colm_aldric.webp`
 - `public/assets/npcs/toby_harlan.webp`
 - `public/assets/npcs/garrick_laton.webp`
+- `public/assets/npcs/silas_sterling.webp`
 Dimensions and format: each 768x1152 WebP RGB, vertical dialogue portrait.
-Required data replacements in `src/data/npcs.ts`: set the `portrait` field for `sela_hartwin`, `lyriel_noite`, `kip_ligeiro`, `torvald_barbaneve`, `ophira_vane`, `cassian_draye`, `oraculo_danika`, `gideon_mascarado`, `diretor_vane`, `colm_aldric`, `toby_harlan`, and `garrick_laton` to their matching paths above. Do not alter their sprites, locations, dialogue, services or gameplay behavior.
+Required data replacements in `src/data/npcs.ts`: set the `portrait` field for `sela_hartwin`, `lyriel_noite`, `kip_ligeiro`, `torvald_barbaneve`, `ophira_vane`, `cassian_draye`, `oraculo_danika`, `gideon_mascarado`, `diretor_vane`, `colm_aldric`, `toby_harlan`, `garrick_laton`, and `silas_sterling` to their matching paths above. Do not alter their sprites, locations, dialogue, services or gameplay behavior.
 Production priority, story quest chain:
 - `sela_hartwin` - Sela Hartwin, Boticaria de Estrada
 - `lyriel_noite` - Mestra Lyriel
@@ -519,6 +521,18 @@ Delivered path: `public/assets/maps/objects/signpost/idle.png`
 Dimensions and format: 128x128 PNG RGBA with real transparent background.
 Integration note: render this asset in the same map-object container used for campfires and levers, preserving the scenery object's accessible label and click handler. Keep all sign text in the code-owned popup, not embedded in the image; retain a simple fallback only for image-load failure.
 Integration (Claude Code): added `RegionMapScenery` to `RegionMapDef` (`scenery?`, with a `kind` field so future scenery types beyond `signpost` can reuse the same list without a new prop). Clicking one opens a small local popup inside `TileWorldExplorer` itself (no store involved -- rereadable every time, exactly like a real sign). Not yet placed on any specific map. `npm test` 97/97 green.
+
+### ART-028 - Overworld monster facing directions
+Status: INTEGRATED
+Requested by: Felipe
+Gameplay purpose: wandering monsters must face their actual direction of travel instead of always appearing to walk toward the player/camera.
+Delivered families: `automato-sentinela`, `batedor-a-vapor`, `elemental-de-vapor`.
+Delivered paths: every family directory under `public/assets/maps/objects/monster-<family>/` now contains `right_idle.png`, `right_walk_1.png`, `right_walk_2.png`, `up_idle.png`, `up_walk_1.png`, and `up_walk_2.png`.
+Dimensions and format: 724x724 PNG RGBA per frame, real transparent background; all 18 delivered files were validated.
+Direction contract: retain the current root `idle.png`, `walk_1.png`, `walk_2.png` as the DOWN-facing frames. Use the new `right_*` files when dx is positive and `up_*` files when dy is negative. For LEFT, reuse the right frames with `transform: scaleX(-1)` on the image (not on the tile container, so its position remains unchanged). Keep the existing three-frame clock and use `idle` whenever the wanderer did not move in the latest patrol tick.
+Code integration: extend the transient `Wanderer` view state with a last-facing direction, initialized to `down`; update it only after a successful patrol step in `setWanderers`; resolve `wanderAsset(spriteId, direction, frame)` from this convention. This is presentation-only and must not affect collision, patrol radius, combat or save data.
+Acceptance check: walk a visible monster north, east, south and west. It shows an up, right, existing down, and mirrored-right frame respectively; its walk cycle continues normally and its hitbox/route does not shift.
+Integration (Claude Code): `Wanderer` gained a `facing:'down'|'up'|'right'|'left'` field (default `down`), updated only when a patrol step actually lands (`dy<0`→up, `dy>0`→down, `dx>0`→right, `dx<0`→left -- `WANDER_STEPS` is cardinal-only so this is exhaustive). `wanderAsset(spriteId, facing, frame)` now resolves the directory prefix (`up_`/`right_`/none for down); `left` reuses the `right_*` files with `transform:scaleX(-1)` on the `<img>` only, tile position untouched. The shared idle/walk_1/walk_2 clock (`wanderFrame`) is unchanged -- purely presentational, no collision/patrol/combat/save impact. `npm test` 97/97 green.
 
 ## Handoff Log
 
