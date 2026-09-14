@@ -20,7 +20,13 @@ const SFX_FILES={
 } as const
 export type SfxId=keyof typeof SFX_FILES
 const MUTE_KEY='bangalores-audio-muted'
-let muted=typeof localStorage!=='undefined'&&localStorage.getItem(MUTE_KEY)==='1'
+// localStorage pode não só estar ausente (typeof undefined) como lançar ao ser acessado --
+// Safari em navegação privada (versões antigas) e navegadores/webviews com armazenamento
+// bloqueado por política de privacidade fazem isso. Isso roda no carregamento do módulo, antes
+// do React montar qualquer coisa, então sem o try/catch aqui o jogo inteiro nunca chegava a
+// aparecer nesses navegadores.
+let muted=false
+try{muted=typeof localStorage!=='undefined'&&localStorage.getItem(MUTE_KEY)==='1'}catch{}
 const cache=new Map<SfxId,HTMLAudioElement>()
 function sfxUrl(path:string){return `${import.meta.env.BASE_URL}${path}`}
 export function isAudioMuted(){return muted}

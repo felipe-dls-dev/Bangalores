@@ -1390,7 +1390,11 @@ export function TileWorldExplorer({
     if (paused) return
     let frameId = 0, interactHeld = false
     const poll = () => {
-      const pad = navigator.getGamepads?.()[0]
+      // navigator.getGamepads?.() já cobre navegadores sem a Gamepad API (retorna undefined),
+      // mas faltava o "?." antes do [0] -- em qualquer navegador sem suporte, isso lançava
+      // "Cannot read properties of undefined" a cada frame (via requestAnimationFrame),
+      // silenciosamente no console, mas sem nunca reagendar o próximo frame corretamente.
+      const pad = navigator.getGamepads?.()?.[0]
       if (pad) {
         const [axisX, axisY] = pad.axes
         let dx = 0, dy = 0

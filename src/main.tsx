@@ -2250,4 +2250,34 @@ function GuildScreen(){
  <div className="guild-mission-grid">{visibleMissions.map((m,missionIndex)=>{const showRankDivider=missionIndex===0||m.rank!==visibleMissions[missionIndex-1].rank,dividerRank=GUILD_RANKS.find(r=>r.id===m.rank)!,accepted=g.guildAccepted.includes(m.id),claimed=g.guildClaimed.includes(m.id),progress=missionProgress(m),ready=accepted&&progress>=m.quantidade,equipmentReward=m.recompensa.tipo==='equipment',deliveryItem=m.itemId?EQUIPMENT.find(e=>e.id===m.itemId):undefined,materialInfo=m.materialId?Object.values(REGION_MATERIALS).find(mat=>mat.id===m.materialId):undefined,deliveryEquippedOnly=m.tipo==='delivery'&&Boolean(m.itemId)&&!g.equipmentBag.some(ref=>equipmentBaseId(ref)===m.itemId!)&&Object.values(g.equipped).some(ref=>equipmentBaseId(ref)===m.itemId!),requiredRank=GUILD_RANKS.find(r=>r.id===m.rank)!,locked=rankIndex<GUILD_RANKS.findIndex(r=>r.id===m.rank);const claimMission=()=>{if(deliveryEquippedOnly&&!window.confirm(`${deliveryItem?.nome} está equipado em um herói. Ao entregá-lo você perderá este equipamento e seus bônus enquanto ele estiver equipado. Deseja continuar?`))return;g.claimGuildMission(m.id)};return <React.Fragment key={m.id}>{showRankDivider&&<div className="guild-rank-divider" style={{'--rank-color':dividerRank.cor} as React.CSSProperties}><Shield size={14}/><strong>{dividerRank.nome}</strong><small>{dividerRank.minimo}+ reputação</small></div>}<article className={`guild-mission${claimed?' claimed':ready?' ready':accepted?' active':locked?' locked':''}`}><header><span>{locked?<Shield/>:m.tipo==='delivery'?<Package/>:m.tipo==='material'?<Gem/>:m.tipo==='boss'?<Trophy/>:m.tipo==='specific'?<Sword/>:<Shield/>}</span><div><small>{m.tipo==='delivery'?'CONTRATO DE ENTREGA':m.tipo==='material'?'PEDIDO DE COLETA':m.tipo==='boss'?'CONTRATO DE CHEFE':m.tipo==='specific'?'CAÇA ESPECÍFICA':'MISSÃO DE CAÇA'}</small><h2>{m.nome}</h2></div><b>{'◆'.repeat(m.dificuldade)}</b></header><span className="guild-required-rank" style={{'--rank-color':requiredRank.cor} as React.CSSProperties}>Rank mínimo: <strong>{requiredRank.nome}</strong> · +{m.dificuldade} reputação</span><p>{m.descricao}</p>{deliveryItem&&<span className="guild-delivery-item"><Package/>Item solicitado: <strong>{deliveryItem.nome}</strong>{progress>0?(deliveryEquippedOnly?<em>Equipado — será perdido ao entregar</em>:<em>Disponível para entrega</em>):<em>Não está na bolsa</em>}</span>}{materialInfo&&<span className="guild-delivery-item"><Gem/>Material pedido: <strong>{materialInfo.nome}</strong><em>{progress}/{m.quantidade} em estoque</em></span>}{m.local&&<span className="guild-location"><Map/>Região indicada: {m.local}</span>}{m.destinoId&&<button className="guild-fast-travel" disabled={locked} title={locked?`Alcance o rank ${requiredRank.nome} para viajar para esta missão.`:`Viajar para ${m.local}`} onClick={()=>g.openSubregion(m.destinoId!)}><Map/><span><small>VIAGEM RÁPIDA</small><strong>{locked?'Destino bloqueado':m.local}</strong></span><ArrowRight/></button>}<div className="guild-progress"><div><span>{m.tipo==='delivery'?'Item na bolsa':m.tipo==='material'?'Materiais coletados':'Progresso'}</span><strong>{progress}/{m.quantidade}</strong></div><div className="xp-track"><div style={{width:`${progress/m.quantidade*100}%`}}/></div></div><div className="guild-reward"><span>{equipmentReward?<Package/>:<Coins/>}<small>RECOMPENSA</small><strong>{equipmentReward?'Equipamento compatível':`${m.recompensa.valor} moedas de ouro`}</strong></span>{claimed?<button disabled>Concluída</button>:locked?<button className="rank-locked" disabled>Requer rank {requiredRank.nome}</button>:!accepted?<button onClick={()=>g.acceptGuildMission(m.id)}>Aceitar missão</button>:ready?<button className="primary" disabled={equipmentReward&&bagFull} title={equipmentReward&&bagFull?'Libere espaço nos equipamentos guardados.':deliveryEquippedOnly?'Este item está equipado e será perdido ao entregar.':''} onClick={claimMission}>{equipmentReward&&bagFull?'Bolsa cheia':m.tipo==='delivery'?'Entregar item':m.tipo==='material'?'Entregar materiais':'Resgatar recompensa'}</button>:<button disabled>{m.tipo==='delivery'?'Item necessário':m.tipo==='material'?'Materiais insuficientes':'Em andamento'}</button>}</div></article></React.Fragment>})}</div></div>
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AuthProvider><AuthGate><CoopProvider><App/></CoopProvider></AuthGate></AuthProvider></React.StrictMode>)
+// Sem isto, qualquer erro não tratado em qualquer tela (incompatibilidade de navegador, bug
+// pontual, estado de save corrompido) desmontava a árvore inteira do React sem aviso nenhum --
+// o jogador só via a tela inicial "piscar" e depois ficar toda preta (o fundo escuro de
+// html/body/#root, sem nenhum conteúdo React por cima). Agora aparece uma tela de recuperação
+// em vez de um vazio sem explicação.
+class AppErrorBoundary extends React.Component<{children:React.ReactNode},{error?:Error}>{
+  state:{error?:Error}={}
+  static getDerivedStateFromError(error:Error){return{error}}
+  componentDidCatch(error:Error,info:React.ErrorInfo){console.error('Erro não tratado na interface do jogo:',error,info.componentStack)}
+  handleReload=()=>{window.location.reload()}
+  handleResetSave=()=>{
+    if(!window.confirm('Isso vai apagar todo o progresso salvo neste navegador e recarregar o jogo do zero. Tem certeza?'))return
+    try{localStorage.removeItem('bangalores-save-v1')}catch{}
+    window.location.reload()
+  }
+  render(){
+    if(!this.state.error)return this.props.children
+    return <div className="app-crash-fallback"><div className="app-crash-card">
+      <div className="brand big">Bangalore's</div>
+      <h2>Algo travou nesta tela</h2>
+      <p>Pode ser uma falha temporária ou uma incompatibilidade com este navegador. Recarregar a página normalmente resolve.</p>
+      <div className="app-crash-actions">
+        <button className="primary" onClick={this.handleReload}>Recarregar página</button>
+        <button className="ghost-action" onClick={this.handleResetSave}>Apagar dados salvos e recomeçar</button>
+      </div>
+      <details><summary>Detalhes técnicos</summary><pre>{String(this.state.error?.message??this.state.error)}</pre></details>
+    </div></div>
+  }
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AppErrorBoundary><AuthProvider><AuthGate><CoopProvider><App/></CoopProvider></AuthGate></AuthProvider></AppErrorBoundary></React.StrictMode>)
