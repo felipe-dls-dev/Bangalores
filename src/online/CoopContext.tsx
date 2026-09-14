@@ -2,9 +2,8 @@ import React from 'react'
 import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type StatusEffects, type Summon, type SummonType } from '../store/game'
 import type { Element } from '../data/expansion'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
-type CoopDestinationKind='encounter'|'subregionBoss'|'regionBoss'
-type CoopVitals={hp:number;maxHp:number;level:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[]}
-type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;selectDestination:(regionId:string,subregionId:string,kind?:CoopDestinationKind)=>Promise<void>;confirmTravel:(enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
+type CoopVitals={hp:number;maxHp:number;level:number;attack?:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[]}
+type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
 const CoopContext=React.createContext<CoopContextValue|null>(null),ROOM_KEY='bangalores-coop-room-id'
 // localStorage pode lançar (não só faltar) em navegadores/webviews com armazenamento bloqueado
 // por política de privacidade. A leitura de readRoomId roda num useEffect que dispara em TODO
@@ -19,17 +18,64 @@ const nextInitiative=(battle:any)=>{const order=Array.isArray(battle.initiativeO
 export function CoopProvider({children}:{children:React.ReactNode}){
  const [room,setRoom]=React.useState<OnlineRoom|null>(null),[members,setMembers]=React.useState<OnlineMember[]>([]),[userId,setUserId]=React.useState(''),[onlineCount,setOnlineCount]=React.useState(0),[busy,setBusy]=React.useState(false),[notice,setNotice]=React.useState('')
  const channel=React.useRef<ReturnType<typeof subscribeToOnlineRoom>>(null),roomRef=React.useRef<OnlineRoom|null>(null),membersRef=React.useRef<OnlineMember[]>([])
- const refresh=React.useCallback(async(roomId:string)=>{try{const data=await loadOnlineRoom(roomId);roomRef.current=data.room;membersRef.current=data.members;setRoom(data.room);setMembers(data.members)}catch(error){clearRoomId();roomRef.current=null;setRoom(null);setMembers([]);setNotice(error instanceof Error?error.message:'A sala não está mais disponível.')}},[])
- const connect=React.useCallback(async(roomId:string,id?:string)=>{await unsubscribeFromOnlineRoom(channel.current);const user=id?{id}:await ensureOnlineUser();setUserId(user.id);writeRoomId(roomId);await refresh(roomId);channel.current=subscribeToOnlineRoom(roomId,()=>void refresh(roomId),presence=>setOnlineCount(Object.keys(presence).length));setNotice('Sala conectada em tempo real.')},[refresh])
+ const mapPosPending=React.useRef<{regionId:string;x:number;y:number}|null>(null),mapPosBusy=React.useRef(false)
+ // Geração da conexão atual: connect() roda de novo tanto no reconnect automático (localStorage,
+ // ao montar) quanto ao criar/entrar numa sala explicitamente -- se as duas chamadas se
+ // sobrepuserem (ex.: a sala antiga salva localmente já não existe mais e o refresh dela demora
+ // pra falhar), sem essa checagem a resposta da chamada MAIS VELHA podia chegar depois e apagar
+ // o estado da sala nova recém conectada com sucesso (setRoom(null) por cima de um room válido).
+ const connectionGen=React.useRef(0)
+ const refresh=React.useCallback(async(roomId:string,expectedGen?:number)=>{try{const data=await loadOnlineRoom(roomId);if(expectedGen!==undefined&&connectionGen.current!==expectedGen)return;roomRef.current=data.room;membersRef.current=data.members;setRoom(data.room);setMembers(data.members)}catch(error){if(expectedGen!==undefined&&connectionGen.current!==expectedGen)return;clearRoomId();roomRef.current=null;setRoom(null);setMembers([]);setNotice(error instanceof Error?error.message:'A sala não está mais disponível.')}},[])
+ const connect=React.useCallback(async(roomId:string,id?:string)=>{const myGen=++connectionGen.current;await unsubscribeFromOnlineRoom(channel.current);const user=id?{id}:await ensureOnlineUser();if(connectionGen.current!==myGen)return;setUserId(user.id);writeRoomId(roomId);await refresh(roomId,myGen);if(connectionGen.current!==myGen)return;channel.current=subscribeToOnlineRoom(roomId,()=>void refresh(roomId),presence=>setOnlineCount(Object.keys(presence).length));setNotice('Sala conectada em tempo real.')},[refresh])
  React.useEffect(()=>{const id=readRoomId();if(id)void connect(id);return()=>{void unsubscribeFromOnlineRoom(channel.current)}},[connect])
  const create=async(name:string,heroId?:string)=>{setBusy(true);try{writeCoopName(name.trim());const result=await createOnlineRoom(name,heroId);await connect(result.room_id,result.user_id)}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível criar a sala.')}finally{setBusy(false)}}
  const join=async(code:string,name:string,heroId?:string)=>{setBusy(true);try{writeCoopName(name.trim());const result=await joinOnlineRoom(code,name,heroId);await connect(result.room_id,result.user_id)}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível entrar na sala.')}finally{setBusy(false)}}
  const leave=async()=>{if(!roomRef.current)return;setBusy(true);try{await leaveOnlineRoom(roomRef.current.id);await unsubscribeFromOnlineRoom(channel.current);channel.current=null;clearRoomId();roomRef.current=null;setRoom(null);setMembers([]);setOnlineCount(0);setNotice('Você saiu da sala.')}finally{setBusy(false)}}
  const toggleReady=async(heroId?:string)=>{const current=roomRef.current,me=membersRef.current.find(member=>member.user_id===userId);if(!current||!me)return;setBusy(true);try{await setMemberReady(current.id,!me.ready,heroId);await refresh(current.id)}finally{setBusy(false)}}
- const updateState=async(makeState:(current:OnlineRoom)=>Record<string,unknown>)=>{for(let attempt=0;attempt<3;attempt++){const current=roomRef.current;if(!current)return;try{await publishRoomState(current.id,makeState(current),current.state_version);await refresh(current.id);return}catch(error){await refresh(current.id);if(attempt===2)throw error}}}
+ // O mapa navegável passou a publicar a posição do líder a cada passo (a cada ~320ms andando),
+ // então agora é comum ter dois escritores concorrentes de verdade na sala (posição do líder +
+ // progresso/vitals de outro membro) -- sem um atraso entre tentativas, as duas colidiam de novo
+ // na tentativa seguinte com boa chance (mesmo após o refresh, se o outro escritor também
+ // estiver retentando no mesmo instante). Um atraso curto e levemente aleatório reduz a chance
+ // de duas tentativas caírem sempre juntas.
+ const updateState=async(makeState:(current:OnlineRoom)=>Record<string,unknown>)=>{for(let attempt=0;attempt<5;attempt++){const current=roomRef.current;if(!current)return;try{await publishRoomState(current.id,makeState(current),current.state_version);await refresh(current.id);return}catch(error){await refresh(current.id);if(attempt===4)throw error;await new Promise(resolve=>setTimeout(resolve,80+Math.random()*120))}}}
  const publishProgress=async(progress:Record<string,number>,vitals:CoopVitals)=>{if(!roomRef.current)return;try{await updateState(current=>({...current.shared_state,memberProgress:{...((current.shared_state.memberProgress as Record<string,unknown>)??{}),[userId]:progress},memberVitals:{...((current.shared_state.memberVitals as Record<string,unknown>)??{}),[userId]:vitals}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível sincronizar o progresso da campanha.')}}
- const selectDestination=async(regionId:string,subregionId:string,kind:CoopDestinationKind='encounter')=>{if(roomRef.current?.host_id!==userId)return;setBusy(true);try{await updateState(current=>({...current.shared_state,destination:{regionId,subregionId,kind,selectedBy:userId,selectedAt:new Date().toISOString()},travelAcceptedBy:[],battle:undefined,rewardRule:{type:'damage_proportional',formula:'player_damage / group_damage'}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível selecionar o destino.')}finally{setBusy(false)}}
- const confirmTravel=async(enemy?:Record<string,unknown>)=>{setBusy(true);try{await updateState(current=>{const accepted=[...new Set([...(Array.isArray(current.shared_state.travelAcceptedBy)?current.shared_state.travelAcceptedBy as string[]:[]),userId])],allAccepted=membersRef.current.length>=2&&membersRef.current.every(member=>accepted.includes(member.user_id)),enemyHp=Number((enemy as any)?.vida??0),initiativeOrder=shuffled([...membersRef.current.map(member=>member.user_id),'enemy']),activeUserId=initiativeOrder[0],initiativeNames=initiativeOrder.map(id=>id==='enemy'?String((enemy as any)?.nome??'Inimigo'):membersRef.current.find(member=>member.user_id===id)?.display_name??'Aventureiro');return{...current.shared_state,travelAcceptedBy:accepted,...(allAccepted?{battle:{id:`coop_${Date.now()}`,status:'playing',subregionId:(current.shared_state.destination as any)?.subregionId,startedAt:new Date().toISOString(),enemy,enemyHp,combatMinions:[],damageByPlayer:{},enemyFearPenalty:0,fearTurnsLeft:0,groupBuff:{},playerBuffs:{},enemyStatus:{},initiativeOrder,initiativeNames,initiativeIndex:0,activeUserId,turn:1,round:1,log:[`Iniciativa sorteada: ${initiativeNames.join(' → ')}.`]}}:{})}})}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível confirmar a viagem.')}finally{setBusy(false)}}
+ // Publica a posição do líder no mapa navegável pros demais integrantes acompanharem. Anda
+ // dispara um onPositionChange por passo (a cada ~320ms), bem mais rápido que uma viagem
+ // completa de updateState (RPC + refetch, com retries em caso de conflito de versão) --
+ // sem essa fila, cada passo novo abria uma escrita concorrente contra a anterior e as duas
+ // ficavam se conflitando entre si pra sempre (STATE_VERSION_CONFLICT em toda tentativa,
+ // mesmo sem nenhum outro jogador escrevendo). Só um publish roda por vez; passos que chegam
+ // enquanto ele está em voo apenas atualizam qual é a posição "mais nova" a mandar a seguir.
+ const publishMapPos=async(regionId:string,x:number,y:number)=>{
+  if(roomRef.current?.host_id!==userId)return
+  mapPosPending.current={regionId,x,y}
+  if(mapPosBusy.current)return
+  mapPosBusy.current=true
+  // Pequeno atraso antes do primeiro envio: dá tempo de vários passos seguidos (segurando a
+  // seta) se acumularem em UM só publish da posição mais recente, em vez de um round-trip
+  // completo por tile -- reduz bastante o volume de escritas concorrentes durante uma
+  // caminhada contínua, que é o cenário que mais gerava conflito de versão.
+  await new Promise(resolve=>setTimeout(resolve,220))
+  try{
+   while(mapPosPending.current){
+    const next=mapPosPending.current
+    mapPosPending.current=null
+    try{await updateState(current=>({...current.shared_state,mapPos:next}))}catch{}
+   }
+  }finally{mapPosBusy.current=false}
+ }
+ // Substitui o antigo fluxo de seleção de destino em dropdown + confirmação de todos: agora o
+ // anfitrião caminha pelo mapa e qualquer emboscada/chefe encontrado já inicia a batalha
+ // compartilhada direto (o grupo "segue o líder" e entra na luta com ele, sem etapa de aceite).
+ const startMapBattle=async(subregionId:string,enemy?:Record<string,unknown>)=>{
+  if(roomRef.current?.host_id!==userId||!enemy)return
+  setBusy(true)
+  try{await updateState(current=>{
+   const enemyHp=Number((enemy as any)?.vida??0),initiativeOrder=shuffled([...membersRef.current.map(member=>member.user_id),'enemy']),activeUserId=initiativeOrder[0],initiativeNames=initiativeOrder.map(id=>id==='enemy'?String((enemy as any)?.nome??'Inimigo'):membersRef.current.find(member=>member.user_id===id)?.display_name??'Aventureiro')
+   return{...current.shared_state,battle:{id:`coop_${Date.now()}`,status:'playing',subregionId,startedAt:new Date().toISOString(),enemy,enemyHp,combatMinions:[],damageByPlayer:{},enemyFearPenalty:0,fearTurnsLeft:0,groupBuff:{},playerBuffs:{},enemyStatus:{},initiativeOrder,initiativeNames,initiativeIndex:0,activeUserId,turn:1,round:1,log:[`Iniciativa sorteada: ${initiativeNames.join(' → ')}.`]}}
+  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível iniciar a batalha.')}finally{setBusy(false)}
+ }
  const coopAttack=async(attackBase:number,defenseBase:number,rollBonus=0,critBoost=false,healChance=0,healAmount=0,label?:string,targetMinionId?:string,forceCrit=false,critChancePct=0,critDamageBonusPct=0,weaponElement:Element='fisico',forceStatus=false,extraStatusTurn=false)=>{try{await updateState(current=>{
   const battle=current.shared_state.battle as any
   if(!battle||battle.status!=='playing'||battle.activeUserId!==userId)return current.shared_state
@@ -355,8 +401,24 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   })
   return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,enemyHp:enemyHpNow,enemyStatus:enemyStun.status,enemyRollBonus:0,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,fleeRoll:undefined,turn:Number(battle.turn??1)+1,status:wiped?'lost':'playing',activeUserId:wiped?null:next.activeUserId,lastRoll:{attacker:'enemy',naturalAttackRoll:mainStrike.naturalAttackRoll,attackBonus:mainStrike.attackBonus,attackBase:mainStrike.attackBase,defenseBase:mainStrike.defenseBase,attackEffect:attackEffect(mainStrike.attackRoll),defenseEffect:defenseEffect(mainStrike.defenseRoll),attackRoll:mainStrike.attackRoll,defenseRoll:mainStrike.defenseRoll,damage:mainStrike.damage,selfDamage:mainStrike.selfDamage,shieldBlocked:mainStrike.shieldBlocked||undefined,targetUserId:mainStrike.target.user_id,actor:battle.enemy?.nome},minionRolls,summonRolls,log:[...(battle.log??[]).slice(-15),...statusLogs,mainLog,...minionLogs,...(wiped?['A equipe foi derrotada.']:[])]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar o turno inimigo.')}}
- const completeBattle=async()=>{try{await updateState(current=>({...current.shared_state,travelAcceptedBy:[],battle:{...(current.shared_state.battle as any),status:'completed',completedAt:new Date().toISOString()}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível encerrar a batalha cooperativa.')}}
- const safeConfirmTravel=async(enemy?:Record<string,unknown>)=>{const accepted=(roomRef.current?.shared_state?.travelAcceptedBy??[]) as string[];if(accepted.includes(userId)){await updateState(current=>({...current.shared_state,travelAcceptedBy:((current.shared_state.travelAcceptedBy??[]) as string[]).filter(id=>id!==userId)}));return}const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId];if(zero){setNotice(`${zero.display_name} está sem vida e precisa se recuperar antes da caçada.`);return}if(mine&&mine.hp<mine.maxHp*.5){const proceed=await new Promise<boolean>(resolve=>{const overlay=document.createElement('div');overlay.className='coop-risk-overlay';overlay.innerHTML=`<section role="dialog"><small>PREPARAÇÃO DA CAÇADA</small><h2>Caçada arriscada</h2><p>Seu herói possui <b>${mine.hp}/${mine.maxHp}</b> de vida, menos de 50% do total. Deseja continuar?</p><div><button data-action="cancel">Preparar-se primeiro</button><button class="primary" data-action="continue">Continuar mesmo assim</button></div></section>`;overlay.onclick=event=>{const action=(event.target as HTMLElement).closest('button')?.dataset.action;if(!action)return;overlay.remove();resolve(action==='continue')};document.body.appendChild(overlay)});if(!proceed)return}await confirmTravel(enemy)}
- return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,publishProgress,selectDestination,confirmTravel:safeConfirmTravel,coopAttack,coopAbility,coopSummon,coopDefend,coopFlee,resolveEnemyTurn,completeBattle}}>{children}</CoopContext.Provider>
+ const completeBattle=async()=>{try{await updateState(current=>({...current.shared_state,battle:{...(current.shared_state.battle as any),status:'completed',completedAt:new Date().toISOString()}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível encerrar a batalha cooperativa.')}}
+ // Antes gatilhada ao confirmar a viagem no dropdown; agora gatilhada pelo anfitrião ao aceitar
+ // uma emboscada ou marcar "enfrentar" num local do mapa -- mesma checagem de risco de sempre
+ // (algum integrante sem vida bloqueia, e vida do próprio líder abaixo de 50% pede confirmação).
+ const safeStartMapBattle=async(subregionId:string,enemy?:Record<string,unknown>)=>{
+  const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId]
+  if(zero){setNotice(`${zero.display_name} está sem vida e precisa se recuperar antes da caçada.`);return}
+  if(mine&&mine.hp<mine.maxHp*.5){
+   const proceed=await new Promise<boolean>(resolve=>{
+    const overlay=document.createElement('div');overlay.className='coop-risk-overlay'
+    overlay.innerHTML=`<section role="dialog"><small>PREPARAÇÃO DA CAÇADA</small><h2>Caçada arriscada</h2><p>Seu herói possui <b>${mine.hp}/${mine.maxHp}</b> de vida, menos de 50% do total. Deseja continuar?</p><div><button data-action="cancel">Preparar-se primeiro</button><button class="primary" data-action="continue">Continuar mesmo assim</button></div></section>`
+    overlay.onclick=event=>{const action=(event.target as HTMLElement).closest('button')?.dataset.action;if(!action)return;overlay.remove();resolve(action==='continue')}
+    document.body.appendChild(overlay)
+   })
+   if(!proceed)return
+  }
+  await startMapBattle(subregionId,enemy)
+ }
+ return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,publishProgress,publishMapPos,startMapBattle:safeStartMapBattle,coopAttack,coopAbility,coopSummon,coopDefend,coopFlee,resolveEnemyTurn,completeBattle}}>{children}</CoopContext.Provider>
 }
 export function useCoop(){const value=React.useContext(CoopContext);if(!value)throw new Error('CoopProvider não encontrado.');return value}

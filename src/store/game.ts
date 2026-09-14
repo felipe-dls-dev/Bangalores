@@ -107,6 +107,11 @@ const SUBREGIONS_LEVEL:Record<string,number>=Object.fromEntries(ALL_SUBREGIONS.m
 const extraMonsters:Enemy[]=Object.entries(EXTRA_SUBREGION_ENEMIES).flatMap(([subregionId,list])=>list.map((monster,index)=>{const arte=namedMonsterArt(monster.nome,monster.arte);return{id:`extra_${subregionId}_${index}`,nome:monster.nome,ataque:monster.ataque,vida:monster.vida,ouro:monster.ouro,dificuldade:SUBREGIONS_LEVEL[subregionId]??1,habilidade:monster.habilidade,imagem:arte,arte,raridade:'incomum'}}))
 export const MONSTERS = [...(monsters as Enemy[]).map(monster=>{const fallback=monster.arte?hdArt(monster.arte):monster.imagem;const arte=namedMonsterArt(monster.nome,fallback);return{...monster,imagem:arte,arte}}),...extraMonsters]
 export const TERRITORIES = [...(territories as Territory[]).map(t=>({...t,mundo:'havendown'})),...(territoriosSteelmere as Territory[]).map(t=>({...t,mundo:'steelmere'}))]
+// Ordem de progressão das regiões de Havendown (Steelmere e demais mundos usam a própria
+// dificuldade como critério, sem lista fixa) -- usada tanto na tela de região (navegação
+// anterior/próxima) quanto no mapa navegável do Coop, pra resolver saídas 'prev'/'next'.
+export const REGION_LIST_ORDER:Record<string,number>={campos_dourados:1,floresta_lunargenta:2,khar_dur:3,montanhas_cinzentas:4,pico_escarlate:5,terras_mortas:6,coracao_eclipse:7}
+export function regionListSort(a:Territory,b:Territory){return (REGION_LIST_ORDER[a.id]??a.dificuldade)-(REGION_LIST_ORDER[b.id]??b.dificuldade)||a.dificuldade-b.dificuldade}
 export function worldUnlocked(s:GameState,world:string){if(world==='havendown')return true;return s.storyChapterId==='epilogo_luz'||s.storyChapterId==='epilogo_sombra'||(s.completedStoryQuests??[]).includes('q_cross_oceans')}
 export const SUBREGIONS = ALL_SUBREGIONS.map(subregion=>({...subregion,inimigos:[...subregion.inimigos.map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,hdArt(enemy.arte))})),...(EXTRA_SUBREGION_ENEMIES[subregion.id]??[]).map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,enemy.arte)}))],chefe:{...subregion.chefe,arte:BOSS_ART[subregion.chefe.nome]??hdArt(subregion.chefe.arte)}}))
 const eventArtFromSource=(event:GameEvent)=>{

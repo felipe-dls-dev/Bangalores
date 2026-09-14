@@ -1016,7 +1016,7 @@ const FOG_EDGE_OFFSETS: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0,
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
   openedChests = {}, onOpenChest, onRestCampfire, onCampfireTick, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin,
-  activatedLevers, onActivateLever, discoveredMonoliths, onActivateMonolith, discoveredSecrets, onDiscoverSecret
+  activatedLevers, onActivateLever, discoveredMonoliths, onActivateMonolith, discoveredSecrets, onDiscoverSecret, externalPosition, partyGhosts
 }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
@@ -1046,8 +1046,15 @@ export function TileWorldExplorer({
   onActivateMonolith?: (monolithId: string) => void
   discoveredSecrets?: Record<string, boolean>
   onDiscoverSecret?: (key: string) => void
+  // Coop: quando definida, a posição do personagem passa a ser espelhada de fora (posição do
+  // líder da sala publicada via Supabase) em vez de reagir a teclado/gamepad/clique -- usado
+  // pelos integrantes que não são o anfitrião, que só acompanham o mapa sem controlá-lo.
+  externalPosition?: { x: number; y: number }
+  // Coop: outros integrantes da sala, exibidos como sprites agrupados na mesma posição (o
+  // líder anda, o grupo "segue" visualmente) -- sem pathing próprio, é só o retrato de cada um.
+  partyGhosts?: Array<{ id: string; spriteId: string }>
 }) {
-  const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
+  const [pos, setPos] = React.useState(initialPosition ?? externalPosition ?? map.spawn)
   // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
   // permite voltar exatamente aqui depois de uma tela que desmonta este componente (combate,
   // emboscada), em vez de sempre recomeçar do spawn/marcador.
@@ -1104,6 +1111,23 @@ export function TileWorldExplorer({
   const adjacentNpc = React.useMemo(() => npcs.find(npc => Math.abs(npc.x - pos.x) + Math.abs(npc.y - pos.y) === 1), [npcs, pos])
 
   React.useEffect(() => { posRef.current = pos }, [pos])
+
+  // Segue a posição externa (líder da sala) quando fornecida: não passa por step() (sem
+  // colisão/eventos), só anima até lá -- a transição CSS de left/top do próprio sprite já
+  // cuida do deslize, então só precisamos da direção pra virar o personagem pro lado certo.
+  React.useEffect(() => {
+    if (!externalPosition) return
+    const current = posRef.current
+    if (externalPosition.x === current.x && externalPosition.y === current.y) return
+    const dx = externalPosition.x - current.x, dy = externalPosition.y - current.y
+    setFacing(Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'))
+    posRef.current = externalPosition
+    setPos(externalPosition)
+    setWalking(true)
+    setFrame(0)
+    const timer = window.setTimeout(() => { setWalking(false); setFrame(IDLE_FRAME) }, STEP_MS)
+    return () => window.clearTimeout(timer)
+  }, [externalPosition?.x, externalPosition?.y])
 
   // Névoa de guerra: a cada posição nova, revela um raio circular ao redor do herói. Só avisa o
   // chamador dos tiles que AINDA não estavam no set recebido -- quem persiste (RegionMapView)
@@ -1628,6 +1652,16 @@ export function TileWorldExplorer({
             <img className="regionmap-wanderer-sprite" style={w.facing === 'left' ? { transform: 'scaleX(-1)' } : undefined} src={wanderAsset(w.spriteId, w.facing, WANDER_FRAMES[wanderFrame])} alt="" />
           </div>
         ))}
+        {(partyGhosts ?? []).map((ghost, index) => {
+          const ghostSprite = playerSpriteFrames(ghost.spriteId)[facing]
+          return <div key={ghost.id} className={`regionmap-party-ghost${walking ? ' is-walking' : ''}`}
+            style={{ left: pos.x * tilePx - (index + 1) * 10, top: pos.y * tilePx + (index + 1) * 4, width: tilePx, height: tilePx }}>
+            <span className="regionmap-player-shadow" />
+            <span className="regionmap-player-sprite-wrap" style={ghostSprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
+              <img className="regionmap-player-sprite" src={ghostSprite.frames[frame]} alt="" />
+            </span>
+          </div>
+        })}
         <div className={`regionmap-player${walking ? ' is-walking' : ''}${riding ? ' is-riding' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
           <span className="regionmap-player-shadow" />
