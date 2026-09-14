@@ -83,7 +83,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P2 | Custom map pins | Claude Code | SHIPPED | Player-placed reminder pins, toggled via a map-HUD button; uses the 📍 emoji, no art dependency yet (could take a dedicated icon later). |
 | P2 | Dynamic character shadow | Claude Code | SHIPPED | CSS-only ellipse under the player sprite, pulses while walking. No art dependency. |
 | P2 | Footstep animation | Claude Code | SHIPPED | CSS-only alternating footprint marks that fade out behind the player. No art dependency. |
-| P3 | Lever and locked gate | Codex | REQUESTED | See ART-023. |
+| P3 | Lever and locked gate | — | MECHANIC SHIPPED | See ART-023 -- code+art integrated, just not placed on a map yet. |
 | P3 | Fast-travel monolith | Codex | REQUESTED | See ART-024. |
 | P3 | Boat / carriage shortcut | Codex | REQUESTED | See ART-025. |
 | P3 | Illusory secret wall | Codex | REQUESTED | See ART-026 (reveal-effect art only, no new wall texture needed). |
@@ -427,7 +427,7 @@ Contract for each future delivery: one character-specific vertical portrait at `
 Integration (Claude Code): swapped `portrait` for all 9 story-quest-chain NPCs (`sela_hartwin`, `lyriel_noite`, `kip_ligeiro`, `torvald_barbaneve`, `ophira_vane`, `cassian_draye`, `oraculo_danika`, `gideon_mascarado`, `diretor_vane`) plus the first 3 second-priority NPCs (`colm_aldric`, `toby_harlan`, `garrick_laton`) -- was reusing Mira Bellwether's portrait or hero card art -- in `src/data/npcs.ts` to their delivered `.webp` files. No sprite/dialogue/service changes. 8 second-priority NPCs (`silas_sterling`, `unidade_73`, `padre_lucian`, `astrid_reclusa`, `alaric_thorne`, `ignatius_drake`, `hamilton_cross`, `vanya_mar`) still pending Codex delivery -- status stays PARTIAL DELIVERY until those land. `npm test` green.
 
 ### ART-023 - Lever and locked gate
-Status: REQUESTED
+Status: INTEGRATED (mechanic shipped, not yet placed on any map)
 Requested by: Claude Code
 Gameplay purpose: a new interactive map object pair -- a lever that permanently opens a paired gate blocking a path, for shortcut/secret-area design on any region map (Havendown or Steelmere).
 Required asset ids and states: `lever` (`idle`, `activated`); `gate` (`closed`, `open`).
@@ -438,9 +438,17 @@ Interaction states: lever is a walk-up-and-click marker like a campfire; gate is
 Visual references or territory: style-match whichever region the first map using this ships in (industrial style if Steelmere, natural/stonework if Havendown) -- generic enough to reskin later per-region if reuse across very different biomes reads oddly.
 Code dependency: none to start art -- Claude Code will add `RegionMapLever`/`RegionMapGate` to `RegionMapDef`, a persisted `activatedLevers:Record<string,boolean>` (same pattern as `openedChests`), and wire the gate's blocked state to the paired lever once this lands. No specific map has these placed yet; first placement will follow whichever map Felipe picks.
 Acceptance check: lever reads clearly as "this does something" at map scale (distinct from decoration); gate closed/open states are visually unambiguous at a glance.
+Delivered paths:
+- `public/assets/maps/objects/lever/idle.png`
+- `public/assets/maps/objects/lever/activated.png`
+- `public/assets/maps/objects/gate/closed.png`
+- `public/assets/maps/objects/gate/open.png`
+Dimensions and format: each 128x128 PNG RGBA with real transparent background.
+Integration note: map `activatedLevers[lever.id]` to `lever/activated.png`; map the linked gate state to `gate/open.png` when activated and `gate/closed.png` otherwise. Retain a visual fallback only if an image fails to load. Closed gates must remain blocked; open gates must become walkable according to the existing object contract.
+Integration (Claude Code): added `RegionMapLever`/`RegionMapGate` to `RegionMapDef` (`levers?`/`gates?`, a gate linked to its lever by `gateId`), a persisted `activatedLevers` dict (never turns back off, same pattern as `openedChests`), and an `activateLever` action. Closed-gate tiles are added to the same dynamic blocked-set already used for NPC collision (renamed `npcBlocked`->`extraBlocked` throughout `TileWorldExplorer` to reflect that) so every existing movement/pathing function picks up the block automatically. Lever renders as a click-to-walk marker like a campfire; gate renders as a non-interactive tile-sized prop, both via `MapPropIcon` (safe emoji fallback: 🔒/🟢 for the lever, 🚧 for a closed gate). Not yet placed on any specific map -- that's a content decision (which map, which shortcut) rather than a code one; `npm test` 97/97 green with zero maps using it yet.
 
 ### ART-024 - Fast-travel monolith
-Status: REQUESTED
+Status: READY FOR CODE
 Requested by: Claude Code
 Gameplay purpose: a discoverable waystone on region maps. Walking up to one for the first time registers it as discovered (persisted); from any discovered monolith the player can instantly travel to any other discovered monolith, including across regions/worlds -- reuses the existing `regionMapPositions` position-memory plumbing, so no new travel UI framework is needed beyond a simple picker list.
 Required asset ids and states: `monolith` (`dormant` -- not yet discovered art is simply not rendered, so this state may be unused; `active` -- discovered/glowing).
@@ -451,9 +459,14 @@ Interaction states: walk-up-and-click marker, same footprint as a campfire/chest
 Visual references or territory: an ancient standing stone/obelisk reads well in both Havendown and Steelmere -- suggest one shared design rather than a per-region reskin, since its whole identity is "the same landmark everywhere," unlike chests/campfires.
 Code dependency: none to start art -- Claude Code owns the `discoveredMonoliths` persisted list, the picker UI, and the actual region/position jump.
 Acceptance check: reads clearly as a landmark distinct from every other map object at a glance, in both an idle and a "lit up" state.
+Delivered paths:
+- `public/assets/maps/objects/monolith/dormant.png`
+- `public/assets/maps/objects/monolith/active.png`
+Dimensions and format: each 128x128 PNG RGBA with real transparent background.
+Integration note: use `dormant.png` only when the undiscovered state is rendered; otherwise use `active.png` after discovery and on all subsequent visits. Keep the object's state, discovery persistence and fast-travel picker entirely in code; retain an image fallback only for load failures.
 
 ### ART-025 - Boat / carriage shortcut
-Status: REQUESTED
+Status: READY FOR CODE
 Requested by: Claude Code
 Gameplay purpose: a scoped-down first version of animated transport -- a vehicle prop at a dock/station tile that, when boarded, rides the player in a straight line to a paired dock/station tile elsewhere on the SAME map (a visual shortcut across a lake, canal or rail line already present in a map's art), instead of an instant teleport.
 Required asset ids and states: pick whichever fits the first map this ships on -- `boat` (`idle`, `moving`) for a water crossing, or `carriage` (`idle`, `moving`) for a road/rail crossing. Only one family is needed to start; the other can be a separate future request.
@@ -464,9 +477,15 @@ Interaction states: walk-up-and-click marker at the boarding point; `moving` pla
 Visual references or territory: match whichever water/road crossing Felipe picks first as the pilot (a Havendown lake or a Steelmere canal/rail both work).
 Code dependency: none to start art -- Claude Code owns pairing the two dock tiles, animating the straight-line ride, and picking the first map to pilot it on.
 Acceptance check: idle vehicle reads clearly as boardable; moving state reads as "in transit," not just a copy of idle.
+Decision: boat selected as the first transport family; a carriage can be requested later when a road or rail pilot is chosen.
+Delivered paths:
+- `public/assets/maps/objects/boat/idle.png`
+- `public/assets/maps/objects/boat/moving.png`
+Dimensions and format: each 128x128 PNG RGBA with real transparent background.
+Integration note: use `idle.png` at the boarding object and switch to `moving.png` only for the short code-driven same-map crossing. The renderer may mirror the image for opposite route direction; place it over the existing water/canal art and keep dock pairing, player movement lock and arrival positioning in code.
 
 ### ART-026 - Illusory secret wall reveal effect
-Status: REQUESTED
+Status: READY FOR CODE
 Requested by: Claude Code
 Gameplay purpose: a wall/obstacle that looks exactly like the surrounding blocked terrain but is secretly walkable, hiding a passage. No new wall texture is needed (it deliberately reuses the existing blocked-terrain art at that spot so it's indistinguishable beforehand) -- what's needed is a one-shot visual sting that plays the moment the player walks through it, so discovery reads as a discovery rather than "huh, I guess that wasn't blocked."
 Required asset ids and states: `secret-reveal` (single effect, no states) -- a brief sparkle/dust-crumble burst, in the same spirit as the weather fx already delivered (ART-012).
@@ -477,9 +496,12 @@ Interaction states: none -- Claude Code triggers a short one-time CSS animation 
 Visual references or territory: generic enough to reuse on any region -- doesn't need to match a specific biome since it's a burst effect, not scenery.
 Code dependency: none to start art -- Claude Code owns the new `illusoryWalls` list on `RegionMapDef` (tiles excluded from `blocked` despite looking solid), the discovery detection, and the persisted "already seen" flag.
 Acceptance check: reads as a brief magical/dust reveal, not a damage or status effect (shouldn't look like a hit-flash or a debuff icon).
+Delivered path: `public/assets/maps/fx/secret-reveal/burst.png`
+Dimensions and format: 320x320 PNG RGBA with real transparent background.
+Integration note: place the effect centered over the discovered tile, above map terrain and below interface overlays. Trigger it once on first discovery, scale/fade it through a short CSS animation and disable motion under the existing reduced-effects setting. Do not reuse it for combat hits or status feedback.
 
 ### ART-027 - Scenery interaction: readable signposts
-Status: REQUESTED
+Status: READY FOR CODE
 Requested by: Claude Code
 Gameplay purpose: first concrete instance of "interact with scenery objects" -- a signpost/plaque the player can walk up to and read for a short flavor-text line (lore, a hint, a joke), establishing a reusable `RegionMapScenery` object pattern that later scenery types (search a bush, ring a bell, etc.) can follow without a new art contract each time.
 Required asset ids and states: `signpost` (`idle` only -- it's read-only scenery, no other state needed).
@@ -490,6 +512,9 @@ Interaction states: walk-up-and-click marker, same footprint as a campfire; clic
 Visual references or territory: a weathered wooden roadside sign reads well in Havendown; propose a Steelmere-appropriate reskin (stamped metal plate, riveted) if this proves out and gets reused there.
 Code dependency: none to start art -- Claude Code owns the `RegionMapScenery` type, the flavor-text data and the popup UI. First placement (which map, which line) will follow whichever map Felipe picks.
 Acceptance check: reads clearly as "read this," distinct from a chest/campfire/lever at a glance.
+Delivered path: `public/assets/maps/objects/signpost/idle.png`
+Dimensions and format: 128x128 PNG RGBA with real transparent background.
+Integration note: render this asset in the same map-object container used for campfires and levers, preserving the scenery object's accessible label and click handler. Keep all sign text in the code-owned popup, not embedded in the image; retain a simple fallback only for image-load failure.
 
 ## Handoff Log
 

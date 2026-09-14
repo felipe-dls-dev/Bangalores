@@ -61,6 +61,21 @@ export interface RegionMapCampfire {
   y: number
   icon?: string
 }
+// Alavanca e portão trancado (ART-023): a alavanca é um marcador clicável (igual fogueira/baú);
+// o portão é só um tile que fica bloqueado até a alavanca ligada a ele (por gateId) ser ativada --
+// não tem alvo de clique próprio, só reage ao estado persistido.
+export interface RegionMapLever {
+  id: string
+  name: string
+  x: number
+  y: number
+  gateId: string
+}
+export interface RegionMapGate {
+  id: string
+  x: number
+  y: number
+}
 export interface RegionMapDef {
   id: string
   background?: string
@@ -74,6 +89,8 @@ export interface RegionMapDef {
   exits?: RegionMapExit[]
   chests?: RegionMapChest[]
   campfires?: RegionMapCampfire[]
+  levers?: RegionMapLever[]
+  gates?: RegionMapGate[]
   blocked?: Array<{ x: number; y: number }>
   weather?: 'snow' | 'rain' | 'ash' | 'smoke' // camada atmosférica opcional (ART-012) -- só nas regiões onde faz sentido, não é universal
 }
@@ -944,7 +961,8 @@ const FOG_REVEAL_RADIUS = 3
 
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
-  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin
+  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin,
+  activatedLevers, onActivateLever
 }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
@@ -967,6 +985,8 @@ export function TileWorldExplorer({
   defeatedWanderers?: Record<string, boolean>
   customPins?: Array<{ x: number; y: number }>
   onTogglePin?: (x: number, y: number) => void
+  activatedLevers?: Record<string, boolean>
+  onActivateLever?: (leverId: string) => void
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
   // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
@@ -992,7 +1012,17 @@ export function TileWorldExplorer({
   const posRef = React.useRef(pos)
   const dragRef = React.useRef<{ x: number; y: number; camX: number; camY: number; dragged: boolean } | null>(null)
   const didDragRef = React.useRef(false)
-  const npcBlocked = React.useMemo(() => new Set(npcs.map(npc => tileKey(npc.x, npc.y))), [npcs])
+  // Além dos NPCs, um portão fechado (ART-023) também bloqueia -- fica no mesmo set porque todo
+  // lugar que já checava colisão de NPC precisa checar a mesma coisa pra portão, sem duplicar a
+  // lista inteira de chamadas de isMapWalkable/routeBetween.
+  const extraBlocked = React.useMemo(() => {
+    const set = new Set(npcs.map(npc => tileKey(npc.x, npc.y)))
+    for (const gate of map.gates ?? []) {
+      const lever = (map.levers ?? []).find(l => l.gateId === gate.id)
+      if (!lever || !activatedLevers?.[lever.id]) set.add(tileKey(gate.x, gate.y))
+    }
+    return set
+  }, [npcs, map, activatedLevers])
   const adjacentNpc = React.useMemo(() => npcs.find(npc => Math.abs(npc.x - pos.x) + Math.abs(npc.y - pos.y) === 1), [npcs, pos])
 
   React.useEffect(() => { posRef.current = pos }, [pos])
@@ -1087,7 +1117,7 @@ export function TileWorldExplorer({
     const currentPos = posRef.current
     const tx = currentPos.x + dx, ty = currentPos.y + dy
     if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return
-    if (!isMapWalkable(map, { x: tx, y: ty }, npcBlocked)) return
+    if (!isMapWalkable(map, { x: tx, y: ty }, extraBlocked)) return
     movingRef.current = true
     // Pegada (alterna pé esquerdo/direito) no tile que está sendo deixado pra trás -- some
     // sozinha depois de FOOTPRINT_FADE_MS, puramente decorativo.
@@ -1121,7 +1151,7 @@ export function TileWorldExplorer({
       else if (exit) onEnterExit?.(exit.id)
       else if (chest && !openedChests?.[chest.id]) onOpenChest?.(chest)
       else if (campfire) onRestCampfire?.(campfire)
-      else if ((landedTile === 'ice' || landedTile === 'conveyor') && isMapWalkable(map, { x: tx + dx, y: ty + dy }, npcBlocked)) {
+      else if ((landedTile === 'ice' || landedTile === 'conveyor') && isMapWalkable(map, { x: tx + dx, y: ty + dy }, extraBlocked)) {
         // Gelo (ART-004) e esteira industrial (ART-014, Coroferro) empurram do mesmo jeito:
         // continua deslizando na mesma direção até sair do terreno especial ou esbarrar em algo --
         // cancela um caminho clicado em andamento, já que o jogador perde o controle da direção
@@ -1133,10 +1163,10 @@ export function TileWorldExplorer({
       else if (!auto && Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
     }, arrivalDelay)
-  }, [paused, map, onEnterLocation, exits, onEnterExit, npcBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire])
+  }, [paused, map, onEnterLocation, exits, onEnterExit, extraBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
-    const route = routeBetween(map, posRef.current, target, npcBlocked)
+    const route = routeBetween(map, posRef.current, target, extraBlocked)
     if (!route.length) return
     queuedMoves.current = route
     runQueuedMove.current = () => {
@@ -1144,10 +1174,10 @@ export function TileWorldExplorer({
       if (next) step(next[0], next[1])
     }
     runQueuedMove.current()
-  }, [map, step, npcBlocked])
+  }, [map, step, extraBlocked])
 
   const moveToExit = React.useCallback((exit: { id: string; x: number; y: number }) => {
-    const route = routeBetween(map, posRef.current, exit, npcBlocked)
+    const route = routeBetween(map, posRef.current, exit, extraBlocked)
     if (!route.length) {
       if (exit.x === posRef.current.x && exit.y === posRef.current.y) onEnterExit?.(exit.id)
       return
@@ -1158,13 +1188,13 @@ export function TileWorldExplorer({
       if (next) step(next[0], next[1])
     }
     runQueuedMove.current()
-  }, [map, npcBlocked, onEnterExit, step])
+  }, [map, extraBlocked, onEnterExit, step])
 
   const moveToNpc = React.useCallback((npc: NpcDefinition) => {
     const targets = [[0, 1], [1, 0], [0, -1], [-1, 0]]
       .map(([dx, dy]) => ({ x: npc.x + dx, y: npc.y + dy }))
-      .filter(point => point.x >= 0 && point.y >= 0 && point.x < map.width && point.y < map.height && isMapWalkable(map, point, npcBlocked))
-      .map(point => ({ point, route: routeBetween(map, posRef.current, point, npcBlocked) }))
+      .filter(point => point.x >= 0 && point.y >= 0 && point.x < map.width && point.y < map.height && isMapWalkable(map, point, extraBlocked))
+      .map(point => ({ point, route: routeBetween(map, posRef.current, point, extraBlocked) }))
       .filter(entry => entry.route.length || (entry.point.x === posRef.current.x && entry.point.y === posRef.current.y))
       .sort((a, b) => a.route.length - b.route.length)
     const best = targets[0]
@@ -1179,7 +1209,7 @@ export function TileWorldExplorer({
       runQueuedMove.current()
       window.setTimeout(() => onInteractNpc?.(npc), best.route.length * STEP_MS + 20)
     }
-  }, [map, npcBlocked, onInteractNpc, step])
+  }, [map, extraBlocked, onInteractNpc, step])
 
   React.useEffect(() => () => {
     movementTimers.current.forEach(window.clearTimeout)
@@ -1365,6 +1395,31 @@ export function TileWorldExplorer({
               aria-label={chest.name} title={opened ? `${chest.name} (Aberto)` : `${chest.name} (Fechado)`}>
               <MapPropIcon className="regionmap-chest-icon" src={mapAsset(`assets/maps/objects/treasure-chest/${opened ? 'opened' : 'common'}.png`)} fallback={opened ? '📭' : '📦'} />
             </button>
+          )
+        })}
+        {(map.levers ?? []).map(lever => {
+          const active = Boolean(activatedLevers?.[lever.id])
+          return (
+            <button key={lever.id} type="button" className={`regionmap-lever${active ? ' active' : ''}`}
+              style={{ left: lever.x * tilePx, top: lever.y * tilePx, width: tilePx, height: tilePx }}
+              onClick={event => {
+                event.stopPropagation()
+                if (didDragRef.current) { didDragRef.current = false; return }
+                moveToTile({ x: lever.x, y: lever.y })
+                if (!active) onActivateLever?.(lever.id)
+              }}
+              aria-label={lever.name} title={active ? `${lever.name} (Ativada)` : `${lever.name} (Puxar)`}>
+              <MapPropIcon className="regionmap-lever-icon" src={mapAsset(`assets/maps/objects/lever/${active ? 'activated' : 'idle'}.png`)} fallback={active ? '🟢' : '🔒'} />
+            </button>
+          )
+        })}
+        {(map.gates ?? []).map(gate => {
+          const lever = (map.levers ?? []).find(l => l.gateId === gate.id)
+          const open = Boolean(lever && activatedLevers?.[lever.id])
+          return (
+            <div key={gate.id} className="regionmap-gate" style={{ left: gate.x * tilePx, top: gate.y * tilePx, width: tilePx, height: tilePx }}>
+              <MapPropIcon className="regionmap-gate-icon" src={mapAsset(`assets/maps/objects/gate/${open ? 'open' : 'closed'}.png`)} fallback={open ? '' : '🚧'} />
+            </div>
           )
         })}
         {npcs.map(npc => {

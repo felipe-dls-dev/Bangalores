@@ -444,6 +444,11 @@ img.regionmap-campfire-icon{width:80%;height:80%;object-fit:contain;image-render
 @keyframes campfire-flicker{0%{transform:scale(.85);opacity:.7}100%{transform:scale(1.25);opacity:1}}
 .regionmap-chest{position:absolute;display:grid;place-items:center;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer;pointer-events:auto;z-index:4}.regionmap-chest-icon{position:relative;z-index:1;font-size:1.05rem;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
 img.regionmap-chest-icon{width:80%;height:80%;object-fit:contain;image-rendering:pixelated}
+.regionmap-lever{position:absolute;display:grid;place-items:center;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer;pointer-events:auto;z-index:4}.regionmap-lever-icon{position:relative;z-index:1;font-size:1rem;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+img.regionmap-lever-icon{width:76%;height:76%;object-fit:contain;image-rendering:pixelated}
+.regionmap-lever.active .regionmap-lever-icon{filter:drop-shadow(0 0 6px rgba(120,255,140,.8))}
+.regionmap-gate{position:absolute;display:grid;place-items:center;pointer-events:none;z-index:4}.regionmap-gate-icon{position:relative;z-index:1;font-size:1.1rem;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+img.regionmap-gate-icon{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
 .regionmap-chest.closed:hover{transform:scale(1.18);filter:drop-shadow(0 0 8px rgba(255,215,0,.9));transition:transform .15s ease}.regionmap-chest.opened{opacity:.55;filter:grayscale(.4)}
 /* Névoa de guerra: um tile escurecido por célula ainda não explorada, dentro de
    .regionmap-world (acompanha a câmera/transform como qualquer outro elemento do mundo).
@@ -1692,6 +1697,7 @@ body::after{content:"VERSÃO 0.8.49 • 13/09/2026\A Integrado lote de arte do C
 body::after{content:"VERSÃO 0.8.50 • 13/09/2026\A Corrigido: monstros vagantes no mapa agora desaparecem de vez ao serem derrotados, em vez de reaparecer no lugar de sempre";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.51 • 14/09/2026\A Integrado: retratos proprios para Sela Hartwin, Mestra Lyriel e Kip Pe-Ligeiro (antes reaproveitavam arte de outro NPC/herois)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.52 • 14/09/2026\A Novo: suporte a gamepad, pins customizados no mapa, sombra dinamica e pegadas do personagem; mais 6 retratos proprios de NPC integrados";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.53 • 14/09/2026\A Novo: mecanica de alavanca e portao trancado (ainda sem posicionamento em nenhum mapa)";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
