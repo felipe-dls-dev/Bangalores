@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, Unlock, Search, ArrowUpDown, KeyRound, Plane, CheckCircle2, XCircle, Gem, UserRound, Quote, Bell, Volume2, VolumeX, X, Contrast } from 'lucide-react'
-import { TileWorldExplorer, getRegionMap, ALL_MONOLITHS, HEAL_POPUP_MS } from './regionMap'
+import { TileWorldExplorer, getRegionMap, ALL_MONOLITHS } from './regionMap'
 import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, attunementItemLevel, attunementResistanceReduction, attunementStatusChance, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, storyModifiers, specializationBonuses, equipmentInstanceBreakdown, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, HERO_ULTIMATES, type AttackAnimType, type Summon, type SummonType, type GuildRankId, ACHIEVEMENTS, unlockedAchievements } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment, Territory } from './types'
 import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, TALENTS, HERO_SUBCLASSES, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
@@ -516,6 +516,8 @@ function CoopBattleSync(){
  return null
 }
 
+const HUD_HEAL_POPUP_MS=1100 // duração do "+1" verde no HUD -- mais curta/sutil que a do mapa (ver heal-popup-rise-hud no CSS), cabe melhor no badge pequeno de vida
+
 function TopBar(){
  const g=useGame();const auth=useAuth();const h=HEROES.find(x=>x.id===g.heroId);const level=levelInfo(g.xp).lvl,capacity=equipmentBagCapacity(g)
  const [menuOpen,setMenuOpen]=React.useState(false)
@@ -542,7 +544,7 @@ function TopBar(){
    if(useGame.getState().tickPassiveRegen()){
     const popupId=++healPopupIdRef.current
     setHealPopups(prev=>[...prev,{id:popupId}])
-    window.setTimeout(()=>setHealPopups(prev=>prev.filter(p=>p.id!==popupId)),HEAL_POPUP_MS)
+    window.setTimeout(()=>setHealPopups(prev=>prev.filter(p=>p.id!==popupId)),HUD_HEAL_POPUP_MS)
    }
   },1000)
   return()=>window.clearInterval(id)
