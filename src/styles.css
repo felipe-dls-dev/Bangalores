@@ -832,6 +832,12 @@ body:has(.combat-v033){overflow-y:auto;overflow-x:hidden}
 .screen:has(.menu-hero){max-width:none;padding:0}
 .menu-hero{position:relative;isolation:isolate;min-height:100vh;display:flex;align-items:center;justify-content:flex-start;overflow:hidden;padding:clamp(28px,6vw,96px);background-image:linear-gradient(90deg,rgba(4,7,10,.88) 0%,rgba(4,7,10,.66) 31%,rgba(4,7,10,.1) 63%,rgba(4,7,10,.26) 100%),linear-gradient(0deg,rgba(3,3,4,.68),transparent 42%),url('/assets/ui/menu/eldravar-war-menu.png');background-size:cover;background-position:center center}
 .menu-atmosphere{position:absolute;z-index:-1;inset:0;background:radial-gradient(circle at 28% 45%,rgba(170,111,35,.11),transparent 28%),linear-gradient(180deg,rgba(2,4,7,.16),transparent 35%,rgba(2,3,5,.64));pointer-events:none}
+/* Sair da conta direto na tela inicial -- antes só existia dentro do dropdown do Menu na
+   TopBar, que fica escondida na tela de menu, então trocar de conta exigia entrar numa
+   campanha primeiro. Canto superior direito, discreto mas sempre alcançável. */
+.menu-account-exit{position:absolute;top:18px;right:18px;z-index:2;display:flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid rgba(208,159,75,.35);border-radius:5px;background:rgba(9,10,12,.7);color:#c9a55c;font-size:.7rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
+.menu-account-exit:hover{border-color:#c89443;color:#f1ce7d;background:rgba(20,14,8,.85)}
+@media(max-width:650px){.menu-account-exit{top:10px;right:10px;padding:6px 9px;font-size:.64rem}.menu-account-exit span{display:none}}
 .menu-hero .menu-card{position:relative;width:min(510px,42vw);padding:clamp(34px,4vw,58px);text-align:left;border:1px solid rgba(208,159,75,.48);border-radius:4px;background:linear-gradient(145deg,rgba(15,16,18,.9),rgba(9,10,12,.76));box-shadow:0 30px 90px rgba(0,0,0,.62),inset 0 0 0 1px rgba(255,220,147,.05);backdrop-filter:blur(8px)}
 .menu-hero .menu-card:before,.menu-hero .menu-card:after{content:'';position:absolute;width:42px;height:42px;border-color:#c89443;pointer-events:none}
 .menu-hero .menu-card:before{top:12px;left:12px;border-top:2px solid;border-left:2px solid}
@@ -1764,6 +1770,7 @@ body::after{content:"VERSÃO 0.8.62 • 14/09/2026\A Ajuste: animacao do +1 vira
 body::after{content:"VERSÃO 0.8.63 • 14/09/2026\A Ajuste: medidor do Golpe Supremo sai da faixa solta no topo e vira um bloco abaixo da carta do heroi, espelhando o bloco de proxima acao do inimigo -- cartas ficam com a mesma altura";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.64 • 14/09/2026\A Removido: botoes de velocidade 2x/3x do combate (mantido apenas o modo automatico)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.65 • 14/09/2026\A Corrigido: navegadores com localStorage bloqueado/restrito (ex: navegacao privada) travavam o jogo inteiro na tela inicial (piscava e ficava preto); agora ha uma tela de recuperacao para qualquer erro nao tratado, e os acessos a localStorage/gamepad ficaram protegidos";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.66 • 14/09/2026\A Novo: botao de sair da conta direto na tela inicial, pra trocar de conta sem precisar entrar numa campanha primeiro";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
