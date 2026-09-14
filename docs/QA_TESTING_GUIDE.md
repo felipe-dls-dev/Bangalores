@@ -5,23 +5,48 @@ browser and checks that recent work looks and behaves right. It complements
 `VISUAL_DEVELOPMENT_HANDOFF.md` (the Codex/Claude Code content contract) — that one is about
 producing art and mechanics; this one is about verifying the result by playing it.
 
+## Autonomy & authorization
+
+Felipe has authorized Antigravity to edit any file in this repository directly — code, data,
+assets, docs, all of it — to fix whatever this testing pass finds. Act on that authorization
+without pausing:
+
+- Run the whole loop — play, find, diagnose, fix, verify, log — end to end in one go. Do not stop
+  mid-process to ask Felipe (or anyone) to pick between options ("should I fix this or just report
+  it?", "which of these two approaches?"). Make the call yourself, apply it, and record which one
+  you picked and why in the Findings Log entry. If a genuinely better fix would need a real design
+  decision (changing balance numbers, removing content, anything that isn't a clear bug fix within
+  the existing design), make the smallest safe fix that resolves the bug as reported, note the
+  larger question in the log, and keep moving — don't block the whole pass on it.
+- Before logging anything as fixed, run the full check this project always runs:
+  `npm run typecheck && npm run lint && npm test && npm run build`. All four clean is the bar here,
+  not a nice-to-have — every prior change in this project's history has been verified this way.
+  If a check fails after your fix, that fix isn't done yet; keep iterating on it rather than moving
+  on with a red suite.
+- Still write down what happened (see "How to report findings"), even for things you fixed
+  yourself — a bug fixed silently with no record is hard for Claude Code or Felipe to follow up on
+  or avoid re-breaking later. Fill in `Fix applied` and `Verification` on the entry, not just
+  `Steps`/`Expected`/`Actual`.
+- This does not relax rule 1 below — playing the game to find and confirm a bug, then editing code
+  to fix what you actually observed, is exactly the intended loop. Reading code as a *substitute*
+  for playing (to guess whether something is a bug without seeing it happen) is still not it.
+
 ## Ground rules
 
-1. Play it like a player would. Do not read or edit source code to verify something — if a
-   bug can only be confirmed by reading code, that's not a playtest finding, describe what you
-   observed on screen instead.
-2. Do not fix bugs directly in code. Report them (see "How to report findings" below) so Claude
-   Code can fix them with full context and re-verify with the automated test suite.
-3. Keep the browser DevTools console open (F12) while playing. A 404 on an image request is
+1. Play it like a player would to find and confirm a bug. Do not treat something as a bug purely
+   because reading the code suggests it might be one — if you can't reproduce it by actually
+   playing, describe what you observed (or didn't observe) instead of reporting a guess. See
+   "Autonomy & authorization" above for what to do once you've actually found one.
+2. Keep the browser DevTools console open (F12) while playing. A 404 on an image request is
    exactly how a missing/renamed asset path shows up — report it even if the feature visually
    degraded gracefully (a fallback emoji, a missing background, etc.), since the fallback working
    isn't the same as the asset being wired correctly.
-4. Test at both a wide window size and a narrow one (~400-500px). The layout should never force
+3. Test at both a wide window size and a narrow one (~400-500px). The layout should never force
    horizontal scrolling on the page itself (a map or a wide table scrolling inside its own box is
    fine).
-5. In Configurações, toggle "Reduzir efeitos visuais" once and re-check the animated items below
+4. In Configurações, toggle "Reduzir efeitos visuais" once and re-check the animated items below
    in both states — animations should stop, static art should not disappear.
-6. Where a feature is persistence-sensitive (marked below), test it once on a brand-new campaign
+5. Where a feature is persistence-sensitive (marked below), test it once on a brand-new campaign
    and once on an existing/reloaded one — new-game state and loaded-save state take different
    code paths in this project and have diverged before.
 
@@ -144,8 +169,11 @@ build):
 
 ## How to report findings
 
-Add one entry per bug under the log below, using this template. Keep it factual (what you saw),
-not a diagnosis (why you think it happens) — Claude Code will investigate the cause.
+Add one entry per bug under the log below, using this template. Describe what you actually
+observed (Steps/Expected/Actual are factual, not a guess) — then, per the Autonomy section above,
+go ahead and fix it yourself and fill in `Fix applied` and `Verification` before moving on. Only
+leave `Fix applied: none yet` when you genuinely couldn't reach a safe fix (e.g. it needs a real
+design decision) — not as a default.
 
 ```md
 ### QA-XXX - Short title
@@ -155,6 +183,8 @@ Steps: exact steps to reproduce
 Expected: what should have happened
 Actual: what happened instead
 Severity: cosmetic / confusing / blocking
+Fix applied: what you changed and why, or "none yet" + what's blocking it
+Verification: typecheck/lint/test/build result after the fix
 ```
 
 ## Findings Log
