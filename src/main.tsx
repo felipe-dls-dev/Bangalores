@@ -1881,15 +1881,6 @@ function CombatScreen(){
  return <div className="combat-page premium-combat combat-v033">
   <div className="screen-intro"><small>FOCO DO TURNO</small><p>Olhe primeiro a intenção do inimigo, depois os bônus ativos e os consumíveis. O log continua disponível, mas a ação principal precisa ser lida em um só olhar.</p></div>
   <div className="battle-summary-strip"><span><small>SEU ATAQUE</small><strong>{attackValue(g)}</strong></span><span><small>SUA DEFESA</small><strong>{defenseValue(g)}</strong></span><span><small>INTENÇÃO</small><strong>{intent.label}</strong></span></div>
-  <div className="ultimate-meter-strip">
-    <div className="ultimate-meter-header">
-      <span className="ultimate-meter-label"><Zap size={14}/> {g.heroId?HERO_ULTIMATES[g.heroId]?.nome:'Golpe Supremo'}</span>
-      <span className="ultimate-meter-pct">{g.ultimateGauge??0}%</span>
-    </div>
-    <div className="ultimate-track">
-      <div className={`ultimate-fill${(g.ultimateGauge??0)>=100?' ready':''}`} style={{width:`${Math.min(100,g.ultimateGauge??0)}%`}}/>
-    </div>
-  </div>
   <div className="combat-controls-strip">
     <div className="combat-speed-group"><span className="speed-label">VELOCIDADE:</span>{([1,2,3] as const).map(speed=><button key={speed} className={`speed-pill${g.combatSpeed===speed?' active':''}`} onClick={()=>g.setCombatSpeed(speed)}>{speed}x</button>)}</div>
     <button className={`combat-auto-toggle${g.autoCombat?' active':''}`} onClick={()=>g.toggleAutoCombat()} title="Auto-combate: ações executadas automaticamente no seu turno"><Zap size={14}/><span>AUTO {g.autoCombat?'LIGADO':'DESLIGADO'}</span></button>
@@ -1898,6 +1889,11 @@ function CombatScreen(){
     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds} attacking={heroActing} impactKind={heroImpact} turnOwner={myTurn&&!g.animating}/>
     {isCoop&&<CoopTeammatesRow coop={coop} battle={battle}/>}
     {currentSummons.length>0&&<div className="summon-row">{currentSummons.map((fera,index)=><article key={`${fera.tipo}-${index}`}><Sparkles/><span><strong>{fera.nome}</strong><small>ATQ {fera.ataque} • DEF {fera.defesa} • VIDA {fera.hp}/{fera.maxHp}</small><i><b style={{width:`${fera.hp/fera.maxHp*100}%`}}/></i></span></article>)}</div>}
+    <div className={`hero-ultimate-intent${(g.ultimateGauge??0)>=100?' ready':''}`}>
+      <small><Zap size={11}/> {g.heroId?HERO_ULTIMATES[g.heroId]?.nome:'Golpe Supremo'}</small>
+      <strong>{Math.min(100,g.ultimateGauge??0)}%</strong>
+      <div className="ultimate-track"><div className={`ultimate-fill${(g.ultimateGauge??0)>=100?' ready':''}`} style={{width:`${Math.min(100,g.ultimateGauge??0)}%`}}/></div>
+    </div>
    </div>
    <div className="combat-enemy-area">
     <Fighter side="enemy" name={e.nome} image={cardArt(e)} hp={g.enemyHp} max={e.vida} attack={e.ataque} defense={enemyDefenseValue(e)} ability={e.habilidade} kind={e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO'} rarity={e.boss?'LENDÁRIO':e.elite?'RARO':'COMUM'} shaking={g.animating&&g.animationActor==='hero'} damage={g.animating&&g.animationActor==='hero'?g.lastDamage:undefined} boss={e.boss} phase={e.fase} frameTheme={CATEGORY_FRAME[e.boss?'CHEFE':e.elite?'ELITE':'INIMIGO']} attackType={currentAttackType} summonAttackType={currentSummonAttackType} attackCritical={currentAttackCritical} statusKinds={enemyStatusKinds} attacking={enemyActing} impactKind={enemyImpact} turnOwner={!myTurn&&!g.animating} staggerCurrent={g.staggerCurrent} staggerMax={g.staggerMax} isStaggered={g.isStaggered} weakness={e.fraqueza??(e.elemento?ELEMENT_ADVANTAGES[e.elemento]?.weakAgainst?.[0]:undefined)}/>

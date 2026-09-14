@@ -970,7 +970,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
    de propósito -- lá o grid de ações pode chegar a 6 botões (ex: escolha de invocação do
    Conjurador) sem o layout lado a lado do tablet para absorver a diferença. */
 .combat-v033{grid-template-columns:minmax(300px,30%) minmax(400px,34%) minmax(410px,36%);grid-template-rows:minmax(260px,32vh) minmax(260px,32vh) minmax(205px,auto) 18px;grid-template-areas:"hero actions enemy" "hero dice enemy" "effects log consumables" "tip tip tip";align-content:start}
-.combat-v033 .combat-hero-area{display:flex;min-height:0;overflow:hidden}.combat-v033 .combat-hero-area>.combat-card-fighter{flex:1;height:100%;min-height:0}
+.combat-v033 .combat-hero-area{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}.combat-v033 .combat-hero-area>.combat-card-fighter{flex:1;height:auto;min-height:0}.combat-v033 .combat-hero-area>.hero-ultimate-intent{flex:none;width:100%;max-width:none;margin:0;padding:8px 12px}
 .combat-v033 .combat-enemy-area{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}.combat-v033 .combat-enemy-area>.combat-card-fighter{flex:1;height:auto;min-height:0}.combat-v033 .combat-enemy-area>.enemy-intent{flex:none;width:100%;max-width:none;margin:0;padding:8px 12px}
 .combat-v033 .combat-dice-area{grid-area:dice;min-height:0;overflow:hidden}
 .combat-v033 .combat-dice-panel{display:flex;flex-direction:column}
@@ -1749,6 +1749,7 @@ body::after{content:"VERSÃO 0.8.59 • 14/09/2026\A Novo: popup +1 verde ao cur
 body::after{content:"VERSÃO 0.8.60 • 14/09/2026\A Ajuste: +1 verde da cura na fogueira agora aparece acima do cronometro (e em negrito)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.61 • 14/09/2026\A Ajuste: +1 verde da fogueira usa fonte Arial Bold e posicionado bem mais acima, garantindo que nao fica atras do personagem/cronometro";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.62 • 14/09/2026\A Ajuste: animacao do +1 vira um 1-up estilo Mario -- nasce perto da cabeca do heroi e sobe bem mais alto antes de sumir";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.63 • 14/09/2026\A Ajuste: medidor do Golpe Supremo sai da faixa solta no topo e vira um bloco abaixo da carta do heroi, espelhando o bloco de proxima acao do inimigo -- cartas ficam com a mesma altura";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -1955,36 +1956,14 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
   gap:6px;
 }
 
-.ultimate-meter-strip{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-  background:linear-gradient(90deg,#150e0a,#24140b,#150e0a);
-  border:1px solid #78350f;
-  border-radius:8px;
-  padding:7px 12px;
-  margin-bottom:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,.45);
-}
-.ultimate-meter-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-family:Georgia,serif;
-  font-size:.75rem;
-  font-weight:700;
-}
-.ultimate-meter-label{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  color:#fef08a;
-  letter-spacing:.03em;
-}
-.ultimate-meter-pct{
-  color:#fde047;
-  font-size:.78rem;
-}
+/* Bloco do Golpe Supremo abaixo da carta do herói -- mesmo box de .enemy-intent (abaixo da
+   carta do inimigo), pra deixar as duas colunas com a mesma altura. Antes era uma faixa solta
+   no topo da tela (.ultimate-meter-strip, removida), que sobrava space e deixava a carta do
+   herói maior que a do inimigo. */
+.hero-ultimate-intent{display:grid;gap:6px;margin:0 auto 10px;padding:9px 14px;max-width:360px;border:1px solid #8c6239;border-radius:10px;background:rgba(16,12,10,.92);text-align:center}
+.hero-ultimate-intent small{display:flex;align-items:center;justify-content:center;gap:5px;color:#ba9a70;font-size:.66rem;letter-spacing:.14em}
+.hero-ultimate-intent strong{color:#fde047;font-size:.85rem}
+.hero-ultimate-intent.ready{border-color:#d8a340;box-shadow:0 0 12px rgba(216,163,64,.35)}
 .ultimate-track{
   width:100%;
   height:8px;
