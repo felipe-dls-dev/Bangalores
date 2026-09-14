@@ -76,6 +76,36 @@ export interface RegionMapGate {
   x: number
   y: number
 }
+// Monólito de teletransporte (ART-024): descoberto ao ser visitado (persistido fora daqui, ver
+// discoveredMonoliths em game.ts); a lista de todos os monólitos de todos os mapas é derivada logo
+// depois de REGION_MAPS, pra viagem rápida poder pular de região sem este arquivo saber nada sobre
+// telas/store.
+export interface RegionMapMonolith {
+  id: string
+  name: string
+  x: number
+  y: number
+}
+// Doca de barco/carruagem (ART-025): duas docas com o mesmo pairId formam uma rota de atalho no
+// mesmo mapa -- embarcar anima o personagem em linha reta até a doca irmã, sem passar por step().
+export interface RegionMapDock {
+  id: string
+  name: string
+  x: number
+  y: number
+  pairId: string
+  vehicle: 'boat' | 'carriage'
+}
+// Objeto de cenário (ART-027): primeira instância é a placa de sinalização -- só mostra um texto
+// ao ser clicado, sem estado persistido (pode ser relida quantas vezes quiser, como uma placa real).
+export interface RegionMapScenery {
+  id: string
+  name: string
+  x: number
+  y: number
+  kind: 'signpost'
+  text: string
+}
 export interface RegionMapDef {
   id: string
   background?: string
@@ -91,6 +121,12 @@ export interface RegionMapDef {
   campfires?: RegionMapCampfire[]
   levers?: RegionMapLever[]
   gates?: RegionMapGate[]
+  monoliths?: RegionMapMonolith[]
+  docks?: RegionMapDock[]
+  scenery?: RegionMapScenery[]
+  // Tiles que aparentam solidos na arte de fundo (por isso não entram em `blocked`), mas são
+  // secretamente andáveis -- ver ART-026. Chave da persistência de "já descoberto" é `${mapId}:x,y`.
+  illusoryWalls?: Array<{ x: number; y: number }>
   blocked?: Array<{ x: number; y: number }>
   weather?: 'snow' | 'rain' | 'ash' | 'smoke' // camada atmosférica opcional (ART-012) -- só nas regiões onde faz sentido, não é universal
 }
@@ -104,6 +140,8 @@ const ZOOM_MAX = 1.8
 const ZOOM_STEP = 0.2
 const FOOTPRINT_FADE_MS = 2200 // tempo até a pegada sumir de vez (bate com a duração da animação de fade no CSS)
 const GAMEPAD_AXIS_DEAD_ZONE = 0.5
+const RIDE_DURATION_MS = 1150 // bate com a transition-duration de .regionmap-player.is-riding no CSS
+const SECRET_BURST_MS = 900 // duração do efeito de revelação da parede ilusória (ART-026)
 const AMBUSH_CHANCE = 0.07 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
 const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
 const WANDER_SPAWN_BUFFER = 3 // raio (em tiles) ao redor do spawn onde nenhum monstro pode nascer ou pisar
@@ -924,6 +962,11 @@ export const REGION_MAPS: Record<string, RegionMapDef> = {
   aetherium: buildAetherium(),
 }
 export function getRegionMap(regionId: string): RegionMapDef | undefined { return REGION_MAPS[regionId] }
+// Lista achatada de todo monólito de todo mapa, com o regionId já anexado -- é o que permite viajar
+// de um monólito descoberto pra qualquer outro (mesmo de outra região/mundo) sem este arquivo
+// precisar saber nada de tela/store; quem consome (game.ts) só cruza isso com `discoveredMonoliths`.
+export interface DiscoverableMonolith extends RegionMapMonolith { regionId: string }
+export const ALL_MONOLITHS: DiscoverableMonolith[] = Object.values(REGION_MAPS).flatMap(m => (m.monoliths ?? []).map(mono => ({ ...mono, regionId: m.id })))
 
 // Ciclo de caminhada gerado (ChatGPT/gpt-image-1): 3 quadros por direção (perna esquerda à
 // frente / passo neutro / perna direita à frente) em public/assets/maps/sprites/adventurer/
@@ -962,7 +1005,7 @@ const FOG_REVEAL_RADIUS = 3
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
   openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin,
-  activatedLevers, onActivateLever
+  activatedLevers, onActivateLever, discoveredMonoliths, onActivateMonolith, discoveredSecrets, onDiscoverSecret
 }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
@@ -987,6 +1030,10 @@ export function TileWorldExplorer({
   onTogglePin?: (x: number, y: number) => void
   activatedLevers?: Record<string, boolean>
   onActivateLever?: (leverId: string) => void
+  discoveredMonoliths?: string[]
+  onActivateMonolith?: (monolithId: string) => void
+  discoveredSecrets?: Record<string, boolean>
+  onDiscoverSecret?: (key: string) => void
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
   // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
@@ -1005,6 +1052,14 @@ export function TileWorldExplorer({
   const [footprints, setFootprints] = React.useState<Array<{ id: number; x: number; y: number; foot: 'l' | 'r' }>>([])
   const footprintIdRef = React.useRef(0)
   const footToggleRef = React.useRef(false)
+  // Barco/carruagem (ART-025): enquanto `riding` está definido, o sprite normal vira o veículo e a
+  // transição CSS de left/top usa uma duração maior (ver .is-riding), então o "andar" até a doca
+  // irmã é só a mesma transição de sempre, só que mais longa e com outro sprite -- sem interpolar
+  // posição manualmente.
+  const [riding, setRiding] = React.useState<{ vehicle: 'boat' | 'carriage' } | undefined>()
+  const [secretBurst, setSecretBurst] = React.useState<{ id: number; x: number; y: number } | undefined>()
+  const secretBurstIdRef = React.useRef(0)
+  const [signpostOpen, setSignpostOpen] = React.useState<RegionMapScenery | undefined>()
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
   const queuedMoves = React.useRef<Array<[number, number]>>([])
@@ -1107,6 +1162,26 @@ export function TileWorldExplorer({
     return () => window.clearInterval(id)
   }, [paused, map])
 
+  // Embarcar (ART-025): só funciona parado exatamente em cima da doca (senão exige um clique pra
+  // andar até lá primeiro e outro pra embarcar, evitando misturar o movimento passo-a-passo do
+  // moveToTile com o "salto" direto de posição que a viagem faz aqui).
+  const boardDock = React.useCallback((dock: RegionMapDock) => {
+    if (movingRef.current || paused) return
+    if (posRef.current.x !== dock.x || posRef.current.y !== dock.y) return
+    const target = (map.docks ?? []).find(d => d.pairId === dock.pairId && d.id !== dock.id)
+    if (!target) return
+    const dir: Facing = Math.abs(target.x - dock.x) >= Math.abs(target.y - dock.y) ? (target.x > dock.x ? 'right' : 'left') : (target.y > dock.y ? 'down' : 'up')
+    movingRef.current = true
+    setFacing(dir)
+    setRiding({ vehicle: dock.vehicle })
+    posRef.current = { x: target.x, y: target.y }
+    setPos({ x: target.x, y: target.y })
+    window.setTimeout(() => {
+      movingRef.current = false
+      setRiding(undefined)
+    }, RIDE_DURATION_MS)
+  }, [map, paused])
+
   // auto=true identifica um passo continuado pelo deslize do gelo (ver terreno 'ice' logo
   // abaixo), não uma entrada nova do jogador -- serve só pra não rolar emboscada de novo a cada
   // tile deslizado (o jogador não escolheu continuar, seria punitivo empilhar chance em cima).
@@ -1147,6 +1222,17 @@ export function TileWorldExplorer({
       const chest = (map.chests ?? []).find(c => c.x === tx && c.y === ty)
       const campfire = (map.campfires ?? []).find(c => c.x === tx && c.y === ty)
       const landedTile = map.grid[ty]?.[tx]
+      // Parede ilusória (ART-026): dispara o efeito uma vez só, na primeira vez que o jogador pisa
+      // ali -- independente do que mais acontecer nesse tile (não é um `else if`, é um efeito à parte).
+      if ((map.illusoryWalls ?? []).some(w => w.x === tx && w.y === ty)) {
+        const secretKey = `${map.id}:${tx},${ty}`
+        if (!discoveredSecrets?.[secretKey]) {
+          onDiscoverSecret?.(secretKey)
+          const burstId = ++secretBurstIdRef.current
+          setSecretBurst({ id: burstId, x: tx, y: ty })
+          window.setTimeout(() => setSecretBurst(prev => (prev?.id === burstId ? undefined : prev)), SECRET_BURST_MS)
+        }
+      }
       if (loc) onEnterLocation(loc.subId)
       else if (exit) onEnterExit?.(exit.id)
       else if (chest && !openedChests?.[chest.id]) onOpenChest?.(chest)
@@ -1163,7 +1249,7 @@ export function TileWorldExplorer({
       else if (!auto && Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
     }, arrivalDelay)
-  }, [paused, map, onEnterLocation, exits, onEnterExit, extraBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire])
+  }, [paused, map, onEnterLocation, exits, onEnterExit, extraBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire, discoveredSecrets, onDiscoverSecret])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
     const route = routeBetween(map, posRef.current, target, extraBlocked)
@@ -1300,7 +1386,7 @@ export function TileWorldExplorer({
       // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
       // de um NPC/local nunca disparava o onClick deles, só o fallback de clique-no-tile daqui.
       // Não capturar quando o toque começa num desses botões deixa o clique nativo bubblear normal.
-      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit, .regionmap-zoom-hud, .regionmap-pin-hud, .regionmap-custom-pin')) return
+      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit, .regionmap-zoom-hud, .regionmap-pin-hud, .regionmap-custom-pin, .regionmap-lever, .regionmap-monolith, .regionmap-dock, .regionmap-scenery, .regionmap-signpost-backdrop')) return
       event.currentTarget.setPointerCapture(event.pointerId)
       dragRef.current = { x: event.clientX, y: event.clientY, camX, camY, dragged: false }
     }} onPointerMove={event => {
@@ -1422,6 +1508,53 @@ export function TileWorldExplorer({
             </div>
           )
         })}
+        {(map.monoliths ?? []).map(monolith => {
+          const discovered = Boolean(discoveredMonoliths?.includes(monolith.id))
+          return (
+            <button key={monolith.id} type="button" className={`regionmap-monolith${discovered ? ' discovered' : ''}`}
+              style={{ left: monolith.x * tilePx, top: monolith.y * tilePx, width: tilePx, height: tilePx }}
+              onClick={event => {
+                event.stopPropagation()
+                if (didDragRef.current) { didDragRef.current = false; return }
+                moveToTile({ x: monolith.x, y: monolith.y })
+                onActivateMonolith?.(monolith.id)
+              }}
+              aria-label={monolith.name} title={discovered ? `${monolith.name} (Viajar)` : monolith.name}>
+              <MapPropIcon className="regionmap-monolith-icon" src={mapAsset(`assets/maps/objects/monolith/${discovered ? 'active' : 'dormant'}.png`)} fallback="🗿" />
+            </button>
+          )
+        })}
+        {(map.docks ?? []).map(dock => (
+          <button key={dock.id} type="button" className="regionmap-dock"
+            style={{ left: dock.x * tilePx, top: dock.y * tilePx, width: tilePx, height: tilePx }}
+            onClick={event => {
+              event.stopPropagation()
+              if (didDragRef.current) { didDragRef.current = false; return }
+              if (posRef.current.x === dock.x && posRef.current.y === dock.y) boardDock(dock)
+              else moveToTile({ x: dock.x, y: dock.y })
+            }}
+            aria-label={dock.name} title={dock.name}>
+            <MapPropIcon className="regionmap-dock-icon" src={mapAsset(`assets/maps/objects/${dock.vehicle}/idle.png`)} fallback={dock.vehicle === 'boat' ? '🛶' : '🐎'} />
+          </button>
+        ))}
+        {(map.scenery ?? []).map(item => (
+          <button key={item.id} type="button" className="regionmap-scenery"
+            style={{ left: item.x * tilePx, top: item.y * tilePx, width: tilePx, height: tilePx }}
+            onClick={event => {
+              event.stopPropagation()
+              if (didDragRef.current) { didDragRef.current = false; return }
+              moveToTile({ x: item.x, y: item.y })
+              setSignpostOpen(item)
+            }}
+            aria-label={item.name} title={item.name}>
+            <MapPropIcon className="regionmap-scenery-icon" src={mapAsset(`assets/maps/objects/${item.kind}/idle.png`)} fallback="📜" />
+          </button>
+        ))}
+        {secretBurst && (
+          <div className="regionmap-secret-burst" style={{ left: secretBurst.x * tilePx, top: secretBurst.y * tilePx, width: tilePx, height: tilePx }}>
+            <img src={mapAsset('assets/maps/fx/secret-reveal/burst.png')} alt="" />
+          </div>
+        )}
         {npcs.map(npc => {
           const status = npcStatus?.(npc) ?? 'default'
           return <button key={npc.id} type="button" className={`regionmap-npc npc-${npc.facing ?? 'down'} status-${status}`}
@@ -1439,12 +1572,16 @@ export function TileWorldExplorer({
             <img className="regionmap-wanderer-sprite" src={wanderAsset(w.spriteId, WANDER_FRAMES[wanderFrame])} alt="" />
           </div>
         ))}
-        <div className={`regionmap-player${walking ? ' is-walking' : ''}`}
+        <div className={`regionmap-player${walking ? ' is-walking' : ''}${riding ? ' is-riding' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
           <span className="regionmap-player-shadow" />
-          <span className="regionmap-player-sprite-wrap" style={sprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
-            <img className="regionmap-player-sprite" src={frameSrc} alt="" />
-          </span>
+          {riding ? (
+            <img className="regionmap-player-vehicle" src={mapAsset(`assets/maps/objects/${riding.vehicle}/moving.png`)} alt="" />
+          ) : (
+            <span className="regionmap-player-sprite-wrap" style={sprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
+              <img className="regionmap-player-sprite" src={frameSrc} alt="" />
+            </span>
+          )}
         </div>
         {exploredTiles && map.grid.flatMap((row, y) => row.map((_, x) => exploredTiles.has(`${x},${y}`) ? null : (
           <div key={`fog_${x}_${y}`} className="regionmap-fog-tile" style={{ left: x * tilePx, top: y * tilePx, width: tilePx, height: tilePx }} />
@@ -1460,6 +1597,15 @@ export function TileWorldExplorer({
           <MapPin size={14} />
         </button>
       </div>}
+      {signpostOpen && (
+        <div className="regionmap-signpost-backdrop" onClick={() => setSignpostOpen(undefined)}>
+          <div className="regionmap-signpost-popup" onClick={event => event.stopPropagation()}>
+            <strong>{signpostOpen.name}</strong>
+            <p>{signpostOpen.text}</p>
+            <button type="button" onClick={() => setSignpostOpen(undefined)}>Fechar</button>
+          </div>
+        </div>
+      )}
     </div>
     <div className="regionmap-controls">
       <p className="regionmap-hint">{adjacentNpc ? `Pressione E ou Enter para falar com ${adjacentNpc.nome}.` : 'Use as setas (ou WASD) e ande ate um marcador ou personagem.'}</p>

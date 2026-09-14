@@ -84,10 +84,10 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P2 | Dynamic character shadow | Claude Code | SHIPPED | CSS-only ellipse under the player sprite, pulses while walking. No art dependency. |
 | P2 | Footstep animation | Claude Code | SHIPPED | CSS-only alternating footprint marks that fade out behind the player. No art dependency. |
 | P3 | Lever and locked gate | — | MECHANIC SHIPPED | See ART-023 -- code+art integrated, just not placed on a map yet. |
-| P3 | Fast-travel monolith | Codex | REQUESTED | See ART-024. |
-| P3 | Boat / carriage shortcut | Codex | REQUESTED | See ART-025. |
-| P3 | Illusory secret wall | Codex | REQUESTED | See ART-026 (reveal-effect art only, no new wall texture needed). |
-| P3 | Scenery interaction (signposts) | Codex | REQUESTED | See ART-027 -- first concrete instance of a reusable scenery-object pattern. |
+| P3 | Fast-travel monolith | — | MECHANIC SHIPPED | See ART-024 -- code+art integrated (discovery + cross-region picker), just not placed on a map yet. |
+| P3 | Boat / carriage shortcut | — | MECHANIC SHIPPED | See ART-025 -- code+art integrated (same-map paired-dock ride), just not placed on a map yet. |
+| P3 | Illusory secret wall | — | MECHANIC SHIPPED | See ART-026 -- code+art integrated (discovery + one-shot reveal fx), just not placed on a map yet. |
+| P3 | Scenery interaction (signposts) | — | MECHANIC SHIPPED | See ART-027 -- code+art integrated (reusable `RegionMapScenery` pattern), just not placed on a map yet. |
 
 ## ART REQUEST Template
 
@@ -448,7 +448,7 @@ Integration note: map `activatedLevers[lever.id]` to `lever/activated.png`; map 
 Integration (Claude Code): added `RegionMapLever`/`RegionMapGate` to `RegionMapDef` (`levers?`/`gates?`, a gate linked to its lever by `gateId`), a persisted `activatedLevers` dict (never turns back off, same pattern as `openedChests`), and an `activateLever` action. Closed-gate tiles are added to the same dynamic blocked-set already used for NPC collision (renamed `npcBlocked`->`extraBlocked` throughout `TileWorldExplorer` to reflect that) so every existing movement/pathing function picks up the block automatically. Lever renders as a click-to-walk marker like a campfire; gate renders as a non-interactive tile-sized prop, both via `MapPropIcon` (safe emoji fallback: 🔒/🟢 for the lever, 🚧 for a closed gate). Not yet placed on any specific map -- that's a content decision (which map, which shortcut) rather than a code one; `npm test` 97/97 green with zero maps using it yet.
 
 ### ART-024 - Fast-travel monolith
-Status: READY FOR CODE
+Status: INTEGRATED (mechanic shipped, not yet placed on any map)
 Requested by: Claude Code
 Gameplay purpose: a discoverable waystone on region maps. Walking up to one for the first time registers it as discovered (persisted); from any discovered monolith the player can instantly travel to any other discovered monolith, including across regions/worlds -- reuses the existing `regionMapPositions` position-memory plumbing, so no new travel UI framework is needed beyond a simple picker list.
 Required asset ids and states: `monolith` (`dormant` -- not yet discovered art is simply not rendered, so this state may be unused; `active` -- discovered/glowing).
@@ -464,9 +464,10 @@ Delivered paths:
 - `public/assets/maps/objects/monolith/active.png`
 Dimensions and format: each 128x128 PNG RGBA with real transparent background.
 Integration note: use `dormant.png` only when the undiscovered state is rendered; otherwise use `active.png` after discovery and on all subsequent visits. Keep the object's state, discovery persistence and fast-travel picker entirely in code; retain an image fallback only for load failures.
+Integration (Claude Code): added `RegionMapMonolith` to `RegionMapDef` (`monoliths?`) and a derived `ALL_MONOLITHS` (flattened across every `REGION_MAPS` entry, tagged with `regionId`) exported from `src/regionMap.tsx`. `discoveredMonoliths` (persisted string array) and `travelToMonolith` live in `src/store/game.ts` -- travel just reuses `regionMapPositions` (same plumbing that already restores exact position after combat) to land at the target monolith's exact tile, so no new cross-region positioning code was needed. Clicking a monolith opens a picker modal (`RegionMapView` in `src/main.tsx`) listing every discovered monolith by name and region; picking one travels immediately. Not yet placed on any specific map -- a content decision, same as ART-023. `npm test` 97/97 green.
 
 ### ART-025 - Boat / carriage shortcut
-Status: READY FOR CODE
+Status: INTEGRATED (mechanic shipped, not yet placed on any map)
 Requested by: Claude Code
 Gameplay purpose: a scoped-down first version of animated transport -- a vehicle prop at a dock/station tile that, when boarded, rides the player in a straight line to a paired dock/station tile elsewhere on the SAME map (a visual shortcut across a lake, canal or rail line already present in a map's art), instead of an instant teleport.
 Required asset ids and states: pick whichever fits the first map this ships on -- `boat` (`idle`, `moving`) for a water crossing, or `carriage` (`idle`, `moving`) for a road/rail crossing. Only one family is needed to start; the other can be a separate future request.
@@ -483,9 +484,10 @@ Delivered paths:
 - `public/assets/maps/objects/boat/moving.png`
 Dimensions and format: each 128x128 PNG RGBA with real transparent background.
 Integration note: use `idle.png` at the boarding object and switch to `moving.png` only for the short code-driven same-map crossing. The renderer may mirror the image for opposite route direction; place it over the existing water/canal art and keep dock pairing, player movement lock and arrival positioning in code.
+Integration (Claude Code): added `RegionMapDock` to `RegionMapDef` (`docks?`, paired by `pairId`). Boarding only works standing exactly on the dock tile (click elsewhere just walks you there first, no auto-chain, to avoid mixing the normal step-by-step walk with the direct position jump a crossing does). The player sprite swaps to `moving.png` and `.regionmap-player` picks up a longer, linear CSS transition (`.is-riding`, 1.15s) instead of the normal .32s walk transition -- the existing left/top transition animates the whole crossing in one smooth motion, no manual per-frame interpolation needed. Not yet placed on any specific map. `npm test` 97/97 green.
 
 ### ART-026 - Illusory secret wall reveal effect
-Status: READY FOR CODE
+Status: INTEGRATED (mechanic shipped, not yet placed on any map)
 Requested by: Claude Code
 Gameplay purpose: a wall/obstacle that looks exactly like the surrounding blocked terrain but is secretly walkable, hiding a passage. No new wall texture is needed (it deliberately reuses the existing blocked-terrain art at that spot so it's indistinguishable beforehand) -- what's needed is a one-shot visual sting that plays the moment the player walks through it, so discovery reads as a discovery rather than "huh, I guess that wasn't blocked."
 Required asset ids and states: `secret-reveal` (single effect, no states) -- a brief sparkle/dust-crumble burst, in the same spirit as the weather fx already delivered (ART-012).
@@ -499,9 +501,10 @@ Acceptance check: reads as a brief magical/dust reveal, not a damage or status e
 Delivered path: `public/assets/maps/fx/secret-reveal/burst.png`
 Dimensions and format: 320x320 PNG RGBA with real transparent background.
 Integration note: place the effect centered over the discovered tile, above map terrain and below interface overlays. Trigger it once on first discovery, scale/fade it through a short CSS animation and disable motion under the existing reduced-effects setting. Do not reuse it for combat hits or status feedback.
+Integration (Claude Code): added `illusoryWalls?:Array<{x,y}>` to `RegionMapDef` -- deliberately excluded from `blocked`, since the whole point is the tile is already walkable, just visually mismatched with the art. `step()` in `TileWorldExplorer` checks the landed tile against this list on every arrival; a persisted `discoveredSecrets` dict (`src/store/game.ts`, keyed `${mapId}:x,y`) gates the burst to a true one-time reveal, and the scale/fade animation itself is gated by the existing `html:not(.reduce-effects)` global class. Not yet placed on any specific map (no map currently declares `illusoryWalls`). `npm test` 97/97 green.
 
 ### ART-027 - Scenery interaction: readable signposts
-Status: READY FOR CODE
+Status: INTEGRATED (mechanic shipped, not yet placed on any map)
 Requested by: Claude Code
 Gameplay purpose: first concrete instance of "interact with scenery objects" -- a signpost/plaque the player can walk up to and read for a short flavor-text line (lore, a hint, a joke), establishing a reusable `RegionMapScenery` object pattern that later scenery types (search a bush, ring a bell, etc.) can follow without a new art contract each time.
 Required asset ids and states: `signpost` (`idle` only -- it's read-only scenery, no other state needed).
@@ -515,6 +518,7 @@ Acceptance check: reads clearly as "read this," distinct from a chest/campfire/l
 Delivered path: `public/assets/maps/objects/signpost/idle.png`
 Dimensions and format: 128x128 PNG RGBA with real transparent background.
 Integration note: render this asset in the same map-object container used for campfires and levers, preserving the scenery object's accessible label and click handler. Keep all sign text in the code-owned popup, not embedded in the image; retain a simple fallback only for image-load failure.
+Integration (Claude Code): added `RegionMapScenery` to `RegionMapDef` (`scenery?`, with a `kind` field so future scenery types beyond `signpost` can reuse the same list without a new prop). Clicking one opens a small local popup inside `TileWorldExplorer` itself (no store involved -- rereadable every time, exactly like a real sign). Not yet placed on any specific map. `npm test` 97/97 green.
 
 ## Handoff Log
 
