@@ -1726,6 +1726,25 @@ function CoopTeammatesRow({coop,battle}:{coop:any,battle:any}){
 }
 function CombatScreen(){
  const g=useGame(),coop=useCoop(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy,battle=coop.room?.shared_state?.battle as any,isCoop=Boolean(coop.room&&battle?.status==='playing'),myTurn=isCoop?battle.activeUserId===coop.userId:g.playerTurn
+ // AUTO-combate (g.autoCombat/runAutoCombatTurn em game.ts) só entendia o turno solo
+ // (s.playerTurn, que startCoopCombat deixa sempre false) e chamava g.attack()/g.heroSkill()
+ // direto -- no coop isso nunca disparava nada, igual ao bug antigo de fuga/consumível.
+ // autoTurnRunnerRef guarda sempre a versão mais recente da decisão (definida mais abaixo,
+ // depois que performAttack/performFervor/etc. já existem, pois dependem do inimigo `e`),
+ // e este efeito só agenda a chamada -- precisa ficar antes do "if(!e) return" abaixo pra
+ // não violar a ordem dos hooks entre renders.
+ const autoTurnRunnerRef=React.useRef<()=>void>(()=>{})
+ // Reagenda sempre que qualquer condição relevante muda -- inclui g.animating de propósito:
+ // sem isso, um disparo que caía bem no meio da animação do golpe inimigo (que dura ~1-2s)
+ // desistia (guarda dentro do runner) e nada mais reagendava depois, porque só o tamanho do
+ // log era observado antes. O próprio runner é seguro de chamar de novo (cada ação coop
+ // revalida de quem é a vez no servidor), então não precisa de uma trava de "já tentei essa
+ // chave" -- cancelar/reagendar o timeout a cada mudança já evita disparos duplicados.
+ React.useEffect(()=>{
+  if(!isCoop||!g.autoCombat||!myTurn||g.animating)return
+  const timer=window.setTimeout(()=>autoTurnRunnerRef.current(),500)
+  return()=>window.clearTimeout(timer)
+ },[isCoop,g.autoCombat,myTurn,g.animating,battle?.log?.length])
  React.useEffect(()=>{window.scrollTo({top:0,left:0,behavior:'auto'});document.documentElement.scrollTop=0;document.body.scrollTop=0},[])
  const summonFxEvent=isCoop?battle?.summonAttackFx:g.summonAttackFx
  React.useEffect(()=>{if(g.heroId!=='conjurador'&&(g.summons?.length||g.summon))useGame.setState({summons:[],summon:undefined} as any)},[g.heroId])
@@ -1846,6 +1865,20 @@ function CombatScreen(){
   void coop.coopAbility(it.nome,0,description)
  }
  const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,spec=specializationBonuses(g),bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g),false,spec.elemental);if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
+ // Mesma prioridade de decisão do auto-combate solo (runAutoCombatTurn em game.ts): poção de
+ // cura com vida baixa > habilidade de herói > Fervor de Combate > mirar num capanga vivo >
+ // ataque padrão. Sem Golpe Supremo aqui de propósito -- o próprio botão manual do Supremo
+ // ainda chama g.ultimateAttack() (só solo) mesmo em coop, então automatizar isso amplificaria
+ // um bug à parte em vez de só religar o AUTO no turno cooperativo.
+ autoTurnRunnerRef.current=()=>{
+  if(!myTurn||g.animating||defeated)return
+  if(g.hp<maxHp(g)*.35&&(g.inventory['pocao_cura']??0)>0){performUseConsumable('pocao_cura');return}
+  if(g.heroId!=='conjurador'&&heroSkillUses<heroSkillLimit){useCoopHeroSkill();return}
+  if(fervorLevel>=3){performFervor();return}
+  const minion=activeMinions.find(m=>m.hp>0)
+  if(minion){performAttack(minion.id);return}
+  performAttack()
+ }
  const attacker=g.combatRoll?.attacker
  // No coop, o dano de "hero" pode ter vindo de qualquer jogador do grupo — sem isso, a
  // animação de ataque sempre usava a arma equipada do jogador local, mesmo quando quem
