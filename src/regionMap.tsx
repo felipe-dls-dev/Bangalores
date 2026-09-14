@@ -4,7 +4,7 @@
 // jogador pisa num marcador de sub-região. Quem decide o que acontece ao entrar num marcador
 // (abrir card, checar progresso etc.) é o componente que usa <TileWorldExplorer/>.
 import React from 'react'
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, MapPin } from 'lucide-react'
 import type { NpcDefinition } from './data/npcs'
 
 // GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
@@ -85,6 +85,8 @@ const VIEWPORT_TILES_Y = 12
 const ZOOM_MIN = 0.6
 const ZOOM_MAX = 1.8
 const ZOOM_STEP = 0.2
+const FOOTPRINT_FADE_MS = 2200 // tempo até a pegada sumir de vez (bate com a duração da animação de fade no CSS)
+const GAMEPAD_AXIS_DEAD_ZONE = 0.5
 const AMBUSH_CHANCE = 0.07 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
 const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
 const WANDER_SPAWN_BUFFER = 3 // raio (em tiles) ao redor do spawn onde nenhum monstro pode nascer ou pisar
@@ -942,7 +944,7 @@ const FOG_REVEAL_RADIUS = 3
 
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
-  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers
+  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin
 }: {
   map: RegionMapDef
   initialPosition?: { x: number; y: number }
@@ -963,6 +965,8 @@ export function TileWorldExplorer({
   exploredTiles?: Set<string>
   onExplore?: (tiles: Array<{ x: number; y: number }>) => void
   defeatedWanderers?: Record<string, boolean>
+  customPins?: Array<{ x: number; y: number }>
+  onTogglePin?: (x: number, y: number) => void
 }) {
   const [pos, setPos] = React.useState(initialPosition ?? map.spawn)
   // Reporta a posição pra quem chamou (ex.: guardar no store) sempre que ela muda -- é o que
@@ -974,6 +978,13 @@ export function TileWorldExplorer({
   const [walking, setWalking] = React.useState(false)
   const [panOffset, setPanOffset] = React.useState({ x: 0, y: 0 })
   const [zoom, setZoom] = React.useState(1)
+  // Modo de pin customizado: enquanto ativo, clicar num tile marca/desmarca um pin em vez de
+  // andar até lá -- fica em estado local (não precisa persistir) já que é só um jeito de alternar
+  // o que o próximo clique faz, não um dado de jogo em si.
+  const [pinMode, setPinMode] = React.useState(false)
+  const [footprints, setFootprints] = React.useState<Array<{ id: number; x: number; y: number; foot: 'l' | 'r' }>>([])
+  const footprintIdRef = React.useRef(0)
+  const footToggleRef = React.useRef(false)
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
   const queuedMoves = React.useRef<Array<[number, number]>>([])
@@ -1078,6 +1089,12 @@ export function TileWorldExplorer({
     if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return
     if (!isMapWalkable(map, { x: tx, y: ty }, npcBlocked)) return
     movingRef.current = true
+    // Pegada (alterna pé esquerdo/direito) no tile que está sendo deixado pra trás -- some
+    // sozinha depois de FOOTPRINT_FADE_MS, puramente decorativo.
+    const footprintId = ++footprintIdRef.current
+    footToggleRef.current = !footToggleRef.current
+    setFootprints(prev => [...prev, { id: footprintId, x: currentPos.x, y: currentPos.y, foot: footToggleRef.current ? 'l' : 'r' }])
+    window.setTimeout(() => setFootprints(prev => prev.filter(f => f.id !== footprintId)), FOOTPRINT_FADE_MS)
     // Lama (ART-014) atrasa a chegada no tile -- é a "sensação" de atolar, sem inventar um
     // sistema de status novo; some assim que o jogador sai da lama, não é acumulativo.
     const arrivalDelay = map.grid[ty]?.[tx] === 'mud' ? Math.round(STEP_MS * 1.6) : STEP_MS
@@ -1196,6 +1213,37 @@ export function TileWorldExplorer({
     return () => window.removeEventListener('keydown', onKey)
   }, [adjacentNpc, onInteractNpc, paused])
 
+  // Suporte a gamepad/controle: a Gamepad API não dispara evento nenhum enquanto um botão/eixo
+  // fica segurado, então sondamos a cada frame via requestAnimationFrame. step() já ignora
+  // chamadas repetidas sozinho (não-op enquanto movingRef.current for true), então segurar uma
+  // direção repete no mesmo ritmo do teclado, sem precisar de debounce próprio aqui.
+  React.useEffect(() => {
+    if (paused) return
+    let frameId = 0, interactHeld = false
+    const poll = () => {
+      const pad = navigator.getGamepads?.()[0]
+      if (pad) {
+        const [axisX, axisY] = pad.axes
+        let dx = 0, dy = 0
+        if (pad.buttons[14]?.pressed) dx = -1
+        else if (pad.buttons[15]?.pressed) dx = 1
+        else if (Math.abs(axisX ?? 0) > GAMEPAD_AXIS_DEAD_ZONE) dx = axisX! > 0 ? 1 : -1
+        if (!dx) {
+          if (pad.buttons[12]?.pressed) dy = -1
+          else if (pad.buttons[13]?.pressed) dy = 1
+          else if (Math.abs(axisY ?? 0) > GAMEPAD_AXIS_DEAD_ZONE) dy = axisY! > 0 ? 1 : -1
+        }
+        if (dx || dy) step(dx, dy)
+        const interactPressed = Boolean(pad.buttons[0]?.pressed)
+        if (interactPressed && !interactHeld && adjacentNpc) onInteractNpc?.(adjacentNpc)
+        interactHeld = interactPressed
+      }
+      frameId = window.requestAnimationFrame(poll)
+    }
+    frameId = window.requestAnimationFrame(poll)
+    return () => window.cancelAnimationFrame(frameId)
+  }, [step, paused, adjacentNpc, onInteractNpc])
+
   // tilePx/worldW/worldH/viewportW/viewportH são a referência "sem zoom" -- é o que posiciona
   // cada tile/marcador dentro de .regionmap-world e define a caixa fixa em tela (.regionmap-
   // viewport nunca cresce/encolhe com o zoom). O zoom só muda quanto do mundo cabe dentro dessa
@@ -1222,7 +1270,7 @@ export function TileWorldExplorer({
       // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
       // de um NPC/local nunca disparava o onClick deles, só o fallback de clique-no-tile daqui.
       // Não capturar quando o toque começa num desses botões deixa o clique nativo bubblear normal.
-      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit, .regionmap-zoom-hud')) return
+      if ((event.target as HTMLElement).closest('.regionmap-npc, .regionmap-location, .regionmap-exit, .regionmap-zoom-hud, .regionmap-pin-hud, .regionmap-custom-pin')) return
       event.currentTarget.setPointerCapture(event.pointerId)
       dragRef.current = { x: event.clientX, y: event.clientY, camX, camY, dragged: false }
     }} onPointerMove={event => {
@@ -1245,7 +1293,9 @@ export function TileWorldExplorer({
       // (clientX - bounds.left) é distância em pixels de TELA a partir do canto do viewport;
       // /zoom converte pra distância em unidades de mundo antes de somar à câmera (também em
       // unidades de mundo) -- sem isso o clique erraria o tile assim que o zoom saísse de 1.
-      moveToTile({ x: Math.floor((camX + (event.clientX - bounds.left) / zoom) / tilePx), y: Math.floor((camY + (event.clientY - bounds.top) / zoom) / tilePx) })
+      const tile = { x: Math.floor((camX + (event.clientX - bounds.left) / zoom) / tilePx), y: Math.floor((camY + (event.clientY - bounds.top) / zoom) / tilePx) }
+      if (pinMode) onTogglePin?.(tile.x, tile.y)
+      else moveToTile(tile)
     }}>
       <div className="regionmap-world" style={{ width: worldW, height: worldH, transformOrigin: '0 0', transform: `translate3d(${-camX * zoom}px,${-camY * zoom}px,0) scale(${zoom})` }}>
         {map.background && <div className="regionmap-art" style={{ backgroundImage: `url(${map.background})` }} />}
@@ -1255,6 +1305,19 @@ export function TileWorldExplorer({
         {twilightOpacity > 0.02 && <div className="regionmap-daynight twilight" style={{ opacity: twilightOpacity }} />}
         {nightOpacity > 0.02 && <div className="regionmap-daynight night" style={{ opacity: nightOpacity }} />}
         {map.weather && <div className={`regionmap-weather regionmap-weather-${map.weather}`} />}
+        {footprints.map(f => (
+          <div key={f.id} className="regionmap-footprint-tile" style={{ left: f.x * tilePx, top: f.y * tilePx, width: tilePx, height: tilePx }}>
+            <span className={`regionmap-footprint foot-${f.foot}`} />
+          </div>
+        ))}
+        {customPins.map((pin, index) => (
+          <button key={`${pin.x}_${pin.y}_${index}`} type="button" className="regionmap-custom-pin"
+            style={{ left: pin.x * tilePx, top: pin.y * tilePx, width: tilePx, height: tilePx }}
+            onClick={event => { event.stopPropagation(); onTogglePin?.(pin.x, pin.y) }}
+            aria-label="Remover pin" title="Pin do jogador -- clique pra remover">
+            <span className="regionmap-custom-pin-icon">📍</span>
+          </button>
+        ))}
         {map.locations.map(loc => {
           const status = locationStatus?.(loc.subId) ?? 'default'
           return <button key={loc.subId} type="button" className={`regionmap-location status-${status}`}
@@ -1323,6 +1386,7 @@ export function TileWorldExplorer({
         ))}
         <div className={`regionmap-player${walking ? ' is-walking' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
+          <span className="regionmap-player-shadow" />
           <span className="regionmap-player-sprite-wrap" style={sprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
             <img className="regionmap-player-sprite" src={frameSrc} alt="" />
           </span>
@@ -1336,6 +1400,11 @@ export function TileWorldExplorer({
         <span>{Math.round(zoom * 100)}%</span>
         <button type="button" onClick={() => setZoom(z => clamp(Math.round((z + ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))} aria-label="Aproximar o mapa" title="Aproximar (ou role o mouse)"><ZoomIn size={14} /></button>
       </div>
+      {onTogglePin && <div className="regionmap-pin-hud" onClick={event => event.stopPropagation()}>
+        <button type="button" className={pinMode ? 'active' : ''} onClick={() => setPinMode(v => !v)} aria-label={pinMode ? 'Sair do modo de marcar pins' : 'Marcar pin no mapa'} title={pinMode ? 'Clique num tile pra marcar/desmarcar um pin -- clique aqui de novo pra sair do modo' : 'Ativar modo de marcar pins pessoais no mapa'}>
+          <MapPin size={14} />
+        </button>
+      </div>}
     </div>
     <div className="regionmap-controls">
       <p className="regionmap-hint">{adjacentNpc ? `Pressione E ou Enter para falar com ${adjacentNpc.nome}.` : 'Use as setas (ou WASD) e ande ate um marcador ou personagem.'}</p>

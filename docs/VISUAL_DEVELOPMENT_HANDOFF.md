@@ -67,7 +67,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 
 | Priority | Request | Owner now | Status | Visual deliverables |
 | --- | --- | --- | --- | --- |
-| P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | First story trio delivered in ART-022; 17 identity-placeholder portraits remain queued. |
+| P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | 12 of 20 portraits delivered and integrated in ART-022; 8 second-priority portraits remain queued. |
 | P0 | Steelmere all 7 territory maps | — | DONE | All delivered and integrated, see ART-001 and ART-005 through ART-010. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
 | P1 | Treasure chest variants | — | DONE | `common`/`opened` integrated (ART-011); `locked`/`rare`/`secret` delivered but unused until a chest-gating mechanic exists. |
@@ -79,6 +79,15 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P2 | Map camera zoom/pan | — | DONE | Mouse wheel + on-screen buttons, 60%-180%. Pure CSS scale on the existing world container — no art impact, works with any background at any resolution. |
 | P2 | Weather layer | — | DONE | Integrated on Frostgard/Vulcannis/Ferrujal/Coroferro (ART-012), drift respects the reduced-effects toggle. |
 | P2 | Day/night layer | — | DONE | Integrated globally as a cosmetic-only cycle (ART-013), no gameplay consequence yet. |
+| P2 | Gamepad support | Claude Code | SHIPPED | Left stick + D-pad move, button 0 interacts with an adjacent NPC. Polls `navigator.getGamepads()` per frame, no art dependency. |
+| P2 | Custom map pins | Claude Code | SHIPPED | Player-placed reminder pins, toggled via a map-HUD button; uses the 📍 emoji, no art dependency yet (could take a dedicated icon later). |
+| P2 | Dynamic character shadow | Claude Code | SHIPPED | CSS-only ellipse under the player sprite, pulses while walking. No art dependency. |
+| P2 | Footstep animation | Claude Code | SHIPPED | CSS-only alternating footprint marks that fade out behind the player. No art dependency. |
+| P3 | Lever and locked gate | Codex | REQUESTED | See ART-023. |
+| P3 | Fast-travel monolith | Codex | REQUESTED | See ART-024. |
+| P3 | Boat / carriage shortcut | Codex | REQUESTED | See ART-025. |
+| P3 | Illusory secret wall | Codex | REQUESTED | See ART-026 (reveal-effect art only, no new wall texture needed). |
+| P3 | Scenery interaction (signposts) | Codex | REQUESTED | See ART-027 -- first concrete instance of a reusable scenery-object pattern. |
 
 ## ART REQUEST Template
 
@@ -387,12 +396,21 @@ Integration (Claude Code): same `MapPropIcon` fallback component used for ART-01
 Status: PARTIAL DELIVERY - READY FOR CODE
 Owner: Codex; data-path integration after delivery: Claude Code
 Audit scope: `src/data/npcs.ts` contains 24 NPC records. All referenced sprite and portrait paths resolve; however, 20 NPCs need a character-specific portrait: 19 currently point at hero artwork and `sela_hartwin` currently points at Mira Bellwether's portrait.
-Delivered, first story trio:
+Delivered, first story set:
 - `public/assets/npcs/sela_hartwin.webp`
 - `public/assets/npcs/lyriel_noite.webp`
 - `public/assets/npcs/kip_ligeiro.webp`
+- `public/assets/npcs/torvald_barbaneve.webp`
+- `public/assets/npcs/ophira_vane.webp`
+- `public/assets/npcs/cassian_draye.webp`
+- `public/assets/npcs/oraculo_danika.webp`
+- `public/assets/npcs/gideon_mascarado.webp`
+- `public/assets/npcs/diretor_vane.webp`
+- `public/assets/npcs/colm_aldric.webp`
+- `public/assets/npcs/toby_harlan.webp`
+- `public/assets/npcs/garrick_laton.webp`
 Dimensions and format: each 768x1152 WebP RGB, vertical dialogue portrait.
-Required data replacements in `src/data/npcs.ts`: set the `portrait` field for `sela_hartwin`, `lyriel_noite`, and `kip_ligeiro` to their matching paths above. Do not alter their sprites, locations, dialogue, services or gameplay behavior.
+Required data replacements in `src/data/npcs.ts`: set the `portrait` field for `sela_hartwin`, `lyriel_noite`, `kip_ligeiro`, `torvald_barbaneve`, `ophira_vane`, `cassian_draye`, `oraculo_danika`, `gideon_mascarado`, `diretor_vane`, `colm_aldric`, `toby_harlan`, and `garrick_laton` to their matching paths above. Do not alter their sprites, locations, dialogue, services or gameplay behavior.
 Production priority, story quest chain:
 - `sela_hartwin` - Sela Hartwin, Boticaria de Estrada
 - `lyriel_noite` - Mestra Lyriel
@@ -406,7 +424,72 @@ Production priority, story quest chain:
 Second priority, region authority and recurring service NPCs:
 - `colm_aldric`, `toby_harlan`, `garrick_laton`, `silas_sterling`, `unidade_73`, `padre_lucian`, `astrid_reclusa`, `alaric_thorne`, `ignatius_drake`, `hamilton_cross`, `vanya_mar`
 Contract for each future delivery: one character-specific vertical portrait at `public/assets/npcs/<npc-id>.webp`, 768x1152 WebP RGB. Claude Code changes only the matching `portrait` field in `src/data/npcs.ts`; sprites and gameplay services remain untouched.
-Integration (Claude Code): swapped `portrait` for `sela_hartwin` (was reusing Mira Bellwether's portrait), `lyriel_noite` and `kip_ligeiro` (both were reusing hero card art) in `src/data/npcs.ts` to their delivered `.webp` files. No sprite/dialogue/service changes. Remaining 17 NPCs (production order above) still pending Codex delivery -- status stays PARTIAL DELIVERY until those land. `npm test` green.
+Integration (Claude Code): swapped `portrait` for all 9 story-quest-chain NPCs (`sela_hartwin`, `lyriel_noite`, `kip_ligeiro`, `torvald_barbaneve`, `ophira_vane`, `cassian_draye`, `oraculo_danika`, `gideon_mascarado`, `diretor_vane`) plus the first 3 second-priority NPCs (`colm_aldric`, `toby_harlan`, `garrick_laton`) -- was reusing Mira Bellwether's portrait or hero card art -- in `src/data/npcs.ts` to their delivered `.webp` files. No sprite/dialogue/service changes. 8 second-priority NPCs (`silas_sterling`, `unidade_73`, `padre_lucian`, `astrid_reclusa`, `alaric_thorne`, `ignatius_drake`, `hamilton_cross`, `vanya_mar`) still pending Codex delivery -- status stays PARTIAL DELIVERY until those land. `npm test` green.
+
+### ART-023 - Lever and locked gate
+Status: REQUESTED
+Requested by: Claude Code
+Gameplay purpose: a new interactive map object pair -- a lever that permanently opens a paired gate blocking a path, for shortcut/secret-area design on any region map (Havendown or Steelmere).
+Required asset ids and states: `lever` (`idle`, `activated`); `gate` (`closed`, `open`).
+Target paths: `public/assets/maps/objects/lever/idle.png`, `public/assets/maps/objects/lever/activated.png`, `public/assets/maps/objects/gate/closed.png`, `public/assets/maps/objects/gate/open.png`.
+Canvas dimensions / tile scale: same 16px-native grid as every other map object (see Asset Conventions) -- 128x128 PNG RGBA is the established convention for object art in this project, scaled down at render time.
+Transparency required: yes.
+Interaction states: lever is a walk-up-and-click marker like a campfire; gate is a blocked tile when closed, walkable once opened -- no separate click target needed for the gate itself.
+Visual references or territory: style-match whichever region the first map using this ships in (industrial style if Steelmere, natural/stonework if Havendown) -- generic enough to reskin later per-region if reuse across very different biomes reads oddly.
+Code dependency: none to start art -- Claude Code will add `RegionMapLever`/`RegionMapGate` to `RegionMapDef`, a persisted `activatedLevers:Record<string,boolean>` (same pattern as `openedChests`), and wire the gate's blocked state to the paired lever once this lands. No specific map has these placed yet; first placement will follow whichever map Felipe picks.
+Acceptance check: lever reads clearly as "this does something" at map scale (distinct from decoration); gate closed/open states are visually unambiguous at a glance.
+
+### ART-024 - Fast-travel monolith
+Status: REQUESTED
+Requested by: Claude Code
+Gameplay purpose: a discoverable waystone on region maps. Walking up to one for the first time registers it as discovered (persisted); from any discovered monolith the player can instantly travel to any other discovered monolith, including across regions/worlds -- reuses the existing `regionMapPositions` position-memory plumbing, so no new travel UI framework is needed beyond a simple picker list.
+Required asset ids and states: `monolith` (`dormant` -- not yet discovered art is simply not rendered, so this state may be unused; `active` -- discovered/glowing).
+Target paths: `public/assets/maps/objects/monolith/dormant.png`, `public/assets/maps/objects/monolith/active.png`.
+Canvas dimensions / tile scale: 128x128 PNG RGBA, same convention as other map objects.
+Transparency required: yes.
+Interaction states: walk-up-and-click marker, same footprint as a campfire/chest. Once discovered, clicking it again opens the fast-travel picker instead of a "you found it" moment.
+Visual references or territory: an ancient standing stone/obelisk reads well in both Havendown and Steelmere -- suggest one shared design rather than a per-region reskin, since its whole identity is "the same landmark everywhere," unlike chests/campfires.
+Code dependency: none to start art -- Claude Code owns the `discoveredMonoliths` persisted list, the picker UI, and the actual region/position jump.
+Acceptance check: reads clearly as a landmark distinct from every other map object at a glance, in both an idle and a "lit up" state.
+
+### ART-025 - Boat / carriage shortcut
+Status: REQUESTED
+Requested by: Claude Code
+Gameplay purpose: a scoped-down first version of animated transport -- a vehicle prop at a dock/station tile that, when boarded, rides the player in a straight line to a paired dock/station tile elsewhere on the SAME map (a visual shortcut across a lake, canal or rail line already present in a map's art), instead of an instant teleport.
+Required asset ids and states: pick whichever fits the first map this ships on -- `boat` (`idle`, `moving`) for a water crossing, or `carriage` (`idle`, `moving`) for a road/rail crossing. Only one family is needed to start; the other can be a separate future request.
+Target paths: `public/assets/maps/objects/boat/idle.png`, `public/assets/maps/objects/boat/moving.png` (or the `carriage` equivalent).
+Canvas dimensions / tile scale: 128x128 PNG RGBA per state, same object convention -- if the moving state reads better as a short 2-3 frame strip (like the wandering-monster walk cycle in ART-003) that's fine too, just list the extra paths.
+Transparency required: yes.
+Interaction states: walk-up-and-click marker at the boarding point; `moving` plays only during the brief travel animation Claude Code drives, `idle` the rest of the time.
+Visual references or territory: match whichever water/road crossing Felipe picks first as the pilot (a Havendown lake or a Steelmere canal/rail both work).
+Code dependency: none to start art -- Claude Code owns pairing the two dock tiles, animating the straight-line ride, and picking the first map to pilot it on.
+Acceptance check: idle vehicle reads clearly as boardable; moving state reads as "in transit," not just a copy of idle.
+
+### ART-026 - Illusory secret wall reveal effect
+Status: REQUESTED
+Requested by: Claude Code
+Gameplay purpose: a wall/obstacle that looks exactly like the surrounding blocked terrain but is secretly walkable, hiding a passage. No new wall texture is needed (it deliberately reuses the existing blocked-terrain art at that spot so it's indistinguishable beforehand) -- what's needed is a one-shot visual sting that plays the moment the player walks through it, so discovery reads as a discovery rather than "huh, I guess that wasn't blocked."
+Required asset ids and states: `secret-reveal` (single effect, no states) -- a brief sparkle/dust-crumble burst, in the same spirit as the weather fx already delivered (ART-012).
+Target paths: `public/assets/maps/fx/secret-reveal/burst.png` (reuses the existing `fx/<effect-id>/<variant>.png` convention).
+Canvas dimensions / tile scale: sized to cover roughly one tile at the 16px-native scale (a small burst, not a full-map overlay like the weather layers) -- a square in the 256-384px range native gives room for the effect to read at any zoom level.
+Transparency required: yes.
+Interaction states: none -- Claude Code triggers a short one-time CSS animation using this image when the player's first step onto an `illusoryWalls` tile is detected, then never replays it for that tile again (persisted, same `??{}` pattern as everything else).
+Visual references or territory: generic enough to reuse on any region -- doesn't need to match a specific biome since it's a burst effect, not scenery.
+Code dependency: none to start art -- Claude Code owns the new `illusoryWalls` list on `RegionMapDef` (tiles excluded from `blocked` despite looking solid), the discovery detection, and the persisted "already seen" flag.
+Acceptance check: reads as a brief magical/dust reveal, not a damage or status effect (shouldn't look like a hit-flash or a debuff icon).
+
+### ART-027 - Scenery interaction: readable signposts
+Status: REQUESTED
+Requested by: Claude Code
+Gameplay purpose: first concrete instance of "interact with scenery objects" -- a signpost/plaque the player can walk up to and read for a short flavor-text line (lore, a hint, a joke), establishing a reusable `RegionMapScenery` object pattern that later scenery types (search a bush, ring a bell, etc.) can follow without a new art contract each time.
+Required asset ids and states: `signpost` (`idle` only -- it's read-only scenery, no other state needed).
+Target paths: `public/assets/maps/objects/signpost/idle.png`.
+Canvas dimensions / tile scale: 128x128 PNG RGBA, same object convention.
+Transparency required: yes.
+Interaction states: walk-up-and-click marker, same footprint as a campfire; clicking shows a small text popup with the flavor line and closes on dismiss -- no persisted state needed (rereadable every time, like a normal sign).
+Visual references or territory: a weathered wooden roadside sign reads well in Havendown; propose a Steelmere-appropriate reskin (stamped metal plate, riveted) if this proves out and gets reused there.
+Code dependency: none to start art -- Claude Code owns the `RegionMapScenery` type, the flavor-text data and the popup UI. First placement (which map, which line) will follow whichever map Felipe picks.
+Acceptance check: reads clearly as "read this," distinct from a chest/campfire/lever at a glance.
 
 ## Handoff Log
 
