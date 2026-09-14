@@ -431,7 +431,8 @@ interface GameState {
  defeatedWanderers?: Record<string, boolean>;
  openMapChest:(chestId:string,chest:{id:string;name:string;contents:{gold:number;materials?:Record<string,number>;consumables?:Record<string,number>}})=>{gold:number;materials?:Record<string,number>;consumables?:Record<string,number>}|null;
  restAtCampfire:(regionId:string,campfire:{id:string;name:string;x:number;y:number})=>void;
- campfireHealTick:()=>void;
+ campfireHealTick:()=>boolean;
+ tickPassiveRegen:()=>boolean;
 }
 
 export function isNavigationLocked(state:Pick<GameState,'screen'|'dungeonActive'>){return state.screen==='combat'||(state.screen==='loot'&&state.dungeonActive)}
@@ -1245,11 +1246,28 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   },
   // Chamado a cada 6s (TileWorldExplorer) enquanto o herói estiver dentro da área da fogueira --
   // +1 de vida por vez, nunca passa do máximo. Para de ter efeito sozinho quando a vida enche,
-  // sem precisar que quem chama saiba de maxHp.
+  // sem precisar que quem chama saiba de maxHp. Retorna se curou de verdade, pra quem chama
+  // saber se deve mostrar o popup "+1" (sem isso, o popup apareceria até com vida cheia).
   campfireHealTick:()=>{
     const s=get() as GameState
-    if(s.hp>=maxHp(s))return
+    if(s.hp>=maxHp(s))return false
     set({hp:Math.min(maxHp(s),s.hp+1)})
+    return true
+  },
+  // Tônico da Regeneração Acelerada (regen_boost): "recupera 1 ponto de vida a cada 30s fora de
+  // combate" já era a descrição do item há muito tempo, mas regenBoostUntil/lastPassiveHealAt só
+  // eram gravados ao usar o tônico -- nada lia de volta pra aplicar a cura, então o efeito nunca
+  // curava de verdade. Chamado a cada 1s (TopBar) e só age quando os 30s já passaram desde a
+  // última cura; lastPassiveHealAt só avança quando cura de verdade acontece, então a vida cheia
+  // não "consome" o relógio -- assim que abrir espaço, cura no próximo check.
+  tickPassiveRegen:()=>{
+    const s=get() as GameState
+    if(s.screen==='combat')return false
+    if((s.regenBoostUntil??0)<=Date.now())return false
+    if(Date.now()-(s.lastPassiveHealAt??0)<30000)return false
+    if(s.hp>=maxHp(s))return false
+    set({hp:Math.min(maxHp(s),s.hp+1),lastPassiveHealAt:Date.now()})
+    return true
   }
 }),{name:'bangalores-save-v1',merge:(persisted:any,current:any)=>{let merged:any={...current,...persisted,equipped:{...(persisted?.equipped??{}),bolsa:persisted?.equipped?.bolsa??'mochila_pequena_8'},regionId:persisted?.regionId??'campos_dourados',world:persisted?.world??'havendown',subregionVictories:persisted?.subregionVictories??{},subregionBossesDefeated:persisted?.subregionBossesDefeated??[],pendingAttackBonus:persisted?.pendingAttackBonus??0,currentEvent:persisted?.currentEvent,eventResult:persisted?.eventResult,customCards:persisted?.customCards??[],campaigns:persisted?.campaigns??{},guildAccepted:persisted?.guildAccepted??[],guildProgress:persisted?.guildProgress??{},guildClaimed:persisted?.guildClaimed??[],difficultyMode:persisted?.difficultyMode??'veterano',talents:persisted?.talents??[],materials:persisted?.materials??{},equipmentUpgrades:persisted?.equipmentUpgrades??{},equipmentGems:persisted?.equipmentGems??{},forgedGemLocked:persisted?.forgedGemLocked??{},craftedEffects:persisted?.craftedEffects??{},equipmentElements:persisted?.equipmentElements??{},equipmentResistances:persisted?.equipmentResistances??{},bestiary:persisted?.bestiary??{},revengeWins:persisted?.revengeWins??{},consecutiveDefeats:persisted?.consecutiveDefeats??0,lastDefeatKey:persisted?.lastDefeatKey,dungeonDepth:persisted?.dungeonDepth??0,dungeonActive:persisted?.dungeonActive??false,storyFlags:persisted?.storyFlags??[],storyChapterId:persisted?.storyChapterId??'prologo',storyChoices:persisted?.storyChoices??{},storyNotice:persisted?.storyNotice,activeStoryQuests:persisted?.activeStoryQuests??{},completedStoryQuests:persisted?.completedStoryQuests??[],questItems:persisted?.questItems??{},combatSpeed:persisted?.combatSpeed??1,autoCombat:false,staggerCurrent:persisted?.staggerCurrent??0,staggerMax:persisted?.staggerMax??15,isStaggered:persisted?.isStaggered??false,heroSkillCooldown:persisted?.heroSkillCooldown??0,highestDamageDealt:persisted?.highestDamageDealt??0,lockedEquipment:persisted?.lockedEquipment??{},dailyRewardClaimedAt:persisted?.dailyRewardClaimedAt,openedChests:persisted?.openedChests??{},defeatedWanderers:persisted?.defeatedWanderers??{},customPins:persisted?.customPins??{},activatedLevers:persisted?.activatedLevers??{},discoveredMonoliths:persisted?.discoveredMonoliths??[],discoveredSecrets:persisted?.discoveredSecrets??{},lastCampfire:persisted?.lastCampfire,guildNotice:undefined,forgeResult:undefined,tourStep:undefined,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,playerTurn:persisted?.screen==='combat'&&persisted?.enemy?true:(persisted?.playerTurn??false)};merged=migrateEquipmentInstances(merged);Object.assign(merged,normalizeAttributes(merged));if(merged.heroId&&!merged.activeCampaignId){const id=`campaign_legacy_${Date.now()}`;merged.activeCampaignId=id;merged.campaigns={...merged.campaigns,[id]:campaignSnapshot(merged)}}return merged}}))
 

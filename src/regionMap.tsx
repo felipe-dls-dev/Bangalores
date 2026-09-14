@@ -144,6 +144,7 @@ const RIDE_DURATION_MS = 1150 // bate com a transition-duration de .regionmap-pl
 const SECRET_BURST_MS = 900 // duração do efeito de revelação da parede ilusória (ART-026)
 const CAMPFIRE_REST_RADIUS = 1 // área 3x3 (raio de Chebyshev 1) ao redor da fogueira
 const CAMPFIRE_TICK_MS = 6000 // intervalo de cada +1 de vida enquanto descansa
+export const HEAL_POPUP_MS = 1100 // duração da animação do "+1" verde subindo e sumindo -- exportado pro TopBar (tônico de regeneração) reaproveitar o mesmo timing/CSS
 const AMBUSH_CHANCE = 0.05 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
 const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
 const WANDER_SPAWN_BUFFER = 3 // raio (em tiles) ao redor do spawn onde nenhum monstro pode nascer ou pisar
@@ -1032,7 +1033,7 @@ export function TileWorldExplorer({
   openedChests?: Record<string, boolean>
   onOpenChest?: (chest: RegionMapChest) => void
   onRestCampfire?: (campfire: RegionMapCampfire) => void
-  onCampfireTick?: (campfire: RegionMapCampfire) => void
+  onCampfireTick?: (campfire: RegionMapCampfire) => boolean
   playerSprite?: string
   exploredTiles?: Set<string>
   onExplore?: (tiles: Array<{ x: number; y: number }>) => void
@@ -1078,6 +1079,11 @@ export function TileWorldExplorer({
   const [restingCampfire, setRestingCampfire] = React.useState<RegionMapCampfire | undefined>()
   const restingIdRef = React.useRef<string | undefined>()
   const restTimerRef = React.useRef<number>()
+  // "+1" verde que sobe e some a cada cura de verdade (fogueira) -- puramente decorativo, some
+  // sozinho depois de HEAL_POPUP_MS. Cada popup carrega sua própria posição (tile no momento da
+  // cura), então continua no lugar certo mesmo se o herói andar dentro da área logo depois.
+  const [healPopups, setHealPopups] = React.useState<Array<{ id: number; x: number; y: number }>>([])
+  const healPopupIdRef = React.useRef(0)
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
   const queuedMoves = React.useRef<Array<[number, number]>>([])
@@ -1115,6 +1121,15 @@ export function TileWorldExplorer({
     if (newly.length) onExplore(newly)
   }, [pos.x, pos.y])
 
+  // "+1" verde: spawna no tile onde o herói está NO MOMENTO da cura (posRef, não pos -- o
+  // interval é de longa duração e o herói pode ter andado dentro da própria área de descanso
+  // entre um tick e outro).
+  const spawnHealPopup = React.useCallback((x: number, y: number) => {
+    const id = ++healPopupIdRef.current
+    setHealPopups(prev => [...prev, { id, x, y }])
+    window.setTimeout(() => setHealPopups(prev => prev.filter(p => p.id !== id)), HEAL_POPUP_MS)
+  }, [])
+
   // Área de descanso da fogueira (3x3): entra/sai por distância de Chebyshev, não por tile
   // exato -- assim a cura funciona em qualquer canto da área, não só parado em cima do objeto.
   // Pausado (diálogo aberto etc.) interrompe a cura, igual o resto do mapa fica congelado.
@@ -1132,9 +1147,11 @@ export function TileWorldExplorer({
     setRestingCampfire(zone)
     if (zone) {
       onRestCampfire?.(zone)
-      restTimerRef.current = window.setInterval(() => onCampfireTick?.(zone), CAMPFIRE_TICK_MS)
+      restTimerRef.current = window.setInterval(() => {
+        if (onCampfireTick?.(zone)) spawnHealPopup(posRef.current.x, posRef.current.y)
+      }, CAMPFIRE_TICK_MS)
     }
-  }, [pos.x, pos.y, paused, map, onRestCampfire, onCampfireTick])
+  }, [pos.x, pos.y, paused, map, onRestCampfire, onCampfireTick, spawnHealPopup])
 
   React.useEffect(() => () => { if (restTimerRef.current) window.clearInterval(restTimerRef.current) }, [])
 
@@ -1594,6 +1611,11 @@ export function TileWorldExplorer({
             <img src={mapAsset('assets/maps/fx/secret-reveal/burst.png')} alt="" />
           </div>
         )}
+        {healPopups.map(popup => (
+          <div key={popup.id} className="regionmap-heal-popup" style={{ left: popup.x * tilePx, top: popup.y * tilePx, width: tilePx, height: tilePx }}>
+            <span className="heal-popup-plus1">+1</span>
+          </div>
+        ))}
         {npcs.map(npc => {
           const status = npcStatus?.(npc) ?? 'default'
           return <button key={npc.id} type="button" className={`regionmap-npc npc-${npc.facing ?? 'down'} status-${status}`}
