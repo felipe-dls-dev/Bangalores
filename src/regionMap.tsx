@@ -1079,10 +1079,9 @@ export function TileWorldExplorer({
   const [restingCampfire, setRestingCampfire] = React.useState<RegionMapCampfire | undefined>()
   const restingIdRef = React.useRef<string | undefined>()
   const restTimerRef = React.useRef<number>()
-  // "+1" verde que sobe e some a cada cura de verdade (fogueira) -- puramente decorativo, some
-  // sozinho depois de HEAL_POPUP_MS. Cada popup carrega sua própria posição (tile no momento da
-  // cura), então continua no lugar certo mesmo se o herói andar dentro da área logo depois.
-  const [healPopups, setHealPopups] = React.useState<Array<{ id: number; x: number; y: number }>>([])
+  // "+1" verde que sobe e some a cada cura de verdade (fogueira) -- renderizado como filho de
+  // .regionmap-player (acima do cronômetro), então segue o herói sem precisar guardar posição.
+  const [healPopups, setHealPopups] = React.useState<Array<{ id: number }>>([])
   const healPopupIdRef = React.useRef(0)
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
@@ -1121,12 +1120,9 @@ export function TileWorldExplorer({
     if (newly.length) onExplore(newly)
   }, [pos.x, pos.y])
 
-  // "+1" verde: spawna no tile onde o herói está NO MOMENTO da cura (posRef, não pos -- o
-  // interval é de longa duração e o herói pode ter andado dentro da própria área de descanso
-  // entre um tick e outro).
-  const spawnHealPopup = React.useCallback((x: number, y: number) => {
+  const spawnHealPopup = React.useCallback(() => {
     const id = ++healPopupIdRef.current
-    setHealPopups(prev => [...prev, { id, x, y }])
+    setHealPopups(prev => [...prev, { id }])
     window.setTimeout(() => setHealPopups(prev => prev.filter(p => p.id !== id)), HEAL_POPUP_MS)
   }, [])
 
@@ -1148,7 +1144,7 @@ export function TileWorldExplorer({
     if (zone) {
       onRestCampfire?.(zone)
       restTimerRef.current = window.setInterval(() => {
-        if (onCampfireTick?.(zone)) spawnHealPopup(posRef.current.x, posRef.current.y)
+        if (onCampfireTick?.(zone)) spawnHealPopup()
       }, CAMPFIRE_TICK_MS)
     }
   }, [pos.x, pos.y, paused, map, onRestCampfire, onCampfireTick, spawnHealPopup])
@@ -1611,11 +1607,6 @@ export function TileWorldExplorer({
             <img src={mapAsset('assets/maps/fx/secret-reveal/burst.png')} alt="" />
           </div>
         )}
-        {healPopups.map(popup => (
-          <div key={popup.id} className="regionmap-heal-popup" style={{ left: popup.x * tilePx, top: popup.y * tilePx, width: tilePx, height: tilePx }}>
-            <span className="heal-popup-plus1">+1</span>
-          </div>
-        ))}
         {npcs.map(npc => {
           const status = npcStatus?.(npc) ?? 'default'
           return <button key={npc.id} type="button" className={`regionmap-npc npc-${npc.facing ?? 'down'} status-${status}`}
@@ -1641,6 +1632,9 @@ export function TileWorldExplorer({
               <span className="regionmap-rest-timer-hand" />
             </span>
           )}
+          {healPopups.map(popup => (
+            <span key={popup.id} className="regionmap-heal-popup"><span className="heal-popup-plus1">+1</span></span>
+          ))}
           {riding ? (
             <img className="regionmap-player-vehicle" src={mapAsset(`assets/maps/objects/${riding.vehicle}/moving.png`)} alt="" />
           ) : (
