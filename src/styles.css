@@ -1773,6 +1773,7 @@ body::after{content:"VERSÃO 0.8.64 • 14/09/2026\A Removido: botoes de velocid
 body::after{content:"VERSÃO 0.8.65 • 14/09/2026\A Corrigido: navegadores com localStorage bloqueado/restrito (ex: navegacao privada) travavam o jogo inteiro na tela inicial (piscava e ficava preto); agora ha uma tela de recuperacao para qualquer erro nao tratado, e os acessos a localStorage/gamepad ficaram protegidos";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.66 • 14/09/2026\A Novo: botao de sair da conta direto na tela inicial, pra trocar de conta sem precisar entrar numa campanha primeiro";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.67 • 14/09/2026\A Coop: sala mostra cards dos participantes com status; navegacao por mapa igual ao solo substitui os botoes de destino -- o lider anda e o grupo o segue, entrando junto em emboscadas e chefes";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.68 • 14/09/2026\A Coop: outros integrantes agora ficam ao redor do lider numa matriz 3x3 durante a caminhada, em vez de empilhados atras dele";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

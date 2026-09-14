@@ -1012,6 +1012,10 @@ function MapPropIcon({ src, fallback, className }: { src: string; fallback: stri
 
 const FOG_REVEAL_RADIUS = 3
 const FOG_EDGE_OFFSETS: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]
+// Coop: as 8 células da matriz 3x3 ao redor do líder (o centro é o próprio líder, a
+// .regionmap-player normal) -- baixo/esquerda/direita/cima primeiro (mais visíveis ao lado do
+// personagem), diagonais depois, já que o grupo tem no máximo 3 seguidores (4 jogadores por sala).
+const PARTY_GHOST_OFFSETS: Array<[number, number]> = [[0, 1], [-1, 0], [1, 0], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
 
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
@@ -1652,10 +1656,11 @@ export function TileWorldExplorer({
             <img className="regionmap-wanderer-sprite" style={w.facing === 'left' ? { transform: 'scaleX(-1)' } : undefined} src={wanderAsset(w.spriteId, w.facing, WANDER_FRAMES[wanderFrame])} alt="" />
           </div>
         ))}
-        {(partyGhosts ?? []).map((ghost, index) => {
+        {(partyGhosts ?? []).slice(0, PARTY_GHOST_OFFSETS.length).map((ghost, index) => {
+          const [dx, dy] = PARTY_GHOST_OFFSETS[index]
           const ghostSprite = playerSpriteFrames(ghost.spriteId)[facing]
           return <div key={ghost.id} className={`regionmap-party-ghost${walking ? ' is-walking' : ''}`}
-            style={{ left: pos.x * tilePx - (index + 1) * 10, top: pos.y * tilePx + (index + 1) * 4, width: tilePx, height: tilePx }}>
+            style={{ left: (pos.x + dx) * tilePx, top: (pos.y + dy) * tilePx, width: tilePx, height: tilePx }}>
             <span className="regionmap-player-shadow" />
             <span className="regionmap-player-sprite-wrap" style={ghostSprite.mirror ? { transform: 'scaleX(-1)' } : undefined}>
               <img className="regionmap-player-sprite" src={ghostSprite.frames[frame]} alt="" />
