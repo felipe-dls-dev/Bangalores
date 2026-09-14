@@ -1001,6 +1001,7 @@ function MapPropIcon({ src, fallback, className }: { src: string; fallback: stri
 }
 
 const FOG_REVEAL_RADIUS = 3
+const FOG_EDGE_OFFSETS: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]
 
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
@@ -1583,9 +1584,14 @@ export function TileWorldExplorer({
             </span>
           )}
         </div>
-        {exploredTiles && map.grid.flatMap((row, y) => row.map((_, x) => exploredTiles.has(`${x},${y}`) ? null : (
-          <div key={`fog_${x}_${y}`} className="regionmap-fog-tile" style={{ left: x * tilePx, top: y * tilePx, width: tilePx, height: tilePx }} />
-        )))}
+        {exploredTiles && map.grid.flatMap((row, y) => row.map((_, x) => {
+          if (exploredTiles.has(`${x},${y}`)) return null
+          // Borda de transição: um tile de névoa colado numa área já explorada fica a 50% de
+          // opacidade em vez de preto sólido, então a visão não corta de 100% pra 100% preto de
+          // uma vez -- só os tiles realmente "no fundo" da névoa (sem vizinho explorado) ficam opacos.
+          const isEdge = FOG_EDGE_OFFSETS.some(([dx, dy]) => exploredTiles.has(`${x + dx},${y + dy}`))
+          return <div key={`fog_${x}_${y}`} className={`regionmap-fog-tile${isEdge ? ' is-edge' : ''}`} style={{ left: x * tilePx, top: y * tilePx, width: tilePx, height: tilePx }} />
+        }))}
       </div>
       <div className="regionmap-zoom-hud" onClick={event => event.stopPropagation()}>
         <button type="button" onClick={() => setZoom(z => clamp(Math.round((z - ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))} aria-label="Afastar o mapa" title="Afastar (ou role o mouse)"><ZoomOut size={14} /></button>

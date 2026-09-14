@@ -472,6 +472,7 @@ html:not(.reduce-effects) .regionmap-secret-burst img{animation:regionmap-secret
    .regionmap-world (acompanha a câmera/transform como qualquer outro elemento do mundo).
    pointer-events:none para não bloquear o clique-para-mover em áreas ainda não vistas. */
 .regionmap-fog-tile{position:absolute;background:#04070d;pointer-events:none;z-index:6;transition:opacity .4s ease}
+.regionmap-fog-tile.is-edge{opacity:.5}
 /* Luz dia/noite (ART-013) e clima regional (ART-012) -- acima da arte do mapa, abaixo dos
    marcadores (z-index:4) e da névoa de guerra (z-index:6), como pede o handoff visual. */
 .regionmap-daynight{position:absolute;inset:0;background-size:cover;background-position:center;pointer-events:none;z-index:2;transition:opacity 3s linear}
@@ -1718,6 +1719,7 @@ body::after{content:"VERSÃO 0.8.51 • 14/09/2026\A Integrado: retratos proprio
 body::after{content:"VERSÃO 0.8.52 • 14/09/2026\A Novo: suporte a gamepad, pins customizados no mapa, sombra dinamica e pegadas do personagem; mais 6 retratos proprios de NPC integrados";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.53 • 14/09/2026\A Novo: mecanica de alavanca e portao trancado (ainda sem posicionamento em nenhum mapa)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.54 • 14/09/2026\A Novo: mecanicas de monolito de teletransporte, atalho de barco/carruagem, parede ilusoria e placa de sinalizacao (ainda sem posicionamento em nenhum mapa)";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.55 • 14/09/2026\A Corrigido: nevoa de guerra nao corta mais de visao total pra preto solido -- borda de transicao com 50% de opacidade nas extremidades";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
