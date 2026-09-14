@@ -431,6 +431,7 @@ interface GameState {
  defeatedWanderers?: Record<string, boolean>;
  openMapChest:(chestId:string,chest:{id:string;name:string;contents:{gold:number;materials?:Record<string,number>;consumables?:Record<string,number>}})=>{gold:number;materials?:Record<string,number>;consumables?:Record<string,number>}|null;
  restAtCampfire:(regionId:string,campfire:{id:string;name:string;x:number;y:number})=>void;
+ campfireHealTick:()=>void;
 }
 
 export function isNavigationLocked(state:Pick<GameState,'screen'|'dungeonActive'>){return state.screen==='combat'||(state.screen==='loot'&&state.dungeonActive)}
@@ -1231,16 +1232,24 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     set({openedChests:{...s.openedChests,[chestId]:true},gold:s.gold+goldReward,materials:mats,inventory:inv,explorationNote:note})
     return{gold:goldReward,materials:chest.contents.materials,consumables:chest.contents.consumables}
   },
+  // Fogueira agora é uma área de descanso (3x3 ao redor, raio checado em TileWorldExplorer) em
+  // vez de cura instantânea só ao tocar o tile exato: entrar na área marca o ponto de
+  // renascimento e limpa status negativos na hora (ainda é "seguro" perto da fogueira), mas a
+  // vida em si sobe de pouco em pouco -- ver campfireHealTick.
   restAtCampfire:(regionId:string,campfire:{id:string;name:string;x:number;y:number})=>{
-    const s=get() as GameState
-    const fullLife=maxHp(s)
     set({
-      hp:fullLife,
       heroStatus:{},
       lastCampfire:{regionId,campfireId:campfire.id,x:campfire.x,y:campfire.y},
-      regionMapPositions:{...s.regionMapPositions,[regionId]:{x:campfire.x,y:campfire.y}},
-      explorationNote:`Você descansou na fogueira "${campfire.name}". Sua vida foi restaurada para ${fullLife}/${fullLife} e o ponto de renascimento foi salvo!`
+      explorationNote:`Você entrou na área de descanso da fogueira "${campfire.name}". Sua vida se recupera lentamente enquanto estiver aqui.`
     })
+  },
+  // Chamado a cada 6s (TileWorldExplorer) enquanto o herói estiver dentro da área da fogueira --
+  // +1 de vida por vez, nunca passa do máximo. Para de ter efeito sozinho quando a vida enche,
+  // sem precisar que quem chama saiba de maxHp.
+  campfireHealTick:()=>{
+    const s=get() as GameState
+    if(s.hp>=maxHp(s))return
+    set({hp:Math.min(maxHp(s),s.hp+1)})
   }
 }),{name:'bangalores-save-v1',merge:(persisted:any,current:any)=>{let merged:any={...current,...persisted,equipped:{...(persisted?.equipped??{}),bolsa:persisted?.equipped?.bolsa??'mochila_pequena_8'},regionId:persisted?.regionId??'campos_dourados',world:persisted?.world??'havendown',subregionVictories:persisted?.subregionVictories??{},subregionBossesDefeated:persisted?.subregionBossesDefeated??[],pendingAttackBonus:persisted?.pendingAttackBonus??0,currentEvent:persisted?.currentEvent,eventResult:persisted?.eventResult,customCards:persisted?.customCards??[],campaigns:persisted?.campaigns??{},guildAccepted:persisted?.guildAccepted??[],guildProgress:persisted?.guildProgress??{},guildClaimed:persisted?.guildClaimed??[],difficultyMode:persisted?.difficultyMode??'veterano',talents:persisted?.talents??[],materials:persisted?.materials??{},equipmentUpgrades:persisted?.equipmentUpgrades??{},equipmentGems:persisted?.equipmentGems??{},forgedGemLocked:persisted?.forgedGemLocked??{},craftedEffects:persisted?.craftedEffects??{},equipmentElements:persisted?.equipmentElements??{},equipmentResistances:persisted?.equipmentResistances??{},bestiary:persisted?.bestiary??{},revengeWins:persisted?.revengeWins??{},consecutiveDefeats:persisted?.consecutiveDefeats??0,lastDefeatKey:persisted?.lastDefeatKey,dungeonDepth:persisted?.dungeonDepth??0,dungeonActive:persisted?.dungeonActive??false,storyFlags:persisted?.storyFlags??[],storyChapterId:persisted?.storyChapterId??'prologo',storyChoices:persisted?.storyChoices??{},storyNotice:persisted?.storyNotice,activeStoryQuests:persisted?.activeStoryQuests??{},completedStoryQuests:persisted?.completedStoryQuests??[],questItems:persisted?.questItems??{},combatSpeed:persisted?.combatSpeed??1,autoCombat:false,staggerCurrent:persisted?.staggerCurrent??0,staggerMax:persisted?.staggerMax??15,isStaggered:persisted?.isStaggered??false,heroSkillCooldown:persisted?.heroSkillCooldown??0,highestDamageDealt:persisted?.highestDamageDealt??0,lockedEquipment:persisted?.lockedEquipment??{},dailyRewardClaimedAt:persisted?.dailyRewardClaimedAt,openedChests:persisted?.openedChests??{},defeatedWanderers:persisted?.defeatedWanderers??{},customPins:persisted?.customPins??{},activatedLevers:persisted?.activatedLevers??{},discoveredMonoliths:persisted?.discoveredMonoliths??[],discoveredSecrets:persisted?.discoveredSecrets??{},lastCampfire:persisted?.lastCampfire,guildNotice:undefined,forgeResult:undefined,tourStep:undefined,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,playerTurn:persisted?.screen==='combat'&&persisted?.enemy?true:(persisted?.playerTurn??false)};merged=migrateEquipmentInstances(merged);Object.assign(merged,normalizeAttributes(merged));if(merged.heroId&&!merged.activeCampaignId){const id=`campaign_legacy_${Date.now()}`;merged.activeCampaignId=id;merged.campaigns={...merged.campaigns,[id]:campaignSnapshot(merged)}}return merged}}))
 

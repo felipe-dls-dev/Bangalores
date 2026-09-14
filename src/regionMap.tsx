@@ -142,6 +142,8 @@ const FOOTPRINT_FADE_MS = 2200 // tempo até a pegada sumir de vez (bate com a d
 const GAMEPAD_AXIS_DEAD_ZONE = 0.5
 const RIDE_DURATION_MS = 1150 // bate com a transition-duration de .regionmap-player.is-riding no CSS
 const SECRET_BURST_MS = 900 // duração do efeito de revelação da parede ilusória (ART-026)
+const CAMPFIRE_REST_RADIUS = 1 // área 3x3 (raio de Chebyshev 1) ao redor da fogueira
+const CAMPFIRE_TICK_MS = 6000 // intervalo de cada +1 de vida enquanto descansa
 const AMBUSH_CHANCE = 0.07 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
 const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
 const WANDER_SPAWN_BUFFER = 3 // raio (em tiles) ao redor do spawn onde nenhum monstro pode nascer ou pisar
@@ -1005,7 +1007,7 @@ const FOG_EDGE_OFFSETS: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0,
 
 export function TileWorldExplorer({
   map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
-  openedChests = {}, onOpenChest, onRestCampfire, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin,
+  openedChests = {}, onOpenChest, onRestCampfire, onCampfireTick, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin,
   activatedLevers, onActivateLever, discoveredMonoliths, onActivateMonolith, discoveredSecrets, onDiscoverSecret
 }: {
   map: RegionMapDef
@@ -1023,6 +1025,7 @@ export function TileWorldExplorer({
   openedChests?: Record<string, boolean>
   onOpenChest?: (chest: RegionMapChest) => void
   onRestCampfire?: (campfire: RegionMapCampfire) => void
+  onCampfireTick?: (campfire: RegionMapCampfire) => void
   playerSprite?: string
   exploredTiles?: Set<string>
   onExplore?: (tiles: Array<{ x: number; y: number }>) => void
@@ -1061,6 +1064,13 @@ export function TileWorldExplorer({
   const [secretBurst, setSecretBurst] = React.useState<{ id: number; x: number; y: number } | undefined>()
   const secretBurstIdRef = React.useRef(0)
   const [signpostOpen, setSignpostOpen] = React.useState<RegionMapScenery | undefined>()
+  // Fogueira agora é uma área de descanso (3x3), não um toque instantâneo: enquanto o herói fica
+  // dentro do raio, restingCampfire fica definido (mostra o cronômetro) e um interval chama
+  // onCampfireTick a cada CAMPFIRE_TICK_MS. restingIdRef existe só pra saber se já estamos
+  // descansando NA MESMA fogueira (não reiniciar o timer a cada passo dentro da própria área).
+  const [restingCampfire, setRestingCampfire] = React.useState<RegionMapCampfire | undefined>()
+  const restingIdRef = React.useRef<string | undefined>()
+  const restTimerRef = React.useRef<number>()
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
   const queuedMoves = React.useRef<Array<[number, number]>>([])
@@ -1097,6 +1107,29 @@ export function TileWorldExplorer({
     }
     if (newly.length) onExplore(newly)
   }, [pos.x, pos.y])
+
+  // Área de descanso da fogueira (3x3): entra/sai por distância de Chebyshev, não por tile
+  // exato -- assim a cura funciona em qualquer canto da área, não só parado em cima do objeto.
+  // Pausado (diálogo aberto etc.) interrompe a cura, igual o resto do mapa fica congelado.
+  React.useEffect(() => {
+    const clearTimer = () => { if (restTimerRef.current) { window.clearInterval(restTimerRef.current); restTimerRef.current = undefined } }
+    if (paused) {
+      clearTimer()
+      if (restingIdRef.current) { restingIdRef.current = undefined; setRestingCampfire(undefined) }
+      return
+    }
+    const zone = (map.campfires ?? []).find(c => Math.abs(c.x - pos.x) <= CAMPFIRE_REST_RADIUS && Math.abs(c.y - pos.y) <= CAMPFIRE_REST_RADIUS)
+    if (zone?.id === restingIdRef.current) return
+    clearTimer()
+    restingIdRef.current = zone?.id
+    setRestingCampfire(zone)
+    if (zone) {
+      onRestCampfire?.(zone)
+      restTimerRef.current = window.setInterval(() => onCampfireTick?.(zone), CAMPFIRE_TICK_MS)
+    }
+  }, [pos.x, pos.y, paused, map, onRestCampfire, onCampfireTick])
+
+  React.useEffect(() => () => { if (restTimerRef.current) window.clearInterval(restTimerRef.current) }, [])
 
   // Ciclo dia/noite (ART-013): puramente estético -- não afeta combate, spawn nem emboscada, só
   // a opacidade dos overlays de luz. Relógio local ao componente (reinicia a cada entrada na
@@ -1221,7 +1254,6 @@ export function TileWorldExplorer({
       const loc = map.locations.find(l => l.x === tx && l.y === ty)
       const exit = exits.find(l => l.x === tx && l.y === ty)
       const chest = (map.chests ?? []).find(c => c.x === tx && c.y === ty)
-      const campfire = (map.campfires ?? []).find(c => c.x === tx && c.y === ty)
       const landedTile = map.grid[ty]?.[tx]
       // Parede ilusória (ART-026): dispara o efeito uma vez só, na primeira vez que o jogador pisa
       // ali -- independente do que mais acontecer nesse tile (não é um `else if`, é um efeito à parte).
@@ -1237,7 +1269,6 @@ export function TileWorldExplorer({
       if (loc) onEnterLocation(loc.subId)
       else if (exit) onEnterExit?.(exit.id)
       else if (chest && !openedChests?.[chest.id]) onOpenChest?.(chest)
-      else if (campfire) onRestCampfire?.(campfire)
       else if ((landedTile === 'ice' || landedTile === 'conveyor') && isMapWalkable(map, { x: tx + dx, y: ty + dy }, extraBlocked)) {
         // Gelo (ART-004) e esteira industrial (ART-014, Coroferro) empurram do mesmo jeito:
         // continua deslizando na mesma direção até sair do terreno especial ou esbarrar em algo --
@@ -1250,7 +1281,7 @@ export function TileWorldExplorer({
       else if (!auto && Math.random() < AMBUSH_CHANCE) { const nearestId = nearestLocationId(map, { x: tx, y: ty }); if (nearestId) onAmbush?.(nearestId) }
       if (queuedMoves.current.length) runQueuedMove.current()
     }, arrivalDelay)
-  }, [paused, map, onEnterLocation, exits, onEnterExit, extraBlocked, onAmbush, openedChests, onOpenChest, onRestCampfire, discoveredSecrets, onDiscoverSecret])
+  }, [paused, map, onEnterLocation, exits, onEnterExit, extraBlocked, onAmbush, openedChests, onOpenChest, discoveredSecrets, onDiscoverSecret])
 
   const moveToTile = React.useCallback((target: { x: number; y: number }) => {
     const route = routeBetween(map, posRef.current, target, extraBlocked)
@@ -1461,7 +1492,6 @@ export function TileWorldExplorer({
               event.stopPropagation()
               if (didDragRef.current) { didDragRef.current = false; return }
               moveToTile({ x: campfire.x, y: campfire.y })
-              onRestCampfire?.(campfire)
             }}
             aria-label={`Descansar na fogueira ${campfire.name}`} title={`Fogueira: ${campfire.name}`}>
             <span className="regionmap-campfire-aura" />
@@ -1576,6 +1606,11 @@ export function TileWorldExplorer({
         <div className={`regionmap-player${walking ? ' is-walking' : ''}${riding ? ' is-riding' : ''}`}
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
           <span className="regionmap-player-shadow" />
+          {restingCampfire && (
+            <span className="regionmap-rest-timer" title={`Descansando na fogueira ${restingCampfire.name}: +1 de vida a cada 6s`}>
+              <span className="regionmap-rest-timer-hand" />
+            </span>
+          )}
           {riding ? (
             <img className="regionmap-player-vehicle" src={mapAsset(`assets/maps/objects/${riding.vehicle}/moving.png`)} alt="" />
           ) : (
