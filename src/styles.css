@@ -1764,6 +1764,7 @@ body::after{content:"VERSÃO 0.8.69 • 14/09/2026\A Coop: formacao dos seguidor
 body::after{content:"VERSÃO 0.8.70 • 14/09/2026\A Corrigido: modo automatico de combate nao funcionava no coop -- so entendia o turno solo, e mesmo depois de religado ficava travado se o disparo caisse durante a animacao do golpe inimigo";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.71 • 14/09/2026\A Loja redesenhada: busca por nome/slot/efeito, carrinho persistente com resumo lateral, alternancia comprar/vender mais visivel e cards de item com selo de raridade e quantidade no carrinho";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.72 • 14/09/2026\A Limpeza: removidas 6 classes CSS orfas de um redesign anterior da Loja (shop-head, shop-grid, shop-filter-row, shop-category-filters, shop-subfilters, shop-sort), sem uso nenhum desde o redesign atual";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.73 • 14/09/2026\A Icone da classe no selo de nivel do HUD (era estrela generica)";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
