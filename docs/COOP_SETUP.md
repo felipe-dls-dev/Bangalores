@@ -16,6 +16,17 @@ VITE_SUPABASE_ANON_KEY=SUA_CHAVE_PUBLICA
 6. No GitHub, abra **Settings > Secrets and variables > Actions > Variables** e crie `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 7. O workflow do GitHub Pages usa essas variáveis durante a compilação. Execute novamente o deploy.
 
+## Aplicando migrações automaticamente
+
+Em vez de colar cada `.sql` novo no SQL Editor manualmente, com `SUPABASE_DB_URL` definida no `.env` (connection string direta do Postgres, pegue em **Connect > Direct** no dashboard do projeto) dá para rodar:
+
+```
+node scripts/db-migrate.mjs supabase/migrations/ARQUIVO.sql
+node scripts/db-migrate.mjs --all   # roda todas em ordem
+```
+
+`SUPABASE_DB_URL` nunca deve ser prefixada com `VITE_` — ela dá acesso direto ao banco (sem passar pelas policies de RLS), então nunca pode ir para o bundle do cliente nem para o repositório (já está no `.gitignore` via `.env`).
+
 ## Segurança
 
 A chave usada pelo navegador é pública por definição. A segurança está nas políticas RLS instaladas pela migração. Nunca coloque a `service_role` no projeto ou no GitHub Pages.
