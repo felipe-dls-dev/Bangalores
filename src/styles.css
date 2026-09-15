@@ -1770,6 +1770,7 @@ body::after{content:"VERSÃO 0.8.74 • 14/09/2026\A Coop: lider em destaque no 
 body::after{content:"VERSÃO 0.8.75 • 14/09/2026\A Coop: lider so inicia batalha se ninguem do grupo estiver preso em outra tela";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.76 • 14/09/2026\A Coop: inimigos escalam vida/ataque/recompensa com o tamanho do grupo (batalha nao acaba num golpe so)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.77 • 14/09/2026\A Coop: batalha so comeca com todos os jogadores marcados como prontos";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.78 • 14/09/2026\A Coop: corrige Ataque Duplo travando o auto-combate, carrega barra de especial, delay minimo de 2s por acao";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

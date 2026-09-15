@@ -508,9 +508,13 @@ function CoopBattleSync(){
  React.useEffect(()=>{if(battle?.status!=='won'||!battle.id||!battle.subregionId||!battle.enemy)return;const damage=battle.damageByPlayer??{},healing=battle.healingByPlayer??{},contributors=new Set([...Object.keys(damage),...Object.keys(healing)]),contributions=Object.fromEntries([...contributors].map(id=>[id,Math.max(0,Number(damage[id])||0)+Math.max(0,Number(healing[id])||0)])),total=Object.values(contributions).reduce((sum,value)=>sum+value,0),mine=contributions[coop.userId]??0,share=total>0?mine/total:1/Math.max(1,coop.members.length);completeVictory(battle.id,battle.subregionId,battle.enemy,share)},[battle?.id,battle?.status,battle?.subregionId,battle?.enemy,battle?.damageByPlayer,battle?.healingByPlayer,coop.userId,coop.members.length,completeVictory])
  React.useEffect(()=>{if(battle?.status!=='lost'||!battle.id||handledDefeat.current===battle.id)return;handledDefeat.current=battle.id;completeDefeat(battle.id)},[battle?.id,battle?.status,completeDefeat])
  React.useEffect(()=>{if(battle?.status!=='fled'||!battle.id||handledFlee.current===battle.id)return;handledFlee.current=battle.id;completeFlee(battle.id)},[battle?.id,battle?.status,completeFlee])
- React.useEffect(()=>{const key=`${battle?.id}:${battle?.turn}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;const timer=setTimeout(()=>{handledEnemyTurn.current=key;void enemyExecutor.current()},900);return()=>clearTimeout(timer)},[battle?.id,battle?.turn,battle?.activeUserId,screen,coop.room?.host_id,coop.userId])
+ // 900ms -> 2000ms: com várias pessoas de verdade lendo o log (em vez de só uma IA decidindo),
+ // o turno do inimigo chegava rápido demais pra dar tempo de acompanhar o que tinha acabado de
+ // acontecer. 2s é o mesmo mínimo pedido pra cada ação de batalha no coop (ver também o auto-
+ // combate logo abaixo, em CombatScreen).
+ React.useEffect(()=>{const key=`${battle?.id}:${battle?.turn}:${battle?.activeUserId}`;if(screen!=='combat'||battle?.activeUserId!=='enemy'||coop.room?.host_id!==coop.userId||handledEnemyTurn.current===key)return;const timer=setTimeout(()=>{handledEnemyTurn.current=key;void enemyExecutor.current()},2000);return()=>clearTimeout(timer)},[battle?.id,battle?.turn,battle?.activeUserId,screen,coop.room?.host_id,coop.userId])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`${battle?.id}:${battle?.turn}`;if(screen!=='combat'||roll?.attacker!=='enemy'||roll.targetUserId!==coop.userId||receivedRoll.current===key)return;receivedRoll.current=key;receiveEnemy(Number(roll.damage??0),roll)},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveEnemy])
- React.useEffect(()=>{const roll=battle?.lastRoll,key=`hero:${battle?.id}:${battle?.turn}`;if(screen!=='combat'||roll?.attacker!=='hero'||receivedHeroRoll.current===key)return;receivedHeroRoll.current=key;receiveHeroAction(Number(roll.damage??0),roll)},[battle?.id,battle?.turn,battle?.lastRoll,screen,receiveHeroAction])
+ React.useEffect(()=>{const roll=battle?.lastRoll,key=`hero:${battle?.id}:${battle?.turn}`;if(screen!=='combat'||roll?.attacker!=='hero'||receivedHeroRoll.current===key)return;receivedHeroRoll.current=key;receiveHeroAction(Number(roll.damage??0),roll,roll.attackerUserId===coop.userId)},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveHeroAction])
  React.useEffect(()=>{
   const roll=battle?.lastRoll,key=`ability:${battle?.id}:${battle?.turn}`
   if(screen!=='combat'||roll?.attacker!=='ability'||receivedAbility.current===key)return
@@ -1808,7 +1812,10 @@ function CombatScreen(){
  // chave" -- cancelar/reagendar o timeout a cada mudança já evita disparos duplicados.
  React.useEffect(()=>{
   if(!isCoop||!g.autoCombat||!myTurn||g.animating)return
-  const timer=window.setTimeout(()=>autoTurnRunnerRef.current(),500)
+  // 500ms -> 2000ms: com 3-4 jogadores de verdade no auto, cada turno levava só meio segundo --
+  // o log crescia rápido demais pra alguém acompanhar quem fez o quê. 2s por ação é o mínimo
+  // pedido; o gate de g.animating acima já impede reagendar em cima de uma animação em andamento.
+  const timer=window.setTimeout(()=>autoTurnRunnerRef.current(),2000)
   return()=>window.clearTimeout(timer)
  },[isCoop,g.autoCombat,myTurn,g.animating,battle?.log?.length])
  React.useEffect(()=>{window.scrollTo({top:0,left:0,behavior:'auto'});document.documentElement.scrollTop=0;document.body.scrollTop=0},[])
@@ -1939,6 +1946,14 @@ function CombatScreen(){
  autoTurnRunnerRef.current=()=>{
   if(!myTurn||g.animating||defeated)return
   if(g.hp<maxHp(g)*.35&&(g.inventory['pocao_cura']??0)>0){performUseConsumable('pocao_cura');return}
+  // Ataque Duplo (e qualquer outra habilidade "keepsTurn", ver DOUBLE_ATTACK em CoopContext.tsx)
+  // libera extraActions[userId] e mantém o turno com o mesmo jogador pra ele de fato golpear de
+  // novo -- sem essa checagem primeiro, a linha de baixo (heroSkillUses<heroSkillLimit, que no
+  // coop escala com o número de jogadores) via de novo a habilidade em vez do ataque garantido,
+  // reativando Ataque Duplo repetidas vezes sem nunca atacar e travando o combate esperando um
+  // clique manual do jogador.
+  const myExtraActions=isCoop?Number(battle?.extraActions?.[coop.userId]??0):0
+  if(myExtraActions>0){performAttack();return}
   if(g.heroId!=='conjurador'&&heroSkillUses<heroSkillLimit){useCoopHeroSkill();return}
   if(fervorLevel>=3){performFervor();return}
   const minion=activeMinions.find(m=>m.hp>0)
