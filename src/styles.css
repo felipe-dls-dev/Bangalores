@@ -1146,6 +1146,7 @@ body::after{content:"VERSÃO 0.5.2 • 13/08/2026 12:34 • Corrigido executor a
 .map-index-head p,.map-panel .screen-intro p{line-height:1.5}
 /* Coop persistent session: participant cards + shared navigable map */
 .coop-defeated-notice{display:inline-block;margin-top:2px;padding:3px 7px;border:1px solid #8c342d;border-radius:6px;background:#2b0d0bcc;color:#ef9c91;font-size:.62rem;font-weight:700}
+.coop-locked-notice{display:inline-block;margin-top:2px;padding:3px 7px;border:1px solid #7a5a1f;border-radius:6px;background:#2b210bcc;color:#e8c583;font-size:.62rem;font-weight:700}
 .coop-risk-overlay{position:fixed;inset:0;z-index:100001;display:grid;place-items:center;padding:20px;background:#050302d9;backdrop-filter:blur(8px)}.coop-risk-overlay section{width:min(520px,100%);padding:28px;border:1px solid #9a692b;border-radius:14px;background:linear-gradient(145deg,#21140c,#0e0906);box-shadow:0 25px 80px #000;color:#dec49a}.coop-risk-overlay small{color:#d69d44;font-weight:800;letter-spacing:.14em}.coop-risk-overlay h2{margin:8px 0;color:#f1c96e;font-family:Georgia,serif;font-size:2rem}.coop-risk-overlay p{line-height:1.6}.coop-risk-overlay div{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}.coop-risk-overlay button{padding:12px}@media(max-width:560px){.coop-risk-overlay div{grid-template-columns:1fr}}
 .coop-map-panel h2{display:flex;align-items:center;gap:8px;margin:0 0 4px;color:#e7c178;font-family:Georgia,serif}
 .coop-map-shell{margin-top:12px}
@@ -1766,6 +1767,7 @@ body::after{content:"VERSÃO 0.8.71 • 14/09/2026\A Loja redesenhada: busca por
 body::after{content:"VERSÃO 0.8.72 • 14/09/2026\A Limpeza: removidas 6 classes CSS orfas de um redesign anterior da Loja (shop-head, shop-grid, shop-filter-row, shop-category-filters, shop-subfilters, shop-sort), sem uso nenhum desde o redesign atual";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.73 • 14/09/2026\A Icone da classe no selo de nivel do HUD (era estrela generica)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.74 • 14/09/2026\A Coop: lider em destaque no card + repassar lideranca para outro membro";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.75 • 14/09/2026\A Coop: lider so inicia batalha se ninguem do grupo estiver preso em outra tela";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

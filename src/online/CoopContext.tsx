@@ -2,7 +2,7 @@ import React from 'react'
 import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type StatusEffects, type Summon, type SummonType } from '../store/game'
 import type { Element } from '../data/expansion'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, transferCoopHost, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
-type CoopVitals={hp:number;maxHp:number;level:number;attack?:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[]}
+type CoopVitals={hp:number;maxHp:number;level:number;attack?:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[];locked?:boolean}
 type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;transferHost:(newHostUserId:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
 const CoopContext=React.createContext<CoopContextValue|null>(null),ROOM_KEY='bangalores-coop-room-id'
 // localStorage pode lançar (não só faltar) em navegadores/webviews com armazenamento bloqueado
@@ -409,8 +409,15 @@ export function CoopProvider({children}:{children:React.ReactNode}){
  // uma emboscada ou marcar "enfrentar" num local do mapa -- mesma checagem de risco de sempre
  // (algum integrante sem vida bloqueia, e vida do próprio líder abaixo de 50% pede confirmação).
  const safeStartMapBattle=async(subregionId:string,enemy?:Record<string,unknown>)=>{
-  const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId]
+  const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number;locked?:boolean}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId]
   if(zero){setNotice(`${zero.display_name} está sem vida e precisa se recuperar antes da caçada.`);return}
+  // Sem essa checagem, uma batalha compartilhada podia começar com alguém preso na própria tela
+  // de combate solo ou no saque de uma masmorra (isNavigationLocked) -- essa pessoa nunca é
+  // puxada pra luta de grupo (trocar a tela dela à força corromperia o combate solo em
+  // andamento), e a iniciativa compartilhada ficava travada esperando pela vez de quem nunca
+  // vai jogar. Bloqueia a caçada até que todos estejam livres pra entrar.
+  const stuck=membersRef.current.find(member=>member.user_id!==userId&&vitals[member.user_id]?.locked)
+  if(stuck){setNotice(`${stuck.display_name} está ocupado(a) em outra tela e não pode entrar na batalha agora. Aguarde um instante e tente de novo.`);return}
   if(mine&&mine.hp<mine.maxHp*.5){
    const proceed=await new Promise<boolean>(resolve=>{
     const overlay=document.createElement('div');overlay.className='coop-risk-overlay'
