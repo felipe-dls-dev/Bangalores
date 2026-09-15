@@ -1,9 +1,16 @@
 import React from 'react'
-import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type StatusEffects, type Summon, type SummonType } from '../store/game'
+import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type StatusEffects, type Summon, type SummonType } from '../store/game'
 import type { Element } from '../data/expansion'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, transferCoopHost, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
 type CoopVitals={hp:number;maxHp:number;level:number;attack?:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[];locked?:boolean}
-type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;transferHost:(newHostUserId:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
+// Anúncio da vitrine do Negociador (sala coop). O item já saiu da bolsa do vendedor no momento
+// do anúncio (escrowMarketItem em game.ts) -- 'listed' é o item "em depósito" na sala; 'sold'
+// registra quem comprou mas só é removido depois que o CLIENTE DO VENDEDOR credita o ouro
+// localmente (settleMarketSale) e confirma a remoção. Como a troca só existe enquanto os dois
+// estiverem na mesma sala (nunca assíncrona entre contas offline), não há tabela nova no Supabase
+// nem risco de sincronização cross-sessão: tudo vive dentro do shared_state da própria sala.
+export type MarketListing={id:string;sellerId:string;sellerName:string;itemId:string;qty:number;price:number;status:'listed'|'sold';buyerId?:string;buyerName?:string;createdAt:number}
+type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;transferHost:(newHostUserId:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;listMarketItem:(itemId:string,qty:number,price:number)=>Promise<void>;cancelMarketListing:(listingId:string)=>Promise<void>;buyMarketListing:(listingId:string)=>Promise<void>;settleMarketSale:(listingId:string)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>}
 const CoopContext=React.createContext<CoopContextValue|null>(null),ROOM_KEY='bangalores-coop-room-id'
 // localStorage pode lançar (não só faltar) em navegadores/webviews com armazenamento bloqueado
 // por política de privacidade. A leitura de readRoomId roda num useEffect que dispara em TODO
@@ -78,6 +85,63 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const enemyHp=Number((enemy as any)?.vida??0),initiativeOrder=shuffled([...membersRef.current.map(member=>member.user_id),'enemy']),activeUserId=initiativeOrder[0],initiativeNames=initiativeOrder.map(id=>id==='enemy'?String((enemy as any)?.nome??'Inimigo'):membersRef.current.find(member=>member.user_id===id)?.display_name??'Aventureiro')
    return{...current.shared_state,battle:{id:`coop_${Date.now()}`,status:'playing',subregionId,startedAt:new Date().toISOString(),enemy,enemyHp,combatMinions:[],damageByPlayer:{},enemyFearPenalty:0,fearTurnsLeft:0,groupBuff:{},playerBuffs:{},enemyStatus:{},initiativeOrder,initiativeNames,initiativeIndex:0,activeUserId,turn:1,round:1,log:[`Iniciativa sorteada: ${initiativeNames.join(' → ')}.`]}}
   })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível iniciar a batalha.')}finally{setBusy(false)}
+ }
+ // Negociador: vitrine só entre quem está na mesma sala agora. listMarketItem/cancelMarketListing
+ // só mexem no shared_state (o item já saiu/volta pra bolsa localmente em quem chama, via
+ // escrowMarketItem/refundMarketItem em game.ts -- CoopContext não importa useGame de propósito,
+ // essa separação já existe pro resto do arquivo). buyMarketListing marca o anúncio como vendido
+ // (trava otimista pelo state_version evita duas pessoas comprarem o mesmo item); quem PAGOU credita
+ // o próprio ouro/item na hora (via completeMarketPurchase, chamado por quem clicou Comprar).
+ // Quem VENDEU só recebe o ouro quando o efeito em CoopBattleSync (main.tsx) detecta status:'sold'
+ // com sellerId===userId -- roda mesmo se o vendedor estiver em outra tela, igual ao gancho de
+ // entrar numa batalha compartilhada a partir de qualquer lugar do app.
+ const listMarketItem=async(itemId:string,qty:number,price:number)=>{
+  const me=membersRef.current.find(m=>m.user_id===userId)
+  if(!roomRef.current||!me||qty<=0||price<=0)return
+  setBusy(true)
+  try{
+   await updateState(current=>{
+    const market:MarketListing[]=Array.isArray(current.shared_state.market)?current.shared_state.market as MarketListing[]:[]
+    const listing:MarketListing={id:`mkt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,sellerId:userId,sellerName:me.display_name,itemId,qty,price:Math.max(1,Math.floor(price)),status:'listed',createdAt:Date.now()}
+    return{...current.shared_state,market:[...market,listing]}
+   })
+  }catch(error){setNotice(error instanceof Error?error.message:'Não foi possível publicar o anúncio.');throw error}
+  finally{setBusy(false)}
+ }
+ const cancelMarketListing=async(listingId:string)=>{
+  if(!roomRef.current)return
+  setBusy(true)
+  try{
+   await updateState(current=>{
+    const market:MarketListing[]=Array.isArray(current.shared_state.market)?current.shared_state.market as MarketListing[]:[]
+    const listing=market.find(item=>item.id===listingId)
+    if(!listing||listing.sellerId!==userId||listing.status!=='listed')throw new Error('Este anúncio não está mais disponível para cancelar.')
+    return{...current.shared_state,market:market.filter(item=>item.id!==listingId)}
+   })
+  }catch(error){setNotice(error instanceof Error?error.message:'Não foi possível cancelar o anúncio.');throw error}
+  finally{setBusy(false)}
+ }
+ const buyMarketListing=async(listingId:string)=>{
+  const me=membersRef.current.find(m=>m.user_id===userId)
+  if(!roomRef.current||!me)return
+  setBusy(true)
+  try{
+   await updateState(current=>{
+    const market:MarketListing[]=Array.isArray(current.shared_state.market)?current.shared_state.market as MarketListing[]:[]
+    const listing=market.find(item=>item.id===listingId)
+    if(!listing||listing.status!=='listed')throw new Error('Este item já foi vendido ou removido.')
+    if(listing.sellerId===userId)throw new Error('Você não pode comprar o próprio anúncio.')
+    return{...current.shared_state,market:market.map(item=>item.id===listingId?{...item,status:'sold',buyerId:userId,buyerName:me.display_name}:item)}
+   })
+  }catch(error){setNotice(error instanceof Error?error.message:'Não foi possível comprar este item.');throw error}
+  finally{setBusy(false)}
+ }
+ const settleMarketSale=async(listingId:string)=>{
+  if(!roomRef.current)return
+  try{await updateState(current=>{
+   const market:MarketListing[]=Array.isArray(current.shared_state.market)?current.shared_state.market as MarketListing[]:[]
+   return{...current.shared_state,market:market.filter(item=>item.id!==listingId)}
+  })}catch{}
  }
  const coopAttack=async(attackBase:number,defenseBase:number,rollBonus=0,critBoost=false,healChance=0,healAmount=0,label?:string,targetMinionId?:string,forceCrit=false,critChancePct=0,critDamageBonusPct=0,weaponElement:Element='fisico',forceStatus=false,extraStatusTurn=false)=>{try{await updateState(current=>{
   const battle=current.shared_state.battle as any
@@ -306,7 +370,11 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   // normalmente), mas nenhum cliente via o card do inimigo reagir ao ataque da fera.
   const summonRolls:{summonName:string;memberName:string;damage:number;attackType:AttackAnimType}[]=[]
   if(enemyHpNow>0){
-   const summonDefenseBase=Math.max(0,Number(battle.enemy?.dificuldade??1)-2)
+   // Antes usava battle.enemy?.dificuldade (índice de progressão da sub-região, ex.: 1-5 nos
+   // primeiros chefes) como se fosse a defesa do inimigo -- bem abaixo da defesa real já
+   // escalada (enemyDefenseValue), então as feras do Conjurador acertavam quase sempre e por
+   // dano inflado contra inimigos de nível alto, só no modo coop (o solo já usava a defesa real).
+   const summonDefenseBase=enemyDefenseValue(battle.enemy??{})
    for(const member of membersRef.current){
     const buffs=workingBuffs[member.user_id],summons:Summon[]=(Array.isArray(buffs?.summons)?buffs.summons:(buffs?.summon?[buffs.summon]:[])).filter((fera:Summon)=>fera.hp>0).slice(0,2),after=[...summons]
     for(let index=0;index<after.length&&enemyHpNow>0;index++){const summon=after[index],attackRoll=1+Math.floor(Math.random()*6),defenseRoll=1+Math.floor(Math.random()*6),resolved=resolveCombatRoll(summon.ataque,summonDefenseBase,attackRoll,defenseRoll)
@@ -435,6 +503,6 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   }
   await startMapBattle(subregionId,enemy)
  }
- return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,transferHost,publishProgress,publishMapPos,startMapBattle:safeStartMapBattle,coopAttack,coopAbility,coopSummon,coopDefend,coopFlee,resolveEnemyTurn,completeBattle}}>{children}</CoopContext.Provider>
+ return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,transferHost,publishProgress,publishMapPos,startMapBattle:safeStartMapBattle,listMarketItem,cancelMarketListing,buyMarketListing,settleMarketSale,coopAttack,coopAbility,coopSummon,coopDefend,coopFlee,resolveEnemyTurn,completeBattle}}>{children}</CoopContext.Provider>
 }
 export function useCoop(){const value=React.useContext(CoopContext);if(!value)throw new Error('CoopProvider não encontrado.');return value}
