@@ -21,7 +21,10 @@ function writeRoomId(id:string){try{localStorage.setItem(ROOM_KEY,id)}catch{}}
 function clearRoomId(){try{localStorage.removeItem(ROOM_KEY)}catch{}}
 function writeCoopName(name:string){try{localStorage.setItem('bangalores-coop-name',name)}catch{}}
 const shuffled=(values:string[])=>{const result=[...values];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}return result}
-const nextInitiative=(battle:any)=>{const order=Array.isArray(battle.initiativeOrder)?battle.initiativeOrder:[],nextIndex=(Number(battle.initiativeIndex??0)+1)%Math.max(1,order.length),round=nextIndex===0?Number(battle.round??1)+1:Number(battle.round??1);return{activeUserId:order[nextIndex],initiativeIndex:nextIndex,round}}
+const usableCoopVitals=(vitals:any)=>Number.isFinite(Number(vitals?.hp))&&Number.isFinite(Number(vitals?.maxHp))&&Number(vitals.maxHp)>0
+const battleReadyMembers=(members:OnlineMember[],vitals:Record<string,any>)=>members.filter(member=>{const v=vitals[member.user_id];return usableCoopVitals(v)&&Number(v.hp)>0&&!v.locked})
+const aliveCoopUserIds=(members:OnlineMember[],vitals:Record<string,any>)=>new Set(members.filter(member=>usableCoopVitals(vitals[member.user_id])&&Number(vitals[member.user_id].hp)>0).map(member=>member.user_id))
+const nextInitiative=(battle:any,aliveUserIds?:Set<string>)=>{const order=Array.isArray(battle.initiativeOrder)?battle.initiativeOrder:[],start=Number(battle.initiativeIndex??0);for(let step=1;step<=Math.max(1,order.length);step++){const nextIndex=(start+step)%Math.max(1,order.length),id=order[nextIndex],round=nextIndex<=start?Number(battle.round??1)+1:Number(battle.round??1);if(id==='enemy'||!aliveUserIds||aliveUserIds.has(id))return{activeUserId:id,initiativeIndex:nextIndex,round}}return{activeUserId:'enemy',initiativeIndex:Math.max(0,order.indexOf('enemy')),round:Number(battle.round??1)+1}}
 export function CoopProvider({children}:{children:React.ReactNode}){
  const [room,setRoom]=React.useState<OnlineRoom|null>(null),[members,setMembers]=React.useState<OnlineMember[]>([]),[userId,setUserId]=React.useState(''),[onlineCount,setOnlineCount]=React.useState(0),[busy,setBusy]=React.useState(false),[notice,setNotice]=React.useState('')
  const channel=React.useRef<ReturnType<typeof subscribeToOnlineRoom>>(null),roomRef=React.useRef<OnlineRoom|null>(null),membersRef=React.useRef<OnlineMember[]>([])
@@ -82,7 +85,9 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   if(roomRef.current?.host_id!==userId||!enemy)return
   setBusy(true)
   try{await updateState(current=>{
-   const enemyHp=Number((enemy as any)?.vida??0),initiativeOrder=shuffled([...membersRef.current.map(member=>member.user_id),'enemy']),activeUserId=initiativeOrder[0],initiativeNames=initiativeOrder.map(id=>id==='enemy'?String((enemy as any)?.nome??'Inimigo'):membersRef.current.find(member=>member.user_id===id)?.display_name??'Aventureiro')
+   const vitals=(current.shared_state.memberVitals??{}) as Record<string,any>,readyMembers=battleReadyMembers(membersRef.current,vitals)
+   if(!readyMembers.length)throw new Error('Nenhum aventureiro está pronto para entrar em batalha.')
+   const enemyHp=Number((enemy as any)?.vida??0),initiativeOrder=shuffled([...readyMembers.map(member=>member.user_id),'enemy']),activeUserId=initiativeOrder[0],initiativeNames=initiativeOrder.map(id=>id==='enemy'?String((enemy as any)?.nome??'Inimigo'):readyMembers.find(member=>member.user_id===id)?.display_name??'Aventureiro')
    return{...current.shared_state,battle:{id:`coop_${Date.now()}`,status:'playing',subregionId,startedAt:new Date().toISOString(),enemy,enemyHp,combatMinions:[],damageByPlayer:{},enemyFearPenalty:0,fearTurnsLeft:0,groupBuff:{},playerBuffs:{},enemyStatus:{},initiativeOrder,initiativeNames,initiativeIndex:0,activeUserId,turn:1,round:1,log:[`Iniciativa sorteada: ${initiativeNames.join(' → ')}.`]}}
   })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível iniciar a batalha.')}finally{setBusy(false)}
  }
@@ -149,7 +154,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const group=battle.groupBuff??{}
   const personal=battle.playerBuffs?.[userId]??{}
   if(personal.stunned){
-   const actorName=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro',next=nextInitiative(battle)
+   const actorName=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro',next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
    return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...personal,stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actorName} está atordoado e perde a ação neste turno.`]}}
   }
   if(forceCrit&&Number(personal.fervor??0)<3)return current.shared_state
@@ -194,7 +199,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const actor=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro'
   const extra=Number(battle.extraActions?.[userId]??0)
   const keepsTurn=!selfDamage&&extra>0
-  const next=keepsTurn?{activeUserId:userId,initiativeIndex:battle.initiativeIndex,round:battle.round}:nextInitiative(battle)
+  const next=keepsTurn?{activeUserId:userId,initiativeIndex:battle.initiativeIndex,round:battle.round}:nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
   const extraActions=selfDamage?battle.extraActions:{...(battle.extraActions??{}),[userId]:Math.max(0,extra-1)}
   const fervorGain=forceCrit?0:attackRoll===6?Math.min(3,Number(personal.fervor??0)+1):Number(personal.fervor??0)
   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,nextRoll:0,fervor:fervorGain}}
@@ -226,12 +231,12 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const personal=battle.playerBuffs?.[userId]??{}
   const actor=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro'
   if(personal.stunned){
-   const next=nextInitiative(battle)
+   const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
    return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...personal,stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} está atordoado e perde a ação neste turno.`]}}
   }
   if(personal.braced){
    const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:false}}
-   const next=nextInitiative(battle)
+   const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
    return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} desativou a postura defensiva.`]}}
   }
   if(!personal.braceBonusUsed){
@@ -239,7 +244,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    return{...current.shared_state,battle:{...battle,activeUserId:userId,playerBuffs,fleeRoll:undefined,log:[...(battle.log??[]).slice(-15),`${actor} assume postura defensiva: +2 de Defesa até o fim da batalha ou até desativar. Pode agir novamente neste turno.`]}}
   }
   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:true}}
-  const next=nextInitiative(battle)
+  const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
   return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} reativou a postura defensiva: +2 de Defesa até o fim da batalha ou até desativar.`]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
  // Como a batalha é compartilhada por todo o grupo, uma fuga bem-sucedida encerra o combate
@@ -253,12 +258,12 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const log=[...(battle.log??[]).slice(-15),message]
   if(outcome==='success')return{...current.shared_state,battle:{...battle,status:'fled',activeUserId:null,fleeRoll:{roll,outcome},log}}
   if(outcome==='neutral')return{...current.shared_state,battle:{...battle,fleeRoll:{roll,outcome},log}}
-  const next=nextInitiative(battle)
+  const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
   return{...current.shared_state,battle:{...battle,...next,turn:Number(battle.turn??1)+1,fleeRoll:{roll,outcome},log}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
  const coopAbility=async(label:string,damage:number,effect:string)=>{try{await updateState(current=>{const battle=current.shared_state.battle as any;if(!battle||battle.status!=='playing'||battle.activeUserId!==userId)return current.shared_state
-  if(battle.playerBuffs?.[userId]?.stunned){const actorName=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro',next=nextInitiative(battle);return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...battle.playerBuffs[userId],stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actorName} está atordoado e perde a ação neste turno.`]}}}
-  const actual=Math.min(Number(battle.enemyHp??0),Math.max(0,damage)),enemyHp=Math.max(0,Number(battle.enemyHp??0)-actual),damageByPlayer={...(battle.damageByPlayer??{}),[userId]:Number(battle.damageByPlayer?.[userId]??0)+actual},actor=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro',keepsTurn=effect==='DOUBLE_ATTACK',next=keepsTurn?{activeUserId:userId,initiativeIndex:battle.initiativeIndex,round:battle.round}:nextInitiative(battle),vitals=(current.shared_state.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>,
+  if(battle.playerBuffs?.[userId]?.stunned){const actorName=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro',next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>));return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...battle.playerBuffs[userId],stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actorName} está atordoado e perde a ação neste turno.`]}}}
+  const actual=Math.min(Number(battle.enemyHp??0),Math.max(0,damage)),enemyHp=Math.max(0,Number(battle.enemyHp??0)-actual),damageByPlayer={...(battle.damageByPlayer??{}),[userId]:Number(battle.damageByPlayer?.[userId]??0)+actual},actor=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro',keepsTurn=effect==='DOUBLE_ATTACK',next=keepsTurn?{activeUserId:userId,initiativeIndex:battle.initiativeIndex,round:battle.round}:nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>)),vitals=(current.shared_state.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>,
   // Bênção da Vida (PRIEST_REVIVE) prioriza reanimar um aliado caído (hp<=0); se ninguém
   // estiver caído, cai para o mesmo comportamento de cura da Druida (aliado vivo mais ferido).
   downedMember=effect==='PRIEST_REVIVE'?membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0):undefined,
@@ -288,7 +293,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const personal=battle.playerBuffs?.[userId]??{}
   const actor=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro'
   if(personal.stunned){
-   const next=nextInitiative(battle)
+   const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
    return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...personal,stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} está atordoado e perde a ação neste turno.`]}}
   }
   const vitals=(current.shared_state.memberVitals??{}) as Record<string,{level?:number}>
@@ -299,7 +304,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const summons=[...existing,summon]
   const typeLabel=tipo==='atacante'?'ofensiva':tipo==='defensor'?'defensiva':'arcana'
   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,summons,summon:summons[0],...(summons.some(fera=>fera.tipo==='arcano')?{attackPct:.1,defensePct:.1}:{})}}
-  const next=nextInitiative(battle)
+  const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
   const message=`${actor} usou Conjurar Fera Espectral (${typeLabel}) • ${summons.length}/2: ${summon.nome} surge com ${summon.maxHp} de vida, ${summon.ataque} de ataque e ${summon.defesa} de defesa.`
   return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),message]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível conjurar a fera espectral.')}}
@@ -389,7 +394,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   if(wipedByStatus)return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,enemyStatus:enemyStatusTick.status,status:'lost',activeUserId:null,log:[...(battle.log??[]).slice(-15),...statusLogs,'A equipe foi derrotada.']}}
   const enemyStun=consumeStun(enemyStatusTick.status)
   if(enemyStun.wasStunned){
-   const next=nextInitiative(battle)
+   const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,workingVitals))
    return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,enemyStatus:enemyStun.status,summonRolls,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),...statusLogs,`${battle.enemy?.nome} está atordoado e perde a ação neste turno.`]}}
   }
   const enemyRollBonusStart=Number(battle.enemyRollBonus??0)
@@ -455,7 +460,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    minionRolls.push({minionName:minion.nome,targetUserId:result.target.user_id,damage:result.damage,shieldBlocked:result.shieldBlocked,rogueDodge:result.rogueDodge,intercepting:result.intercepting,summonName:result.summonName,summonDied:result.summonDied})
   }
   const wiped=membersRef.current.length>0&&membersRef.current.every(member=>(workingVitals[member.user_id]?.hp??1)<=0)
-  const next=nextInitiative(battle)
+  const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,workingVitals))
   const blockedText=mainStrike.shieldBlocked?` (${mainStrike.shieldBlocked} bloqueado pelo escudo)`:''
   const mainLog=mainStrike.intercepting
    ?`${battle.enemy?.nome}: ataque ${mainStrike.attackRoll} contra defesa ${mainStrike.defenseRoll}, mas ${mainStrike.summonName} intercepta o golpe destinado a ${mainStrike.target.display_name}! A fera sofre ${mainStrike.damage} de dano${mainStrike.summonDied?' e cai em combate!':'.'}`
@@ -483,7 +488,8 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   // requisito de verdade: ninguém entra em combate (nem o próprio líder) até todos confirmarem.
   const notReady=membersRef.current.find(member=>!member.ready)
   if(notReady){setNotice(`${notReady.display_name} ainda não está pronto(a). Aguarde todos marcarem prontidão antes de iniciar a batalha.`);return}
-  const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number;locked?:boolean}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId]
+  const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number;locked?:boolean}>,missing=membersRef.current.find(member=>!usableCoopVitals(vitals[member.user_id])),zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId]
+  if(missing){setNotice(`${missing.display_name} ainda está sincronizando vida e atributos. Aguarde um instante e tente de novo.`);return}
   if(zero){setNotice(`${zero.display_name} está sem vida e precisa se recuperar antes da caçada.`);return}
   // Sem essa checagem, uma batalha compartilhada podia começar com alguém preso na própria tela
   // de combate solo ou no saque de uma masmorra (isNavigationLocked) -- essa pessoa nunca é

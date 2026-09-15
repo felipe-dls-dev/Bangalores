@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
-// @ts-expect-error -- node:fs/node:path type defs aren't in this project's app tsconfig scope (test-only file, tsc -b doesn't check it)
 import fs from 'node:fs'
-// @ts-expect-error -- see above
 import path from 'node:path'
 import { REGION_MAPS, validateRegionMap } from './regionMap'
 import { useGame, HEROES, SUBREGIONS, worldUnlocked, maxHp, attackValue } from './store/game'
