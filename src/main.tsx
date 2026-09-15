@@ -8,12 +8,14 @@ import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, Shop
 import { TileWorldExplorer, getRegionMap, ALL_MONOLITHS } from './regionMap'
 import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, regionListSort, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, attunementItemLevel, attunementResistanceReduction, attunementStatusChance, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, storyModifiers, specializationBonuses, equipmentInstanceBreakdown, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, HERO_ULTIMATES, type AttackAnimType, type Summon, type SummonType, type GuildRankId, ACHIEVEMENTS, unlockedAchievements } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment, Territory } from './types'
-import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, TALENTS, HERO_SUBCLASSES, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
+import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, SUBREGION_THEME_MATERIALS, TALENTS, HERO_SUBCLASSES, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
 import { npcsForRegion, npcById, type NpcDefinition } from './data/npcs'
 import { STORY_QUESTS, questById, questsOfferedByNpc, questsDeliverableToNpc, type StoryQuest } from './data/storyQuests'
 import { onlineConfigured } from './online/supabase'
 import { CoopProvider, useCoop, type MarketListing } from './online/CoopContext'
+import { selectCoopAutoSummonType, shouldUseCoopAutoHeroSkill } from './online/coopAutoCombat'
+import { selectAutoItemSkill } from './autoCombat'
 import { playSfx, isAudioMuted, setAudioMuted, type SfxId } from './audio'
 import { AuthProvider, useAuth } from './online/AuthContext'
 import PersistentCoopScreen from './online/CoopScreen'
@@ -532,7 +534,7 @@ function CoopBattleSync(){
   const type=String(roll.effectType??'')
   if(type==='WARRIOR_BUFF'||type==='ARCANE_GROUP_BUFF'||type==='HUNTER_CRITICAL'||type==='SUMMON_BOND'||/escudo/i.test(type))receiveSupportFx('fortificacao')
   else if(type==='DRUID_HEAL'||type==='PRIEST_REVIVE')receiveSupportFx('cura')
-  else if(/recupere/i.test(type))receiveSupportFx('cura-item')
+  else if(type==='ITEM_CLEANSE'||/recuper/i.test(type))receiveSupportFx('cura-item')
   else if(Number(roll.damage)>0)receiveHeroAction(Number(roll.damage),{})
  },[battle?.id,battle?.turn,battle?.lastRoll,screen,receiveSupportFx,receiveHeroAction])
  React.useEffect(()=>{const roll=battle?.lastRoll,key=`heal:${battle?.id}:${battle?.turn}`;if(screen!=='combat'||!roll?.healAmount||roll.healTargetUserId!==coop.userId||receivedHeal.current===key)return;receivedHeal.current=key;receiveHeal(Number(roll.healAmount??0))},[battle?.id,battle?.turn,battle?.lastRoll,screen,coop.userId,receiveHeal])
@@ -839,7 +841,7 @@ function ForgeResultDialog(){
   </motion.div>
  </motion.div>}</AnimatePresence>
 }
-type ForgeMaterialEntry={id:string;nome:string;kind:'region';elemento:GameElement;regionId:string}|{id:string;nome:string;kind:'dismantle'}|{id:string;nome:string;kind:'gem';texto:string}
+type ForgeMaterialEntry={id:string;nome:string;kind:'region';elemento:GameElement;regionId:string}|{id:string;nome:string;kind:'dismantle'}|{id:string;nome:string;kind:'gem';texto:string}|{id:string;nome:string;kind:'bioma';elemento:GameElement}
 function MaterialSourceDialog({material,onClose}:{material:ForgeMaterialEntry;onClose:()=>void}){
  const region=material.kind==='region'?TERRITORIES.find(t=>t.id===material.regionId):undefined
  const subs=material.kind==='region'?SUBREGIONS.filter(s=>s.regionId===material.regionId):[]
@@ -850,6 +852,7 @@ function MaterialSourceDialog({material,onClose}:{material:ForgeMaterialEntry;on
   {material.kind==='dismantle'&&material.id==='essencia_magica'&&<p>Obtida desmontando equipamentos <b>Incomuns ou melhores</b> na Oficina de desmontagem (mais abaixo) — peças Comuns não rendem essência mágica. Raridades Épica, Lendária e Mítica rendem ainda mais. Armas e armaduras pesadas rendem mais que acessórios e bolsas.</p>}
   {material.kind==='dismantle'&&material.id!=='essencia_magica'&&<p>Obtido desmontando qualquer equipamento na Oficina de desmontagem (mais abaixo), de qualquer raridade. Armas e armaduras pesadas rendem mais que acessórios e bolsas.</p>}
   {material.kind==='gem'&&<p>{material.texto} — obtida ao desmontar equipamentos (a chance aumenta com o nível do item e o número de encaixes da peça, que por sua vez depende da raridade) ou recuperada ao desmontar uma peça que já tinha esta pedra instalada. Usada para instalar um bônus de atributo nos encaixes de uma peça na Oficina, ou para refinar o bônus de atributo/efeito especial de uma receita na Forja.</p>}
+  {material.kind==='bioma'&&<p>Material temático: cai como bônus extra (25% de chance) ao vencer um combate numa sub-região cujo tema de loot combine com ele — reforça a identidade daquele lugar específico, além do material regional de sempre.</p>}
   {subs.length>0&&<div className="material-info-subs"><small>SUB-REGIÕES</small><ul>{subs.map(s=><li key={s.id}>{s.nome}</li>)}</ul></div>}
   <button className="primary" onClick={onClose}>Fechar</button>
  </section></div>
@@ -882,7 +885,7 @@ function ForgeTutorialPanel({showAttunement=true}:{showAttunement?:boolean}={}){
   </button>
   {open&&<div className="mechanics-grid forge-tutorial-grid">
    <div className="mechanics-card"><small>1. ESCOLHA A RECEITA</small><p>Abra uma categoria no Catálogo de receitas e escolha um item. Cada card mostra o nível de Forjador e o nível de Jogador exigidos e a chance de sucesso atual — os dois precisam estar liberados antes de tentar forjar.</p></div>
-   <div className="mechanics-card"><small>2. JUNTE OS MATERIAIS</small><p>Desmonte equipamentos na Oficina de desmontagem (mais abaixo) para render fragmentos, essências e pedras, ou derrote inimigos nas regiões que produzem os materiais exclusivos de cada receita.</p></div>
+   <div className="mechanics-card"><small>2. JUNTE OS MATERIAIS</small><p>Desmonte equipamentos na Oficina de desmontagem (mais abaixo) para render fragmentos, essências e pedras, ou derrote inimigos nas regiões que produzem os materiais exclusivos de cada receita. Sub-regiões com um tema de loot reconhecível (Machados, Runas, Veneno...) também têm chance de render um material extra combinando com esse tema.</p></div>
    <div className="mechanics-card"><small>3. SACRIFÍCIO POR RARIDADE</small><p>Peças Comuns fabricam só com materiais. A partir de Incomum, fabricar sem bônus também consome peças prontas de uma raridade abaixo: Incomum pede 1 Comum, Raro pede 2 Incomuns, Épico pede 3 Raros e Lendário pede 3 Épicos. Qualquer peça sobrando na mochila com a raridade certa serve — não precisa ser do mesmo tipo.</p></div>
    <div className="mechanics-card"><small>4. BÔNUS É REFINO, NÃO CRIAÇÃO</small><p>A partir de Incomum, dá pra escolher um atributo ou efeito especial. Isso não fabrica uma peça nova: exige que você já tenha a MESMA peça sem bônus (na mochila ou equipada) e a refina no lugar, sem duplicar. O bônus fica permanente, preso a essa peça.</p></div>
    <div className="mechanics-card"><small>5. SUCESSO E FALHA</small><p>Toda tentativa concede XP de Forja e conta pro seu nível de Forjador, ganhe ou perca. Em sucesso, a peça (ou o bônus) sai pronta. Em falha, metade dos materiais e das peças sacrificadas se perde e nada é produzido.</p></div>
@@ -972,9 +975,9 @@ function ForgeMasteryPanel({mastery,rate,attempts,successes}:{mastery:ReturnType
  const progress=mastery.max?100:Math.min(100,mastery.progress/mastery.next*100)
  return <section className="forge-side-card forge-mastery-card"><header><span><small>MAESTRIA</small><strong>Nível {mastery.level}</strong></span><Sparkles size={18}/></header><div className="forge-xp"><span>{mastery.max?'Maestria máxima':`${mastery.progress}/${mastery.next} XP`}</span><div className="xp-track"><div style={{width:`${progress}%`}}/></div></div><div className="forge-side-stats"><span><small>Sucessos</small><b>{successes}/{attempts}</b></span><span><small>Taxa</small><b>{rate}%</b></span></div></section>
 }
-function forgeMaterialSource(m:ForgeMaterialEntry){return m.kind==='region'?`Região • ${ELEMENT_LABELS[m.elemento]}`:m.kind==='gem'?m.texto:'Desmontagem'}
+function forgeMaterialSource(m:ForgeMaterialEntry){return m.kind==='region'?`Região • ${ELEMENT_LABELS[m.elemento]}`:m.kind==='bioma'?`Sub-região • ${ELEMENT_LABELS[m.elemento]}`:m.kind==='gem'?m.texto:'Desmontagem'}
 function ForgeMaterialsPanel({materials,totalMaterials,onSelect}:{materials:ForgeMaterialEntry[];totalMaterials:number;onSelect:(material:ForgeMaterialEntry)=>void}){
- const g=useGame(),groups:{kind:ForgeMaterialEntry['kind'];label:string}[]=[{kind:'region',label:'Regionais'},{kind:'dismantle',label:'Base'},{kind:'gem',label:'Pedras'}]
+ const g=useGame(),groups:{kind:ForgeMaterialEntry['kind'];label:string}[]=[{kind:'region',label:'Regionais'},{kind:'bioma',label:'Sub-regiões'},{kind:'dismantle',label:'Base'},{kind:'gem',label:'Pedras'}]
  return <section className="forge-side-card forge-materials-panel"><header><span><small>MATERIAIS</small><strong>{totalMaterials}</strong></span><Package size={18}/></header><div className="forge-material-groups">{groups.map(group=>{const list=materials.filter(m=>m.kind===group.kind),owned=list.reduce((sum,m)=>sum+(g.materials[m.id]??0),0);return <section className="forge-material-group" key={group.kind}><div className="forge-material-group-title"><span>{group.label}</span><b>{owned}</b></div><div>{list.map(m=><button key={m.id} type="button" onClick={()=>onSelect(m)} title="Ver origem do material"><b>{g.materials[m.id]??0}</b><span><strong>{m.nome}</strong><small>{forgeMaterialSource(m)}</small></span></button>)}</div></section>})}</div></section>
 }
 function ForgeUpgradePanel(){
@@ -990,7 +993,7 @@ function ForgeUpgradePanel(){
   return <motion.article key={ref} {...rarityMotionProps(rarity,index*.025)} whileHover={rarityHoverLift(rarity)} className={`forge-upgrade-card item-rarity-${rarity}${canAfford?' ready':' locked'}`}><ArtPreview className="forge-item-art" image={cardArt(item)} name={item.nome} text={item.habilidade}/><div><small>{source} • {RARITY_LABEL[rarity]} • Atual +{upLevel}</small><strong>{item.nome}</strong><p>Próximo reforço: +{targetLevel}{targetLevel>1?' • falha pode regredir':''}{upgradeFails>0?` • bônus de persistência +${Math.min(65,upgradeFails*8)}%`:''}</p><div className="forge-upgrade-costs"><span className={g.gold>=goldCost?'met':'missing'}><Coins size={13}/>{goldCost} ouro</span>{Object.entries(matCost).map(([mid,qty])=>{const owned=g.materials[mid]??0,name=FORGE_MATERIALS.find(m=>m.id===mid)?.nome??mid;return <span key={mid} className={owned>=qty?'met':'missing'}>{owned}/{qty} {name}</span>})}<span><Dices size={13}/>{chance}%</span></div></div><button className={canAfford?'primary':''} disabled={!canAfford} title={!canAfford?'Ouro ou materiais insuficientes':undefined} onClick={()=>g.upgradeEquipment(ref)}>Aprimorar +{targetLevel}</button></motion.article>})}</div>:<div className="forge-empty"><ArrowUpDown/><strong>Nenhum equipamento para aprimorar</strong><span>Guarde ou equipe uma peça de combate para liberar reforços.</span></div>}</section>
 }
 function ForgeScreen(){const g=useGame()
- const materials:ForgeMaterialEntry[]=[...Object.entries(REGION_MATERIALS).map(([regionId,m]):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'region',elemento:m.elemento,regionId})),...FORGE_MATERIALS.map((m):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'dismantle'})),...FORGE_GEMS.map((m):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'gem',texto:m.texto}))]
+ const materials:ForgeMaterialEntry[]=[...Object.entries(REGION_MATERIALS).map(([regionId,m]):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'region',elemento:m.elemento,regionId})),...SUBREGION_THEME_MATERIALS.map((m):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'bioma',elemento:m.elemento})),...FORGE_MATERIALS.map((m):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'dismantle'})),...FORGE_GEMS.map((m):ForgeMaterialEntry=>({id:m.id,nome:m.nome,kind:'gem',texto:m.texto}))]
  const mastery=forgeLevelInfo(g.forgeXp??0),rate=(g.forgeAttempts??0)?Math.round((g.forgeSuccesses??0)/(g.forgeAttempts??1)*100):0,totalMaterials=Object.values(g.materials).reduce((sum,n)=>sum+n,0)
  const [materialInfo,setMaterialInfo]=React.useState<ForgeMaterialEntry|undefined>(undefined),[activeWorkbench,setActiveWorkbench]=React.useState<ForgeWorkbench>('craft')
  const recipeCount=FORGE_RECIPES.filter(recipe=>{const item=EQUIPMENT.find(e=>e.id===recipe.equipmentId);return item&&equipmentClassAllowed(item,g.heroId)}).length
@@ -1912,6 +1915,9 @@ function CombatScreen(){
  // (2 jogadores = 2 usos, 3 jogadores = 3 usos), em vez do limite único do modo solo.
  const heroSkillLimit=g.heroId==='conjurador'?2:(isCoop?Math.max(1,coop.members.length):1)
  const heroSkillUses=g.heroSkillUses??0
+ const sharedCoopVitals=(coop.room?.shared_state?.memberVitals??{}) as Record<string,{hp?:number;maxHp?:number}>
+ const coopAutoVitals=isCoop?{...sharedCoopVitals,[coop.userId]:{...sharedCoopVitals[coop.userId],hp:g.hp,maxHp:maxHp(g)}}:sharedCoopVitals
+ const coopHeroSkillHasValue=()=>shouldUseCoopAutoHeroSkill(g.heroId,coop.userId,battle,coop.members,coopAutoVitals)
  const useCoopHeroSkill=()=>{if(heroSkillUses>=heroSkillLimit||!myTurn)return;
   // Golpe Flamejante (Monge) é um ataque de verdade (rola dado, causa dano), então passa por
   // coopAttack — igual ao Fervor de Combate — em vez de coopAbility, que só cobre efeitos sem
@@ -1936,7 +1942,7 @@ function CombatScreen(){
  const useCoopItemSkill=(equipmentId?:string)=>{if(g.itemSkillUsed||!myTurn)return;const item=itemAbilities.find(x=>x.id===equipmentId)??itemAbilities[0],effect=item?.activeEffect;if(!item||!effect)return
   if(effect.type==='shield'){useGame.setState({shield:g.shield+effect.value,itemSkillUsed:true});void coop.coopAbility(item.nome,0,`+${effect.value} de escudo`);return}
   if(effect.type==='heal'){const healed=Math.min(effect.value,maxHp(g)-g.hp);useGame.setState({hp:g.hp+healed,itemSkillUsed:true});void coop.coopAbility(item.nome,0,`recuperou ${healed} de vida`);return}
-  if(effect.type==='cleanse'){useGame.setState({heroStatus:{},itemSkillUsed:true});void coop.coopAbility(item.nome,0,'removeu todas as condições negativas');return}
+  if(effect.type==='cleanse'){useGame.setState({heroStatus:{},itemSkillUsed:true});void coop.coopAbility(item.nome,0,'ITEM_CLEANSE');return}
   if(effect.type==='reroll'){useGame.setState({heroRollBonus:g.heroRollBonus+effect.value,itemSkillUsed:true});void coop.coopAbility(item.nome,0,`+${effect.value} na próxima rolagem`);return}
   // Ataque de item com dano vai pelo mesmo dado de coopAttack (pode critar ou falhar),
   // igual ao solo (que roda o mesmo playerAttack usado pelo botão Atacar, com +3 de bônus)
@@ -1995,14 +2001,22 @@ function CombatScreen(){
   void coop.coopAbility(it.nome,0,description)
  }
  const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,spec=specializationBonuses(g),bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g),false,spec.elemental);if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
- // Mesma prioridade de decisão do auto-combate solo (runAutoCombatTurn em game.ts): poção de
- // cura com vida baixa > habilidade de herói > Fervor de Combate > mirar num capanga vivo >
+ const tryAutoItemSkill=(mode:'urgent'|'tactical')=>{
+  if(g.itemSkillUsed)return false
+  const equipmentId=selectAutoItemSkill(itemAbilities,{hp:g.hp,maxHp:maxHp(g),shield:g.shield,heroRollBonus:g.heroRollBonus+(g.classRollBonus??0),heroStatus:(isCoop?battle.playerBuffs?.[coop.userId]:g.heroStatus) as Record<string,unknown>|undefined,enemyHp:g.enemyHp,enemyMaxHp:e.vida,enemyIsBoss:Boolean(e.boss),enemyIsElite:Boolean(e.elite),enemyIntentType:intent.type,hasActiveMinions:Boolean(activeMinions.some(minion=>minion.hp>0))},{mode})
+  if(!equipmentId)return false
+  if(isCoop)useCoopItemSkill(equipmentId);else g.itemSkill(equipmentId)
+  return true
+ }
+ // Mesma prioridade de decisão do auto-combate solo (runAutoCombatTurn em game.ts): recursos
+ // defensivos urgentes > habilidade de herói > Fervor > capangas > habilidade ofensiva de item >
  // ataque padrão. Sem Golpe Supremo aqui de propósito -- o próprio botão manual do Supremo
  // ainda chama g.ultimateAttack() (só solo) mesmo em coop, então automatizar isso amplificaria
  // um bug à parte em vez de só religar o AUTO no turno cooperativo.
  autoTurnRunnerRef.current=()=>{
   if(!myTurn||g.animating||defeated)return
   if(g.hp<maxHp(g)*.35&&(g.inventory['pocao_cura']??0)>0){performUseConsumable('pocao_cura');return}
+  if(tryAutoItemSkill('urgent'))return
   // Ataque Duplo (e qualquer outra habilidade "keepsTurn", ver DOUBLE_ATTACK em CoopContext.tsx)
   // libera extraActions[userId] e mantém o turno com o mesmo jogador pra ele de fato golpear de
   // novo -- sem essa checagem primeiro, a linha de baixo (heroSkillUses<heroSkillLimit, que no
@@ -2011,10 +2025,15 @@ function CombatScreen(){
   // clique manual do jogador.
   const myExtraActions=isCoop?Number(battle?.extraActions?.[coop.userId]??0):0
   if(myExtraActions>0){performAttack();return}
-  if(g.heroId!=='conjurador'&&heroSkillUses<heroSkillLimit){useCoopHeroSkill();return}
+  if(g.heroId==='conjurador'&&heroSkillUses<heroSkillLimit){
+   const summonType=selectCoopAutoSummonType(currentSummons,coopAutoVitals[coop.userId],coop.members,coopAutoVitals)
+   if(summonType){performSummon(summonType);return}
+  }
+  if(g.heroId!=='conjurador'&&heroSkillUses<heroSkillLimit&&coopHeroSkillHasValue()){useCoopHeroSkill();return}
   if(fervorLevel>=3){performFervor();return}
   const minion=activeMinions.find(m=>m.hp>0)
   if(minion){performAttack(minion.id);return}
+  if(tryAutoItemSkill('tactical'))return
   performAttack()
  }
  const attacker=g.combatRoll?.attacker

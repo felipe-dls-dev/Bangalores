@@ -24,11 +24,12 @@ import { STEELMERE_SUBREGIONS } from '../data/subregioesSteelmere'
 import monsterArt from '../data/monsterArt.json'
 import eventArt from '../data/eventArt.json'
 import bossArt from '../data/bossArt.json'
-import { BESTIARY_MILESTONES, CLASS_ELEMENT, DIFFICULTIES, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, HERO_SUBCLASSES, REGION_MATERIALS, SPECIALIZATION_CHOICES, STORY_CHAPTERS, TALENTS, type DifficultyMode, type Element, type ForgeBonus, type ForgeChoice, type ForgeEffect } from '../data/expansion'
+import { BESTIARY_MILESTONES, CLASS_ELEMENT, DIFFICULTIES, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, HERO_SUBCLASSES, REGION_MATERIALS, SPECIALIZATION_CHOICES, STORY_CHAPTERS, TALENTS, subregionThemeMaterial, subregionEquipmentKeyword, type DifficultyMode, type Element, type ForgeBonus, type ForgeChoice, type ForgeEffect } from '../data/expansion'
 import { questById, STORY_QUESTS } from '../data/storyQuests'
 import { buildForgeRecipes } from '../data/forgeRecipes'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard, EquipmentActiveEffect, EquipmentSetId } from '../types'
 import { ALL_MONOLITHS } from '../regionMap'
+import { selectAutoItemSkill } from '../autoCombat'
 
 const HD_ART:Record<string,string> = {
   'assets/art/monsters/cabra_malgor.webp':'assets/art/hd/monsters/cabra-malgor-hd.webp',
@@ -1384,11 +1385,25 @@ export function runAutoCombatTurn(set:any,get:any){
   if(heroStunned(set,get))return
   if((s.ultimateGauge??0)>=100){s.ultimateAttack();return}
   if(s.hp<maxHp(s)*.35&&(s.inventory['pocao_cura']??0)>0){s.useConsumable('pocao_cura');return}
+  const autoItemSkills=equippedAutoItemSkills(s),autoItemState=autoItemSkillState(s)
+  const urgentItem=selectAutoItemSkill(autoItemSkills,autoItemState,{mode:'urgent'})
+  if(urgentItem){s.itemSkill(urgentItem);return}
   if((s.heroSkillCooldown??0)===0&&s.heroId!=='conjurador'){s.heroSkill();return}
   if((s.fervor??0)>=3){s.useFervor();return}
   const minion=(s.combatMinions??[]).find(m=>m.hp>0)
   if(minion){s.attack(minion.id);return}
+  const tacticalItem=selectAutoItemSkill(autoItemSkills,autoItemState,{mode:'tactical'})
+  if(tacticalItem){s.itemSkill(tacticalItem);return}
   s.attack()
+}
+
+function equippedAutoItemSkills(s:GameState){
+ return (Object.values(s.equipped) as (string|undefined)[]).map(id=>eqById(id)).filter((item):item is Equipment=>Boolean(item?.activeEffect&&item.slot!=='bolsa'))
+}
+
+function autoItemSkillState(s:GameState){
+ const intent=s.enemy?enemyIntentFor(s.enemy,s.combatTurn):undefined
+ return{hp:s.hp,maxHp:maxHp(s),shield:s.shield,heroRollBonus:s.heroRollBonus+(s.classRollBonus??0),heroStatus:s.heroStatus as Record<string,unknown>|undefined,enemyHp:s.enemyHp,enemyMaxHp:s.enemy?.vida,enemyIsBoss:Boolean(s.enemy?.boss),enemyIsElite:Boolean(s.enemy?.elite),enemyIntentType:intent?.type,hasActiveMinions:Boolean((s.combatMinions??[]).some(minion=>minion.hp>0))}
 }
 
 function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState,key=enemyDisplayKey(enemy.nome),discovery=`${enemy.boss?'boss':enemy.elite?'elite':'monster'}:${key}`,discoveries=s.discoveredCards??[];const known=s.bestiary[key]??{encontros:0,vitorias:0},sets=equipmentSetCounts(s),setShield=sets.khar>=4?3:0,setRoll=enemy.boss&&sets.eclipse>=4?1:0,setStrike=sets.cinzas>=4?2:0,warriorLuck=s.heroId==='guerreiro'&&Math.random()<.5;const enemyElement=enemy.elemento??(enemy.boss?'sombra':'fisico');const enemyWeakness=ELEMENT_ADVANTAGES[enemyElement]?.weakAgainst?.[0];const staggerMax=Math.max(12,Math.ceil(enemy.vida*.35));set({screen:'combat',enemy:{...enemy,fraqueza:enemyWeakness},enemyHp:enemy.vida,ultimateGauge:0,staggerCurrent:0,staggerMax,isStaggered:false,heroSkillCooldown:0,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Afinidade elemental: ${enemyElement}.${enemyWeakness?` Fraqueza: ${enemyWeakness} (+35% dano).`:''}`,...(warriorLuck?['Fortuna do Guerreiro ativada: +1 em todos os dados nesta batalha.']:[]),...(setShield?[`Conjunto de Kholgard: +${setShield} de escudo inicial.`]:[]),...(setRoll?[`Conjunto do Sol Negro: +1 nas rolagens contra chefes.`]:[]),...(setStrike?[`Arsenal das Cinzas: +${setStrike} de dano no primeiro ataque.`]:[]),`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:(s.talents.includes('destino')?1:0)+setRoll+(warriorLuck?1:0)+equipmentRollBonus(s),enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:s.shield+setShield,classRollBonus:warriorLuck?1:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,braced:false,braceBonusUsed:false,fervor:0,firstStrikeBonus:setStrike,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false,bestiary:{...s.bestiary,[key]:{...known,encontros:known.encontros+1}},discoveredCards:discoveries.includes(discovery)?discoveries:[...discoveries,discovery]});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),getCombatDelay(s,800));else if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(s,500))}
@@ -1929,7 +1944,18 @@ if(bossGateMet&&encounterSubId&&!subBosses.includes(encounterSubId))subBosses.pu
 // de espaço. Agora, ao sortear equipamento com a bolsa cheia, nenhum consumível substituto é
 // dado: o loot registra qual equipamento foi perdido e por quê.
 const lootChanceBonus=storyModifiers(s).drop+specializationBonuses(s).loot+(hasCraftedEffect(s,'sorte')?.15:0),lootQualityBoost=hasCraftedEffect(s,'sorte')
-if(Math.random()<monsterDropChance(en,lootChanceBonus)){const equipmentPool=equipmentLootPool(en,s.heroId,after),consumablePool=consumableLootPool(en);const rollsEquipment=Math.random()<.62&&equipmentPool.length>0;if(rollsEquipment){const e=pickWeightedEquipment(equipmentPool,lootQualityBoost)!;if(equipmentBag.length<equipmentBagCapacity(s)){equipmentRef=createEquipmentInstance(e.id);equipmentBag.push(equipmentRef);equipmentId=e.id}else missedEquipmentId=e.id}else if(consumablePool.length){const i=consumablePool[Math.floor(Math.random()*consumablePool.length)];inventory[i.id]=(inventory[i.id]??0)+1;itemId=i.id}}const baseName=enemyDisplayKey(en.nome);const record=s.bestiary[baseName]??{encontros:1,vitorias:0},material=REGION_MATERIALS[encounterRegionId]??REGION_MATERIALS.campos_dourados,materialQty=Math.round((en.boss?3:en.elite?2:1)*(1+spec.reward));const materials={...s.materials,[material.id]:(s.materials[material.id]??0)+materialQty};const revengeWins=en.revenge&&encounterSubId?{...s.revengeWins,[encounterSubId]:(s.revengeWins[encounterSubId]??0)+1}:s.revengeWins;
+if(Math.random()<monsterDropChance(en,lootChanceBonus)){const equipmentPoolBase=equipmentLootPool(en,s.heroId,after),consumablePool=consumableLootPool(en);
+// Contrato 16 do Quadro de Contratos: quando o temaLoot da sub-região cita um tipo de arma/
+// armadura que já existe no catálogo, o sorteio de equipamento prefere esse tipo em vez de
+// qualquer coisa do nível/classe do herói -- só metade das vezes, pra ainda deixar espaço pra
+// variedade normal no resto do tempo, e só reaproveitando itens já existentes (zero conteúdo novo).
+const themedKeyword=subregionEquipmentKeyword(encounterSub?.temaLoot),themedPool=themedKeyword?equipmentPoolBase.filter(e=>themedKeyword.test(e.nome)||(e.tipoEquipamento&&themedKeyword.test(e.tipoEquipamento))):[],equipmentPool=themedPool.length&&Math.random()<.5?themedPool:equipmentPoolBase
+const rollsEquipment=Math.random()<.62&&equipmentPool.length>0;if(rollsEquipment){const e=pickWeightedEquipment(equipmentPool,lootQualityBoost)!;if(equipmentBag.length<equipmentBagCapacity(s)){equipmentRef=createEquipmentInstance(e.id);equipmentBag.push(equipmentRef);equipmentId=e.id}else missedEquipmentId=e.id}else if(consumablePool.length){const i=consumablePool[Math.floor(Math.random()*consumablePool.length)];inventory[i.id]=(inventory[i.id]??0)+1;itemId=i.id}}const baseName=enemyDisplayKey(en.nome);const record=s.bestiary[baseName]??{encontros:1,vitorias:0},material=REGION_MATERIALS[encounterRegionId]??REGION_MATERIALS.campos_dourados,materialQty=Math.round((en.boss?3:en.elite?2:1)*(1+spec.reward));
+// Contrato 16: bônus de material exclusivo da sub-região, somado ao material regional acima (não
+// o substitui) -- só quando o temaLoot bate com uma palavra-chave reconhecida, e só em 25% das
+// vitórias, pra ficar como um "extra" temático em vez de inflar a economia de materiais existente.
+const themeMaterial=subregionThemeMaterial(encounterSub?.temaLoot),themeMaterialQty=themeMaterial&&Math.random()<.25?Math.round((en.boss?2:1)*(1+spec.reward)):0
+const materials={...s.materials,[material.id]:(s.materials[material.id]??0)+materialQty,...(themeMaterialQty?{[themeMaterial!.id]:(s.materials[themeMaterial!.id]??0)+themeMaterialQty}:{})};const revengeWins=en.revenge&&encounterSubId?{...s.revengeWins,[encounterSubId]:(s.revengeWins[encounterSubId]??0)+1}:s.revengeWins;
 const discoveredCards=[...(s.discoveredCards??[])];const isNewEquipment=Boolean(equipmentId)&&!discoveredCards.includes(`equipment:${equipmentId}`);const isNewItem=Boolean(itemId)&&!discoveredCards.includes(`consumable:${itemId}`);if(equipmentId&&isNewEquipment)discoveredCards.push(`equipment:${equipmentId}`);if(itemId&&isNewItem)discoveredCards.push(`consumable:${itemId}`)
 // Elemento/resistência em espólio só podem acontecer quando um CHEFE derruba o item — mesmo
 // assim, metade dos drops de chefe continua "normal", igual ao que a loja vende. Monstros e

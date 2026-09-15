@@ -23,6 +23,45 @@ export const REGION_MATERIALS:Record<string,{id:string;nome:string;elemento:Elem
 // Steelmere (mundo 'steelmere'): mesma cobertura de 1 material por região, ausente antes --
 // vitórias em qualquer região de Steelmere caíam no fallback (Fibra Dourada, de Havendown).
 frostgard:{id:'cristal_glacial',nome:'Cristal Glacial',elemento:'gelo'},engrenverde:{id:'seiva_encanada',nome:'Seiva Encanada',elemento:'natureza'},trilhouro:{id:'latao_ferroviario',nome:'Latão Ferroviário',elemento:'fisico'},vulcannis:{id:'escoria_vulcanica',nome:'Escória Vulcânica',elemento:'fogo'},ferrujal:{id:'oleo_corrosivo',nome:'Óleo Corrosivo',elemento:'sombra'},coroferro:{id:'engrenagem_real',nome:'Engrenagem Real',elemento:'luz'},aetherium:{id:'nucleo_etereo',nome:'Núcleo Etéreo',elemento:'arcano'}}
+// Contrato 16 do Quadro de Contratos: temaLoot de cada sub-região (ex. "Machados, martelos e
+// itens cerimoniais", "Runas e itens arcanos") sempre foi só texto de exibição, sem nenhuma
+// ligação com o que a sub-região de fato larga. Em vez de mapear cada uma das ~75 frases livres
+// (uma por sub-região, entre subregioes.json/expandedSubregions.ts/subregioesSteelmere.ts) pra um
+// material próprio -- economia nova demais pra um contrato de esforço médio -- extrai a PRIMEIRA
+// palavra-chave reconhecida de cada frase (ordem da lista importa: mais específica primeiro) e
+// resolve pra um material pequeno e compartilhado entre todas as frases que citam aquele tema.
+// Sub-regiões cujo temaLoot não bate com nenhuma palavra-chave simplesmente não geram bônus --
+// sem fallback "genérico" que tornaria o vínculo com o texto real inexistente na prática.
+export const SUBREGION_THEME_MATERIALS:Array<{match:RegExp;id:string;nome:string;elemento:Element}>=[
+ {match:/couro/i,id:'couro_curtido',nome:'Couro Curtido',elemento:'fisico'},
+ {match:/veneno|toxina|ácido|acido/i,id:'veneno_concentrado',nome:'Veneno Concentrado',elemento:'sombra'},
+ {match:/machado|martelo/i,id:'aco_forjado',nome:'Aço Forjado',elemento:'fisico'},
+ {match:/faca|adaga/i,id:'lamina_fragmentada',nome:'Lâmina Fragmentada',elemento:'fisico'},
+ {match:/runa/i,id:'esquirla_runica',nome:'Esquirla Rúnica',elemento:'luz'},
+ {match:/cristal/i,id:'cristal_bruto',nome:'Cristal Bruto',elemento:'gelo'},
+ {match:/escama/i,id:'escama_menor',nome:'Escama Menor',elemento:'fogo'},
+ {match:/essência|essencia|grimório|grimorio/i,id:'po_arcano',nome:'Pó Arcano',elemento:'arcano'},
+ {match:/amuleto/i,id:'fragmento_de_amuleto',nome:'Fragmento de Amuleto',elemento:'luz'},
+ {match:/óleo|oleo/i,id:'oleo_espesso',nome:'Óleo Espesso',elemento:'fogo'},
+ {match:/seda/i,id:'fio_de_seda',nome:'Fio de Seda',elemento:'natureza'},
+ {match:/núcleo|nucleo|engrenagem|latão|latao|vapor/i,id:'engrenagem_solta',nome:'Engrenagem Solta',elemento:'fisico'},
+ {match:/fuligem|sucata/i,id:'sucata_enegrecida',nome:'Sucata Enegrecida',elemento:'sombra'},
+]
+export function subregionThemeMaterial(temaLoot:string|undefined){return temaLoot?SUBREGION_THEME_MATERIALS.find(m=>m.match.test(temaLoot)):undefined}
+// Mesma ideia pro lado do equipamento: quando o temaLoot cita um tipo de arma/armadura que já
+// existe no catálogo, o sorteio de item na sub-região prefere esse tipo em vez de qualquer coisa
+// do nível/classe do herói -- reaproveita o catálogo existente (zero item novo), só reordena a
+// chance. Padrões espelham os já usados por equipmentAffinity (game.ts) pra manter consistência.
+export const SUBREGION_EQUIPMENT_KEYWORDS:Array<{theme:RegExp;item:RegExp}>=[
+ {theme:/machado|martelo/i,item:/machado|martelo/i},
+ {theme:/faca|adaga/i,item:/faca|adaga/i},
+ {theme:/cajado|grimório|grimorio/i,item:/cajado|orbe/i},
+ {theme:/arco|balestra/i,item:/arco|balestra/i},
+ {theme:/escudo/i,item:/escudo/i},
+ {theme:/armadura/i,item:/armadura|couraça|couraca|peitoral/i},
+ {theme:/botas/i,item:/botas/i},
+]
+export function subregionEquipmentKeyword(temaLoot:string|undefined){return temaLoot?SUBREGION_EQUIPMENT_KEYWORDS.find(k=>k.theme.test(temaLoot))?.item:undefined}
 export const SET_BONUSES=[{key:'lua',nome:'Regalia de Abdendriel',two:'+1 defesa',four:'+4 vida'},{key:'cinza',nome:'Arsenal das Cinzas',two:'+1 ataque',four:'primeiro ataque causa +2 de dano'},{key:'kh ar|khar|runa|bronze',nome:'Legado de Kholgard',two:'+3 vida',four:'+3 escudo inicial'},{key:'eclipse|véu|vazio',nome:'Vestes do Sol Negro',two:'+1 ataque',four:'+1 em rolagens contra chefes'}]
 export interface SubclassChoice {
   id: string

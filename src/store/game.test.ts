@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn } from './game'
 import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
@@ -1058,6 +1058,68 @@ describe('Sistema de Missões de História (Story Quests & NPCs)', () => {
     expect(useGame.getState().completedStoryQuests.length).toBe(13)
     expect(useGame.getState().gold).toBeGreaterThan(1500)
     expect(useGame.getState().xp).toBeGreaterThan(3000)
+  })
+})
+
+describe('auto-combate com habilidades de itens', () => {
+  it('usa uma habilidade de cura equipada quando a vida está baixa e não há poção', () => {
+    vi.useFakeTimers()
+    try {
+      const item = EQUIPMENT.find(e => e.activeEffect?.type === 'heal' && e.slot !== 'bolsa')!
+      useGame.getState().newGame('guerreiro')
+      useGame.setState({
+        screen: 'combat',
+        enemy: fakeEnemy,
+        enemyHp: 999,
+        hp: 4,
+        playerTurn: true,
+        animating: false,
+        autoCombat: true,
+        inventory: {},
+        itemSkillUsed: false,
+        equipped: { [item.slot]: item.id },
+      } as any)
+
+      runAutoCombatTurn(useGame.setState, useGame.getState)
+
+      expect(useGame.getState().itemSkillUsed).toBe(true)
+      expect(useGame.getState().hp).toBeGreaterThan(4)
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
+
+  it('usa uma habilidade ofensiva equipada antes do ataque básico quando não há capangas', () => {
+    vi.useFakeTimers()
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    try {
+      const item = EQUIPMENT.find(e => e.activeEffect?.type === 'element' && e.slot !== 'bolsa') ?? EQUIPMENT.find(e => e.activeEffect?.type === 'attack' && e.slot !== 'bolsa')!
+      useGame.getState().newGame('guerreiro')
+      useGame.setState({
+        screen: 'combat',
+        enemy: fakeEnemy,
+        enemyHp: 999,
+        hp: maxHp(useGame.getState()),
+        playerTurn: true,
+        animating: false,
+        autoCombat: true,
+        heroSkillCooldown: 2,
+        fervor: 0,
+        itemSkillUsed: false,
+        combatMinions: [],
+        equipped: { [item.slot]: item.id },
+      } as any)
+
+      runAutoCombatTurn(useGame.setState, useGame.getState)
+
+      expect(useGame.getState().itemSkillUsed).toBe(true)
+      expect(useGame.getState().combatLog.some(line => line.includes(item.nome))).toBe(true)
+    } finally {
+      randomSpy.mockRestore()
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
   })
 })
 
