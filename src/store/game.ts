@@ -721,9 +721,24 @@ export function buildBoss(sub:Subregion,heroPower?:{level:number;atk:number;def:
   return balanceEnemyByLevel({id:`boss_${sub.id}`,nome:b.nome,ataque:Math.max(1,Math.ceil(b.ataque*noviceDamping(sub.nivelMax,.58)*powerMult)),vida:Math.max(1,Math.ceil(b.vida*noviceDamping(sub.nivelMax,.55)*powerMult)),ouro:rollGoldReward(sub.nivelMax,{boss:true,maxFases:b.maxFases}),xpReward:xpRewardForLevel(sub.nivelMax,{boss:true,maxFases:b.maxFases}),dificuldade:sub.nivelMax,habilidade:b.habilidade,imagem:b.arte,arte:b.arte,raridade:b.raridade,boss:true,maxFases:startingRegion?Math.min(2,b.maxFases??2):b.maxFases,fase:1,nivel:sub.nivelMax,elemento:REGION_MATERIALS[sub.regionId]?.elemento},powerMult)
 }
 function difficultyEnemy(enemy:Enemy,mode:DifficultyMode){const multiplier=DIFFICULTIES[mode].enemy;return balanceEnemyByLevel({...enemy,ataque:Math.max(1,Math.ceil(enemy.ataque*multiplier)),vida:Math.max(1,Math.ceil(enemy.vida*multiplier)),ouro:Math.ceil(enemy.ouro*DIFFICULTIES[mode].reward),xpReward:enemy.xpReward!=null?Math.min(MAX_ENEMY_XP,Math.round(enemy.xpReward*DIFFICULTIES[mode].reward)):enemy.xpReward},multiplier)}
-export function buildCoopEnemy(subregionId:string,playerLevel:number,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildEnemy(sub,playerLevel),mode):undefined}
-export function buildCoopSubregionBoss(subregionId:string,mode:DifficultyMode){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?difficultyEnemy(buildBoss(sub),mode):undefined}
-export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode){const region=TERRITORIES.find(item=>item.id===regionId),base=region&&BOSSES[region.dificuldade];return region&&base?difficultyEnemy({...base,id:`coop_region_boss_${region.id}`,nome:`${base.nome} • Soberano de ${region.nome}`,ouro:rollGoldReward(region.nivelMax,{boss:true,maxFases:base.maxFases}),xpReward:xpRewardForLevel(region.nivelMax,{boss:true,maxFases:base.maxFases})},mode):undefined}
+// buildEnemy/buildBoss (e o orçamento de pontos em balanceEnemyByLevel, logo acima) calibram o
+// inimigo pra UM herói lutando sozinho -- nunca souberam quantos jogadores existem numa sala
+// coop. Com 3-4 atacantes reais por turno contra uma vida pensada pra um só, a batalha podia
+// acabar num único turno (às vezes na própria primeira rolagem, antes de qualquer log aparecer
+// na tela) -- não era um "ataque mega forte" bugado, era vida insuficiente pro tamanho do grupo.
+// Aplicado DEPOIS de difficultyEnemy (que já passou pelo orçamento de pontos), de propósito: se
+// entrasse antes, o orçamento solo re-cortaria a vida extra de volta. Vida escala quase linear
+// com o grupo (mais atacantes por rodada = precisa de mais vida pra durar o mesmo tanto de
+// turnos); ataque sobe bem menos, só o bastante pra continuar ameaçando um grupo maior sem punir
+// demais quem está de dupla; ouro/xp sobem junto (senão o "prêmio de sala" fica pequeno demais
+// depois de dividido entre mais gente, apesar da caçada durar mais rodadas).
+function coopPartyScale<T extends Enemy>(enemy:T,memberCount:number):T{
+ const extra=Math.max(0,memberCount-1),hpMult=1+extra*.7,atkMult=1+extra*.15,rewardMult=1+extra*.55
+ return{...enemy,vida:Math.max(1,Math.ceil(enemy.vida*hpMult)),ataque:Math.max(1,Math.ceil(enemy.ataque*atkMult)),ouro:Math.ceil(enemy.ouro*rewardMult),xpReward:enemy.xpReward!=null?Math.min(MAX_ENEMY_XP,Math.round(enemy.xpReward*rewardMult)):enemy.xpReward}
+}
+export function buildCoopEnemy(subregionId:string,playerLevel:number,mode:DifficultyMode,memberCount=1){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?coopPartyScale(difficultyEnemy(buildEnemy(sub,playerLevel),mode),memberCount):undefined}
+export function buildCoopSubregionBoss(subregionId:string,mode:DifficultyMode,memberCount=1){const sub=SUBREGIONS.find(item=>item.id===subregionId);return sub?coopPartyScale(difficultyEnemy(buildBoss(sub),mode),memberCount):undefined}
+export function buildCoopRegionBoss(regionId:string,mode:DifficultyMode,memberCount=1){const region=TERRITORIES.find(item=>item.id===regionId),base=region&&BOSSES[region.dificuldade];return region&&base?coopPartyScale(difficultyEnemy({...base,id:`coop_region_boss_${region.id}`,nome:`${base.nome} • Soberano de ${region.nome}`,ouro:rollGoldReward(region.nivelMax,{boss:true,maxFases:base.maxFases}),xpReward:xpRewardForLevel(region.nivelMax,{boss:true,maxFases:base.maxFases})},mode),memberCount):undefined}
 // A recompensa por vingança repetida crescia sem limite (1.5+wins*.25, nunca travava) --
 // dava pra farmar o mesmo chefe dezenas de vezes e cada vitória valer mais que a anterior
 // pra sempre. O poder de combate (power) continua crescendo sem teto de propósito (isso já
