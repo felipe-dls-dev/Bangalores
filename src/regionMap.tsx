@@ -4,7 +4,7 @@
 // jogador pisa num marcador de sub-região. Quem decide o que acontece ao entrar num marcador
 // (abrir card, checar progresso etc.) é o componente que usa <TileWorldExplorer/>.
 import React from 'react'
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, MapPin } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, MapPin, Sun, Leaf, Snowflake, Flame, Skull, Anvil, Eclipse, Wheat, Cog, Factory, Wind, type LucideIcon } from 'lucide-react'
 import type { NpcDefinition } from './data/npcs'
 
 // GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
@@ -12,6 +12,26 @@ import type { NpcDefinition } from './data/npcs'
 // funcionam em dev, onde o app já está na raiz. import.meta.env.BASE_URL carrega o prefixo
 // correto nos dois casos (replica o mesmo padrão usado por assetUrl() em main.tsx).
 function mapAsset(path: string) { return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}` }
+
+// Contrato 10 do Quadro de Contratos: cada saída de mapa hoje usa a mesma seta genérica (➜) pra
+// qualquer destino. Em vez de esperar arte bespoke por saída (que exigiria uma peça nova por par
+// região-destino), reaproveita a identidade visual que cada território já tem -- REGION_UI_THEME
+// em main.tsx, aqui espelhado só pela paleta de cor -- pra dar um ícone e uma cor coerentes com
+// pra onde aquela passagem específica leva, mesmo estando parado numa região com tema diferente
+// (por isso a cor vem inline via --exit-accent, não do data-region-theme ambiente do app-shell).
+const EXIT_THEME: Record<string, { Icon: LucideIcon; color: string }> = {
+  gold: { Icon: Sun, color: '#c99d46' },
+  forest: { Icon: Leaf, color: '#76ad65' },
+  frost: { Icon: Snowflake, color: '#78b9d8' },
+  volcanic: { Icon: Flame, color: '#db6848' },
+  shadow: { Icon: Skull, color: '#9d7ab2' },
+  forge: { Icon: Anvil, color: '#c48b54' },
+  eclipse: { Icon: Eclipse, color: '#a27bc3' },
+  harvest: { Icon: Wheat, color: '#c99d46' },
+  rust: { Icon: Cog, color: '#bb8651' },
+  coroferro: { Icon: Factory, color: '#b97862' },
+  aetherium: { Icon: Wind, color: '#8faee6' },
+}
 
 // Grid "de autoria" -- o que se desenha à mão em build*() usando fill/hline/vline/rect.
 // Tipos genéricos: não sabem (nem precisam saber) qual variante de arte existe pra cada caso.
@@ -464,8 +484,8 @@ function buildCamposDourados(): RegionMapDef {
     // onde a câmera precisava acompanhar o primeiro passo para revelar o personagem.
     spawn: { x: 10, y: 9 },
     exits: [
-      { id: 'west_serra', x: 1, y: 4, icon: '←', targetRegionId: 'montanhas_cinzentas' },
-      { id: 'east_abdendriel', x: 20, y: 7, icon: '➜', targetRegionId: 'floresta_lunargenta' },
+      { id: 'west_serra', x: 1, y: 4, targetRegionId: 'montanhas_cinzentas' },
+      { id: 'east_abdendriel', x: 20, y: 7, targetRegionId: 'floresta_lunargenta' },
       { id: 'south_kholgard', x: 10, y: 14, icon: '↓', targetRegionId: 'khar_dur' },
     ],
     locations: [
@@ -503,7 +523,7 @@ function buildFlorestaLunargenta(): RegionMapDef {
     id: 'floresta_lunargenta', background: mapAsset('assets/maps/floresta-lunargenta-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([15, 1, 16, 2], [19, 2, 20, 5], [2, 10, 5, 13]),
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'west_planicies', x: 1, y: 7, icon: '←', targetRegionId: 'campos_dourados' },
+      { id: 'west_planicies', x: 1, y: 7, targetRegionId: 'campos_dourados' },
       { id: 'south_morvath', x: 11, y: 14, icon: '↓', targetRegionId: 'terras_mortas' },
       { id: 'north_serra', x: 11, y: 1, icon: '↑', targetRegionId: 'montanhas_cinzentas' },
     ],
@@ -539,8 +559,8 @@ function buildMontanhasCinzentas(): RegionMapDef {
     id: 'montanhas_cinzentas', background: mapAsset('assets/maps/montanhas-cinzentas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 1, 3, 2], [7, 1, 9, 3], [11, 1, 13, 3], [3, 8, 6, 10], [8, 8, 10, 10]),
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'west_planicies', x: 1, y: 7, icon: '←', targetRegionId: 'campos_dourados' },
-      { id: 'next', x: 20, y: 2, icon: '➜' },
+      { id: 'west_planicies', x: 1, y: 7, targetRegionId: 'campos_dourados' },
+      { id: 'next', x: 20, y: 2 },
     ],
     locations: [
       { subId: 'montanhas_passagem', x: 11, y: 11, icon: '⛰️' },
@@ -576,8 +596,8 @@ function buildPicoEscarlate(): RegionMapDef {
     id: 'pico_escarlate', background: mapAsset('assets/maps/pico-escarlate-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 7, 4, 9], [6, 6, 8, 8], [12, 8, 14, 10], [5, 11, 8, 13]),
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'west_serra', x: 1, y: 5, icon: '←', targetRegionId: 'montanhas_cinzentas' },
-      { id: 'east_sol_negro', x: 20, y: 5, icon: '➜', targetRegionId: 'coracao_eclipse' },
+      { id: 'west_serra', x: 1, y: 5, targetRegionId: 'montanhas_cinzentas' },
+      { id: 'east_sol_negro', x: 20, y: 5, targetRegionId: 'coracao_eclipse' },
       { id: 'south_abdendriel', x: 11, y: 14, icon: '↓', targetRegionId: 'floresta_lunargenta' },
     ],
     locations: [
@@ -610,8 +630,8 @@ function buildTerrasMortas(): RegionMapDef {
     id: 'terras_mortas', background: mapAsset('assets/maps/terras-mortas-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([1, 1, 3, 3], [7, 1, 9, 3], [11, 1, 13, 4], [3, 9, 5, 11]),
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'west_kholgard', x: 1, y: 10, icon: '←', targetRegionId: 'khar_dur' },
-      { id: 'east_sol_negro', x: 20, y: 10, icon: '➜', targetRegionId: 'coracao_eclipse' },
+      { id: 'west_kholgard', x: 1, y: 10, targetRegionId: 'khar_dur' },
+      { id: 'east_sol_negro', x: 20, y: 10, targetRegionId: 'coracao_eclipse' },
       { id: 'north_abdendriel', x: 10, y: 1, icon: '↑', targetRegionId: 'floresta_lunargenta' },
     ],
     locations: [
@@ -635,9 +655,9 @@ function buildKharDur(): RegionMapDef {
   hline(base, 0, width - 1, 0, 'tree'); hline(base, 0, width - 1, height - 1, 'tree'); vline(base, 0, height - 1, 0, 'tree'); vline(base, 0, height - 1, width - 1, 'tree')
   rect(base, 2, 7, 8, 14, 'water'); hline(base, 2, 8, 10, 'bridge')
   return { id: 'khar_dur', background: mapAsset('assets/maps/khar-dur-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([2, 1, 4, 3], [7, 1, 9, 3], [13, 1, 15, 3], [3, 6, 7, 8], [14, 6, 16, 8]), spawn: { x: 11, y: 13 }, exits: [
-    { id: 'west_planicies', x: 1, y: 6, icon: '←', targetRegionId: 'campos_dourados' },
+    { id: 'west_planicies', x: 1, y: 6, targetRegionId: 'campos_dourados' },
     { id: 'north_abdendriel', x: 10, y: 1, icon: '↑', targetRegionId: 'floresta_lunargenta' },
-    { id: 'east_morvath', x: 20, y: 13, icon: '➜', targetRegionId: 'terras_mortas' },
+    { id: 'east_morvath', x: 20, y: 13, targetRegionId: 'terras_mortas' },
   ], locations: [
     { subId: 'khar_galerias', x: 10, y: 9, icon: '🛤️' }, { subId: 'khar_labirinto', x: 9, y: 11, icon: '🌀' }, { subId: 'khar_templo_minotauro', x: 12, y: 10, icon: '🐂' },
     { subId: 'khar_forjas', x: 5, y: 3, icon: '🔥' }, { subId: 'khar_cofre', x: 17, y: 3, icon: '🔐' }, { subId: 'khar_profundezas', x: 17, y: 10, icon: '⛏️' },
@@ -665,7 +685,7 @@ function buildCoracaoEclipse(): RegionMapDef {
     blocked: blockedRects([1, 1, 2, 3], [6, 1, 8, 3], [13, 1, 15, 3], [2, 11, 5, 13], [9, 7, 11, 9]),
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'prev', x: 11, y: 14, icon: '←' },
+      { id: 'prev', x: 11, y: 14 },
     ],
     locations: [
       { subId: 'eclipse_portoes', x: 11, y: 12, icon: '🚪' },
@@ -712,8 +732,8 @@ function buildFrostgard(): RegionMapDef {
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'south_engrenverde', x: 11, y: 14, icon: '↓', targetRegionId: 'engrenverde' },
-      { id: 'east_vulcannis', x: 20, y: 7, icon: '➜', targetRegionId: 'vulcannis' },
-      { id: 'airship_havendown', x: 1, y: 7, icon: '←', targetRegionId: 'campos_dourados' },
+      { id: 'east_vulcannis', x: 20, y: 7, targetRegionId: 'vulcannis' },
+      { id: 'airship_havendown', x: 1, y: 7, targetRegionId: 'campos_dourados' },
     ],
     locations: [
       { subId: 'frost_rota', x: 10, y: 12, icon: '⚙️' },
@@ -753,7 +773,7 @@ function buildEngrenverde(): RegionMapDef {
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_frostgard', x: 11, y: 1, icon: '↑', targetRegionId: 'frostgard' },
-      { id: 'east_aetherium', x: 20, y: 8, icon: '➜', targetRegionId: 'aetherium' },
+      { id: 'east_aetherium', x: 20, y: 8, targetRegionId: 'aetherium' },
       { id: 'south_ferrujal', x: 11, y: 14, icon: '↓', targetRegionId: 'ferrujal' },
     ],
     locations: [
@@ -794,7 +814,7 @@ function buildTrilhouro(): RegionMapDef {
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_vulcannis', x: 11, y: 1, icon: '↑', targetRegionId: 'vulcannis' },
-      { id: 'west_aetherium', x: 1, y: 8, icon: '←', targetRegionId: 'aetherium' },
+      { id: 'west_aetherium', x: 1, y: 8, targetRegionId: 'aetherium' },
       { id: 'south_coroferro', x: 11, y: 14, icon: '↓', targetRegionId: 'coroferro' },
     ],
     locations: [
@@ -838,7 +858,7 @@ function buildVulcannis(): RegionMapDef {
     id: 'vulcannis', background: mapAsset('assets/maps/steelmere/vulcannis.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'ash',
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'west_frostgard', x: 1, y: 7, icon: '←', targetRegionId: 'frostgard' },
+      { id: 'west_frostgard', x: 1, y: 7, targetRegionId: 'frostgard' },
       { id: 'south_trilhouro', x: 11, y: 14, icon: '↓', targetRegionId: 'trilhouro' },
       { id: 'southwest_aetherium', x: 1, y: 12, icon: '↙', targetRegionId: 'aetherium' },
     ],
@@ -884,7 +904,7 @@ function buildFerrujal(): RegionMapDef {
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_engrenverde', x: 10, y: 1, icon: '↑', targetRegionId: 'engrenverde' },
-      { id: 'east_coroferro', x: 20, y: 8, icon: '➜', targetRegionId: 'coroferro' },
+      { id: 'east_coroferro', x: 20, y: 8, targetRegionId: 'coroferro' },
       { id: 'northeast_aetherium', x: 20, y: 3, icon: '↗', targetRegionId: 'aetherium' },
     ],
     locations: [
@@ -928,7 +948,7 @@ function buildCoroferro(): RegionMapDef {
     id: 'coroferro', background: mapAsset('assets/maps/steelmere/coroferro.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'smoke',
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'west_ferrujal', x: 1, y: 8, icon: '←', targetRegionId: 'ferrujal' },
+      { id: 'west_ferrujal', x: 1, y: 8, targetRegionId: 'ferrujal' },
       { id: 'north_trilhouro', x: 11, y: 1, icon: '↑', targetRegionId: 'trilhouro' },
       { id: 'northwest_aetherium', x: 1, y: 3, icon: '↖', targetRegionId: 'aetherium' },
     ],
@@ -968,8 +988,8 @@ function buildAetherium(): RegionMapDef {
     id: 'aetherium', background: mapAsset('assets/maps/steelmere/aetherium.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
     spawn: { x: 11, y: 13 },
     exits: [
-      { id: 'west_engrenverde', x: 1, y: 8, icon: '←', targetRegionId: 'engrenverde' },
-      { id: 'east_trilhouro', x: 20, y: 8, icon: '➜', targetRegionId: 'trilhouro' },
+      { id: 'west_engrenverde', x: 1, y: 8, targetRegionId: 'engrenverde' },
+      { id: 'east_trilhouro', x: 20, y: 8, targetRegionId: 'trilhouro' },
       { id: 'south_coroferro', x: 11, y: 14, icon: '↓', targetRegionId: 'coroferro' },
       { id: 'fenda_havendown', x: 11, y: 1, icon: '↑', targetRegionId: 'coracao_eclipse' },
     ],
@@ -1080,7 +1100,7 @@ export function TileWorldExplorer({
   paused?: boolean
   onEnterLocation: (subId: string) => void
   locationStatus?: (subId: string) => 'done' | 'ready' | 'default'
-  exits?: Array<{ id: string; x: number; y: number; label: string; icon?: string }>
+  exits?: Array<{ id: string; x: number; y: number; label: string; icon?: string; theme?: string }>
   onEnterExit?: (id: string) => void
   npcs?: NpcDefinition[]
   onInteractNpc?: (npc: NpcDefinition) => void
@@ -1581,16 +1601,19 @@ export function TileWorldExplorer({
             <span className="regionmap-location-icon">{loc.icon ?? '◆'}</span>
           </button>
         })}
-        {exits.map(exit => (
+        {exits.map(exit => {
+          const themed = EXIT_THEME[exit.theme ?? '']
+          return (
           <button key={exit.id} type="button" className="regionmap-exit"
-            style={{ left: exit.x * tilePx, top: exit.y * tilePx, width: tilePx, height: tilePx }}
+            style={{ left: exit.x * tilePx, top: exit.y * tilePx, width: tilePx, height: tilePx, ...(themed ? { '--exit-accent': themed.color } as React.CSSProperties : {}) }}
             onClick={event => { event.stopPropagation(); if (didDragRef.current) { didDragRef.current = false; return }; moveToExit(exit) }}
             aria-label={`Viajar para ${exit.label}`} title={exit.label}>
             <span className="regionmap-exit-ring" />
-            <span className="regionmap-exit-icon">{exit.icon ?? '➜'}</span>
+            <span className="regionmap-exit-icon">{exit.icon ? exit.icon : themed ? <themed.Icon size={16} /> : '➜'}</span>
             <span className="regionmap-exit-label">{exit.label}</span>
           </button>
-        ))}
+          )
+        })}
         {(map.campfires ?? []).map(campfire => (
           <button key={campfire.id} type="button" className="regionmap-campfire"
             style={{ left: campfire.x * tilePx, top: campfire.y * tilePx, width: tilePx, height: tilePx }}

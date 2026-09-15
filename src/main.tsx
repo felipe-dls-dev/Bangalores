@@ -1391,7 +1391,7 @@ function RegionMapView({region,subs,level,selectedSub}:{region:Territory;subs:Su
   const locationStatus=(subId:string):'done'|'ready'|'default'=>{const sub=subs.find(s=>s.id===subId);if(!sub)return 'default';if(g.subregionBossesDefeated.includes(sub.id))return 'done';const wins=g.subregionVictories[sub.id]??0;return wins>=sub.encontrosNecessarios?'ready':'default'}
   const handleEnter=(subId:string)=>{const sub=subs.find(s=>s.id===subId);if(sub){setActiveSub(sub);setEncounterPrompt(sub);setShowBattleDetails(false)}}
   const world=region.mundo??'havendown',worldProgression=[...TERRITORIES].filter(t=>(t.mundo??'havendown')===world).sort(regionListSort),regionIndex=worldProgression.findIndex(t=>t.id===region.id),exitTargets={prev:worldProgression[regionIndex-1],next:worldProgression[regionIndex+1]} as const
-  const regionExits=(map.exits??[]).flatMap(exit=>{const target=exit.targetRegionId?TERRITORIES.find(t=>t.id===exit.targetRegionId):exitTargets[exit.id as 'prev'|'next'];return target?[{...exit,label:target.nome,region:target}]:[]})
+  const regionExits=(map.exits??[]).flatMap(exit=>{const target=exit.targetRegionId?TERRITORIES.find(t=>t.id===exit.targetRegionId):exitTargets[exit.id as 'prev'|'next'];return target?[{...exit,label:target.nome,region:target,theme:REGION_UI_THEME[target.id]}]:[]})
   const handleExit=(exitId:string)=>{const exit=regionExits.find(item=>item.id===exitId);if(exit)g.openRegion(exit.region)}
   const npcs=npcsForRegion(region.id)
  const npcStatus=(npc:NpcDefinition):'ready'|'available'|'default'=>{
