@@ -409,6 +409,12 @@ export function CoopProvider({children}:{children:React.ReactNode}){
  // uma emboscada ou marcar "enfrentar" num local do mapa -- mesma checagem de risco de sempre
  // (algum integrante sem vida bloqueia, e vida do próprio líder abaixo de 50% pede confirmação).
  const safeStartMapBattle=async(subregionId:string,enemy?:Record<string,unknown>)=>{
+  // "PRONTO"/"PREPARANDO" (toggleReady) existia só como rótulo visual no card -- não impedia
+  // nada. Isso deixava o líder puxar o grupo inteiro pra uma batalha (emboscada ou "explorar")
+  // com gente ainda ajustando herói/equipamento e nem percebendo que a luta ia começar. Vira um
+  // requisito de verdade: ninguém entra em combate (nem o próprio líder) até todos confirmarem.
+  const notReady=membersRef.current.find(member=>!member.ready)
+  if(notReady){setNotice(`${notReady.display_name} ainda não está pronto(a). Aguarde todos marcarem prontidão antes de iniciar a batalha.`);return}
   const vitals=(roomRef.current?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number;locked?:boolean}>,zero=membersRef.current.find(member=>(vitals[member.user_id]?.hp??1)<=0),mine=vitals[userId]
   if(zero){setNotice(`${zero.display_name} está sem vida e precisa se recuperar antes da caçada.`);return}
   // Sem essa checagem, uma batalha compartilhada podia começar com alguém preso na própria tela

@@ -1769,6 +1769,7 @@ body::after{content:"VERSÃO 0.8.73 • 14/09/2026\A Icone da classe no selo de 
 body::after{content:"VERSÃO 0.8.74 • 14/09/2026\A Coop: lider em destaque no card + repassar lideranca para outro membro";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.75 • 14/09/2026\A Coop: lider so inicia batalha se ninguem do grupo estiver preso em outra tela";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.76 • 14/09/2026\A Coop: inimigos escalam vida/ataque/recompensa com o tamanho do grupo (batalha nao acaba num golpe so)";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.77 • 14/09/2026\A Coop: batalha so comeca com todos os jogadores marcados como prontos";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
