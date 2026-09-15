@@ -1772,6 +1772,7 @@ body::after{content:"VERSÃO 0.8.76 • 14/09/2026\A Coop: inimigos escalam vida
 body::after{content:"VERSÃO 0.8.77 • 14/09/2026\A Coop: batalha so comeca com todos os jogadores marcados como prontos";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.78 • 14/09/2026\A Coop: corrige Ataque Duplo travando o auto-combate, carrega barra de especial, delay minimo de 2s por acao";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.79 • 15/09/2026\A Fix: novo personagem herdava mapa/monolitos descobertos do personagem anterior";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.80 • 15/09/2026\A Confirma antes de batalhas em regioes muito acima do nivel (andar sequencial nunca teve trava)";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
