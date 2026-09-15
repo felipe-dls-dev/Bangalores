@@ -1803,9 +1803,9 @@ function resolveSummonAttacks(set:any,get:any,onComplete:()=>void){
    setTimeout(strike,350);return
   }
   if(resolved.damage>0){
-   const enemyHp=Math.max(0,s.enemyHp-resolved.damage),healAmount=Math.max(0,Math.min(1,maxHp(s)-s.hp))
-   set({enemyHp,hp:s.hp+healAmount,animating:true,animationActor:'hero',lastDamage:resolved.damage,summonAttackFx:{types:[SUMMON_ATTACK_ANIMATION[summon.tipo]],nonce:Date.now()}})
-   addLog(set,`${summon.nome} ataca: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). Causou ${resolved.damage} de dano a ${en.nome}.${healAmount>0?' O vínculo recupera 1 de vida.':''}`)
+   const enemyHp=Math.max(0,s.enemyHp-resolved.damage)
+   set({enemyHp,animating:true,animationActor:'hero',lastDamage:resolved.damage,summonAttackFx:{types:[SUMMON_ATTACK_ANIMATION[summon.tipo]],nonce:Date.now()}})
+   addLog(set,`${summon.nome} ataca: dado ${attackRoll} (${attackEffect(attackRoll)}) contra defesa ${defenseRoll} (${defenseEffect(defenseRoll)}). Causou ${resolved.damage} de dano a ${en.nome}.`)
    if(enemyHp<=0){
     const survivors=nextSummons.filter(fera=>fera.hp>0)
     set({summons:survivors,summon:survivors[0]})
