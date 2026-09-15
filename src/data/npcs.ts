@@ -2,6 +2,15 @@ import type { Screen, ShopCategory, ShopTier } from '../types'
 
 export type NpcService = 'guild' | 'shop' | 'forge' | 'chronicle' | 'quest'
 export type NpcFacing = 'up' | 'down' | 'left' | 'right'
+// Traço de personalidade de cada NPC -- não afeta nenhuma mecânica, só qual "voz" as falas em
+// `dialogue` usam. Existe pra dar carisma/humor consistente (um rabugento não solta piada de
+// palhaço, um medroso não faz discurso arrogante) e como gancho pra futuras missões flavorizadas
+// pela personalidade do NPC (ver GUILD_MISSIONS em store/game.ts: 'kip_covarde_coragem' e
+// 'torvald_picareta_perdida' nasceram assim, a partir do Kip medroso e do Torvald hilário).
+export type NpcPersonality =
+  | 'sarcastico' | 'rabugento' | 'entusiasta' | 'desastrado' | 'hilario' | 'medroso'
+  | 'excentrico' | 'arrogante' | 'dramatico' | 'sombrio' | 'sorrateiro' | 'seco'
+  | 'nervoso' | 'apaixonado' | 'pomposo' | 'literal' | 'sonhador' | 'grave'
 
 export interface NpcDefinition {
   id: string
@@ -18,6 +27,7 @@ export interface NpcDefinition {
   screen: Screen
   shopCategory?: ShopCategory
   shopTier?: ShopTier
+  personality?: NpcPersonality
 }
 
 export const NPCS: NpcDefinition[] = [
@@ -36,10 +46,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/brenna-ashcombe.webp',
     services: ['guild', 'chronicle'],
     screen: 'guild',
+    personality: 'sarcastico',
     dialogue: [
-      'A Guilda sempre tem os olhos abertos. Volte quando precisar de trabalho.',
-      'Tenho contratos para quem ainda sabe voltar inteiro.',
-      'Se trouxe provas do trabalho feito, a Guilda honra a recompensa.',
+      'Ah, você ainda está vivo. Confesso que apostei 3 moedas em contrário lá na taverna.',
+      'Tenho contratos pra quem sabe voltar inteiro... e pra quem só volta pra reclamar comigo depois.',
+      'Se trouxe provas do trabalho feito, a Guilda paga. Se trouxe desculpas, eu também tenho um quadro pra elas — chama-se lixeira.',
+      'Não me chame de "senhora". Me chame de "a pessoa que decide se você almoça essa semana".',
     ],
   },
   {
@@ -54,10 +66,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/borin-fenrick.webp',
     services: ['forge', 'quest'],
     screen: 'forge',
+    personality: 'rabugento',
     dialogue: [
-      'Metal bom fala baixo. Metal ruim grita quando quebra.',
-      'Traga material, ouro e coragem. A forja cobra os três.',
-      'Se você trouxer ferro verdadeiro das montanhas, forjarei lendas com você.',
+      'Metal bom fala baixo. Metal ruim grita quando quebra. Gente boa também devia aprender essa lição.',
+      'Traga material, ouro e coragem. A forja cobra os três — e eu cobro juros se você atrapalhar meu silêncio falando demais.',
+      'Se trouxer ferro verdadeiro das montanhas, forjo lendas com você. Se trouxer sucata, forjo uma piada e conto pros outros.',
+      'Não sorrio fácil. Já sorri uma vez, em 1502. Não recomendo repetir o trauma.',
     ],
   },
   {
@@ -74,9 +88,11 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'arma',
     shopTier: 'simples',
+    personality: 'entusiasta',
     dialogue: [
-      'Toda lâmina que vendo já provou o próprio aço antes de chegar até você.',
-      'Nada raro por aqui — só ferro confiável pra quem está começando.',
+      'TODA lâmina aqui já provou o próprio aço antes de chegar até você! É... uma forma bonita de dizer que eu mesmo testei nas cebolas do jantar!',
+      'Nada raro por aqui, só ferro confiável — mas olha esse brilho! OLHA esse brilho! Eu poliria a minha própria alma se tivesse esse brilho!',
+      'Compra uma espada, ganha uma história inventada na hora sobre ela. É de graça! É o meu diferencial!',
     ],
   },
   {
@@ -93,9 +109,12 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'equipamento',
     shopTier: 'simples',
+    personality: 'desastrado',
     dialogue: [
-      'Curo e reforço cada peça com as próprias mãos. Não é bonito, mas aguenta golpe.',
-      'Comece protegido. O resto você conquista nas estradas.',
+      'Curo e reforço cada peça com as próprias mãos — o que explica os três dedos ligeiramente tortos.',
+      'Comece protegido. Eu, por exemplo, uso a MINHA própria armadura... por baixo da roupa... por precaução, depois do incidente com o barril.',
+      'Não pergunta sobre o incidente com o barril.',
+      'Peça bonita, essa. Só não deixa cair — igual eu deixei ontem. Duas vezes.',
     ],
   },
   {
@@ -112,10 +131,12 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'consumivel',
     shopTier: 'simples',
+    personality: 'hilario',
     dialogue: [
-      'Aprendi a destilar antes de aprender a ler. Minhas poções não falham.',
-      'Cura simples, mas cura de verdade. Leve quantas precisar.',
-      'As águas das planícies andam turvas... precisamos de ajuda rápida.',
+      'Aprendi a destilar antes de aprender a ler. Isso explica o rótulo "Poção de Cura" que, até ano passado, eu escrevia "Poção de Cuca".',
+      'Cura simples, mas cura de verdade! Ingrediente secreto: nenhum. É só ervas, água e uma quantidade preocupante de otimismo.',
+      'As águas das planícies andam turvas... precisamos de ajuda rápida! Ou de um filtro. Aceito as duas soluções.',
+      'Compre duas poções e ganhe um conselho de vida que ninguém pediu. É o meu jeito de dizer "eu te amo, cliente".',
     ],
   },
   // Floresta de Abdendriel
@@ -131,10 +152,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/lyriel_noite.webp',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
+    personality: 'sonhador',
     dialogue: [
-      'A floresta respira devagar, mas suas raízes sentem cada gota de veneno que escorre da terra.',
-      'Se você busca as bênçãos de Abdendriel, honre o pacto das árvores antigas.',
-      'Traga esperança aos nossos batedores e a floresta abrirá seus caminhos para você.',
+      'A floresta respira devagar, mas suas raízes sentem cada gota de veneno que escorre da terra... desculpe, eu estava conversando com um musgo. Onde estávamos?',
+      'Se você busca as bênçãos de Abdendriel, honre o pacto das árvores antigas. Elas também aceitam um "oi" educado, não custa nada.',
+      'Traga esperança aos nossos batedores e a floresta abrirá seus caminhos para você. Ah, e se ver o Kip por aí, diga a ele que os arbustos não mordem. Ainda.',
+      'Perco a noção do tempo entre uma árvore e outra. Já estamos em que século, mesmo?',
     ],
   },
   {
@@ -149,10 +172,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/kip_ligeiro.webp',
     services: ['quest'],
     screen: 'chronicle',
+    personality: 'medroso',
     dialogue: [
-      'Shh! Fale baixo... tem coisas metálicas se mexendo entre os arbustos.',
-      'Eu corro rápido, mas uma lâmina na mão sempre ajuda a acalmar os nervos.',
-      'Se tiver notícias da Mestra Lyriel, por favor me diga que posso recuar!',
+      'Shh! Fale baixo... tem coisas metálicas se mexendo entre os arbustos. Ou é o vento. Ou é meu coração, que também faz barulho de armadura quando eu tô com medo.',
+      'Eu corro rápido, mas uma lâmina na mão sempre ajuda a acalmar os nervos — a minha, não a lâmina, a lâmina não tem nervos, eu tenho, MUITOS.',
+      'Se tiver notícias da Mestra Lyriel, por favor me diga que posso recuar! Eu já recuei tanto essa semana que ando de costas por hábito.',
+      '"Batedor da Fronteira" é o título bonito. O título de verdade é "primeiro a ver o perigo e o mais rápido a fugir dele". Funciona igual bem.',
     ],
   },
   // Serra de Kaldrum
@@ -168,10 +193,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/torvald_barbaneve.webp',
     services: ['quest'],
     screen: 'chronicle',
+    personality: 'hilario',
     dialogue: [
-      'O frio congela o suor, mas não congela a vontade de cavar!',
-      'Estas montanhas escondem veios de ferro estelar que nenhuma outra terra possui.',
-      'Cuidado com as fendas profundas. As picaretas andam batendo em algo oco lá embaixo.',
+      'O frio congela o suor, mas não congela a vontade de cavar! Nem a minha vontade de gritar isso bem alto todo dia, aparentemente!',
+      'Estas montanhas escondem veios de ferro estelar que nenhuma outra terra possui! E escondem também minha picareta favorita, que eu perco toda terça-feira!',
+      'Cuidado com as fendas profundas. As picaretas andam batendo em algo oco lá embaixo — provavelmente é eco. PROVAVELMENTE.',
+      'Trinta anos nas minas e minha barba já é mais dura que o granito. Serve de escova pra polir minério, inclusive. Praticidade, rapaz!',
     ],
   },
   {
@@ -186,10 +213,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/heroes/sacerdotisa-khardur-v2.png',
     services: ['chronicle', 'quest'],
     screen: 'chronicle',
+    personality: 'excentrico',
     dialogue: [
-      'As constelações estão desalinhadas. Um eclipse de ferro cobre o horizonte leste.',
-      'O vento traz cheiro de óleo e fuligem... algo nunca antes visto nestes cumes sagrados.',
-      'Observe os céus, andarilho. As estrelas não mentem quando o perigo se aproxima.',
+      'As constelações estão desalinhadas. Um eclipse de ferro cobre o horizonte leste. Ou é fuligem na minha lente. As duas coisas são igualmente preocupantes.',
+      'O vento traz cheiro de óleo e fuligem... algo nunca antes visto nestes cumes sagrados. Já perguntei pras estrelas o que é. Elas não responderam. Rudes.',
+      'Observe os céus, andarilho. As estrelas não mentem — ao contrário do meu vizinho, que jura que viu um dragão e era só uma nuvem grande.',
+      'Previ sete finais do mundo essa década. Nenhum aconteceu ainda, mas a estatística está do meu lado.',
     ],
   },
   // Pico de Ignaris
@@ -207,9 +236,11 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'arma',
     shopTier: 'superior',
+    personality: 'arrogante',
     dialogue: [
-      'Cada lâmina aqui já sobreviveu ao Pico. Isso diz mais que qualquer selo de qualidade.',
-      'Não vendo pra qualquer um. Mas você já chegou longe o bastante.',
+      'Cada lâmina aqui já sobreviveu ao Pico. Isso diz mais sobre elas do que qualquer selo de qualidade — e infinitamente mais do que a sua conversa até agora.',
+      'Não vendo pra qualquer um. Mas você já chegou longe o bastante para eu fingir que me impressionei.',
+      'Admiro apenas duas coisas nesta vida: aço bem forjado e a minha própria reputação. Nessa ordem, às vezes.',
     ],
   },
   {
@@ -226,10 +257,11 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'equipamento',
     shopTier: 'superior',
+    personality: 'dramatico',
     dialogue: [
-      'Forjo cada peça perto da lava. O calor separa o aço fraco do forte.',
-      'Isso aqui não é pra iniciante. É pra quem pretende voltar vivo do próximo chefe.',
-      'Traga materiais purificados e temperarei sua armadura contra o próprio fogo cósmico.',
+      'Forjo cada peça perto da lava! O CALOR! A FÚRIA DA MONTANHA! ...desculpe, é assim que eu narro até quando estou fritando ovo de manhã.',
+      'Isso aqui não é pra iniciante. É pra quem pretende voltar VIVO do próximo chefe, encarando o abismo, cuspindo no rosto do destino!',
+      'Traga materiais purificados e temperarei sua armadura contra o próprio fogo cósmico! É trabalho duro, honroso, e também uma ótima desculpa pra eu gritar dramaticamente o dia inteiro.',
     ],
   },
   {
@@ -246,9 +278,11 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'consumivel',
     shopTier: 'superior',
+    personality: 'excentrico',
     dialogue: [
-      'Destilo com cinzas vulcânicas. O efeito é mais forte, o preço também.',
-      'Poções simples não bastam mais na sua altura. Estas sim.',
+      'Destilo com cinzas vulcânicas. O efeito é mais forte, o preço também, e as minhas sobrancelhas nunca mais voltaram ao normal.',
+      'Poções simples não bastam mais na sua altura. Estas sim — e explodiram só duas vezes no processo, o que pra mim já é um recorde de segurança.',
+      'Se o rótulo brilhar no escuro, beba rápido. Se brilhar E fizer barulho, beba na hora. Se cantar... corra.',
     ],
   },
   // Terras de Morvath
@@ -264,10 +298,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/heroes/cacador-terras-mortas.png',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
+    personality: 'sombrio',
     dialogue: [
-      'Que a paz encontre os que já partiram... e que os vivos não perturbem o silêncio.',
-      'As catacumbas andam inquietas desde que a drenagem de energia começou.',
-      'Se você veio trazer preces ou aço purificado, sua presença é bem-vinda neste solo aflito.',
+      'Que a paz encontre os que já partiram... e que os vivos não perturbem o silêncio. Exceto você. Você pode ficar. É a única companhia que não reclama do meu humor.',
+      'As catacumbas andam inquietas desde que a drenagem de energia começou. Os mortos, veja bem, são pessoas muito paticientes — até deixarem de ser.',
+      'Se veio trazer preces ou aço purificado, sua presença é bem-vinda. Se veio só de passagem, tudo bem também: aqui todo mundo é "de passagem", mais cedo ou mais tarde.',
+      'Enterrei muita gente boa. E uma quantidade vergonhosa de gente que só fingia ser boa. O chão não faz distinção.',
     ],
   },
   {
@@ -284,9 +320,11 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'equipamento',
     shopTier: 'superior',
+    personality: 'sorrateiro',
     dialogue: [
-      'Nem tudo o que foi enterrado merece ser esquecido... especialmente se tiver valor de troca.',
-      'Ouro antigo brilha no escuro, sabia? Dê uma olhada no meu estoque proibido.',
+      'Nem tudo o que foi enterrado merece ser esquecido... especialmente se tiver valor de troca. Eu, particularmente, não julgo os mortos por serem péssimos negociantes.',
+      'Ouro antigo brilha no escuro, sabia? Dê uma olhada no meu estoque proibido — proibido é modo de dizer, ninguém proibiu nada oficialmente, é só... mal visto.',
+      'Pergunte de onde vem cada peça e eu conto uma história diferente toda vez. É um serviço extra. Gratuito. Não reembolsável.',
     ],
   },
   // Reino do Sol Negro
@@ -302,10 +340,11 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/oraculo_danika.webp',
     services: ['chronicle', 'quest'],
     screen: 'chronicle',
+    personality: 'seco',
     dialogue: [
-      'Eu fechei meus olhos carnais para enxergar o rasgo que consome nossa realidade.',
-      'Havendown não está morrendo por velhice. Nossa alma está sendo puxada por cabos oceânicos.',
-      'O destino de dois continentes repousa nos ombros de quem ousar atravessar o mar revolto.',
+      'Eu fechei meus olhos carnais para enxergar o rasgo que consome nossa realidade. Trocaria de volta se pudesse. A visão cósmica não vem com manual de instruções.',
+      'Havendown não está morrendo por velhice. Nossa alma está sendo puxada por cabos oceânicos — sim, eu sei como isso soa. Não, não tenho uma versão mais tranquilizadora.',
+      'O destino de dois continentes repousa nos ombros de quem ousar atravessar o mar revolto. Sem pressão. Bom, com toda a pressão, na verdade.',
     ],
   },
 
@@ -324,10 +363,11 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/heroes/ladino-eldravar-hd.webp',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
+    personality: 'seco',
     dialogue: [
-      'O quebra-gelos não desiste por causa de nevasca, e eu também não.',
-      'Em Steelmere você aprende rápido: ou você é a engrenagem ou é o operário esmagado por ela.',
-      'Se veio de Havendown, guarde segredo. Os patrulheiros do Sindicato prendem qualquer forasteiro rúnico.',
+      'O quebra-gelos não desiste por causa de nevasca, e eu também não. É basicamente minha única personalidade e funciona bem o suficiente.',
+      'Em Steelmere você aprende rápido: ou você é a engrenagem ou é o operário esmagado por ela. Eu escolhi ser o gelo. O gelo não pergunta, o gelo racha.',
+      'Se veio de Havendown, guarde segredo. Os patrulheiros do Sindicato prendem qualquer forasteiro rúnico — e enchem o saco por meia hora antes disso, o que é pior.',
     ],
   },
   {
@@ -342,10 +382,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/heroes/guardiao-montanhas-v2.png',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
+    personality: 'nervoso',
     dialogue: [
-      'Trinta segundos de atraso e o comboio perde a conexão com a Caldeira de Vulcannis!',
-      'Tudo nesta terra é medido em pressão de vapor, toneladas de latão e relógios pontuais.',
-      'Se você tem documentos em ordem, podemos conversar. Se não tem... fale bem rápido.',
+      'Trinta segundos de atraso e o comboio perde a conexão com a Caldeira de Vulcannis! TRINTA SEGUNDOS! Eu conto nos dedos enquanto falo com você, inclusive!',
+      'Tudo nesta terra é medido em pressão de vapor, toneladas de latão e relógios pontuais. Meu próprio pulso, aliás, está acima do recomendado desde 2019.',
+      'Se você tem documentos em ordem, podemos conversar. Se não tem... fale MUITO rápido, porque o próximo trem sai em quatro minutos e eu já estou suando.',
+      'Já perdi três pentes de cabelo de tanto passar a mão na cabeça vendo horário atrasar. Considero isso um sacrifício profissional.',
     ],
   },
   {
@@ -360,10 +402,11 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/brenna-ashcombe.webp',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
+    personality: 'apaixonado',
     dialogue: [
-      'Eles ficam com o lucro do Aetherium e nós ficamos com a fumaça preta nos pulmões.',
-      'Uma faísca bem colocada no lugar certo queima uma ferrovia inteira de opressão.',
-      'Se você luta pelos que não têm voz, nós temos um lugar para você na linha de frente.',
+      'Eles ficam com o lucro do Aetherium e nós ficamos com a fumaça preta nos pulmões — e ainda têm a cara de pedir "compreensão" nas reuniões.',
+      'Uma faísca bem colocada no lugar certo queima uma ferrovia inteira de opressão. Metáfora e ameaça, ao mesmo tempo. Eficiência é minha marca registrada.',
+      'Se você luta pelos que não têm voz, nós temos um lugar pra você na linha de frente. Trazer as próprias luvas é apreciado, mas não obrigatório.',
     ],
   },
   {
@@ -378,10 +421,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/heroes/monge-ignaris-v2.png',
     services: ['quest', 'forge'],
     screen: 'forge',
+    personality: 'hilario',
     dialogue: [
-      'Calor, pressão e carvão! É assim que se forja o progresso de Steelmere!',
-      'Se uma tubulação estourar, não corra... apenas reze para os parafusos segurarem o tranco.',
-      'Traga metal resistente e nós faremos essas chapas suportarem o próprio inferno.',
+      'Calor, pressão e carvão! É assim que se forja o progresso de Steelmere! É também como eu explico por que como tanto no almoço!',
+      'Se uma tubulação estourar, não corra... apenas reze para os parafusos segurarem o tranco. Eu já rezei tanto que o santo local me deu desconto.',
+      'Traga metal resistente e nós faremos essas chapas suportarem o próprio inferno! Ou pelo menos uma tarde ruim, que já ajuda bastante por aqui.',
+      'Trabalho perto do fogo há vinte anos. Minhas sobrancelhas voltaram a crescer há só cinco. Progresso é isso.',
     ],
   },
   {
@@ -396,10 +441,12 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/heroes/guardiao-montanhas-v2.png',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
+    personality: 'literal',
     dialogue: [
-      '[BIP... SISTEMA OPERACIONAL ATIVO. DETECTANDO BATIMENTOS CARDÍACOS.]',
-      '[HOMENS DE CARNE CONSTRUÍRAM NOSSAS CARCAÇAS E NOS JOGARAM NA LAMA QUANDO AS ENGRENAGENS FALHARAM.]',
-      '[NÓS NÃO BUSCAMOS VINGANÇA. BUSCAMOS RECONHECIMENTO E SOBREVIVÊNCIA.]',
+      '[BIP... SISTEMA OPERACIONAL ATIVO. DETECTANDO BATIMENTOS CARDÍACOS. ISSO É NORMAL PARA VOCÊ. PARA MIM, SERIA MOTIVO DE PÂNICO.]',
+      '[HOMENS DE CARNE CONSTRUÍRAM NOSSAS CARCAÇAS E NOS JOGARAM NA LAMA QUANDO AS ENGRENAGENS FALHARAM. REGISTRO ISSO COMO "INGRATIDÃO", CATEGORIA: ALTA.]',
+      '[NÓS NÃO BUSCAMOS VINGANÇA. BUSCAMOS RECONHECIMENTO E SOBREVIVÊNCIA. NESSA ORDEM. A ORDEM IMPORTA. EU SOU MUITO LITERAL A RESPEITO DE ORDEM.]',
+      '[VOCÊ SORRIU. MEU MANUAL DIZ QUE ISSO SIGNIFICA "AMIGÁVEL" OU "ESTÁ PLANEJANDO ALGO". AGUARDANDO MAIS DADOS.]',
     ],
   },
   {
@@ -416,10 +463,12 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'arma',
     shopTier: 'superior',
+    personality: 'pomposo',
     dialogue: [
-      'O dinheiro move o mundo, meu caro. Aetherium é apenas a forma mais pura e brilhante dele.',
-      'Se você tem relíquias do continente selvagem, meu cofre está sempre aberto para negócios.',
-      'Em Coroferro, quem tem capital tem o poder de ditar o próprio horário dos relógios.',
+      'O dinheiro move o mundo, meu caro. Aetherium é apenas a forma mais pura e brilhante dele — e, coincidentemente, a forma que eu mais possuo.',
+      'Se você tem relíquias do continente selvagem, meu cofre está sempre aberto para negócios. Meu coração, infelizmente, cobra uma taxa de administração.',
+      'Em Coroferro, quem tem capital tem o poder de ditar o próprio horário dos relógios. O meu, por sinal, está sempre sete minutos adiantado. Por respeito à minha própria importância.',
+      'Perdi meu anel de sinete predileto num negócio mal-acabado. Recompenso generosamente quem devolver — generosamente pros MEUS padrões, esclareço.',
     ],
   },
   {
@@ -434,10 +483,11 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/mira-bellwether.webp',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
+    personality: 'nervoso',
     dialogue: [
-      'Eu criei os cálculos do Núcleo acreditando que traria prosperidade sem fim... que erro terrível.',
-      'O Sindicato não se importa se Havendown desmoronar no mar, desde que as máquinas continuem girando.',
-      'Se unirmos a ciência de Steelmere e os mistérios de Havendown, ainda há tempo de consertar o mundo.',
+      'Eu criei os cálculos do Núcleo acreditando que traria prosperidade sem fim... que erro terrível. Reli minhas próprias anotações sete vezes essa semana procurando onde errei.',
+      'O Sindicato não se importa se Havendown desmoronar no mar, desde que as máquinas continuem girando. Eu me importo. Talvez importe demais. Não durmo direito desde então.',
+      'Se unirmos a ciência de Steelmere e os mistérios de Havendown, ainda há tempo de consertar o mundo. Ou pelo menos de eu parar de roer as unhas enquanto calculo isso.',
     ],
   },
   {
@@ -454,10 +504,11 @@ export const NPCS: NpcDefinition[] = [
     screen: 'shop',
     shopCategory: 'consumivel',
     shopTier: 'superior',
+    personality: 'entusiasta',
     dialogue: [
-      'Tubulações de cobre cruzam os galhos destas árvores seculares. A seiva aqui conduz vapor e eletricidade.',
-      'O Sindicato quer podar o bosque para abrir espaço para novas caldeiras... mas a floresta tem espinhos afiados.',
-      'Leve extratos de seiva tratada se for se aventurar nos níveis superiores das copas.',
+      'Tubulações de cobre cruzam os galhos destas árvores seculares! A seiva conduz vapor E eletricidade — eu poderia falar disso por HORAS, e já falei, pergunte ao esquilo que fugiu.',
+      'O Sindicato quer podar o bosque pra abrir espaço pra novas caldeiras... mas a floresta tem espinhos afiados. E eu tenho uma lista de trinta e sete motivos pra eles desistirem. Quer ouvir todos?',
+      'Leve extratos de seiva tratada se for se aventurar nos níveis superiores das copas! Fiz a fórmula eu mesmo. Cheira mal. Funciona muito bem. As duas coisas não têm relação, prometo.',
     ],
   },
   {
@@ -472,10 +523,11 @@ export const NPCS: NpcDefinition[] = [
     portrait: 'assets/npcs/diretor_vane.webp',
     services: ['chronicle'],
     screen: 'chronicle',
+    personality: 'grave',
     dialogue: [
       'A frequência do Núcleo atingiu o limiar de ressonância com a fenda do Sol Negro em Havendown.',
       'Ou equilibramos o fluxo energético entre os dois continentes, ou ambas as realidades entrarão em colapso.',
-      'O destino dos mundos agora depende de cada válvula e cada runa ativada com precisão cirúrgica.',
+      'O destino dos mundos agora depende de cada válvula e cada runa ativada com precisão cirúrgica. Não há espaço pra humor aqui. Peço desculpas se isso decepciona.',
     ],
   },
 ]
@@ -487,4 +539,3 @@ export function npcsForRegion(regionId: string) {
 export function npcById(npcId: string) {
   return NPCS.find(npc => npc.id === npcId)
 }
-

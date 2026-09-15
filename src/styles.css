@@ -1792,6 +1792,7 @@ body::after{content:"VERSÃO 0.8.78 • 14/09/2026\A Coop: corrige Ataque Duplo 
 body::after{content:"VERSÃO 0.8.79 • 15/09/2026\A Fix: novo personagem herdava mapa/monolitos descobertos do personagem anterior";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.80 • 15/09/2026\A Confirma antes de batalhas em regioes muito acima do nivel (andar sequencial nunca teve trava)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.81 • 15/09/2026\A Viagem rapida so por proximo/anterior; corrige defesa das feras do invocador no coop; rebalanceia precos de consumiveis raros/epicos; ajustes de layout (ficha/mapa/guilda)";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.82 • 15/09/2026\A NPCs ganham personalidade/humor (24 falas reescritas) e 2 missoes novas flavorizadas por personalidade";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
