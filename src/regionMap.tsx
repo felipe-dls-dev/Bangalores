@@ -18,7 +18,7 @@ function mapAsset(path: string) { return `${import.meta.env.BASE_URL}${path.repl
 // 'ice'/'snow_drift'/'steam_vent' (ART-004) e 'mud'/'conveyor'/'ash_lava_rock' (ART-014) são
 // terrenos especiais de bioma -- sem auto-tiling de vizinhança como path/bridge/bank, são tile
 // únicos (igual flower/tree/water), então passam direto por resolveTerrain().
-type BaseTile = 'grass' | 'flower' | 'tree' | 'water' | 'path' | 'bridge' | 'ice' | 'snow_drift' | 'steam_vent' | 'mud' | 'conveyor' | 'ash_lava_rock'
+export type BaseTile = 'grass' | 'flower' | 'tree' | 'water' | 'path' | 'bridge' | 'ice' | 'snow_drift' | 'steam_vent' | 'mud' | 'conveyor' | 'ash_lava_rock'
 
 // Grid "de renderização" -- variante exata de arte, resolvida a partir do grid de autoria por
 // resolveTerrain() olhando os vizinhos de cada célula. É o que TileWorldExplorer de fato desenha
@@ -158,11 +158,11 @@ const WANDER_FRAME_MS = 420 // cadência do ciclo idle/walk_1/walk_2 (ver ART-00
 // o nome exato do inimigo sorteado. Atribuídas em round-robin só pra dar variedade visual.
 const WANDER_SPRITE_FAMILIES = ['automato-sentinela', 'batedor-a-vapor', 'elemental-de-vapor']
 const WANDER_FRAMES = ['idle', 'walk_1', 'walk_2']
-type WanderFacing = 'down' | 'up' | 'right' | 'left'
+export type WanderFacing = 'down' | 'up' | 'right' | 'left'
 // ART-028: down usa os arquivos raiz (idle/walk_1/walk_2), up e right têm pastas próprias
 // (up_idle.png etc.); left reaproveita os frames de right espelhados via CSS (scaleX(-1) só na
 // img, não no tile), então não existe um left_*.png separado -- ver .regionmap-wanderer-sprite.
-function wanderAsset(spriteId: string, facing: WanderFacing, frame: string) {
+export function wanderAsset(spriteId: string, facing: WanderFacing, frame: string) {
   const prefix = facing === 'up' ? 'up_' : facing === 'right' || facing === 'left' ? 'right_' : ''
   return mapAsset(`assets/maps/objects/monster-${spriteId}/${prefix}${frame}.png`)
 }
@@ -217,11 +217,11 @@ function nearestLocationId(map: RegionMapDef, point: { x: number; y: number }) {
   return bestId
 }
 
-function tileKey(x: number, y: number) { return `${x}:${y}` }
-function isMapWalkable(map: RegionMapDef, point: { x: number; y: number }, extraBlocked = new Set<string>()) {
+export function tileKey(x: number, y: number) { return `${x}:${y}` }
+export function isMapWalkable(map: RegionMapDef, point: { x: number; y: number }, extraBlocked = new Set<string>()) {
   return WALKABLE.has(map.grid[point.y]?.[point.x]) && !map.blocked?.some(block => block.x === point.x && block.y === point.y) && !extraBlocked.has(tileKey(point.x, point.y))
 }
-function nearestWalkable(map: RegionMapDef, target: { x: number; y: number }, extraBlocked = new Set<string>()) {
+export function nearestWalkable(map: RegionMapDef, target: { x: number; y: number }, extraBlocked = new Set<string>()) {
   if (isMapWalkable(map, target, extraBlocked)) return target
   for (let distance = 1; distance < Math.max(map.width, map.height); distance++) {
     for (let y = target.y - distance; y <= target.y + distance; y++) for (let x = target.x - distance; x <= target.x + distance; x++) {
@@ -231,7 +231,7 @@ function nearestWalkable(map: RegionMapDef, target: { x: number; y: number }, ex
   }
   return undefined
 }
-function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target: { x: number; y: number }, extraBlocked = new Set<string>()): Array<[number, number]> {
+export function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target: { x: number; y: number }, extraBlocked = new Set<string>()): Array<[number, number]> {
   const goal = nearestWalkable(map, target, extraBlocked)
   if (!goal || (goal.x === start.x && goal.y === start.y)) return []
   const queue = [start], previous = new Map<string, { from: { x: number; y: number }; step: [number, number] }>()
@@ -257,7 +257,7 @@ function routeBetween(map: RegionMapDef, start: { x: number; y: number }, target
   return route
 }
 
-function fill(w: number, h: number, tile: BaseTile): BaseTile[][] {
+export function fill(w: number, h: number, tile: BaseTile): BaseTile[][] {
   return Array.from({ length: h }, () => Array.from({ length: w }, () => tile))
 }
 function hline(grid: BaseTile[][], x0: number, x1: number, y: number, tile: BaseTile) {
@@ -271,7 +271,7 @@ function vline(grid: BaseTile[][], y0: number, y1: number, x: number, tile: Base
 function rect(grid: BaseTile[][], x0: number, y0: number, x1: number, y1: number, tile: BaseTile) {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (grid[y]?.[x] !== undefined) grid[y][x] = tile
 }
-function blockedRects(...rectangles: Array<[number, number, number, number]>) {
+export function blockedRects(...rectangles: Array<[number, number, number, number]>) {
   return rectangles.flatMap(([x0, y0, x1, y1]) => {
     const cells: Array<{ x: number; y: number }> = []
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) cells.push({ x, y })
@@ -286,7 +286,7 @@ function blockedRects(...rectangles: Array<[number, number, number, number]>) {
 // nenhum mapa atual tem esse caso, mas fica registrado caso um mapa futuro precise de mais peças.
 // Margens do rio nem existem no grid de autoria: são derivadas automaticamente onde uma célula
 // 'grass' encosta em 'water', então o autor só desenha água e grama normalmente.
-function resolveTerrain(base: BaseTile[][]): MapTile[][] {
+export function resolveTerrain(base: BaseTile[][]): MapTile[][] {
   const h = base.length, w = base[0]?.length ?? 0
   const at = (x: number, y: number): BaseTile | undefined => base[y]?.[x]
   const isPathLike = (t?: BaseTile) => t === 'path' || t === 'bridge'
@@ -358,6 +358,50 @@ export function validateRegionMap(map: RegionMapDef): string[] {
     usedLocations.add(key)
     if (!isWalkable(campfire)) errors.push(`${map.id}: fogueira ${campfire.id} fora de uma área transitável`)
     else if (!routeBetween(map, map.spawn, campfire).length) errors.push(`${map.id}: fogueira ${campfire.id} não pode ser alcançada a partir do spawn`)
+  }
+  for (const lever of map.levers ?? []) {
+    const key = tileKey(lever.x, lever.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: alavanca sobreposta em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(lever)) errors.push(`${map.id}: alavanca ${lever.id} fora de uma área transitável`)
+    else if (!routeBetween(map, map.spawn, lever).length) errors.push(`${map.id}: alavanca ${lever.id} não pode ser alcançada a partir do spawn`)
+    if (!(map.gates ?? []).some(gate => gate.id === lever.gateId)) errors.push(`${map.id}: alavanca ${lever.id} aponta para o portão inexistente ${lever.gateId}`)
+  }
+  for (const gate of map.gates ?? []) {
+    const key = tileKey(gate.x, gate.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: portão sobreposto em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(gate)) errors.push(`${map.id}: portão ${gate.id} fora de uma área transitável quando aberto`)
+    else if (!routeBetween(map, map.spawn, gate).length) errors.push(`${map.id}: portão ${gate.id} não pode ser alcançado a partir do spawn quando aberto`)
+    if (!(map.levers ?? []).some(lever => lever.gateId === gate.id)) errors.push(`${map.id}: portão ${gate.id} não tem nenhuma alavanca associada`)
+  }
+  for (const monolith of map.monoliths ?? []) {
+    const key = tileKey(monolith.x, monolith.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: monólito sobreposto em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(monolith)) errors.push(`${map.id}: monólito ${monolith.id} fora de uma área transitável`)
+    else if (!routeBetween(map, map.spawn, monolith).length) errors.push(`${map.id}: monólito ${monolith.id} não pode ser alcançado a partir do spawn`)
+  }
+  const dockPairs = new Map<string, number>()
+  for (const dock of map.docks ?? []) {
+    const key = tileKey(dock.x, dock.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: doca sobreposta em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(dock)) errors.push(`${map.id}: doca ${dock.id} fora de uma área transitável`)
+    else if (!routeBetween(map, map.spawn, dock).length) errors.push(`${map.id}: doca ${dock.id} não pode ser alcançada a partir do spawn`)
+    dockPairs.set(dock.pairId, (dockPairs.get(dock.pairId) ?? 0) + 1)
+  }
+  for (const [pairId, count] of dockPairs) if (count !== 2) errors.push(`${map.id}: par de doca ${pairId} tem ${count} doca(s), esperado 2`)
+  for (const item of map.scenery ?? []) {
+    const key = tileKey(item.x, item.y)
+    if (usedLocations.has(key)) errors.push(`${map.id}: objeto de cenário sobreposto em ${key}`)
+    usedLocations.add(key)
+    if (!isWalkable(item)) errors.push(`${map.id}: objeto de cenário ${item.id} fora de uma área transitável`)
+    else if (!routeBetween(map, map.spawn, item).length) errors.push(`${map.id}: objeto de cenário ${item.id} não pode ser alcançado a partir do spawn`)
+  }
+  for (const wall of map.illusoryWalls ?? []) {
+    if (wall.x < 0 || wall.y < 0 || wall.x >= map.width || wall.y >= map.height) errors.push(`${map.id}: parede ilusória em ${tileKey(wall.x, wall.y)} fora dos limites do mapa`)
+    if (map.blocked?.some(block => block.x === wall.x && block.y === wall.y)) errors.push(`${map.id}: parede ilusória em ${tileKey(wall.x, wall.y)} não deveria estar em blocked (ela já é andável por design, só a arte parece sólida)`)
   }
   return errors
 }

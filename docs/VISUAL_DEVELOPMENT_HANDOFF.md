@@ -89,6 +89,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P3 | Boat / carriage shortcut | — | MECHANIC SHIPPED | See ART-025 -- code+art integrated (same-map paired-dock ride), just not placed on a map yet. |
 | P3 | Illusory secret wall | — | MECHANIC SHIPPED | See ART-026 -- code+art integrated (discovery + one-shot reveal fx), just not placed on a map yet. |
 | P3 | Scenery interaction (signposts) | — | MECHANIC SHIPPED | See ART-027 -- code+art integrated (reusable `RegionMapScenery` pattern), just not placed on a map yet. |
+| P2 | Shared equipment art, last 2 pieces | Codex | REQUESTED | See ART-029 -- tier-0 Andarilhos calças/botas are the only 2 equipment pieces (of the full catalog) still missing art; everything else closed since the last audit. |
 
 ## ART REQUEST Template
 
@@ -533,6 +534,23 @@ Direction contract: retain the current root `idle.png`, `walk_1.png`, `walk_2.pn
 Code integration: extend the transient `Wanderer` view state with a last-facing direction, initialized to `down`; update it only after a successful patrol step in `setWanderers`; resolve `wanderAsset(spriteId, direction, frame)` from this convention. This is presentation-only and must not affect collision, patrol radius, combat or save data.
 Acceptance check: walk a visible monster north, east, south and west. It shows an up, right, existing down, and mirrored-right frame respectively; its walk cycle continues normally and its hitbox/route does not shift.
 Integration (Claude Code): `Wanderer` gained a `facing:'down'|'up'|'right'|'left'` field (default `down`), updated only when a patrol step actually lands (`dy<0`→up, `dy>0`→down, `dx>0`→right, `dx<0`→left -- `WANDER_STEPS` is cardinal-only so this is exhaustive). `wanderAsset(spriteId, facing, frame)` now resolves the directory prefix (`up_`/`right_`/none for down); `left` reuses the `right_*` files with `transform:scaleX(-1)` on the `<img>` only, tile position untouched. The shared idle/walk_1/walk_2 clock (`wanderFrame`) is unchanged -- purely presentational, no collision/patrol/combat/save impact. `npm test` 97/97 green.
+
+### ART-029 - Shared equipment art, last 2 pieces
+Status: REQUESTED
+Requested by: Claude Code
+Gameplay purpose: close the last gap in shared-equipment art coverage (Contrato 10 of the Quadro de Contratos). An automated audit of every `Equipment` entry's `arte`/`imagem` path against disk (importing `EQUIPMENT` from `src/store/game.ts` and checking `fs.existsSync` for each, same method as `qa-verification.test.ts`'s boss-art check) found only these 2 missing out of the full catalog — everything else has been closed since the last art-regen pass.
+Required asset ids and states:
+- `andarilhos_calcas_t0` — "Calças de Andarilhos" (tier 0 of the Andarilhos shared-legwear line; class group: monge, caçadora, caçador)
+- `andarilhos_botas_t0` — "Botas de Andarilhos" (tier 0 of the Andarilhos shared-boots line; same class group)
+Target paths:
+- `public/assets/art/hd/shared-legwear/andarilhos_calcas_t0.webp`
+- `public/assets/art/hd/shared-boots/andarilhos_botas_t0.webp`
+Canvas dimensions / tile scale: match the sibling tier-1 files in the same folders for consistency — `andarilhos_calcas_t1.webp` is 1491x1536 RGB, `andarilhos_botas_t1.webp` is 1536x1342 RGB. No alpha channel needed (siblings are flat RGB card art, not a cutout sprite).
+Transparency required: no.
+Interaction states: none — static item-card art, same as every other tier in this line.
+Visual references or territory: match the "Andarilhos" theme already established by the 7 other tiers already delivered in both folders (t1 through t7) and by the already-complete `andarilhos_capacete_t0.webp` (tier 0 of the sibling headgear line, same folder family) — light traveler's gear, agile/scout silhouette, earth-tone leather and cloth. Tier 0 should read as the humblest/starting-tier version of the set (plainer than t1), consistent with how every other shared-equipment group's t0 looks a step below its t1.
+Code dependency: none — `sharedArtPath()` in `src/data/sharedEquipment.ts` already points at these exact paths; the entries just need the files to exist. No code change required once delivered.
+Acceptance check: both files exist on disk at the target paths above; re-running the audit script (`EQUIPMENT` catalog vs `fs.existsSync` on every `arte`/`imagem` path) reports zero missing.
 
 ## Handoff Log
 
