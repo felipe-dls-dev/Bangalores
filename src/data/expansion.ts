@@ -1,6 +1,14 @@
 export type DifficultyMode='aventura'|'veterano'|'lendario'
 export type Element='fisico'|'fogo'|'gelo'|'natureza'|'sombra'|'luz'|'arcano'
-export const DIFFICULTIES={aventura:{nome:'Aventura',enemy:.88,reward:1},veterano:{nome:'Veterano',enemy:1,reward:1.12},lendario:{nome:'Lendário',enemy:1.22,reward:1.32}} as const
+// Contrato 6 do Quadro de Contratos: "Aventura" já existia, mas só 12% mais fraco que o padrão
+// não entregava "sem a pressão do combate" -- suavizado pra 40% mais fraco (perto do que um modo
+// história de verdade precisa) e ganhou uma descrição própria, exibida na tela de Crônicas junto
+// com os multiplicadores, pra deixar claro pra quem esse modo é.
+export const DIFFICULTIES={
+ aventura:{nome:'Aventura',enemy:.6,reward:1,descricao:'Foque na história: inimigos bem mais fracos, ideal pra acompanhar as Crônicas sem se preocupar com o combate.'},
+ veterano:{nome:'Veterano',enemy:1,reward:1.12,descricao:'A experiência padrão do jogo, equilibrada entre desafio e recompensa.'},
+ lendario:{nome:'Lendário',enemy:1.22,reward:1.32,descricao:'Inimigos mais fortes e recompensas maiores, para quem já domina o combate.'}
+} as const
 export const CLASS_IDENTITIES={guerreiro:{nome:'Mestre de Armas',texto:'Combos, contra-ataques e dano constante.',elemento:'fisico'},guardiao:{nome:'Bastião',texto:'Escudos, redução de dano e retaliação.',elemento:'luz'},cacadora:{nome:'Sombra Veloz',texto:'Críticos, sombras, esquiva e saque.',elemento:'sombra'},arcanista:{nome:'Tecelão Arcano',texto:'Elementos, controle e manipulação dos dados.',elemento:'arcano'}} as const
 // Elemento de ataque/resistência associado a cada classe, usado para marcar armas e
 // equipamentos de defesa gerados por classe (offhands, headgear, armorSets, legwear,
@@ -62,6 +70,48 @@ export const SUBREGION_EQUIPMENT_KEYWORDS:Array<{theme:RegExp;item:RegExp}>=[
  {theme:/botas/i,item:/botas/i},
 ]
 export function subregionEquipmentKeyword(temaLoot:string|undefined){return temaLoot?SUBREGION_EQUIPMENT_KEYWORDS.find(k=>k.theme.test(temaLoot))?.item:undefined}
+
+// Contrato 47 do Quadro de Contratos: desafios diários/semanais leves, um motivo concreto pra
+// voltar todo dia. Em vez de sortear e PERSISTIR uma lista de desafios ativos (que exigiria uma
+// rotina de expiração/renovação em algum lugar), os desafios são DERIVADOS deterministicamente da
+// data atual (dia desde a época Unix pro diário, semana ISO pro semanal) -- todo jogador vê os
+// mesmos desafios no mesmo dia, e um novo conjunto "aparece" sozinho à meia-noite sem nenhum
+// código de expiração: é só uma chave (id) diferente, que os Records de progresso/reivindicado
+// (challengeProgress/challengeClaimed em game.ts) nunca viram até o metric bater de novo.
+export type ChallengeMetric='combat_win'|'dungeon_win'|'guild_delivery'
+interface ChallengeDef{metric:ChallengeMetric;target:number;label:string;reward:number}
+const DAILY_CHALLENGE_POOL:ChallengeDef[]=[
+ {metric:'combat_win',target:3,label:'Vença 3 combates',reward:25},
+ {metric:'dungeon_win',target:1,label:'Vença 1 andar de masmorra infinita',reward:30},
+ {metric:'combat_win',target:5,label:'Vença 5 combates',reward:35},
+]
+const WEEKLY_CHALLENGE_POOL:ChallengeDef[]=[
+ {metric:'guild_delivery',target:1,label:'Entregue 1 missão da Guilda',reward:120},
+ {metric:'dungeon_win',target:5,label:'Vença 5 andares de masmorra infinita',reward:150},
+ {metric:'combat_win',target:20,label:'Vença 20 combates',reward:140},
+]
+const DAY_MS=86400000
+function dayIndex(now:number){return Math.floor(now/DAY_MS)}
+// Semana ISO simplificada (segunda a domingo) -- só precisa ser estável e consistente entre
+// jogadores no mesmo dia, não precisa bater com a numeração oficial de semana do calendário.
+function weekIndex(now:number){return Math.floor(dayIndex(now)/7)}
+export interface Challenge{id:string;kind:'daily'|'weekly';metric:ChallengeMetric;target:number;label:string;reward:number}
+export function activeChallenges(now=Date.now()):Challenge[]{
+ const di=dayIndex(now),wi=weekIndex(now)
+ const first=DAILY_CHALLENGE_POOL[di%DAILY_CHALLENGE_POOL.length],second=DAILY_CHALLENGE_POOL[(di+1)%DAILY_CHALLENGE_POOL.length]
+ const weekly=WEEKLY_CHALLENGE_POOL[wi%WEEKLY_CHALLENGE_POOL.length]
+ return[
+  {id:`daily_a_${di}`,kind:'daily',...first},
+  {id:`daily_b_${di}`,kind:'daily',...second},
+  {id:`weekly_${wi}`,kind:'weekly',...weekly}
+ ]
+}
+export function bumpChallengeProgress(progress:Record<string,number>|undefined,metrics:ChallengeMetric[],now=Date.now()):Record<string,number>{
+ if(!metrics.length)return progress??{}
+ const result={...(progress??{})}
+ for(const challenge of activeChallenges(now))if(metrics.includes(challenge.metric))result[challenge.id]=(result[challenge.id]??0)+1
+ return result
+}
 export const SET_BONUSES=[{key:'lua',nome:'Regalia de Abdendriel',two:'+1 defesa',four:'+4 vida'},{key:'cinza',nome:'Arsenal das Cinzas',two:'+1 ataque',four:'primeiro ataque causa +2 de dano'},{key:'kh ar|khar|runa|bronze',nome:'Legado de Kholgard',two:'+3 vida',four:'+3 escudo inicial'},{key:'eclipse|véu|vazio',nome:'Vestes do Sol Negro',two:'+1 ataque',four:'+1 em rolagens contra chefes'}]
 export interface SubclassChoice {
   id: string

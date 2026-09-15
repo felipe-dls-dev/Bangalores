@@ -8,7 +8,7 @@ import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, Shop
 import { TileWorldExplorer, getRegionMap, ALL_MONOLITHS } from './regionMap'
 import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, regionListSort, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, attunementItemLevel, attunementResistanceReduction, attunementStatusChance, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, storyModifiers, specializationBonuses, equipmentInstanceBreakdown, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, HERO_ULTIMATES, type AttackAnimType, type Summon, type SummonType, type GuildRankId, ACHIEVEMENTS, unlockedAchievements } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment, Territory } from './types'
-import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, SUBREGION_THEME_MATERIALS, TALENTS, HERO_SUBCLASSES, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
+import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, SUBREGION_THEME_MATERIALS, TALENTS, HERO_SUBCLASSES, activeChallenges, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
 import { npcsForRegion, npcById, type NpcDefinition } from './data/npcs'
 import { STORY_QUESTS, questById, questsOfferedByNpc, questsDeliverableToNpc, type StoryQuest } from './data/storyQuests'
@@ -18,7 +18,7 @@ import { selectCoopAutoSummonType, shouldUseCoopAutoHeroSkill } from './online/c
 import { selectAutoItemSkill } from './autoCombat'
 import { playSfx, isAudioMuted, setAudioMuted, type SfxId } from './audio'
 import { AuthProvider, useAuth } from './online/AuthContext'
-import PersistentCoopScreen from './online/CoopScreen'
+import PersistentCoopScreen, { CoopEmoteBar, CoopEmoteToast } from './online/CoopScreen'
 import './styles.css'
 
 gsap.registerPlugin(useGSAP)
@@ -1558,7 +1558,7 @@ function StoryQuestsJournalPanel() {
   )
 }
 
-function ChronicleScreen(){const g=useGame(),identity=CLASS_IDENTITIES[g.heroId as keyof typeof CLASS_IDENTITIES];return <div className="chronicle-page"><Panel className="chronicle-hero"><span className="eyebrow">CRÔNICAS DA CAMPANHA</span><h1>Crônicas de Havendown</h1><p>{identity?.nome}: {identity?.texto}</p><div className="difficulty-row">{Object.entries(DIFFICULTIES).map(([id,d])=><button className={g.difficultyMode===id?'active':''} onClick={()=>g.setDifficulty(id as DifficultyMode)} key={id}><strong>{d.nome}</strong><small>Inimigos ×{d.enemy} • recompensas ×{d.reward}</small></button>)}</div></Panel><div className="moved-systems"><StoryQuestsJournalPanel/><StoryCampaignPanel/><AchievementsPanel/><ProgressHistoryPanel/><DungeonPanel/><BestiaryPanel/><EquipmentRulesPanel/></div></div>}
+function ChronicleScreen(){const g=useGame(),identity=CLASS_IDENTITIES[g.heroId as keyof typeof CLASS_IDENTITIES],activeDifficulty=DIFFICULTIES[g.difficultyMode as keyof typeof DIFFICULTIES]??DIFFICULTIES.veterano;return <div className="chronicle-page"><Panel className="chronicle-hero"><span className="eyebrow">CRÔNICAS DA CAMPANHA</span><h1>Crônicas de Havendown</h1><p>{identity?.nome}: {identity?.texto}</p><div className="difficulty-row">{Object.entries(DIFFICULTIES).map(([id,d])=><button className={g.difficultyMode===id?'active':''} title={d.descricao} onClick={()=>g.setDifficulty(id as DifficultyMode)} key={id}><strong>{d.nome}</strong><small>Inimigos ×{d.enemy} • recompensas ×{d.reward}</small></button>)}</div><p className="difficulty-description">{activeDifficulty.descricao}</p></Panel>{g.difficultyMode==='aventura'&&<div className="exploration-note"><Sparkles/>Modo Aventura ativo: combate mais leve pra você aproveitar a história em paz. Troque a qualquer momento aqui mesmo.</div>}<div className="moved-systems"><StoryQuestsJournalPanel/><StoryCampaignPanel/><AchievementsPanel/><ProgressHistoryPanel/><DungeonPanel/><BestiaryPanel/><EquipmentRulesPanel/></div></div>}
 function AttrRow({label,value,n,detail,onPlus,disabled}:{label:string;value:any;n:number;detail?:string;onPlus:()=>void;disabled:boolean}){return <div className="attr-row"><div><span>{label}</span><strong>{value}</strong><small>Pontos distribuídos: {n}</small>{detail&&<small className="attr-detail">{detail}</small>}</div><button disabled={disabled} title={disabled?'Nenhum ponto de atributo disponível':`Adicionar ponto em ${label}`} aria-label={`Adicionar ponto em ${label}`} onClick={onPlus}><Plus/></button></div>}
 function InventoryScreen(){
   const g=useGame()
@@ -2075,6 +2075,8 @@ function CombatScreen(){
   <div className="combat-hero-area">
     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds} attacking={heroActing} impactKind={heroImpact} turnOwner={myTurn&&!g.animating}/>
     {isCoop&&<CoopTeammatesRow coop={coop} battle={battle}/>}
+    {isCoop&&<CoopEmoteBar className="combat-emote-bar"/>}
+    {isCoop&&<CoopEmoteToast/>}
     {currentSummons.length>0&&<div className="summon-row">{currentSummons.map((fera,index)=><article key={`${fera.tipo}-${index}`}><Sparkles/><span><strong>{fera.nome}</strong><small>ATQ {fera.ataque} • DEF {fera.defesa} • VIDA {fera.hp}/{fera.maxHp}</small><i><b style={{width:`${fera.hp/fera.maxHp*100}%`}}/></i></span></article>)}</div>}
     <div className={`hero-ultimate-intent${(g.ultimateGauge??0)>=100?' ready':''}`}>
       <small><Zap size={11}/> {g.heroId?HERO_ULTIMATES[g.heroId]?.nome:'Golpe Supremo'}</small>
@@ -2413,6 +2415,21 @@ function GuildHerald(){
   </div>}
  </div>
 }
+// Contrato 47 do Quadro de Contratos: desafios diários/semanais leves. Vive na tela da Guilda
+// (não uma tela própria) porque é exatamente o mesmo tipo de "contrato com recompensa" que a
+// Guilda já mostra -- só que gerado automaticamente pela data em vez de aceito manualmente.
+function ChallengesPanel(){
+ const g=useGame(),challenges=activeChallenges()
+ return <section className="challenges-panel"><h2><Target size={17}/>Desafios</h2><div className="challenges-grid">{challenges.map(c=>{
+  const progress=Math.min(c.target,g.challengeProgress?.[c.id]??0),ready=progress>=c.target,claimed=Boolean(g.challengeClaimed?.[c.id])
+  return <article className={`challenge-card${claimed?' claimed':ready?' ready':''}`} key={c.id}>
+   <span className={`challenge-kind challenge-kind-${c.kind}`}>{c.kind==='daily'?'DIÁRIO':'SEMANAL'}</span>
+   <strong>{c.label}</strong>
+   <div className="challenge-progress"><div className="xp-track"><div style={{width:`${progress/c.target*100}%`}}/></div><small>{progress}/{c.target}</small></div>
+   <div className="challenge-reward"><Coins size={13}/>{c.reward}{claimed?<button disabled>Resgatado</button>:ready?<button className="primary" onClick={()=>g.claimChallenge(c.id)}>Resgatar</button>:<button disabled>Em andamento</button>}</div>
+  </article>
+ })}</div></section>
+}
 function GuildScreen(){
  const g=useGame()
  const [category,setCategory]=React.useState<(typeof GUILD_MISSION_CATEGORIES)[number]['id']>('todos')
@@ -2432,6 +2449,7 @@ function GuildScreen(){
  const visibleMissions=sortGuildMissionsByRank(GUILD_MISSIONS.filter(m=>GUILD_MISSION_CATEGORIES.find(c=>c.id===category)!.match(m.tipo)))
  return <div className="guild-page"><Panel className="guild-head"><button onClick={()=>g.setScreen('map')}><ArrowLeft/>Voltar ao mapa</button><div><span className="eyebrow">SALÃO DOS AVENTUREIROS</span><h1>Guilda de Havendown</h1><p>Aceite contratos, aumente sua reputação e conquiste acesso às missões mais valiosas.</p></div><Shield className="guild-crest"/></Panel><div className="guild-summary"><span><ScrollText/><small>MISSÕES ATIVAS</small><strong>{active}</strong></span><span><Trophy/><small>PRONTAS</small><strong>{completed}</strong></span><span><Shield/><small>RANK</small><strong>{rank.nome}</strong></span></div><div className="screen-intro"><small>ORDEM SUGERIDA</small><p>Primeiro veja seu rank, depois o que já está pronto para resgate e por fim os contratos bloqueados. Isso reduz a chance de se perder na lista.</p></div>
  <NpcBanner name={GUILD_LEADER.nome} title={GUILD_LEADER.titulo} line={guildLeaderLine(g,active,completed,reputation)} image={GUILD_LEADER.retrato}/>
+ <ChallengesPanel/>
  <section className="guild-rank-panel"><div className="guild-current-rank" style={{'--rank-color':rank.cor} as React.CSSProperties}><Shield/><span><small>RANK DE AVENTUREIRO</small><strong>{rank.nome}</strong></span></div><div className="guild-rank-progress"><div><span>{reputation} pontos de reputação</span><strong>{nextRank?`Próximo: ${nextRank.nome} (${nextRank.minimo})`:'Rank máximo alcançado'}</strong></div><div className="xp-track"><div style={{width:nextRank?`${Math.min(100,(reputation-rank.minimo)/(nextRank.minimo-rank.minimo)*100)}%`:'100%'}}/></div></div><div className="guild-rank-road">{GUILD_RANKS.map(r=><span className={reputation>=r.minimo?'reached':''} style={{'--rank-color':r.cor} as React.CSSProperties} key={r.id} title={`${r.nome}: ${r.minimo} pontos`}><i/>{r.nome}</span>)}</div></section>
  <div className="guild-summary"><span><ScrollText/><small>MISSÕES ATIVAS</small><strong>{active}</strong></span><span><Trophy/><small>PRONTAS PARA RESGATE</small><strong>{completed}</strong></span><span><Package/><small>ESPAÇO NA BOLSA</small><strong>{g.equipmentBag.length}/{equipmentBagCapacity(g)}</strong></span></div>{g.guildNotice&&<div className="guild-notice"><Sparkles/>{g.guildNotice}</div>}
  <div className="guild-filter">{GUILD_MISSION_CATEGORIES.map(c=><button key={c.id} className={category===c.id?'active':''} onClick={()=>setCategory(c.id)}>{c.label}<small>{GUILD_MISSIONS.filter(m=>c.match(m.tipo)).length}</small></button>)}</div>

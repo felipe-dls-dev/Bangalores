@@ -8,6 +8,30 @@ import { useCoop, type MarketListing } from './CoopContext'
 import { getRegionMap, TileWorldExplorer } from '../regionMap'
 
 const art=(hero:any)=>'./'+(hero?.arte??hero?.imagem??'')
+// Contrato 17 do Quadro de Contratos: emotes rápidos (não chat livre, sem risco de moderação) --
+// exportados daqui pra CombatScreen (main.tsx) também poder usar os mesmos dois componentes
+// durante uma batalha cooperativa, sem duplicar a lista nem a lógica de exibição/expiração.
+export const COOP_EMOTES=['👋','⚔️','❤️','🏃','🎉','😅','👍','⏳']
+export function CoopEmoteBar({className}:{className?:string}){
+ const coop=useCoop()
+ return <div className={`coop-emote-bar${className?' '+className:''}`}>{COOP_EMOTES.map(emote=><button key={emote} type="button" disabled={coop.busy} onClick={()=>void coop.sendEmote(emote)} title="Enviar emote pro grupo">{emote}</button>)}</div>
+}
+const EMOTE_DISPLAY_MS=3000
+export function CoopEmoteToast(){
+ const coop=useCoop()
+ const lastEmote=coop.room?.shared_state?.lastEmote as {userId:string;displayName:string;emote:string;ts:number}|undefined
+ const [visible,setVisible]=React.useState(false)
+ const seenTs=React.useRef(0)
+ React.useEffect(()=>{
+  if(!lastEmote||lastEmote.ts===seenTs.current)return
+  seenTs.current=lastEmote.ts
+  setVisible(true)
+  const timer=setTimeout(()=>setVisible(false),EMOTE_DISPLAY_MS)
+  return()=>clearTimeout(timer)
+ },[lastEmote?.ts])
+ if(!visible||!lastEmote)return null
+ return <div className="coop-emote-toast" key={lastEmote.ts}><span className="coop-emote-toast-icon">{lastEmote.emote}</span><small>{lastEmote.userId===coop.userId?'Você':lastEmote.displayName}</small></div>
+}
 // Só existe arte de sprite de mapa (pixel art nas 4 direções) pra estes heróis -- os demais (e
 // NPCs) caem no fallback 'adventurer' do próprio TileWorldExplorer, igual ao mapa solo.
 const MAP_SPRITE_HEROES=['guerreiro','guardiao','cacadora','arcanista','druida','cacador','monge','sacerdotisa','conjurador']
@@ -37,7 +61,7 @@ export default function PersistentCoopScreen(){
  if(!onlineConfigured)return <div className="coop-page"><section className="panel coop-setup"><WifiOff/><h2>Serviço online ainda não conectado</h2></section></div>
  if(!room)return <div className="coop-page"><section className="panel coop-hero"><div><span className="eyebrow">BANGALORE'S ONLINE</span><h1>Cooperativo em tempo real</h1></div><Wifi className="online"/></section><div className="coop-entry"><section className="panel"><h2>Seu aventureiro</h2><label>Nome visível<input maxLength={24} value={name} onChange={e=>setName(e.target.value)}/></label></section><section className="panel"><h2>Criar ou entrar</h2><button className="primary" disabled={busy||!name.trim()} onClick={()=>void coop.create(name,g.heroId)}><Users/>Criar sala cooperativa</button><div className="coop-divider"><span/>OU<span/></div><label>Código da sala<input value={code} onChange={e=>setCode(normalizeRoomCode(e.target.value))} maxLength={6}/></label>{code&&code===codeFromLink&&<p className="coop-notice">Código preenchido pelo link de convite recebido.</p>}<button disabled={busy||!name.trim()||code.length!==6} onClick={()=>void coop.join(code,name,g.heroId)}>Entrar na sala</button>{notice&&<p className="coop-notice">{notice}</p>}</section></div></div>
  const followerGhosts=members.filter(member=>member.user_id!==room.host_id).map(member=>({id:member.user_id,spriteId:mapSpriteFor(member.hero_id)}))
- return <div className="coop-page coop-page-room"><section className="panel coop-hero"><div><span className="eyebrow">BANGALORE'S ONLINE</span><h1>Cooperativo em tempo real</h1><p>A sala permanece conectada enquanto você usa os outros menus.</p></div><Wifi className="online"/></section><section className="panel coop-room"><header><div><small>CÓDIGO DA SALA</small><strong>{room.code}</strong></div><button onClick={()=>navigator.clipboard?.writeText(room.code)}><Copy/>Copiar código</button><button onClick={()=>copyInviteLink(room.code)}><Link2/>{linkCopied?'Link copiado!':'Copiar link de convite'}</button><span className="coop-live"><Wifi/> {onlineCount||members.length} online</span><button className="danger-action" onClick={()=>void coop.leave()}><LogOut/>Sair</button></header><div className="coop-member-cards">{[...members].sort((a,b)=>Number(b.user_id===room.host_id)-Number(a.user_id===room.host_id)).map(member=>{
+ return <div className="coop-page coop-page-room"><section className="panel coop-hero"><div><span className="eyebrow">BANGALORE'S ONLINE</span><h1>Cooperativo em tempo real</h1><p>A sala permanece conectada enquanto você usa os outros menus.</p><CoopEmoteBar/></div><Wifi className="online"/><CoopEmoteToast/></section><section className="panel coop-room"><header><div><small>CÓDIGO DA SALA</small><strong>{room.code}</strong></div><button onClick={()=>navigator.clipboard?.writeText(room.code)}><Copy/>Copiar código</button><button onClick={()=>copyInviteLink(room.code)}><Link2/>{linkCopied?'Link copiado!':'Copiar link de convite'}</button><span className="coop-live"><Wifi/> {onlineCount||members.length} online</span><button className="danger-action" onClick={()=>void coop.leave()}><LogOut/>Sair</button></header><div className="coop-member-cards">{[...members].sort((a,b)=>Number(b.user_id===room.host_id)-Number(a.user_id===room.host_id)).map(member=>{
   const hero=HEROES.find(item=>item.id===member.hero_id),host=member.user_id===room.host_id,isMe=member.user_id===userId
   const vitals:MemberVitals|undefined=isMe?{hp:g.hp,maxHp:myMaxHp,level:levelInfo(g.xp).lvl,attack:attackValue(g),defense:defenseValue(g),shield:g.shield,locked:isNavigationLocked(g)}:memberVitals[member.user_id]
   const hpPct=vitals?Math.max(0,Math.min(100,vitals.hp/Math.max(1,vitals.maxHp)*100)):100,isDown=Boolean(vitals&&vitals.hp<=0),isLocked=Boolean(!isMe&&vitals?.locked)

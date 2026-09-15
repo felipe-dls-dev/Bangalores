@@ -1,7 +1,7 @@
 {
   "name": "bangalores-web",
   "private": true,
-  "version": "0.8.82",
+  "version": "0.8.83",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:balance": "vitest run --config vitest.balance.config.ts scripts/balance-sim.test.ts",
+    "test:balance:coop": "vitest run --config vitest.balance.config.ts scripts/balance-sim-coop.test.ts",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write .",
