@@ -113,7 +113,13 @@ export const TERRITORIES = [...(territories as Territory[]).map(t=>({...t,mundo:
 // anterior/próxima) quanto no mapa navegável do Coop, pra resolver saídas 'prev'/'next'.
 export const REGION_LIST_ORDER:Record<string,number>={campos_dourados:1,floresta_lunargenta:2,khar_dur:3,montanhas_cinzentas:4,pico_escarlate:5,terras_mortas:6,coracao_eclipse:7}
 export function regionListSort(a:Territory,b:Territory){return (REGION_LIST_ORDER[a.id]??a.dificuldade)-(REGION_LIST_ORDER[b.id]??b.dificuldade)||a.dificuldade-b.dificuldade}
-export function worldUnlocked(s:GameState,world:string){if(world==='havendown')return true;return s.storyChapterId==='epilogo_luz'||s.storyChapterId==='epilogo_sombra'||(s.completedStoryQuests??[]).includes('q_cross_oceans')}
+// q_cross_oceans só pode ser ENTREGUE em Frostgard (Steelmere) -- Capitã Vanya, o alvo da
+// entrega, mora lá (ver npcs.ts). Antes esta função só liberava o mundo quando a missão já
+// estava COMPLETA, criando uma trava impossível: o jogador nunca conseguia pisar em Steelmere
+// pra entregar o Selo dos Mares que abre a rota, porque a rota só abria depois da entrega. Aceitar
+// a missão (activeStoryQuests) já entrega o Selo (ver acceptStoryQuest) e a própria narrativa diz
+// que ele é o que "permite cruzar a tempestade" -- então aceitar já deve liberar a viagem.
+export function worldUnlocked(s:GameState,world:string){if(world==='havendown')return true;return s.storyChapterId==='epilogo_luz'||s.storyChapterId==='epilogo_sombra'||(s.completedStoryQuests??[]).includes('q_cross_oceans')||Boolean((s.activeStoryQuests??{})['q_cross_oceans'])}
 export const SUBREGIONS = ALL_SUBREGIONS.map(subregion=>({...subregion,inimigos:[...subregion.inimigos.map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,hdArt(enemy.arte))})),...(EXTRA_SUBREGION_ENEMIES[subregion.id]??[]).map(enemy=>({...enemy,arte:namedMonsterArt(enemy.nome,enemy.arte)}))],chefe:{...subregion.chefe,arte:BOSS_ART[subregion.chefe.nome]??hdArt(subregion.chefe.arte)}}))
 const eventArtFromSource=(event:GameEvent)=>{
   const sourceNumber=Number(event.imagem.match(/\/(\d{3})_eventos_/)?.[1])

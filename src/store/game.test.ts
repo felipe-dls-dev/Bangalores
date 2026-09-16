@@ -1117,6 +1117,17 @@ describe('Sistema de Missões de História (Story Quests & NPCs)', () => {
     expect(unlocked).toBe(true)
   })
 
+  it('aceitar q_cross_oceans já desbloqueia Steelmere, sem exigir a entrega primeiro (evita soft-lock)', () => {
+    // vanya_mar (alvo da entrega de q_cross_oceans) mora em frostgard, uma região de Steelmere --
+    // se o mundo só destravasse ao COMPLETAR a missão, o jogador nunca conseguiria chegar até ela
+    // pra entregar, porque a viagem pra Steelmere (travelWorld) já exige worldUnlocked antes.
+    useGame.getState().newGame('guerreiro')
+    useGame.getState().acceptStoryQuest('q_cross_oceans')
+    expect(worldUnlocked(useGame.getState(), 'steelmere')).toBe(true)
+    useGame.getState().travelWorld('steelmere')
+    expect(useGame.getState().world).toBe('steelmere')
+  })
+
   it('todos os 14 territórios (Havendown e Steelmere) possuem NPCs residentes', () => {
     const territoriesHavendown = ['campos_dourados', 'floresta_lunargenta', 'montanhas_cinzentas', 'pico_escarlate', 'terras_mortas', 'khar_dur', 'coracao_eclipse']
     const territoriesSteelmere = ['frostgard', 'engrenverde', 'trilhouro', 'vulcannis', 'ferrujal', 'coroferro', 'aetherium']
