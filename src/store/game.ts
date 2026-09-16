@@ -1526,7 +1526,7 @@ function enemyApproachPhrase(enemy:Enemy){
  return pick(pool)
 }
 export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRoll:number,defenseRoll:number,critBonusPct=0){
- if(attackRoll===1)return{damage:0,selfDamage:Math.max(1,Math.floor(attackBase*.1))}
+ if(attackRoll===1)return{damage:0,selfDamage:Math.max(1,Math.floor(attackBase*.1)),effectiveAttack:0}
  const effectiveAttack=attackBase+(attackRoll===5?1:0)
  let damage=Math.max(1,effectiveAttack-defenseBase)
  if(attackRoll===6)damage=Math.max(1,Math.floor(damage*(1.5+critBonusPct)))
@@ -1534,7 +1534,9 @@ export function resolveCombatRoll(attackBase:number,defenseBase:number,attackRol
  else if(defenseRoll===2)damage+=1
  else if(defenseRoll===5)damage=Math.max(0,damage-1)
  else if(defenseRoll===6)damage=Math.floor(damage*.5)
- return{damage,selfDamage:0}
+ // effectiveAttack (dano bruto do golpe antes de defesa/escudo) menos o dano final é usado no
+ // coop pra creditar "dano resistido" a quem apanhou -- ver strike() em CoopContext.tsx.
+ return{damage,selfDamage:0,effectiveAttack}
 }
 // Sistema de condições elementais: cada elemento de ataque tem uma chance de aplicar uma
 // condição correspondente no alvo, a menos que ele resista (equipamento defensivo com o

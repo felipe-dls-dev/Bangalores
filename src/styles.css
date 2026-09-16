@@ -1803,6 +1803,7 @@ body::after{content:"VERSÃO 0.8.85 • 15/09/2026\A O Negociador (coop) agora t
 body::after{content:"VERSÃO 0.8.86 • 15/09/2026\A Postura de combate: Ofensiva (+20% Ataque/-20% Defesa), Defensiva (+20% Defesa/-20% Ataque) e Neutra, em solo e coop";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.87 • 15/09/2026\A Fix: destaque da postura de combate ativa sumia em regioes com tema visual proprio";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.88 • 15/09/2026\A Fix: monstros de masmorra so tinham a vida escalada pela profundidade; ataque/defesa ficavam presos, deixando-os cair de um golpe";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.89 • 16/09/2026\A Coop: rateio de ouro/XP agora tambem conta o dano resistido (defesa/escudo/resistencia) de cada jogador, nao so dano causado e cura";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

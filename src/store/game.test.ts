@@ -35,6 +35,17 @@ describe('resolveCombatRoll', () => {
     const r = resolveCombatRoll(1, 50, 3, 3)
     expect(r.damage).toBeGreaterThanOrEqual(1)
   })
+  it('effectiveAttack (raw hit power) is 0 on a fumble and unaffected by defense', () => {
+    expect(resolveCombatRoll(10, 2, 1, 3).effectiveAttack).toBe(0)
+    expect(resolveCombatRoll(10, 8, 3, 3).effectiveAttack).toBe(10)
+  })
+  it('high defense leaves a bigger gap between effectiveAttack and final damage (used as coop "damage resisted" credit)', () => {
+    const lowDefense = resolveCombatRoll(10, 1, 3, 3)
+    const highDefense = resolveCombatRoll(10, 8, 3, 3)
+    const resistedLow = lowDefense.effectiveAttack - lowDefense.damage
+    const resistedHigh = highDefense.effectiveAttack - highDefense.damage
+    expect(resistedHigh).toBeGreaterThan(resistedLow)
+  })
 })
 
 describe('sistemas de build aprofundados', () => {

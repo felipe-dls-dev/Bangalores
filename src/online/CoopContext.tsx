@@ -442,6 +442,11 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   // Fervor de Combate e escudo agora se aplicam da mesma forma a qualquer atacante inimigo
   // (chefe principal ou capanga), não só ao chefe.
   let appliedStatusKind:string|undefined,appliedStatusTargetName:string|undefined
+  // Quanto dano cada jogador evitou levar (defesa, rolagem de defesa, resistência elemental,
+  // escudo, esquiva ou interceptação de fera) -- entra no rateio de ouro/XP em CoopBattleSync
+  // (main.tsx) junto com dano causado e cura feita, pra um tank que segura os golpes do grupo
+  // (mas não cura nem bate tão forte quanto um mago, por exemplo) também ser recompensado.
+  const workingResisted:Record<string,number>={...(battle.damageResistedByPlayer??{})}
   const strike=(attackBase:number,bonus:number,canApplyStatus:boolean)=>{
    const target=pickTarget()
    if(!target?.user_id)return null
@@ -474,6 +479,8 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    }else{
     workingVitals[target.user_id]={...targetVitals,hp:Math.max(0,Number(targetVitals.hp??1)-damage),shield:Math.max(0,Number(targetVitals.shield??0)-shieldBlocked)}
    }
+   const resistedDamage=Math.max(0,Number(resolved.effectiveAttack??0)-damage)
+   if(resistedDamage>0)workingResisted[target.user_id]=Number(workingResisted[target.user_id]??0)+resistedDamage
    const fervorGain=!intercepting&&defenseRoll===6?Math.min(3,Number(targetBuffs.fervor??0)+1):Number(targetBuffs.fervor??0)
    const statusApplied=!intercepting&&canApplyStatus&&!rogueDodge&&!resolved.selfDamage&&damage>0&&!resisted&&naturalAttackRoll===6?applyElementalStatus(targetStun.status,enemyElement,attackBase):{status:targetStun.status}
    if(statusApplied.appliedKind){appliedStatusKind=statusApplied.appliedKind;appliedStatusTargetName=target.display_name}
@@ -509,7 +516,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    if(r.intercepting)return`${r.summonName} intercepta o golpe de ${r.minionName} destinado a ${targetMember?.display_name}! A fera sofre ${r.damage} de dano${r.summonDied?' e cai em combate!':'.'}`
    return r.rogueDodge?`${targetMember?.display_name} desviou do golpe de ${r.minionName}.`:`${r.minionName} atacou ${targetMember?.display_name} e causou ${r.damage} de dano${blocked}.`
   })
-  return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,enemyHp:enemyHpNow,enemyStatus:enemyStun.status,enemyRollBonus:0,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,fleeRoll:undefined,turn:Number(battle.turn??1)+1,status:wiped?'lost':'playing',activeUserId:wiped?null:next.activeUserId,lastRoll:{attacker:'enemy',naturalAttackRoll:mainStrike.naturalAttackRoll,attackBonus:mainStrike.attackBonus,attackBase:mainStrike.attackBase,defenseBase:mainStrike.defenseBase,attackEffect:attackEffect(mainStrike.attackRoll),defenseEffect:defenseEffect(mainStrike.defenseRoll),attackRoll:mainStrike.attackRoll,defenseRoll:mainStrike.defenseRoll,damage:mainStrike.damage,selfDamage:mainStrike.selfDamage,shieldBlocked:mainStrike.shieldBlocked||undefined,targetUserId:mainStrike.target.user_id,actor:battle.enemy?.nome},minionRolls,summonRolls,log:[...(battle.log??[]).slice(-15),...statusLogs,mainLog,...minionLogs,...(wiped?['A equipe foi derrotada.']:[])]}}
+  return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,enemyHp:enemyHpNow,enemyStatus:enemyStun.status,enemyRollBonus:0,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,fleeRoll:undefined,turn:Number(battle.turn??1)+1,status:wiped?'lost':'playing',activeUserId:wiped?null:next.activeUserId,damageResistedByPlayer:workingResisted,lastRoll:{attacker:'enemy',naturalAttackRoll:mainStrike.naturalAttackRoll,attackBonus:mainStrike.attackBonus,attackBase:mainStrike.attackBase,defenseBase:mainStrike.defenseBase,attackEffect:attackEffect(mainStrike.attackRoll),defenseEffect:defenseEffect(mainStrike.defenseRoll),attackRoll:mainStrike.attackRoll,defenseRoll:mainStrike.defenseRoll,damage:mainStrike.damage,selfDamage:mainStrike.selfDamage,shieldBlocked:mainStrike.shieldBlocked||undefined,targetUserId:mainStrike.target.user_id,actor:battle.enemy?.nome},minionRolls,summonRolls,log:[...(battle.log??[]).slice(-15),...statusLogs,mainLog,...minionLogs,...(wiped?['A equipe foi derrotada.']:[])]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar o turno inimigo.')}}
  const completeBattle=async()=>{try{await updateState(current=>({...current.shared_state,battle:{...(current.shared_state.battle as any),status:'completed',completedAt:new Date().toISOString()}}))}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível encerrar a batalha cooperativa.')}}
  // Antes gatilhada ao confirmar a viagem no dropdown; agora gatilhada pelo anfitrião ao aceitar
