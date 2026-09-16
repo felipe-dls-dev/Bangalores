@@ -500,7 +500,15 @@ function CoopBattleSync(){
   joinedBattle.current=battle.id
   g.startCoopCombat(battle.enemy,battle.subregionId)
  },[battle?.id,battle?.status,battle?.enemy,battle?.subregionId,screen,dungeonActive])
- React.useEffect(()=>{if(!battle?.id||typeof battle.enemyHp!=='number'||screen!=='combat'||enemyHp===battle.enemyHp)return;sync(battle.enemyHp)},[battle?.id,battle?.enemyHp,screen,enemyHp,sync])
+ // battle.status==='playing' + joinedBattle.current===battle.id garantem que só sincroniza a
+ // vida do inimigo quando o combate na tela É essa batalha coop específica E ela ainda está
+ // rolando -- sem essas duas checagens, um jogador que entra numa masmorra SOLO enquanto ainda
+ // está numa sala coop (dungeon usa a mesma tela 'combat') tinha o monstro zerado na hora: o
+ // objeto battle da sala fica preso no estado da ÚLTIMA luta coop (ex.: status 'won' e
+ // enemyHp:0 de uma vitória anterior, já com joinedBattle.current apontando pro mesmo id de
+ // quando essa luta ainda estava em andamento), e como esse efeito só checava screen==='combat',
+ // ele aplicava esse 0 leftover no inimigo da masmorra solo antes do primeiro ataque.
+ React.useEffect(()=>{if(!battle?.id||battle.status!=='playing'||typeof battle.enemyHp!=='number'||screen!=='combat'||joinedBattle.current!==battle.id||enemyHp===battle.enemyHp)return;sync(battle.enemyHp)},[battle?.id,battle?.status,battle?.enemyHp,screen,enemyHp,sync])
  // Negociador: quando um anúncio meu vira 'sold', credito o ouro localmente (funciona em
  // qualquer tela, não só com o Negociador aberto) e só então peço pra remover o anúncio da sala
  // -- settledSales evita creditar de novo caso settleMarketSale precise ser tentado mais de uma

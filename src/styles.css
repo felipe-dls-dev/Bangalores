@@ -1804,6 +1804,7 @@ body::after{content:"VERSÃO 0.8.86 • 15/09/2026\A Postura de combate: Ofensiv
 body::after{content:"VERSÃO 0.8.87 • 15/09/2026\A Fix: destaque da postura de combate ativa sumia em regioes com tema visual proprio";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.88 • 15/09/2026\A Fix: monstros de masmorra so tinham a vida escalada pela profundidade; ataque/defesa ficavam presos, deixando-os cair de um golpe";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.89 • 16/09/2026\A Coop: rateio de ouro/XP agora tambem conta o dano resistido (defesa/escudo/resistencia) de cada jogador, nao so dano causado e cura";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.90 • 16/09/2026\A Fix: masmorra solo dentro de uma sala coop zerava a vida do monstro antes do primeiro ataque, por causa de dados de uma batalha coop anterior ainda presos na sala";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
