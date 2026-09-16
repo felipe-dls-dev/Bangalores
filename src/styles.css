@@ -1238,6 +1238,10 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .world-travel-card small{color:#cfac69;letter-spacing:.16em;font-size:.62rem;font-weight:800;text-transform:uppercase}
 .world-travel-card p{margin:0;color:#e0d1b7;line-height:1.45;font-size:.86rem}
 .world-travel-card .map-travel-button{margin:4px 0 0}
+.world-travel-debug{border:1px dashed #b33f3f;background:linear-gradient(180deg,rgba(46,17,17,.66),rgba(15,7,7,.38))}
+.world-travel-debug small{color:#e08a8a}
+.world-travel-debug .map-travel-button{border-color:#b33f3f;background:linear-gradient(180deg,#2e1414,#160a0a)}
+.world-travel-debug .map-travel-button:hover{background:linear-gradient(180deg,#3a1a1a,#1c0d0d)}
 .map-index-soon{margin:0 0 4px;padding:.5rem .7rem;color:#a99879;font-size:.78rem;font-style:italic}
 /* Estas duas media queries ficavam no topo do arquivo, antes de várias regras base (.char-grid,
    .shop-grid etc.) que são redefinidas mais adiante — como CSS resolve por ordem de origem entre
@@ -1806,6 +1810,7 @@ body::after{content:"VERSÃO 0.8.88 • 15/09/2026\A Fix: monstros de masmorra s
 body::after{content:"VERSÃO 0.8.89 • 16/09/2026\A Coop: rateio de ouro/XP agora tambem conta o dano resistido (defesa/escudo/resistencia) de cada jogador, nao so dano causado e cura";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.90 • 16/09/2026\A Fix: masmorra solo dentro de uma sala coop zerava a vida do monstro antes do primeiro ataque, por causa de dados de uma batalha coop anterior ainda presos na sala";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.91 • 16/09/2026\A Fix: rota para Steelmere nunca abria -- o mundo so destravava ao ENTREGAR a missao da travessia, mas o alvo da entrega mora em Steelmere; agora aceitar a missao ja libera a viagem";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.92 • 16/09/2026\A Botao de teste no Mapa: viajar para Steelmere sem precisar da missao da travessia (so aparece enquanto o mundo ainda nao foi desbloqueado)";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
