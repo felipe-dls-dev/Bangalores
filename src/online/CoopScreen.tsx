@@ -1,6 +1,6 @@
 import React from 'react'
 import { ArrowLeftRight, Coins, Copy, Crown, Heart, Link2, LogOut, Map, PackageSearch, ShieldHalf, Sword, Users, Wifi, WifiOff } from 'lucide-react'
-import { attackValue, buildCoopEnemy, buildCoopRegionBoss, buildCoopSubregionBoss, CONSUMABLES, defenseValue, HEROES, hasCraftedEffect, heroResistances, heroWeaponAnimationType, isNavigationLocked, levelInfo, maxHp, regionListSort, SUBREGIONS, TERRITORIES, useGame } from '../store/game'
+import { attackValue, buildCoopEnemy, buildCoopRegionBoss, buildCoopSubregionBoss, CONSUMABLES, defenseValue, equipmentBagCapacity, equipmentByRef, HEROES, hasCraftedEffect, heroResistances, heroWeaponAnimationType, isNavigationLocked, levelInfo, maxHp, regionListSort, SUBREGIONS, TERRITORIES, useGame } from '../store/game'
 import { SPECIALIZATION_CHOICES } from '../data/expansion'
 import type { Enemy, Subregion } from '../types'
 import { normalizeRoomCode, onlineConfigured } from './supabase'
@@ -85,43 +85,89 @@ export default function PersistentCoopScreen(){
   </article>
  })}</div><footer><p>Cada jogador atualiza sua campanha; a experiência será proporcional ao dano causado.</p><button className="primary" disabled={!me||busy} onClick={()=>void coop.toggleReady(g.heroId)}>{me?.ready?'Cancelar prontidão':'Marcar como pronto'}</button></footer></section><section className="panel coop-map-panel"><h2><Map size={17}/> Exploração compartilhada</h2><p>{isHost?'Você lidera a expedição: ande pelo mapa com as setas/WASD -- o grupo te segue e entra nas mesmas emboscadas e batalhas.':'Você está seguindo o líder da sala pelo mapa. Emboscadas e chefes acontecem automaticamente para o grupo todo.'}</p>{isHost?<CoopHostMap key={sharedRegionId} regionId={sharedRegionId}/>:(sharedMapPos?<CoopFollowerMap key={sharedMapPos.regionId} mapPos={sharedMapPos} hostHeroId={hostMember?.hero_id} partyGhosts={followerGhosts}/>:<p className="coop-notice">Aguardando o anfitrião iniciar a exploração...</p>)}</section><CoopMarketPanel members={members} userId={userId}/>{notice&&<p className="coop-notice">{notice}</p>}</div>
 }
-// O Negociador: uma vitrine de consumíveis só entre quem está na MESMA sala agora (ver o tipo
-// MarketListing em CoopContext.tsx pra entender por que não é uma troca assíncrona entre contas
-// offline). Equipamentos ficam de fora por enquanto -- forja/gemas/elementos de um item vivem em
-// Records separados chaveados pela ref da instância (equipmentUpgrades, equipmentGems etc.), e
-// mover só a ref pra bolsa de outro jogador apagaria esses bônus sem aviso nenhum. Consumíveis
-// são só um contador (inventory[id]), então a troca é simples e segura.
+// O Negociador: uma vitrine de itens (consumíveis e equipamentos) só entre quem está na MESMA
+// sala agora (ver o tipo MarketListing em CoopContext.tsx pra entender por que não é uma troca
+// assíncrona entre contas offline). Consumíveis são só um contador (inventory[id]) -- troca
+// simples de qty. Equipamento é uma ref de instância única; a forja/gemas/elemento de uma ref
+// vivem em Records separados no save (equipmentUpgrades, equipmentGems etc.), então o anúncio
+// carrega um snapshot desses bônus (listing.forge) que a store re-key pra uma ref nova no
+// comprador ao completar a compra (ver completeMarketEquipmentPurchase em game.ts) -- sem isso o
+// bônus forjado desapareceria ao trocar de dono.
+const EQUIPMENT_RARITY_LABEL:Record<string,string>={comum:'Comum',incomum:'Incomum',raro:'Raro',epico:'Épico',lendario:'Lendário',mitico:'Mítico',heroico:'Heróico'}
 function CoopMarketPanel({members,userId}:{members:{user_id:string;display_name:string}[];userId:string}){
  const g=useGame(),coop=useCoop(),market=(coop.room?.shared_state?.market as MarketListing[]|undefined)??[]
- const owned=Object.entries(g.inventory).filter(([,qty])=>qty>0).map(([id,qty])=>({id,qty,item:CONSUMABLES.find(c=>c.id===id)})).filter(entry=>entry.item)
+ const ownedConsumables=Object.entries(g.inventory).filter(([,qty])=>qty>0).map(([id,qty])=>({id,qty,item:CONSUMABLES.find(c=>c.id===id)})).filter(entry=>entry.item)
+ const ownedEquipment=g.equipmentBag.map(ref=>({ref,e:equipmentByRef(ref),upgrade:g.equipmentUpgrades[ref]??0,gems:g.equipmentGems[ref]?.length??0})).filter(entry=>entry.e&&!g.lockedEquipment?.[entry.ref])
+ const [kind,setKind]=React.useState<'consumable'|'equipment'>('consumable')
  const [itemId,setItemId]=React.useState(''),[qty,setQty]=React.useState(1),[price,setPrice]=React.useState(10)
- React.useEffect(()=>{if(!itemId&&owned.length)setItemId(owned[0].id)},[owned.length])
- const selected=owned.find(entry=>entry.id===itemId)
+ const pool=kind==='consumable'?ownedConsumables.map(entry=>entry.id):ownedEquipment.map(entry=>entry.ref)
+ React.useEffect(()=>{if(!pool.includes(itemId))setItemId(pool[0]??'')},[kind,pool.join(',')])
+ const selectedConsumable=ownedConsumables.find(entry=>entry.id===itemId)
+ const selectedEquipment=ownedEquipment.find(entry=>entry.ref===itemId)
  const mine=market.filter(listing=>listing.sellerId===userId)
  const others=market.filter(listing=>listing.sellerId!==userId&&listing.status==='listed')
- const doList=async()=>{
-  if(!selected||qty<1||qty>selected.qty||price<1)return
-  if(!g.escrowMarketItem(itemId,qty))return
-  try{await coop.listMarketItem(itemId,qty,price);setQty(1);setPrice(10)}catch{g.refundMarketItem(itemId,qty)}
+ const equipmentLabel=(ref:string,forge?:{upgrade?:number;gems?:string[]})=>{
+  const e=equipmentByRef(ref);if(!e)return ref
+  const bits=[e.nome]
+  if(forge?.upgrade)bits.push(`+${forge.upgrade}`)
+  if(forge?.gems?.length)bits.push(`💎${forge.gems.length}`)
+  return bits.join(' ')
  }
- const doCancel=async(listing:MarketListing)=>{try{await coop.cancelMarketListing(listing.id);g.refundMarketItem(listing.itemId,listing.qty)}catch{}}
- const doBuy=async(listing:MarketListing)=>{if(g.gold<listing.price)return;try{await coop.buyMarketListing(listing.id);g.completeMarketPurchase(listing.itemId,listing.qty,listing.price)}catch{}}
+ const doList=async()=>{
+  if(price<1)return
+  if(kind==='consumable'){
+   if(!selectedConsumable||qty<1||qty>selectedConsumable.qty)return
+   if(!g.escrowMarketItem(itemId,qty))return
+   try{await coop.listMarketItem(itemId,qty,price,'consumable');setQty(1);setPrice(10)}catch{g.refundMarketItem(itemId,qty)}
+  }else{
+   if(!selectedEquipment)return
+   const snapshot=g.escrowMarketEquipment(itemId)
+   if(snapshot===false)return
+   try{await coop.listMarketItem(itemId,1,price,'equipment',snapshot);setPrice(10)}catch{g.refundMarketEquipment(itemId,snapshot)}
+  }
+ }
+ const doCancel=async(listing:MarketListing)=>{
+  try{
+   await coop.cancelMarketListing(listing.id)
+   if(listing.kind==='equipment')g.refundMarketEquipment(listing.itemId,listing.forge??{})
+   else g.refundMarketItem(listing.itemId,listing.qty)
+  }catch{}
+ }
+ const equipmentBagFull=g.equipmentBag.length>=equipmentBagCapacity(g)
+ const doBuy=async(listing:MarketListing)=>{
+  if(g.gold<listing.price)return
+  if(listing.kind==='equipment'&&equipmentBagFull)return
+  try{
+   await coop.buyMarketListing(listing.id)
+   if(listing.kind==='equipment')g.completeMarketEquipmentPurchase(listing.itemId,listing.price,listing.forge??{})
+   else g.completeMarketPurchase(listing.itemId,listing.qty,listing.price)
+  }catch{}
+ }
  return <section className="panel coop-market-panel">
   <h2><PackageSearch size={17}/> O Negociador</h2>
   <div className="panel npc-banner"><span className="npc-banner-portrait"><PackageSearch/></span><div className="npc-banner-copy"><span className="npc-banner-name">Otávio Marreco<small>Negociador itinerante da sala</small></span><p>"Sozinho eu só tenho tralha. Com um comprador do lado, isso vira comércio."</p></div></div>
-  <p className="coop-market-hint">Anuncie consumíveis da sua bolsa pro resto do grupo comprar com ouro. Só funciona enquanto vocês estiverem juntos nesta sala -- ao anunciar, o item sai da sua bolsa na hora; cancelando, ele volta.</p>
-  {owned.length>0?<div className="coop-market-form">
-   <select value={itemId} onChange={e=>setItemId(e.target.value)}>{owned.map(entry=><option key={entry.id} value={entry.id}>{entry.item!.nome} (x{entry.qty})</option>)}</select>
-   <input type="number" min={1} max={selected?.qty??1} value={qty} onChange={e=>setQty(Math.max(1,Math.min(selected?.qty??1,Number(e.target.value)||1)))} title="Quantidade"/>
+  <p className="coop-market-hint">Anuncie consumíveis ou equipamentos da sua bolsa pro resto do grupo comprar com ouro. Só funciona enquanto vocês estiverem juntos nesta sala -- ao anunciar, o item sai da sua bolsa na hora; cancelando, ele volta.</p>
+  <div className="coop-market-kind-toggle">
+   <button type="button" className={kind==='consumable'?'primary':''} onClick={()=>setKind('consumable')}>Consumíveis</button>
+   <button type="button" className={kind==='equipment'?'primary':''} onClick={()=>setKind('equipment')}>Equipamentos</button>
+  </div>
+  {kind==='consumable'?(ownedConsumables.length>0?<div className="coop-market-form">
+   <select value={itemId} onChange={e=>setItemId(e.target.value)}>{ownedConsumables.map(entry=><option key={entry.id} value={entry.id}>{entry.item!.nome} (x{entry.qty})</option>)}</select>
+   <input type="number" min={1} max={selectedConsumable?.qty??1} value={qty} onChange={e=>setQty(Math.max(1,Math.min(selectedConsumable?.qty??1,Number(e.target.value)||1)))} title="Quantidade"/>
    <label className="coop-market-price"><Coins size={14}/><input type="number" min={1} value={price} onChange={e=>setPrice(Math.max(1,Number(e.target.value)||1))} title="Preço em ouro"/></label>
-   <button className="primary" disabled={coop.busy||!selected} onClick={doList}>Anunciar</button>
-  </div>:<p className="coop-market-empty">Você não tem consumíveis na bolsa pra anunciar agora.</p>}
+   <button className="primary" disabled={coop.busy||!selectedConsumable} onClick={doList}>Anunciar</button>
+  </div>:<p className="coop-market-empty">Você não tem consumíveis na bolsa pra anunciar agora.</p>)
+  :(ownedEquipment.length>0?<div className="coop-market-form">
+   <select value={itemId} onChange={e=>setItemId(e.target.value)}>{ownedEquipment.map(entry=><option key={entry.ref} value={entry.ref}>{equipmentLabel(entry.ref,{upgrade:entry.upgrade,gems:g.equipmentGems[entry.ref]})} — {EQUIPMENT_RARITY_LABEL[entry.e!.raridade??'comum']}</option>)}</select>
+   <label className="coop-market-price"><Coins size={14}/><input type="number" min={1} value={price} onChange={e=>setPrice(Math.max(1,Number(e.target.value)||1))} title="Preço em ouro"/></label>
+   <button className="primary" disabled={coop.busy||!selectedEquipment} onClick={doList}>Anunciar</button>
+  </div>:<p className="coop-market-empty">Você não tem equipamentos livres na mochila pra anunciar agora.</p>)}
   <div className="coop-market-lists">
    <div>
     <small>SEUS ANÚNCIOS</small>
     {mine.length===0&&<p className="coop-market-empty">Nenhum anúncio ativo.</p>}
-    {mine.map(listing=>{const item=CONSUMABLES.find(c=>c.id===listing.itemId);return <article key={listing.id} className="coop-market-row">
-     <span><strong>{item?.nome??listing.itemId}</strong> x{listing.qty}</span>
+    {mine.map(listing=>{const label=listing.kind==='equipment'?equipmentLabel(listing.itemId,listing.forge):`${CONSUMABLES.find(c=>c.id===listing.itemId)?.nome??listing.itemId}`;return <article key={listing.id} className="coop-market-row">
+     <span><strong>{label}</strong>{listing.kind!=='equipment'&&` x${listing.qty}`}</span>
      <span className="coop-market-row-price"><Coins size={13}/>{listing.price}</span>
      {listing.status==='listed'?<button disabled={coop.busy} onClick={()=>void doCancel(listing)}>Cancelar</button>:<em>Vendido a {listing.buyerName} — repassando ouro...</em>}
     </article>})}
@@ -129,10 +175,10 @@ function CoopMarketPanel({members,userId}:{members:{user_id:string;display_name:
    <div>
     <small>VITRINE DO GRUPO</small>
     {others.length===0&&<p className="coop-market-empty">Ninguém anunciou nada ainda.</p>}
-    {others.map(listing=>{const item=CONSUMABLES.find(c=>c.id===listing.itemId);return <article key={listing.id} className="coop-market-row">
-     <span><strong>{item?.nome??listing.itemId}</strong> x{listing.qty} <em>de {listing.sellerName}</em></span>
+    {others.map(listing=>{const label=listing.kind==='equipment'?equipmentLabel(listing.itemId,listing.forge):`${CONSUMABLES.find(c=>c.id===listing.itemId)?.nome??listing.itemId}`,blocked=listing.kind==='equipment'&&equipmentBagFull;return <article key={listing.id} className="coop-market-row">
+     <span><strong>{label}</strong>{listing.kind!=='equipment'&&` x${listing.qty}`} <em>de {listing.sellerName}</em></span>
      <span className="coop-market-row-price"><Coins size={13}/>{listing.price}</span>
-     <button className="primary" disabled={coop.busy||g.gold<listing.price} onClick={()=>void doBuy(listing)}>Comprar</button>
+     <button className="primary" disabled={coop.busy||g.gold<listing.price||blocked} title={blocked?'Sua mochila de equipamentos está cheia.':undefined} onClick={()=>void doBuy(listing)}>Comprar</button>
     </article>})}
    </div>
   </div>

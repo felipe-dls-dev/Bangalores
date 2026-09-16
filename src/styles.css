@@ -1148,6 +1148,8 @@ body::after{content:"VERSÃO 0.5.3 • 15/09/2026 10:35 • Conjurador: removida
 .coop-locked-notice{display:inline-block;margin-top:2px;padding:3px 7px;border:1px solid #7a5a1f;border-radius:6px;background:#2b210bcc;color:#e8c583;font-size:.62rem;font-weight:700}
 .coop-market-panel .npc-banner{margin-top:10px;padding:14px 16px}
 .coop-market-hint{margin:10px 0 14px;color:#a99879;font-size:.78rem;line-height:1.5}
+.coop-market-kind-toggle{display:flex;gap:8px;margin-bottom:12px}
+.coop-market-kind-toggle button{padding:.45rem .9rem;font-size:.78rem}
 .coop-market-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;padding:12px;border:1px solid #47321d;border-radius:9px;background:#100b08}
 .coop-market-form select{flex:1;min-width:160px}
 .coop-market-form input[type=number]{width:64px}
@@ -1796,6 +1798,7 @@ body::after{content:"VERSÃO 0.8.81 • 15/09/2026\A Viagem rapida so por proxim
 body::after{content:"VERSÃO 0.8.82 • 15/09/2026\A NPCs ganham personalidade/humor (24 falas reescritas) e 2 missoes novas flavorizadas por personalidade";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.83 • 15/09/2026\A Dificuldade Aventura mais leve com descricoes; sim de balanceamento coop; saidas de mapa com icone tematico; loot de sub-regiao; emotes em combate coop; desafios diarios/semanais na guilda";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.84 • 15/09/2026\A Fix: Golpe Supremo no coop (manual e auto-combate) nunca era executado, so enchia a barra";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.85 • 15/09/2026\A O Negociador (coop) agora tambem vende equipamentos da mochila, preservando forja/gemas/elemento";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

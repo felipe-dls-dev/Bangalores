@@ -1,17 +1,20 @@
 import React from 'react'
-import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type StatusEffects, type Summon, type SummonType } from '../store/game'
+import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type EquipmentForgeSnapshot, type StatusEffects, type Summon, type SummonType } from '../store/game'
 import type { Element } from '../data/expansion'
 import { selectCoopAutoHealTarget } from './coopAutoCombat'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, transferCoopHost, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
 type CoopVitals={hp:number;maxHp:number;level:number;attack?:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[];locked?:boolean}
 // Anúncio da vitrine do Negociador (sala coop). O item já saiu da bolsa do vendedor no momento
-// do anúncio (escrowMarketItem em game.ts) -- 'listed' é o item "em depósito" na sala; 'sold'
-// registra quem comprou mas só é removido depois que o CLIENTE DO VENDEDOR credita o ouro
-// localmente (settleMarketSale) e confirma a remoção. Como a troca só existe enquanto os dois
-// estiverem na mesma sala (nunca assíncrona entre contas offline), não há tabela nova no Supabase
-// nem risco de sincronização cross-sessão: tudo vive dentro do shared_state da própria sala.
-export type MarketListing={id:string;sellerId:string;sellerName:string;itemId:string;qty:number;price:number;status:'listed'|'sold';buyerId?:string;buyerName?:string;createdAt:number}
-type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;transferHost:(newHostUserId:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;listMarketItem:(itemId:string,qty:number,price:number)=>Promise<void>;cancelMarketListing:(listingId:string)=>Promise<void>;buyMarketListing:(listingId:string)=>Promise<void>;settleMarketSale:(listingId:string)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopUltimate:(damage:number,label:string,description:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>;sendEmote:(emote:string)=>Promise<void>}
+// do anúncio (escrowMarketItem/escrowMarketEquipment em game.ts) -- 'listed' é o item "em
+// depósito" na sala; 'sold' registra quem comprou mas só é removido depois que o CLIENTE DO
+// VENDEDOR credita o ouro localmente (settleMarketSale) e confirma a remoção. Como a troca só
+// existe enquanto os dois estiverem na mesma sala (nunca assíncrona entre contas offline), não há
+// tabela nova no Supabase nem risco de sincronização cross-sessão: tudo vive dentro do
+// shared_state da própria sala. kind/forge só existem em anúncios de equipamento -- itemId nesse
+// caso é a REF da instância (catalogId@@sufixo) e qty é sempre 1; forge carrega o snapshot dos
+// Records por-instância (upgrade/gemas/elemento) pra não sumir ao trocar de dono.
+export type MarketListing={id:string;sellerId:string;sellerName:string;itemId:string;qty:number;price:number;status:'listed'|'sold';buyerId?:string;buyerName?:string;createdAt:number;kind?:'consumable'|'equipment';forge?:EquipmentForgeSnapshot}
+type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;transferHost:(newHostUserId:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;listMarketItem:(itemId:string,qty:number,price:number,kind?:'consumable'|'equipment',forge?:EquipmentForgeSnapshot)=>Promise<void>;cancelMarketListing:(listingId:string)=>Promise<void>;buyMarketListing:(listingId:string)=>Promise<void>;settleMarketSale:(listingId:string)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopUltimate:(damage:number,label:string,description:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>;sendEmote:(emote:string)=>Promise<void>}
 const CoopContext=React.createContext<CoopContextValue|null>(null),ROOM_KEY='bangalores-coop-room-id'
 // localStorage pode lançar (não só faltar) em navegadores/webviews com armazenamento bloqueado
 // por política de privacidade. A leitura de readRoomId roda num useEffect que dispara em TODO
@@ -108,14 +111,14 @@ export function CoopProvider({children}:{children:React.ReactNode}){
  // Quem VENDEU só recebe o ouro quando o efeito em CoopBattleSync (main.tsx) detecta status:'sold'
  // com sellerId===userId -- roda mesmo se o vendedor estiver em outra tela, igual ao gancho de
  // entrar numa batalha compartilhada a partir de qualquer lugar do app.
- const listMarketItem=async(itemId:string,qty:number,price:number)=>{
+ const listMarketItem=async(itemId:string,qty:number,price:number,kind:'consumable'|'equipment'='consumable',forge?:EquipmentForgeSnapshot)=>{
   const me=membersRef.current.find(m=>m.user_id===userId)
   if(!roomRef.current||!me||qty<=0||price<=0)return
   setBusy(true)
   try{
    await updateState(current=>{
     const market:MarketListing[]=Array.isArray(current.shared_state.market)?current.shared_state.market as MarketListing[]:[]
-    const listing:MarketListing={id:`mkt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,sellerId:userId,sellerName:me.display_name,itemId,qty,price:Math.max(1,Math.floor(price)),status:'listed',createdAt:Date.now()}
+    const listing:MarketListing={id:`mkt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,sellerId:userId,sellerName:me.display_name,itemId,qty,price:Math.max(1,Math.floor(price)),status:'listed',createdAt:Date.now(),kind,...(forge?{forge}:{})}
     return{...current.shared_state,market:[...market,listing]}
    })
   }catch(error){setNotice(error instanceof Error?error.message:'Não foi possível publicar o anúncio.');throw error}

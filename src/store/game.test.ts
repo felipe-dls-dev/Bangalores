@@ -1319,6 +1319,56 @@ describe('Batch 1: Táticas de Combate & Gestão de Inventário', () => {
     useGame.getState().receiveCoopHeroAction(damage, { attackRoll: 6, naturalAttackRoll: 6, ultimate: true }, true)
     expect(useGame.getState().ultimateGauge).toBe(0)
   })
+
+  it('Negociador (coop): venda de equipamento preserva forja/gemas ao trocar de dono e respeita trava/capacidade', () => {
+    useGame.getState().newGame('guerreiro')
+    const ref = 'lamina_sentinela@@test_market'
+    useGame.setState({
+      equipmentBag: [ref],
+      equipmentUpgrades: { [ref]: 2 },
+      equipmentGems: { [ref]: ['gema_teste'] },
+      forgedGemLocked: { [ref]: true },
+      lockedEquipment: {}
+    })
+
+    // Item travado não pode ser anunciado (mesma trava do sellEquipment/dismantleEquipment)
+    useGame.getState().toggleLockEquipment(ref)
+    expect(useGame.getState().escrowMarketEquipment(ref)).toBe(false)
+    useGame.getState().toggleLockEquipment(ref)
+
+    // Anunciar: sai da bolsa, snapshot carrega o bônus, Records locais são limpos
+    const snapshot = useGame.getState().escrowMarketEquipment(ref)
+    expect(snapshot).not.toBe(false)
+    if (snapshot === false) throw new Error('unreachable')
+    expect(snapshot.upgrade).toBe(2)
+    expect(snapshot.gems).toEqual(['gema_teste'])
+    expect(snapshot.gemLocked).toBe(true)
+    expect(useGame.getState().equipmentBag).not.toContain(ref)
+    expect(useGame.getState().equipmentUpgrades[ref]).toBeUndefined()
+
+    // Cancelar o anúncio: refund devolve a MESMA ref com o bônus intacto
+    useGame.getState().refundMarketEquipment(ref, snapshot)
+    expect(useGame.getState().equipmentBag).toContain(ref)
+    expect(useGame.getState().equipmentUpgrades[ref]).toBe(2)
+    expect(useGame.getState().equipmentGems[ref]).toEqual(['gema_teste'])
+
+    // Comprador: recebe uma ref NOVA (nunca a mesma) com o bônus reaplicado, ouro debitado
+    useGame.getState().escrowMarketEquipment(ref)
+    useGame.setState({ gold: 100 })
+    useGame.getState().completeMarketEquipmentPurchase(ref, 40, snapshot)
+    const boughtRef = useGame.getState().equipmentBag.find(r => r !== ref)!
+    expect(boughtRef).toBeDefined()
+    expect(boughtRef).not.toBe(ref)
+    expect(useGame.getState().gold).toBe(60)
+    expect(useGame.getState().equipmentUpgrades[boughtRef]).toBe(2)
+    expect(useGame.getState().equipmentGems[boughtRef]).toEqual(['gema_teste'])
+    expect(useGame.getState().forgedGemLocked?.[boughtRef]).toBe(true)
+
+    // Sem ouro suficiente ou com a mochila cheia, a compra não é aplicada
+    const before = useGame.getState().equipmentBag.length
+    useGame.getState().completeMarketEquipmentPurchase(ref, 9999, snapshot)
+    expect(useGame.getState().equipmentBag.length).toBe(before)
+  })
 })
 
 
