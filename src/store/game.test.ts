@@ -550,6 +550,64 @@ describe('limite de poções temporárias', () => {
   })
 })
 
+describe('bug corrigido: monstros de masmorra morriam de um golpe', () => {
+  // startDungeon() só multiplicava vida pela profundidade (dungeonScale) -- ataque e defesa
+  // ficavam presos ao nível "real" calculado por buildEnemy/buildBoss (teto em sub.nivelMax+2),
+  // bem abaixo do Nível exibido depois que a profundidade era somada. Um monstro rotulado
+  // "Nível 30" podia ter defesa de nível ~5, e um golpe normal (ou crítico) já superava sua vida
+  // inteira. Agora ataque e defesa devem escalar na mesma proporção que a vida.
+  it('ataque e defesa do 1º andar escalam pela mesma proporção que a vida, não ficam presos no valor "real" pré-masmorra', () => {
+    // Math.random mockado deixa buildEnemy 100% determinístico (mesmo monstro, variante Comum,
+    // mesmo targetLevel) -- assim dá pra recalcular o inimigo "cru" (sem o multiplicador de
+    // profundidade da masmorra) fora do startDungeon e comparar exatamente contra o que a store
+    // produziu, em vez de inferir o bug indiretamente através de várias rodadas com RNG real.
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(.99)
+    try {
+      useGame.getState().newGame('guerreiro')
+      // XP bem acima do nivelMax+2 de qualquer sub-região: reproduz o cenário relatado (um herói
+      // já desenvolvido descendo numa masmorra "fácil"), onde o teto de buildEnemy sempre entra
+      // em jogo e o Nível exibido pela masmorra passa a vir quase inteiro do bônus de profundidade.
+      useGame.setState({ xp: 5_000_000 } as any)
+      useGame.getState().selectDungeon('campos_estrada')
+
+      const sub = SUBREGIONS.find(x => x.id === 'campos_estrada')!
+      const playerLevel = deriveLevel(useGame.getState().xp).lvl + 1 // depth 1
+      const rawEnemy = buildEnemy(sub, playerLevel) // difficultyEnemy('veterano') é identidade p/ ataque/vida/defesa
+      const dungeonScale = 1 + 1 * .12 // scalingDepth=1 no 1º andar
+
+      useGame.getState().startDungeon()
+      const enemy = useGame.getState().enemy!
+
+      expect(enemy.vida, 'vida (já funcionava antes da correção)').toBe(Math.ceil(rawEnemy.vida * dungeonScale))
+      expect(enemy.ataque, 'ataque também precisa escalar com a profundidade').toBe(Math.ceil(rawEnemy.ataque * dungeonScale))
+      expect(enemy.defesa, 'defesa também precisa escalar com a profundidade').toBe(Math.ceil((rawEnemy.defesa ?? 0) * dungeonScale))
+    } finally {
+      randomSpy.mockRestore()
+    }
+  })
+
+  it('um ataque comum do herói não derruba de uma vez um inimigo de andar avançado', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.setState({ attr: { vida: 10, ataque: 15, defesa: 10 } } as any)
+    useGame.getState().selectDungeon('campos_estrada')
+    const heroAtk = attackValue(useGame.getState())
+
+    for (let i = 0; i < 30; i++) {
+      useGame.getState().startDungeon()
+      const enemy = useGame.getState().enemy!
+      // resolveCombatRoll's ceiling (crítico + defesa mínima) é ~2.25x o dano base
+      // (attackBase - defenseBase); se isso sozinho já supera a vida inteira, o "golpe único"
+      // acontece mesmo sem nenhum erro de dado a favor do jogador. Os primeiros andares vêm de
+      // um monstro de nível baixo de propósito (região inicial) -- um herói já desenvolvido
+      // pode legitimamente derrubá-los de um golpe, então a asserção só vale a partir de um
+      // andar cujo Nível exibido já reflete profundidade real, não só o monstro-base trivial.
+      if (enemy.nivel != null && enemy.nivel < 12) continue
+      const worstCaseDamage = Math.max(1, heroAtk - (enemy.defesa ?? 0)) * 2.25
+      expect(worstCaseDamage, `andar ${i + 1} (Nível ${enemy.nivel}, vida ${enemy.vida}, defesa ${enemy.defesa})`).toBeLessThan(enemy.vida)
+    }
+  })
+})
+
 describe('Conjurador com duas feras espectrais', () => {
   it('mantém duas invocações simultâneas e bloqueia uma terceira', () => {
     vi.useFakeTimers()

@@ -1161,7 +1161,16 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     const scalingDepth=Math.min(depth,DUNGEON_SCALING_DEPTH)
     const enemyLevel=enemy.nivel??enemy.dificuldade??1
     const dungeonLevel=enemyLevel+scalingDepth
-    let dungeonEnemy:Enemy=balanceEnemyByLevel({...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*(1+scalingDepth*.12)),dungeon:true,nivel:dungeonLevel,dificuldade:dungeonLevel})
+    // Só vida crescia com a profundidade -- ataque e defesa ficavam travados no nível "real"
+    // calculado por buildEnemy/buildBoss (que tem teto em sub.nivelMax+2, bem abaixo do Nível
+    // exibido depois que dungeonLevel soma a profundidade). Rechamar balanceEnemyByLevel aqui não
+    // resolvia: o orçamento novo já usa dungeonLevel (bem maior), então custo<=orçamento sempre
+    // batia sem precisar subir nada, e ataque/defesa continuavam presos ao valor baixo original.
+    // Resultado: um monstro rotulado "Nível 30" com defesa de nível ~5 -- um único golpe normal
+    // (às vezes um crítico) já superava a vida inteira dele. Agora ataque e defesa escalam pela
+    // mesma proporção que a vida, então o Nível exibido reflete o poder de combate real.
+    const dungeonScale=1+scalingDepth*.12
+    let dungeonEnemy:Enemy={...enemy,nome:`Masmorra ${depth}: ${enemy.nome}`,vida:Math.ceil(enemy.vida*dungeonScale),ataque:Math.ceil(enemy.ataque*dungeonScale),defesa:Math.ceil(enemyDefenseValue(enemy)*dungeonScale),dungeon:true,nivel:dungeonLevel,dificuldade:dungeonLevel}
 
     // Cada andar precisa ser sempre mais desafiador que o anterior -- o sorteio de monstro/
     // variante (buildEnemy) sozinho não garantia isso, dava pra cair num andar mais fraco que o
