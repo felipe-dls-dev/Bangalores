@@ -146,14 +146,27 @@ describe('QA Suite: Asset Integrity & 404 Prevention', () => {
   })
 })
 
-describe('QA Suite: Steelmere 2D Maps Reachability & Collision', () => {
-  it('all 7 Steelmere maps pass navigation validation', () => {
-    const steelmereIds = ['frostgard', 'engrenverde', 'trilhouro', 'vulcannis', 'ferrujal', 'coroferro', 'aetherium']
-    for (const id of steelmereIds) {
-      const map = REGION_MAPS[id]
-      expect(map, `Map ${id} must exist in REGION_MAPS`).toBeDefined()
+describe('QA Suite: 2D Maps Reachability & Collision', () => {
+  // Cobria só os 7 mapas de Steelmere -- os 7 originais de Havendown (campos_dourados,
+  // floresta_lunargenta, montanhas_cinzentas, pico_escarlate, terras_mortas, khar_dur,
+  // coracao_eclipse) nunca passavam por validateRegionMap (spawn/pins/saídas/baús/fogueiras
+  // alcançáveis por BFS real, ver routeBetween em regionMap.tsx), só pelo teste mais fraco
+  // abaixo (saída não cair em cima de um retângulo bloqueado, sem checar se dá pra chegar
+  // nela). Generalizado pra todo REGION_MAPS -- Havendown já passava quando isso foi checado
+  // manualmente (2026-09-15), mas sem esse teste uma saída futura mal posicionada nunca
+  // travaria a suíte, como quase aconteceu na investigação do relato de Morvath sem travessia.
+  it('every map (Havendown + Steelmere) passes navigation validation', () => {
+    for (const [id, map] of Object.entries(REGION_MAPS)) {
       const errors = validateRegionMap(map)
       expect(errors, `Map ${id} has navigation validation errors`).toEqual([])
+    }
+  })
+  it('every exit targets a region that itself has a map, so crossing never lands on a dead end', () => {
+    for (const [id, map] of Object.entries(REGION_MAPS)) {
+      for (const exit of map.exits ?? []) {
+        if (!exit.targetRegionId) continue // 'prev'/'next' exits resolve via world progression order, not a fixed id
+        expect(REGION_MAPS[exit.targetRegionId], `${id}: exit ${exit.id} targets '${exit.targetRegionId}', which has no map in REGION_MAPS`).toBeDefined()
+      }
     }
   })
 

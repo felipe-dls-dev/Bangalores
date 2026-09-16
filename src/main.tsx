@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, Unlock, Search, ArrowUpDown, KeyRound, Plane, CheckCircle2, XCircle, Gem, UserRound, Quote, Bell, Volume2, VolumeX, X, Contrast, Swords, Leaf, Target, Flame, HeartPulse, Ghost } from 'lucide-react'
-import { TileWorldExplorer, getRegionMap, ALL_MONOLITHS } from './regionMap'
+import { TileWorldExplorer, getRegionMap, ALL_MONOLITHS, REGION_UI_THEME } from './regionMap'
 import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, regionListSort, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, attunementItemLevel, attunementResistanceReduction, attunementStatusChance, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, storyModifiers, specializationBonuses, equipmentInstanceBreakdown, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, HERO_ULTIMATES, ultimateEffects, type AttackAnimType, type Summon, type SummonType, type GuildRankId, ACHIEVEMENTS, unlockedAchievements } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment, Territory } from './types'
 import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, SUBREGION_THEME_MATERIALS, TALENTS, HERO_SUBCLASSES, activeChallenges, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
@@ -77,11 +77,7 @@ function heroAbilityParts(text:string):{passivo?:string;ativo:string}{
 const CATEGORY_FRAME:Record<string,string>={CHEFE:'red',ELITE:'purple',INIMIGO:'green'}
 // Paleta de interface acompanha a região ativa sem alterar as regras de jogo.
 // O dourado continua sendo o fallback para o menu e regiões sem uma identidade própria.
-const REGION_UI_THEME:Record<string,string>={
- campos_dourados:'gold',floresta_lunargenta:'forest',montanhas_cinzentas:'frost',pico_escarlate:'volcanic',
- terras_mortas:'shadow',khar_dur:'forge',coracao_eclipse:'eclipse',frostgard:'frost',engrenverde:'forest',
- trilhouro:'harvest',vulcannis:'volcanic',ferrujal:'rust',coroferro:'coroferro',aetherium:'aetherium'
-}
+// (REGION_UI_THEME agora vive em regionMap.tsx -- ver comentário lá.)
 const ELEMENT_LABELS:Record<string,string>={fisico:'Físico',fogo:'Fogo',gelo:'Gelo',natureza:'Natureza',sombra:'Sombra',luz:'Luz',arcano:'Arcano'}
 // Elemento (arma) e resistência (demais slots) só existem em itens forjados com sucesso ou
 // obtidos de chefes — a loja nunca atribui essas propriedades, então a nota só aparece

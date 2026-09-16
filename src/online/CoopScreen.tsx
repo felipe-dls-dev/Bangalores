@@ -5,7 +5,7 @@ import { SPECIALIZATION_CHOICES } from '../data/expansion'
 import type { Enemy, Subregion } from '../types'
 import { normalizeRoomCode, onlineConfigured } from './supabase'
 import { useCoop, type MarketListing } from './CoopContext'
-import { getRegionMap, TileWorldExplorer } from '../regionMap'
+import { getRegionMap, REGION_UI_THEME, TileWorldExplorer } from '../regionMap'
 
 const art=(hero:any)=>'./'+(hero?.arte??hero?.imagem??'')
 // Contrato 17 do Quadro de Contratos: emotes rápidos (não chat livre, sem risco de moderação) --
@@ -209,7 +209,7 @@ function CoopHostMap({regionId}:{regionId:string}){
  const partyGhosts=coop.members.filter(member=>member.user_id!==coop.userId).map(member=>({id:member.user_id,spriteId:mapSpriteFor(member.hero_id)}))
  const worldProgression=[...TERRITORIES].filter(t=>(t.mundo??'havendown')===(region.mundo??'havendown')).sort(regionListSort)
  const regionIndex=worldProgression.findIndex(t=>t.id===region.id),exitTargets={prev:worldProgression[regionIndex-1],next:worldProgression[regionIndex+1]} as const
- const regionExits=(map.exits??[]).flatMap(exit=>{const target=exit.targetRegionId?TERRITORIES.find(t=>t.id===exit.targetRegionId):exitTargets[exit.id as 'prev'|'next'];return target?[{...exit,label:target.nome,region:target}]:[]})
+ const regionExits=(map.exits??[]).flatMap(exit=>{const target=exit.targetRegionId?TERRITORIES.find(t=>t.id===exit.targetRegionId):exitTargets[exit.id as 'prev'|'next'];return target?[{...exit,label:target.nome,region:target,theme:REGION_UI_THEME[target.id]}]:[]})
  const handleEnter=(subId:string)=>{const sub=subs.find(s=>s.id===subId);if(sub){setActiveSub(sub);setEncounterPrompt(sub)}}
  const handleExit=(exitId:string)=>{const exit=regionExits.find(item=>item.id===exitId);if(!exit)return;const nextMap=getRegionMap(exit.region.id);if(!nextMap)return;const nextPos=g.regionMapPositions?.[exit.region.id]??nextMap.spawn;void coop.publishMapPos(exit.region.id,nextPos.x,nextPos.y)}
  const handleAmbush=(nearestSubId:string)=>{if(ambushPrompt)return;const sub=subs.find(s=>s.id===nearestSubId);const enemy=sub&&buildCoopEnemy(sub.id,level,g.difficultyMode,coop.members.length);if(sub&&enemy)setAmbushPrompt({enemy,subregionId:sub.id})}

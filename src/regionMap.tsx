@@ -33,6 +33,16 @@ const EXIT_THEME: Record<string, { Icon: LucideIcon; color: string }> = {
   aetherium: { Icon: Wind, color: '#8faee6' },
 }
 
+// Movido de main.tsx (era local lá) pra cá pra ficar ao lado de EXIT_THEME, cujas chaves
+// espelham exatamente estes valores -- e pra dar pro CoopScreen.tsx (que duplica a mesma
+// construção de regionExits do RegionMapView solo) como importar sem criar dependência
+// circular com main.tsx (main.tsx já importa deste arquivo).
+export const REGION_UI_THEME: Record<string, string> = {
+  campos_dourados: 'gold', floresta_lunargenta: 'forest', montanhas_cinzentas: 'frost', pico_escarlate: 'volcanic',
+  terras_mortas: 'shadow', khar_dur: 'forge', coracao_eclipse: 'eclipse', frostgard: 'frost', engrenverde: 'forest',
+  trilhouro: 'harvest', vulcannis: 'volcanic', ferrujal: 'rust', coroferro: 'coroferro', aetherium: 'aetherium',
+}
+
 // Grid "de autoria" -- o que se desenha à mão em build*() usando fill/hline/vline/rect.
 // Tipos genéricos: não sabem (nem precisam saber) qual variante de arte existe pra cada caso.
 // 'ice'/'snow_drift'/'steam_vent' (ART-004) e 'mud'/'conveyor'/'ash_lava_rock' (ART-014) são
