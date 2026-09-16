@@ -974,6 +974,7 @@ body::after{content:"VERSÃO 0.5.3 • 15/09/2026 10:35 • Conjurador: removida
 .combat-dice-roll{position:fixed;z-index:900;top:70px;left:50%;translate:-50% 0;width:min(430px,calc(100vw - 32px));padding:12px 18px 10px;text-align:center;border:1px solid #b37b35;border-radius:14px;background:linear-gradient(145deg,rgba(36,24,15,.97),rgba(10,7,5,.98));box-shadow:0 15px 48px #000,0 0 26px rgba(208,148,61,.2);pointer-events:none}.combat-dice-roll.enemy{border-color:#9c4937;box-shadow:0 15px 48px #000,0 0 26px rgba(188,67,48,.2)}.combat-dice-roll>small{display:block;color:#e2b258;font-size:.62rem;font-weight:900;letter-spacing:.14em}.combat-dice-pair{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:13px;margin-top:7px}.combat-dice-pair>div{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;align-items:center;gap:2px 9px}.combat-dice-pair span{grid-column:1/3;color:#a99472;font-size:.54rem;font-weight:800;letter-spacing:.1em}.combat-die{grid-row:2;display:grid;place-items:center;width:42px;height:42px;border:2px solid #e4c17b;border-radius:9px;background:linear-gradient(145deg,#f3dfae,#b77b30);color:#25170b;font:900 1.35rem Georgia,serif;box-shadow:inset 0 0 0 2px rgba(71,39,12,.32),0 3px 9px #000}.defense-die{background:linear-gradient(145deg,#b9d4e5,#527c9c);border-color:#cce8f4}.combat-dice-pair em{font-size:.72rem;font-style:normal;color:#bca98d}.combat-dice-pair em strong{color:#f0cd80;font-size:.92rem}.combat-dice-pair>i{color:#7f6848;font:700 .7rem Georgia,serif}.combat-dice-roll>p{margin:6px 0 0;color:#a99575;font-size:.65rem;font-weight:800;letter-spacing:.1em}.combat-dice-roll>p strong{margin-left:5px;color:#ffbd63;font-size:1.05rem}.combat-dice-roll.enemy>p strong{color:#f07b68}
 @media(max-width:600px){.combat-dice-roll{top:12px;padding:9px 12px}.combat-dice-pair{gap:7px}.combat-die{width:36px;height:36px}}
 .combat-dice-pair em{display:grid;gap:2px;text-align:left}.combat-dice-pair em u{color:#d0a654;font-size:.58rem;text-decoration:none}
+.combat-roll-label b{color:#f1d18c;font-size:.68rem}.damage-result{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 0;padding:6px 10px;border:1px solid rgba(196,139,61,.32);border-radius:8px;background:rgba(8,5,3,.42);color:#c2ae8d;font-size:.66rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.damage-result strong{color:#ffbd63;font:900 1.24rem Georgia,serif;line-height:1}.combat-dice-roll.enemy .damage-result strong{color:#f07b68}.damage-steps{list-style:none;display:grid;gap:5px;margin:8px 0 0;padding:0;text-align:left}.damage-steps li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:7px;align-items:start;padding:6px 7px;border:1px solid rgba(175,124,58,.22);border-radius:7px;background:rgba(7,5,3,.34)}.damage-steps li>span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#2d2114;color:#efc679;font:900 .6rem Georgia,serif}.damage-steps p{margin:0;color:#c9baa2;font-size:.67rem;line-height:1.28}.damage-steps b{color:#efcb80}
 .attack-die{background:linear-gradient(145deg,#f0a08f,#9f2f29);border-color:#ffc0ae;color:#2d0907;box-shadow:inset 0 0 0 2px rgba(74,9,6,.38),0 3px 9px #000,0 0 12px rgba(190,48,38,.28)}
 .flee-dice-roll{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;border:1px solid #8c692d;border-radius:10px;background:radial-gradient(circle,rgba(78,54,16,.45),rgba(10,7,5,.88))}.flee-dice-roll>small{color:#d9aa49;font-size:.62rem;font-weight:900;letter-spacing:.14em}.flee-die{width:58px;height:58px;background:linear-gradient(145deg,#ffe69a,#c58b1d);border-color:#fff0b0;color:#322006;box-shadow:inset 0 0 0 2px rgba(93,58,5,.32),0 4px 12px #000,0 0 18px rgba(225,171,54,.32)}.flee-dice-roll>strong{font:700 1.05rem Georgia,serif;color:#edc776}.flee-dice-roll.success>strong{color:#8fcd75}.flee-dice-roll.failed>strong{color:#ee8170}.flee-dice-roll>span{color:#9e8d72;font-size:.62rem}
 
@@ -1169,6 +1170,25 @@ body::after{content:"VERSÃO 0.5.3 • 15/09/2026 10:35 • Conjurador: removida
 .coop-map-shell{margin-top:12px}
 .coop-map-inspector .coop-region-progress{display:grid;gap:6px;margin:10px 0}.coop-map-inspector .coop-region-progress>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 9px;border:1px solid #4d351d;border-radius:7px;background:#100b08}.coop-map-inspector .coop-region-progress small{color:#96784b;font-size:.62rem}.coop-map-inspector .coop-region-progress strong{font-size:.68rem;color:#c98a4a}.coop-map-inspector .coop-region-progress strong.ready{color:#7bc97e}
 .coop-map-follower .regionmap-inspector p{color:#9f9079}
+.coop-region-page{display:grid;gap:12px;min-width:0}
+.coop-region-head{grid-template-columns:auto minmax(0,1fr) auto}
+.coop-region-mode{display:flex;align-items:center;justify-content:center;gap:7px;min-width:116px;padding:8px 10px;border:1px solid #604421;border-radius:9px;background:#120d09;color:#e3bd73;font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.coop-region-totals{grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
+.coop-subregion-board{grid-template-columns:repeat(3,minmax(0,1fr));max-height:none;overflow:visible;padding:0}
+.coop-subregion-card{min-height:330px}
+.coop-subregion-members{display:grid;gap:5px;padding:7px;border:1px solid #352515;border-radius:7px;background:#0f0b08}
+.coop-subregion-members>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center;font-size:.6rem;color:#9f9079}
+.coop-subregion-members span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coop-subregion-members b{color:#d7b36d}
+.coop-subregion-members i{grid-column:1/3;height:5px;overflow:hidden;border-radius:999px;background:#25180d}
+.coop-subregion-members em{display:block;height:100%;background:linear-gradient(90deg,#8c4a2b,#d3a34a)}
+.coop-subregion-members .ready b{color:#7bc97e}
+.coop-subregion-members .ready em{background:#6fbd73}
+.coop-map-panel-solo-layout{display:grid;gap:10px}
+.coop-map-panel-solo-layout>.screen-intro{margin:0}
+.coop-map-inspector .coop-region-progress>div.active{border-color:#9f7136;background:#1c120b}
+@media(max-width:1200px){.coop-subregion-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.coop-region-head{grid-template-columns:1fr}.coop-region-mode{justify-content:flex-start}.coop-region-totals{grid-template-columns:1fr}.coop-subregion-board{grid-template-columns:1fr}.coop-map-shell{grid-template-columns:1fr}.coop-map-shell>.regionmap-inspector{grid-row:auto}}
 /* Icon-only top nav with animated hover label */
 .topbar nav button{position:relative;overflow:visible}
 .topbar nav .nav-tooltip{position:absolute;top:calc(100% + 6px);left:50%;transform:translate(-50%,-4px) scale(.92);opacity:0;pointer-events:none;white-space:nowrap;padding:.36rem .68rem;border:1px solid #6c522f;border-radius:7px;background:linear-gradient(180deg,#241809,#150e07);color:var(--gold2);font-size:.76rem;letter-spacing:.02em;font-weight:600;box-shadow:0 8px 18px rgba(0,0,0,.4);transition:opacity .16s ease,transform .16s ease;z-index:50}
@@ -1715,6 +1735,10 @@ button:active:not(:disabled){transform:translateY(0) scale(.95);transition-durat
 .combat-action-callout.impact-glance{border-color:#67553e}
 .combat-v033 .combat-dice-panel{display:flex;flex-direction:column;overflow:hidden}
 .combat-v033 .combat-dice-panel>.combat-dice-roll,.combat-v033 .combat-dice-panel>.combat-dice-idle{flex:1}
+.combat-v033 .combat-dice-roll{justify-content:flex-start;gap:5px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#704b25 transparent}
+.combat-v033 .combat-dice-panel{min-height:220px}
+@media(max-width:1099px){.combat-v033 .combat-dice-panel{min-height:230px}}
+@media(max-width:760px){.combat-v033 .combat-dice-panel{min-height:235px}.damage-steps p{font-size:.63rem}.damage-result{font-size:.6rem}.damage-result strong{font-size:1.12rem}}
 .forge-result-dialog{position:relative;overflow:hidden}
 .forge-result-aura{position:absolute;inset:-30% -10% auto;height:180px;pointer-events:none;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 68%);filter:blur(12px);opacity:.85}
 .forge-result-icon{position:relative;display:grid;place-items:center;width:82px;height:82px;border-radius:50%;border:1px solid currentColor;background:rgba(0,0,0,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArrowLeftRight, Coins, Copy, Crown, Heart, Link2, LogOut, Map, PackageSearch, ShieldHalf, Sword, Users, Wifi, WifiOff } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Coins, Copy, Crown, Heart, Link2, LogOut, Map, PackageSearch, ScrollText, ShieldHalf, Sword, Trophy, Users, Wifi, WifiOff } from 'lucide-react'
 import { attackValue, buildCoopEnemy, buildCoopRegionBoss, buildCoopSubregionBoss, CONSUMABLES, defenseValue, equipmentBagCapacity, equipmentByRef, HEROES, hasCraftedEffect, heroResistances, heroWeaponAnimationType, isNavigationLocked, levelInfo, maxHp, regionListSort, SUBREGIONS, TERRITORIES, useGame } from '../store/game'
 import { SPECIALIZATION_CHOICES } from '../data/expansion'
 import type { Enemy, Subregion } from '../types'
@@ -38,6 +38,10 @@ const MAP_SPRITE_HEROES=['guerreiro','guardiao','cacadora','arcanista','druida',
 const mapSpriteFor=(heroId?:string):string=>MAP_SPRITE_HEROES.includes(heroId??'')?heroId!:'adventurer'
 type MemberVitals={hp:number;maxHp:number;level?:number;attack?:number;defense?:number;shield?:number;locked?:boolean}
 type MapPos={regionId:string;x:number;y:number}
+type CoopMemberProgress=Record<string,Record<string,number>>
+const COOP_WORLD_LABELS:Record<string,string>={havendown:'Havendown',steelmere:'Steelmere'}
+function coopDangerFor(level:number,min:number,max:number){if(level<min-2)return{label:'PERIGO EXTREMO',stars:5,cls:'deadly'};if(level<min)return{label:'Difícil',stars:4,cls:'hard'};if(level<=max)return{label:'Adequado',stars:3,cls:'fair'};if(level<=max+3)return{label:'Fácil',stars:2,cls:'easy'};return{label:'Muito fácil',stars:1,cls:'easy'}}
+function coopSubProgress(sub:Subregion,members:{user_id:string}[],memberProgress:CoopMemberProgress){const required=sub.encontrosNecessarios,values=members.map(member=>Math.min(required,memberProgress[member.user_id]?.[sub.id]??0)),minimum=values.length?Math.min(...values):0,ready=values.length>0&&values.every(value=>value>=required);return{required,values,minimum,ready,left:Math.max(0,required-minimum)}}
 
 export default function PersistentCoopScreen(){
  // Link de convite: ?coop=CODIGO na URL pré-preenche o campo de código, então quem recebe
@@ -83,7 +87,25 @@ export default function PersistentCoopScreen(){
     {isHost&&!host&&<button className="coop-transfer-host-btn" disabled={busy} onClick={doTransfer}><ArrowLeftRight size={12}/>Repassar liderança</button>}
    </div>
   </article>
- })}</div><footer><p>Cada jogador atualiza sua campanha; a experiência será proporcional ao dano causado.</p><button className="primary" disabled={!me||busy} onClick={()=>void coop.toggleReady(g.heroId)}>{me?.ready?'Cancelar prontidão':'Marcar como pronto'}</button></footer></section><section className="panel coop-map-panel"><h2><Map size={17}/> Exploração compartilhada</h2><p>{isHost?'Você lidera a expedição: ande pelo mapa com as setas/WASD -- o grupo te segue e entra nas mesmas emboscadas e batalhas.':'Você está seguindo o líder da sala pelo mapa. Emboscadas e chefes acontecem automaticamente para o grupo todo.'}</p>{isHost?<CoopHostMap key={sharedRegionId} regionId={sharedRegionId}/>:(sharedMapPos?<CoopFollowerMap key={sharedMapPos.regionId} mapPos={sharedMapPos} hostHeroId={hostMember?.hero_id} partyGhosts={followerGhosts}/>:<p className="coop-notice">Aguardando o anfitrião iniciar a exploração...</p>)}</section><CoopMarketPanel members={members} userId={userId}/>{notice&&<p className="coop-notice">{notice}</p>}</div>
+ })}</div><footer><p>Cada jogador atualiza sua campanha; a experiência será proporcional ao dano causado.</p><button className="primary" disabled={!me||busy} onClick={()=>void coop.toggleReady(g.heroId)}>{me?.ready?'Cancelar prontidão':'Marcar como pronto'}</button></footer></section><CoopExplorationPanel isHost={isHost} sharedRegionId={sharedRegionId} sharedMapPos={sharedMapPos} hostHeroId={hostMember?.hero_id} partyGhosts={followerGhosts}/><CoopMarketPanel members={members} userId={userId}/>{notice&&<p className="coop-notice">{notice}</p>}</div>
+}
+function CoopExplorationPanel({isHost,sharedRegionId,sharedMapPos,hostHeroId,partyGhosts}:{isHost:boolean;sharedRegionId:string;sharedMapPos?:MapPos;hostHeroId?:string;partyGhosts:Array<{id:string;spriteId:string}>}){
+ const g=useGame(),coop=useCoop(),region=TERRITORIES.find(t=>t.id===sharedRegionId)??TERRITORIES[0],world=region.mundo??'havendown',worldLabel=COOP_WORLD_LABELS[world]??world
+ const progression=[...TERRITORIES].sort(regionListSort),worldProgression=progression.filter(t=>(t.mundo??'havendown')===world),regionIndex=worldProgression.findIndex(t=>t.id===region.id),weaker=worldProgression[regionIndex-1],stronger=worldProgression[regionIndex+1]
+ const subs=SUBREGIONS.filter(sub=>sub.regionId===region.id),memberProgress=(coop.room?.shared_state?.memberProgress??{}) as CoopMemberProgress,readySubs=subs.filter(sub=>coopSubProgress(sub,coop.members,memberProgress).ready).length
+ const level=levelInfo(g.xp).lvl,moveToRegion=(target?:typeof TERRITORIES[number])=>{if(!isHost||!target)return;const map=getRegionMap(target.id);if(!map)return;const pos=g.regionMapPositions?.[target.id]??map.spawn;void coop.publishMapPos(target.id,pos.x,pos.y)}
+ const mapNode=isHost?<CoopHostMap key={sharedRegionId} regionId={sharedRegionId}/>:(sharedMapPos?<CoopFollowerMap key={sharedMapPos.regionId} mapPos={sharedMapPos} hostHeroId={hostHeroId} partyGhosts={partyGhosts}/>:<p className="coop-notice">Aguardando o anfitrião iniciar a exploração...</p>)
+ return <section className="coop-region-page">
+  <section className="panel region-head coop-region-head"><div className="coop-region-mode"><Map size={16}/>{isHost?'Liderando':'Acompanhando'}</div><div><span className="eyebrow">COOP • {worldLabel.toUpperCase()} • DIFICULDADE {region.dificuldade}</span><h1>{region.nome}</h1><p>{region.descricao}</p></div><div className="region-side-actions"><div className="region-level"><small>Nível recomendado</small><strong>{region.nivelMin}–{region.nivelMax}</strong><span>Seu nível: {level}</span></div></div></section>
+  <nav className="region-step-nav coop-region-step-nav" aria-label="Navegação cooperativa entre regiões"><button disabled={!isHost||!weaker} title={!isHost?'Somente o líder move a expedição.':undefined} onClick={()=>moveToRegion(weaker)}><ArrowLeft/><span><small>REGIÃO ANTERIOR</small><strong>{weaker?.nome??'Primeira região'}</strong>{weaker&&<em>Nível {weaker.nivelMin}–{weaker.nivelMax}</em>}</span></button><button disabled={!isHost||!stronger} title={!isHost?'Somente o líder move a expedição.':undefined} onClick={()=>moveToRegion(stronger)}><span><small>PRÓXIMA REGIÃO</small><strong>{stronger?.nome??'Última região'}</strong>{stronger&&<em>Nível {stronger.nivelMin}–{stronger.nivelMax}</em>}</span><ArrowRight/></button></nav>
+  <div className="map-index-totals coop-region-totals"><span><Map/><small>REGIÃO</small><strong>{regionIndex+1}/{worldProgression.length}</strong></span><span><ScrollText/><small>SUB-REGIÕES</small><strong>{readySubs}/{subs.length}</strong></span><span><Trophy/><small>GRUPO</small><strong>{coop.members.length}</strong></span></div>
+  <CoopSubregionProgressBoard regionId={region.id}/>
+  <section className="panel coop-map-panel coop-map-panel-solo-layout"><div className="screen-intro"><small>EXPLORAÇÃO COMPARTILHADA</small><p>{isHost?'Ande pelo mapa com WASD ou setas. O grupo segue sua posição e entra nas mesmas emboscadas e batalhas.':'Você está vendo o mesmo mapa do líder. O progresso acima mostra quanto falta em cada sub-região para liberar chefes.'}</p></div>{mapNode}</section>
+ </section>
+}
+function CoopSubregionProgressBoard({regionId}:{regionId:string}){
+ const g=useGame(),coop=useCoop(),subs=SUBREGIONS.filter(sub=>sub.regionId===regionId),memberProgress=(coop.room?.shared_state?.memberProgress??{}) as CoopMemberProgress,level=levelInfo(g.xp).lvl
+ return <div className="coop-subregion-board subregion-grid">{subs.map(sub=>{const progress=coopSubProgress(sub,coop.members,memberProgress),danger=coopDangerFor(level,sub.nivelMin,sub.nivelMax),pct=Math.min(100,progress.minimum/Math.max(1,progress.required)*100);return <article key={sub.id} className={`subregion-card coop-subregion-card danger-${danger.cls}`}><div className="subregion-top"><span className="subregion-icon">{sub.icone}</span><div><h2>{sub.nome}</h2><p>Nível {sub.nivelMin}–{sub.nivelMax}</p></div><span className={`danger-badge ${danger.cls}`}>{danger.label}</span></div><p className="subregion-desc">{sub.descricao}</p><div className="subregion-progress"><div><span>Progresso do grupo</span><strong>{progress.minimum}/{progress.required}</strong></div><div className="xp-track"><div style={{width:`${pct}%`}}/></div></div><div className="subregion-meta"><span>★{'★'.repeat(Math.max(0,danger.stars-1))}{'☆'.repeat(Math.max(0,5-danger.stars))}</span><span>{progress.ready?'CHEFE LIBERADO':`Faltam ${progress.left}`}</span></div><div className="coop-subregion-members">{coop.members.map(member=>{const value=Math.min(progress.required,memberProgress[member.user_id]?.[sub.id]??0),memberPct=Math.min(100,value/Math.max(1,progress.required)*100);return <div key={member.user_id} className={value>=progress.required?'ready':''}><span>{member.display_name}</span><b>{value}/{progress.required}</b><i><em style={{width:`${memberPct}%`}}/></i></div>})}</div><div className="subregion-details"><small><b>Loot:</b> {sub.temaLoot}</small><small><b>Desafios:</b> {sub.desafios.slice(0,3).join(' • ')}</small></div></article>})}</div>
 }
 // O Negociador: uma vitrine de itens (consumíveis e equipamentos) só entre quem está na MESMA
 // sala agora (ver o tipo MarketListing em CoopContext.tsx pra entender por que não é uma troca
@@ -195,11 +217,12 @@ function CoopHostMap({regionId}:{regionId:string}){
  const [encounterPrompt,setEncounterPrompt]=React.useState<Subregion|undefined>()
  const [ambushPrompt,setAmbushPrompt]=React.useState<{enemy:Enemy;subregionId:string}|undefined>()
  const [chestNotice,setChestNotice]=React.useState<string|undefined>()
- const memberProgress=(coop.room?.shared_state?.memberProgress??{}) as Record<string,Record<string,number>>
- const allHaveSubProgress=(sub:Subregion)=>coop.members.length>=2&&coop.members.every(member=>(memberProgress[member.user_id]?.[sub.id]??0)>=sub.encontrosNecessarios)
+ const memberProgress=(coop.room?.shared_state?.memberProgress??{}) as CoopMemberProgress
+ const subProgress=(sub:Subregion)=>coopSubProgress(sub,coop.members,memberProgress)
+ const allHaveSubProgress=(sub:Subregion)=>subProgress(sub).ready
  const regionRequired=subs.reduce((sum,sub)=>sum+sub.encontrosNecessarios,0)
- const allHaveRegionProgress=coop.members.length>=2&&coop.members.every(member=>subs.reduce((sum,sub)=>sum+(memberProgress[member.user_id]?.[sub.id]??0),0)>=regionRequired)
- const subBattlesLeft=(sub:Subregion)=>coop.members.length?Math.max(0,sub.encontrosNecessarios-Math.min(...coop.members.map(member=>memberProgress[member.user_id]?.[sub.id]??0))):sub.encontrosNecessarios
+ const allHaveRegionProgress=coop.members.length>0&&coop.members.every(member=>subs.reduce((sum,sub)=>sum+(memberProgress[member.user_id]?.[sub.id]??0),0)>=regionRequired)
+ const subBattlesLeft=(sub:Subregion)=>subProgress(sub).left
  const level=levelInfo(g.xp).lvl
  React.useEffect(()=>setActiveSub(subs[0]),[regionId])
  const knownTiles=g.exploredMapTiles?.[regionId]
@@ -219,6 +242,7 @@ function CoopHostMap({regionId}:{regionId:string}){
  const fleeAmbush=()=>{if(!ambushPrompt)return;const roll=1+Math.floor(Math.random()*6);if(roll>=5){setAmbushPrompt(undefined);return}acceptAmbush()}
  const explore=()=>{if(!encounterPrompt)return;const sub=encounterPrompt,bossReady=allHaveSubProgress(sub);setEncounterPrompt(undefined);const enemy=bossReady?buildCoopSubregionBoss(sub.id,g.difficultyMode,coop.members.length):buildCoopEnemy(sub.id,level,g.difficultyMode,coop.members.length);if(enemy)void coop.startMapBattle(sub.id,enemy as unknown as Record<string,unknown>)}
  const handleRegionBoss=()=>{const sub=activeSub??subs[0];if(!sub)return;const enemy=buildCoopRegionBoss(regionId,g.difficultyMode,coop.members.length);if(enemy)void coop.startMapBattle(sub.id,enemy as unknown as Record<string,unknown>)}
+ const selectedSub=activeSub??subs[0],selectedProgress=selectedSub?subProgress(selectedSub):undefined,selectedDanger=selectedSub?coopDangerFor(level,selectedSub.nivelMin,selectedSub.nivelMax):undefined
  const encounterDialog=encounterPrompt&&<div className="regionmap-encounter-backdrop" onClick={()=>setEncounterPrompt(undefined)}><section className="regionmap-encounter-prompt" onClick={event=>event.stopPropagation()}><span className="eyebrow">{allHaveSubProgress(encounterPrompt)?'CHEFE DA SUB-REGIÃO':'PONTO DE EXPLORAÇÃO'}</span><h2>{encounterPrompt.nome}</h2><p>{encounterPrompt.descricao}</p><div><button onClick={()=>setEncounterPrompt(undefined)}>Continuar explorando</button><button className="primary" onClick={explore}>{allHaveSubProgress(encounterPrompt)?'Enfrentar chefe':'Explorar (buscar combate)'}</button></div></section></div>
  const ambushDialog=ambushPrompt&&<div className="regionmap-encounter-backdrop"><section className="regionmap-ambush-prompt"><span className="eyebrow">EMBOSCADA</span><h2>O grupo foi atacado!</h2><div className="regionmap-ambush-enemy"><img src={art(ambushPrompt.enemy)} alt={ambushPrompt.enemy.nome}/><div><strong>{ambushPrompt.enemy.nome}</strong><small>Nível {(ambushPrompt.enemy as any).nivel??ambushPrompt.enemy.dificuldade}</small></div></div><p>Um inimigo surge e bloqueia o caminho do grupo. Fugir usa a mesma chance de uma fuga em combate.</p><div><button onClick={fleeAmbush}>Tentar fugir</button><button className="primary" onClick={acceptAmbush}>Aceitar o desafio</button></div></section></div>
  const chestDialog=chestNotice&&<div className="regionmap-encounter-backdrop" onClick={()=>setChestNotice(undefined)}><section className="regionmap-chest-prompt" onClick={event=>event.stopPropagation()}><span className="eyebrow">BAÚ ABERTO</span><p>{chestNotice}</p><button className="primary" onClick={()=>setChestNotice(undefined)}>Continuar</button></section></div>
@@ -234,8 +258,12 @@ function CoopHostMap({regionId}:{regionId:string}){
     discoveredSecrets={g.discoveredSecrets} onDiscoverSecret={key=>g.discoverSecret(key)}
     partyGhosts={partyGhosts}/>
   </div>
-  <aside className="regionmap-inspector coop-map-inspector"><span className="eyebrow">GRUPO NA REGIÃO</span><h2>{region.nome}</h2><p>Ande até um marcador para explorar; onde o chefe já foi liberado pelo grupo, o marcador aparece destacado.</p>
-   <div className="coop-region-progress">{subs.map(loc=>{const left=subBattlesLeft(loc);return <div key={loc.id}><small>{loc.nome}</small><strong className={left?'':'ready'}>{left?`Faltam ${left}`:'Chefe liberado'}</strong></div>})}</div>
+  <aside className="regionmap-inspector coop-map-inspector"><span className="eyebrow">LOCAL DO GRUPO</span><h2>{selectedSub?.nome??region.nome}</h2>
+   {selectedSub&&<div className="regionmap-inspector-preview" style={{backgroundImage:`url(${map.background})`}}><span>{selectedSub.icone}</span></div>}
+   <p>{selectedSub?.descricao??'Ande até um marcador para iniciar a exploração compartilhada.'}</p>
+   {selectedSub&&selectedProgress&&selectedDanger&&<div className="regionmap-details"><div><small>GRUPO</small><strong>{selectedProgress.minimum}/{selectedProgress.required}</strong></div><div><small>PERIGO</small><strong className={`danger-${selectedDanger.cls}`}>{selectedDanger.label}</strong></div><div><small>CHEFE</small><strong>{selectedProgress.ready?'Liberado':'Oculto'}</strong></div></div>}
+   {selectedSub&&<div className="regionmap-loot"><small>RECOMPENSAS</small><span>{selectedSub.temaLoot}</span></div>}
+   <div className="coop-region-progress">{subs.map(loc=>{const left=subBattlesLeft(loc);return <div key={loc.id} className={loc.id===selectedSub?.id?'active':''}><small>{loc.nome}</small><strong className={left?'':'ready'}>{left?`Faltam ${left}`:'Chefe liberado'}</strong></div>})}</div>
    <button className={allHaveRegionProgress?'primary boss-button':'primary'} disabled={!allHaveRegionProgress} onClick={handleRegionBoss}>{allHaveRegionProgress?'ENFRENTAR CHEFE DA REGIÃO':'Chefe da região bloqueado'}</button>
   </aside>
   {encounterDialog}
