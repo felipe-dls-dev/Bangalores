@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
 import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
@@ -1300,6 +1300,24 @@ describe('Batch 1: Táticas de Combate & Gestão de Inventário', () => {
     // Mensagem de log registrada com Golpe Supremo
     const logs = useGame.getState().combatLog
     expect(logs.some(l => l.includes('GOLPE SUPREMO'))).toBe(true)
+  })
+
+  it('Golpe Supremo cooperativo: mesma fórmula do solo e a barra não se recarrega sozinha ao usar', () => {
+    useGame.getState().newGame('guerreiro')
+    const enemy = buildEnemy(SUBREGIONS[0], 1)
+    useGame.setState({ screen: 'combat', enemy, enemyHp: 500, playerTurn: true, ultimateGauge: 100 })
+    const atk = attackValue(useGame.getState())
+    const { damage } = ultimateEffects('guerreiro', atk, maxHp(useGame.getState()))
+    useGame.getState().ultimateAttack()
+    expect(useGame.getState().lastDamage).toBe(damage)
+
+    // Simula o caminho cooperativo: performUltimate (main.tsx) zera a barra local e manda o dano
+    // pra coop.coopUltimate, que devolve um lastRoll com attackRoll:6 marcado como roll.ultimate.
+    // Sem essa flag, receiveCoopHeroAction recarregaria a barra sozinha (+30, ganho normal de
+    // "acerto crítico" quando mine=true), e o Golpe Supremo nunca ficaria de fato em 0% no coop.
+    useGame.setState({ ultimateGauge: 0 })
+    useGame.getState().receiveCoopHeroAction(damage, { attackRoll: 6, naturalAttackRoll: 6, ultimate: true }, true)
+    expect(useGame.getState().ultimateGauge).toBe(0)
   })
 })
 

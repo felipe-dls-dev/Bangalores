@@ -803,7 +803,11 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   // Esse handler dispara em TODO cliente conectado (só pra sincronizar a animação de tremor/dano
   // que todo mundo vê) -- mine (roll.attackerUserId===meu userId, calculado em CoopBattleSync)
   // garante que só o autor do ataque ganha carga na própria barra, não quem só está assistindo.
-  receiveCoopHeroAction:(damage:number,roll:any,mine=false)=>{const s=get();if(s.screen!=='combat'||!s.enemy)return;const attackRoll=roll?.attackRoll??0,defenseRoll=roll?.defenseRoll??0,gainedGauge=mine?(attackRoll===6||roll?.naturalAttackRoll===6?30:15):0,ultimateGauge=gainedGauge?Math.min(100,(s.ultimateGauge??0)+gainedGauge):s.ultimateGauge;set({combatRoll:{attacker:'hero',naturalAttackRoll:attackRoll,attackRoll,attackBonus:0,defenseRoll,attackBase:0,defenseBase:0,attackEffect:attackEffect(attackRoll||3),defenseEffect:defenseEffect(defenseRoll||3),damage,selfDamage:0},animating:true,animationActor:'hero',lastDamage:damage,ultimateGauge,...(roll?.summonAttackType?{summonAttackFx:{types:[roll.summonAttackType as AttackAnimType],nonce:Date.now()}}:{})});setTimeout(()=>set({animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined}),COMBAT_ROLL_DISPLAY_MS)},
+  // roll.ultimate (coopUltimate em CoopContext.tsx) marca o Golpe Supremo cooperativo -- ele já
+  // manda attackRoll/naturalAttackRoll:6 só pra reaproveitar a mesma animação rica de crítico do
+  // ataque normal, então sem essa flag o ganho de barra "acerto crítico" (+30) recarregaria a
+  // barra que performUltimate (main.tsx) acabou de zerar na hora de usar o Supremo.
+  receiveCoopHeroAction:(damage:number,roll:any,mine=false)=>{const s=get();if(s.screen!=='combat'||!s.enemy)return;const attackRoll=roll?.attackRoll??0,defenseRoll=roll?.defenseRoll??0,gainedGauge=mine&&!roll?.ultimate?(attackRoll===6||roll?.naturalAttackRoll===6?30:15):0,ultimateGauge=gainedGauge?Math.min(100,(s.ultimateGauge??0)+gainedGauge):s.ultimateGauge;set({combatRoll:{attacker:'hero',naturalAttackRoll:attackRoll,attackRoll,attackBonus:0,defenseRoll,attackBase:0,defenseBase:0,attackEffect:attackEffect(attackRoll||3),defenseEffect:defenseEffect(defenseRoll||3),damage,selfDamage:0},animating:true,animationActor:'hero',lastDamage:damage,ultimateGauge,...(roll?.summonAttackType?{summonAttackFx:{types:[roll.summonAttackType as AttackAnimType],nonce:Date.now()}}:{})});setTimeout(()=>set({animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined}),COMBAT_ROLL_DISPLAY_MS)},
   receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>{const s=get();if(s.screen!=='combat')return;triggerSupportFx(set,get,type)},
   receiveCoopHeal:(amount:number)=>{const s=get();if(s.screen!=='combat'||amount<=0)return;set({hp:Math.min(maxHp(s),s.hp+amount)})},
   continueGame:()=>{const state=get(),saved=state.activeCampaignId&&state.campaigns[state.activeCampaignId];if(saved){const migrated=migrateEquipmentInstances(saved);set({...migrated,...normalizeAttributes(migrated),campaigns:state.campaigns,activeCampaignId:state.activeCampaignId,guildAccepted:migrated.guildAccepted??[],guildProgress:migrated.guildProgress??{},guildClaimed:migrated.guildClaimed??[],guildNotice:undefined,screen:resumableScreen(migrated.screen),animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,playerTurn:migrated.screen==='combat'&&migrated.enemy?true:(migrated.playerTurn??false)})}else set({screen:state.heroId?'map':'select'})},
@@ -1706,14 +1710,12 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
   if(hp<=0)victory(set,get);else if(grantsExtraTurn){set({enemyHp:hp,extraHeroAttacks:now.extraHeroAttacks-1,animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});addLog(set,'Ataque Duplo: realize o segundo ataque.');if(now.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(now,400))}else{set({enemyHp:hp});enemyAfterDelay(set,get)}
  },getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS))
 }
-function playerUltimateAttack(set:any,get:any){
-  const s=get() as GameState
-  if(!s.enemy||!s.playerTurn||s.animating||(s.ultimateGauge??0)<100)return
-  if(heroStunned(set,get))return
-  const heroClass=s.heroId??'guerreiro'
-  const ultInfo=HERO_ULTIMATES[heroClass]??{nome:'Golpe Supremo',descricao:'Ataque avassalador'}
-  const atk=attackValue(s)
-  const heroMaxHp=maxHp(s)
+// Fórmula do Golpe Supremo isolada do fluxo solo (playerUltimateAttack) para o coop reaproveitar
+// sem duplicar os bônus por classe -- performUltimate (main.tsx) chama isso e manda o dano pra
+// coop.coopUltimate em vez de mexer no estado solo (s.playerTurn/s.enemy), que nunca existiu
+// de verdade em coop e é por isso que o botão manual e o auto-combate cooperativos nunca
+// executavam o Supremo antes desta correção.
+export function ultimateEffects(heroClass:string,atk:number,heroMaxHp:number){
   let damage=Math.round(atk*2.5+10)
   let bonusHeal=0
   let bonusShield=0
@@ -1727,6 +1729,17 @@ function playerUltimateAttack(set:any,get:any){
   else if(heroClass==='monge'){damage+=Math.round(atk*.16);extraFervor=1}
   else if(heroClass==='sacerdotisa'){bonusHeal=Math.round(heroMaxHp*.15);bonusShield=Math.round(heroMaxHp*.09)}
   else if(heroClass==='conjurador')damage+=Math.round(atk*.24)
+  return{damage,bonusHeal,bonusShield,extraFervor}
+}
+function playerUltimateAttack(set:any,get:any){
+  const s=get() as GameState
+  if(!s.enemy||!s.playerTurn||s.animating||(s.ultimateGauge??0)<100)return
+  if(heroStunned(set,get))return
+  const heroClass=s.heroId??'guerreiro'
+  const ultInfo=HERO_ULTIMATES[heroClass]??{nome:'Golpe Supremo',descricao:'Ataque avassalador'}
+  const atk=attackValue(s)
+  const heroMaxHp=maxHp(s)
+  const{damage,bonusHeal,bonusShield,extraFervor}=ultimateEffects(heroClass,atk,heroMaxHp)
 
   const hpBefore=s.hp
   const nextHp=bonusHeal>0?Math.min(maxHp(s),hpBefore+bonusHeal):hpBefore

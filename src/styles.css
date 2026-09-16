@@ -1795,6 +1795,7 @@ body::after{content:"VERSÃO 0.8.80 • 15/09/2026\A Confirma antes de batalhas 
 body::after{content:"VERSÃO 0.8.81 • 15/09/2026\A Viagem rapida so por proximo/anterior; corrige defesa das feras do invocador no coop; rebalanceia precos de consumiveis raros/epicos; ajustes de layout (ficha/mapa/guilda)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.82 • 15/09/2026\A NPCs ganham personalidade/humor (24 falas reescritas) e 2 missoes novas flavorizadas por personalidade";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.83 • 15/09/2026\A Dificuldade Aventura mais leve com descricoes; sim de balanceamento coop; saidas de mapa com icone tematico; loot de sub-regiao; emotes em combate coop; desafios diarios/semanais na guilda";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.84 • 15/09/2026\A Fix: Golpe Supremo no coop (manual e auto-combate) nunca era executado, so enchia a barra";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

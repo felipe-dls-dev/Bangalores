@@ -6,7 +6,7 @@ import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { Heart, Map, ScrollText, Backpack, Shield, ShieldHalf, ShoppingBag, ShoppingCart, Trash2, Images, BookOpen, History, ChevronDown, Users, Wifi, WifiOff, Copy, LogOut, Menu, Sword, Sparkles, Zap, Coins, Trophy, Skull, Package, Plus, Minus, ArrowLeft, ArrowRight, ArrowLeftRight, FlaskConical, Footprints, Dices, Wand2, Upload, ImageOff, ZoomIn, Mail, Lock, Unlock, Search, ArrowUpDown, KeyRound, Plane, CheckCircle2, XCircle, Gem, UserRound, Quote, Bell, Volume2, VolumeX, X, Contrast, Swords, Leaf, Target, Flame, HeartPulse, Ghost } from 'lucide-react'
 import { TileWorldExplorer, getRegionMap, ALL_MONOLITHS } from './regionMap'
-import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, regionListSort, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, attunementItemLevel, attunementResistanceReduction, attunementStatusChance, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, storyModifiers, specializationBonuses, equipmentInstanceBreakdown, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, HERO_ULTIMATES, type AttackAnimType, type Summon, type SummonType, type GuildRankId, ACHIEVEMENTS, unlockedAchievements } from './store/game'
+import { useGame, isNavigationLocked, equipmentByRef, equipmentBaseId, HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, TERRITORIES, SUBREGIONS, BOSSES, EVENTS, GUILD_MISSIONS, GUILD_RANKS, guildRankFor, availableGuildMissions, guildMissionById, SLOT_ORDER, maxHp, attackValue, defenseValue, levelInfo, regionListSort, equipmentAffinity, equipmentAttackForHero, equipmentCompatibility, equipmentClassAllowed, equipmentRequiredLevel, equipmentLevelAllowed, equipmentBagCapacity, equipmentWeaponClass, storyRequirementProgress, equipmentSocketCount, dismantlePreview, forgeLevelInfo, forgeRecipeLevel, forgeSuccessChance, worldUnlocked, heroWeaponAnimationType, enemyWeaponAnimationType, enemyIntentFor, enemyDefenseValue, druidHealProc, hasCraftedEffect, equipmentSetCounts, FORGE_RECIPES, LIFE_CHANCE, heroWeaponElement, heroResistances, attunementItemLevel, attunementResistanceReduction, attunementStatusChance, equipmentStatBonus, STATUS_LABELS, consumableEffectiveValue, consumableDescription, equipmentGemBonus, equipmentUpgradeCost, itemSkillEffectText, TOUR_STEPS, FORGE_SACRIFICE, RARITY_LABEL, forgeSacrificeOwned, SUMMON_ATTACK_ANIMATION, enemyDisplayKey, storyModifiers, specializationBonuses, equipmentInstanceBreakdown, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, HERO_ULTIMATES, ultimateEffects, type AttackAnimType, type Summon, type SummonType, type GuildRankId, ACHIEVEMENTS, unlockedAchievements } from './store/game'
 import type { Slot, Rarity, Subregion, GameEvent, Equipment, Territory } from './types'
 import { BESTIARY_MILESTONES, CLASS_IDENTITIES, DIFFICULTIES, ELEMENTS, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, FORGE_MATERIALS, REGION_MATERIALS, SET_BONUSES, SPECIALIZATION_CHOICES, STATUS_INFO, STORY_CHAPTERS, SUBREGION_THEME_MATERIALS, TALENTS, HERO_SUBCLASSES, activeChallenges, type DifficultyMode, type Element as GameElement, type ForgeAttribute, type ForgeBonus, type ForgeChoice } from './data/expansion'
 import { FORGE_CATEGORY_LABELS, FORGE_CATEGORY_ORDER, forgeCategory } from './data/forgeRecipes'
@@ -2001,6 +2001,22 @@ function CombatScreen(){
   void coop.coopAbility(it.nome,0,description)
  }
  const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,spec=specializationBonuses(g),bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g),false,spec.elemental);if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
+ // g.ultimateAttack() (game.ts) só entende o turno solo (s.playerTurn/s.enemy) -- por isso o
+ // botão manual do Golpe Supremo nunca funcionava direito em coop, e o auto-combate cooperativo
+ // era escrito de propósito SEM checar o Supremo (ver comentário em autoTurnRunnerRef abaixo)
+ // pra não amplificar esse bug chamando g.ultimateAttack() a cada turno automático. Reaproveita
+ // ultimateEffects (mesma fórmula por classe do solo) e aplica cura/escudo/fervor localmente,
+ // igual ao padrão de performUseConsumable, mandando só o dano pra coop.coopUltimate.
+ const performUltimate=()=>{
+  if((g.ultimateGauge??0)<100)return
+  if(!isCoop){g.ultimateAttack();return}
+  if(!myTurn)return
+  const heroClass=g.heroId??'guerreiro',ultInfo=HERO_ULTIMATES[heroClass]??{nome:'Golpe Supremo',descricao:'Ataque avassalador'},heroMaxHp=maxHp(g)
+  const{damage,bonusHeal,bonusShield,extraFervor}=ultimateEffects(heroClass,attackValue(g),heroMaxHp)
+  const nextHp=bonusHeal>0?Math.min(heroMaxHp,g.hp+bonusHeal):g.hp,nextShield=bonusShield>0?g.shield+bonusShield:g.shield,nextFervor=extraFervor>0?Math.min(3,(g.fervor??0)+extraFervor):g.fervor
+  useGame.setState({ultimateGauge:0,hp:nextHp,shield:nextShield,fervor:nextFervor})
+  void coop.coopUltimate(damage,ultInfo.nome,ultInfo.descricao)
+ }
  const tryAutoItemSkill=(mode:'urgent'|'tactical')=>{
   if(g.itemSkillUsed)return false
   const equipmentId=selectAutoItemSkill(itemAbilities,{hp:g.hp,maxHp:maxHp(g),shield:g.shield,heroRollBonus:g.heroRollBonus+(g.classRollBonus??0),heroStatus:(isCoop?battle.playerBuffs?.[coop.userId]:g.heroStatus) as Record<string,unknown>|undefined,enemyHp:g.enemyHp,enemyMaxHp:e.vida,enemyIsBoss:Boolean(e.boss),enemyIsElite:Boolean(e.elite),enemyIntentType:intent.type,hasActiveMinions:Boolean(activeMinions.some(minion=>minion.hp>0))},{mode})
@@ -2008,13 +2024,15 @@ function CombatScreen(){
   if(isCoop)useCoopItemSkill(equipmentId);else g.itemSkill(equipmentId)
   return true
  }
- // Mesma prioridade de decisão do auto-combate solo (runAutoCombatTurn em game.ts): recursos
- // defensivos urgentes > habilidade de herói > Fervor > capangas > habilidade ofensiva de item >
- // ataque padrão. Sem Golpe Supremo aqui de propósito -- o próprio botão manual do Supremo
- // ainda chama g.ultimateAttack() (só solo) mesmo em coop, então automatizar isso amplificaria
- // um bug à parte em vez de só religar o AUTO no turno cooperativo.
+ // Mesma prioridade de decisão do auto-combate solo (runAutoCombatTurn em game.ts): Golpe
+ // Supremo pronto > recursos defensivos urgentes > habilidade de herói > Fervor > capangas >
+ // habilidade ofensiva de item > ataque padrão. O Supremo só entrou aqui depois que
+ // performUltimate passou a rotear corretamente pro estado compartilhado (coop.coopUltimate) --
+ // antes disso o botão manual e o auto-combate cooperativos chamavam g.ultimateAttack() (só
+ // entende s.playerTurn/s.enemy do modo solo), então a barra enchia e o Supremo nunca disparava.
  autoTurnRunnerRef.current=()=>{
   if(!myTurn||g.animating||defeated)return
+  if((g.ultimateGauge??0)>=100){performUltimate();return}
   if(g.hp<maxHp(g)*.35&&(g.inventory['pocao_cura']??0)>0){performUseConsumable('pocao_cura');return}
   if(tryAutoItemSkill('urgent'))return
   // Ataque Duplo (e qualquer outra habilidade "keepsTurn", ver DOUBLE_ATTACK em CoopContext.tsx)
@@ -2118,7 +2136,7 @@ function CombatScreen(){
        <button className="premium-action" disabled={disabled} title={disabled?(defeated?'Você foi derrotado':'Aguarde seu turno'):undefined} onClick={performFlee}><Footprints/>Tentar fugir</button>
        <button className={`premium-action${isBraced?' active-toggle':''}`} disabled={disabled} title={isBraced?'Desativa a postura defensiva (+2 de Defesa).':'Ativa +2 de Defesa até o fim da batalha ou até você desativar. Na primeira vez, não consome o turno.'} onClick={performDefend}><ShieldHalf/>{isBraced?'Desativar postura defensiva':'Postura defensiva'}</button>
        <button className="premium-action fervor-action" disabled={disabled||fervorLevel<3} title="Acerta uma rolagem de ataque cheia com um crítico garantido." onClick={performFervor}><Zap/>Fervor de Combate ({Math.min(3,fervorLevel)}/3)</button>
-       <button className={`premium-action ultimate-action-btn${(g.ultimateGauge??0)>=100?' ready':''}`} disabled={disabled||(g.ultimateGauge??0)<100} title={(g.ultimateGauge??0)<100?`Carregue a barra de Supremo (${g.ultimateGauge??0}%/100%) causando e sofrendo dano`:g.heroId?HERO_ULTIMATES[g.heroId]?.descricao:'Desperte o Golpe Supremo!'} onClick={()=>g.ultimateAttack()}><Zap size={16}/>{g.heroId?HERO_ULTIMATES[g.heroId]?.nome:'Golpe Supremo'}</button>
+       <button className={`premium-action ultimate-action-btn${(g.ultimateGauge??0)>=100?' ready':''}`} disabled={disabled||(g.ultimateGauge??0)<100} title={(g.ultimateGauge??0)<100?`Carregue a barra de Supremo (${g.ultimateGauge??0}%/100%) causando e sofrendo dano`:g.heroId?HERO_ULTIMATES[g.heroId]?.descricao:'Desperte o Golpe Supremo!'} onClick={performUltimate}><Zap size={16}/>{g.heroId?HERO_ULTIMATES[g.heroId]?.nome:'Golpe Supremo'}</button>
       </div>
    </Panel>
 
