@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
+import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
 import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
@@ -157,6 +157,8 @@ describe('newGame() resets all per-combat/session bonus fields', () => {
       combatDefensePct: 0.3,
       extraHeroAttacks: 2,
       guardianTaunt: true,
+      battleStance: 'ofensiva',
+      stanceChangeUsed: true,
       combatMinions: [{ id: 'ghost', nome: 'Capanga Fantasma', hp: 5, maxHp: 5, ataque: 3 }],
       equipmentGems: { alguma_espada: ['rubi'] },
       craftedEffects: { alguma_espada: 'critico' }
@@ -170,6 +172,8 @@ describe('newGame() resets all per-combat/session bonus fields', () => {
     expect(s.combatDefensePct).toBe(0)
     expect(s.extraHeroAttacks).toBe(0)
     expect(s.guardianTaunt).toBe(false)
+    expect(s.battleStance).toBe('neutra')
+    expect(s.stanceChangeUsed).toBe(false)
     expect(s.combatMinions).toEqual([])
     expect(s.equipmentGems).toEqual({})
     expect(s.craftedEffects).toEqual({})
@@ -206,40 +210,61 @@ describe('druidHealProc', () => {
 
 const fakeEnemy = { id: 'x', nome: 'Inimigo de Teste', vida: 999, ataque: 3, dificuldade: 2, ouro: 5, habilidade: '' } as any
 
-describe('combate: postura defensiva e Fervor de Combate', () => {
-  it('defend() só age no turno do jogador e com inimigo vivo', () => {
+describe('combate: postura de combate e Fervor de Combate', () => {
+  it('setBattleStance() só age no turno do jogador e com inimigo vivo', () => {
     useGame.getState().newGame('guerreiro')
-    useGame.setState({ enemy: undefined, playerTurn: true, animating: false, braced: false } as any)
-    useGame.getState().defend()
-    expect(useGame.getState().braced).toBe(false) // sem inimigo, não faz nada
+    useGame.setState({ enemy: undefined, playerTurn: true, animating: false, battleStance: 'neutra' } as any)
+    useGame.getState().setBattleStance('ofensiva')
+    expect(useGame.getState().battleStance).toBe('neutra') // sem inimigo, não faz nada
 
-    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: false, animating: false, braced: false } as any)
-    useGame.getState().defend()
-    expect(useGame.getState().braced).toBe(false) // fora do turno, não faz nada
+    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: false, animating: false, battleStance: 'neutra' } as any)
+    useGame.getState().setBattleStance('ofensiva')
+    expect(useGame.getState().battleStance).toBe('neutra') // fora do turno, não faz nada
   })
 
-  it('primeira ativação da postura defensiva não consome o turno e dura até desativar', () => {
+  it('primeira troca de postura não consome o turno e dura até trocar de novo', () => {
     useGame.getState().newGame('guerreiro')
-    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, braced: false, braceBonusUsed: false, extraHeroAttacks: 0 } as any)
-    useGame.getState().defend()
+    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, battleStance: 'neutra', stanceChangeUsed: false, extraHeroAttacks: 0 } as any)
+    useGame.getState().setBattleStance('defensiva')
     const s1 = useGame.getState()
-    expect(s1.braced).toBe(true)
-    expect(s1.braceBonusUsed).toBe(true)
+    expect(s1.battleStance).toBe('defensiva')
+    expect(s1.stanceChangeUsed).toBe(true)
     expect(s1.playerTurn).toBe(true) // não perde o turno na primeira vez: pode agir mais uma vez
 
-    // Desativar consome o turno normalmente, igual a qualquer outra ação.
+    // Trocar de novo consome o turno normalmente, igual a qualquer outra ação.
     useGame.setState({ playerTurn: true, animating: false } as any)
-    useGame.getState().defend()
+    useGame.getState().setBattleStance('ofensiva')
     const s2 = useGame.getState()
-    expect(s2.braced).toBe(false)
+    expect(s2.battleStance).toBe('ofensiva')
     expect(s2.playerTurn).toBe(false)
 
-    // Reativar depois do primeiro uso já consome o turno (o bônus só vale uma vez por batalha).
+    // Selecionar a postura já ativa não faz nada, nem consome o turno.
     useGame.setState({ playerTurn: true, animating: false } as any)
-    useGame.getState().defend()
+    useGame.getState().setBattleStance('ofensiva')
     const s3 = useGame.getState()
-    expect(s3.braced).toBe(true)
-    expect(s3.playerTurn).toBe(false)
+    expect(s3.battleStance).toBe('ofensiva')
+    expect(s3.playerTurn).toBe(true)
+  })
+
+  it('postura ofensiva aumenta Ataque e reduz Defesa; defensiva faz o oposto; neutra não altera nada', () => {
+    useGame.getState().newGame('guerreiro')
+    // Ataque/Defesa base do herói recém-criado são baixos o bastante para o Math.ceil do +/-20%
+    // não mudar o resultado (ex.: ceil(4*0.8) === ceil(4)); soma atributos pra garantir uma base
+    // grande o bastante pra revelar a diferença nos dois sentidos.
+    useGame.setState({ attr: { ...useGame.getState().attr, ataque: 20, defesa: 20 }, battleStance: 'neutra' } as any)
+    const baseAtk = attackValue(useGame.getState()), baseDef = defenseValue(useGame.getState())
+
+    useGame.setState({ battleStance: 'ofensiva' } as any)
+    expect(attackValue(useGame.getState())).toBeGreaterThan(baseAtk)
+    expect(defenseValue(useGame.getState())).toBeLessThan(baseDef)
+
+    useGame.setState({ battleStance: 'defensiva' } as any)
+    expect(attackValue(useGame.getState())).toBeLessThan(baseAtk)
+    expect(defenseValue(useGame.getState())).toBeGreaterThan(baseDef)
+
+    useGame.setState({ battleStance: 'neutra' } as any)
+    expect(attackValue(useGame.getState())).toBe(baseAtk)
+    expect(defenseValue(useGame.getState())).toBe(baseDef)
   })
 
   it('useFervor() é bloqueado abaixo do medidor cheio e consome o medidor imediatamente ao usar', () => {
@@ -255,12 +280,12 @@ describe('combate: postura defensiva e Fervor de Combate', () => {
     expect(s.animating).toBe(true)
   })
 
-  it('newGame() zera braced e fervor de uma campanha anterior', () => {
+  it('newGame() zera battleStance e fervor de uma campanha anterior', () => {
     useGame.getState().newGame('arcanista')
-    useGame.setState({ braced: true, fervor: 3 } as any)
+    useGame.setState({ battleStance: 'ofensiva', stanceChangeUsed: true, fervor: 3 } as any)
     useGame.getState().newGame('guerreiro')
     const s = useGame.getState()
-    expect(s.braced).toBe(false)
+    expect(s.battleStance).toBe('neutra')
     expect(s.fervor).toBe(0)
   })
 })
@@ -595,11 +620,11 @@ describe('Conjurador com duas feras espectrais', () => {
       // enemyAfterDelay ao fundar a invocação) para isolar só o comportamento de
       // resolveSummonAttacks com duas feras já vivas e nenhum ataque ainda resolvido.
       const atacante = buildSummon('atacante', 10), defensor = buildSummon('defensor', 10)
-      useGame.setState({ screen: 'combat', enemy: fakeEnemy, enemyHp: 999, hp: 999, playerTurn: true, animating: false, heroSkillUses: 1, summon: atacante, summons: [atacante, defensor], braced: false, braceBonusUsed: true } as any)
+      useGame.setState({ screen: 'combat', enemy: fakeEnemy, enemyHp: 999, hp: 999, playerTurn: true, animating: false, heroSkillUses: 1, summon: atacante, summons: [atacante, defensor], battleStance: 'neutra', stanceChangeUsed: true } as any)
 
-      // defend() chama enemyAfterDelay diretamente (sem setTimeout antes) quando ativa a postura --
-      // dispara resolveSummonAttacks com as duas feras vivas.
-      useGame.getState().defend()
+      // setBattleStance() chama enemyAfterDelay diretamente (sem setTimeout antes) ao trocar de
+      // postura depois da primeira troca gratuita -- dispara resolveSummonAttacks com as duas feras vivas.
+      useGame.getState().setBattleStance('defensiva')
 
       let state = useGame.getState()
       expect(state.animating).toBe(true)

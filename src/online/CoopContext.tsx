@@ -1,5 +1,5 @@
 import React from 'react'
-import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, type AttackAnimType, type EquipmentForgeSnapshot, type StatusEffects, type Summon, type SummonType } from '../store/game'
+import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, STANCE_ATTACK_PCT, STANCE_DEFENSE_PCT, STANCE_LABELS, type AttackAnimType, type BattleStance, type EquipmentForgeSnapshot, type StatusEffects, type Summon, type SummonType } from '../store/game'
 import type { Element } from '../data/expansion'
 import { selectCoopAutoHealTarget } from './coopAutoCombat'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, setMemberReady, subscribeToOnlineRoom, transferCoopHost, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
@@ -14,7 +14,7 @@ type CoopVitals={hp:number;maxHp:number;level:number;attack?:number;defense:numb
 // caso é a REF da instância (catalogId@@sufixo) e qty é sempre 1; forge carrega o snapshot dos
 // Records por-instância (upgrade/gemas/elemento) pra não sumir ao trocar de dono.
 export type MarketListing={id:string;sellerId:string;sellerName:string;itemId:string;qty:number;price:number;status:'listed'|'sold';buyerId?:string;buyerName?:string;createdAt:number;kind?:'consumable'|'equipment';forge?:EquipmentForgeSnapshot}
-type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;transferHost:(newHostUserId:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;listMarketItem:(itemId:string,qty:number,price:number,kind?:'consumable'|'equipment',forge?:EquipmentForgeSnapshot)=>Promise<void>;cancelMarketListing:(listingId:string)=>Promise<void>;buyMarketListing:(listingId:string)=>Promise<void>;settleMarketSale:(listingId:string)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopUltimate:(damage:number,label:string,description:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopDefend:()=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>;sendEmote:(emote:string)=>Promise<void>}
+type CoopContextValue={room:OnlineRoom|null;members:OnlineMember[];userId:string;onlineCount:number;busy:boolean;notice:string;create:(name:string,heroId?:string)=>Promise<void>;join:(code:string,name:string,heroId?:string)=>Promise<void>;leave:()=>Promise<void>;toggleReady:(heroId?:string)=>Promise<void>;transferHost:(newHostUserId:string)=>Promise<void>;publishProgress:(progress:Record<string,number>,vitals:CoopVitals)=>Promise<void>;publishMapPos:(regionId:string,x:number,y:number)=>Promise<void>;startMapBattle:(subregionId:string,enemy?:Record<string,unknown>)=>Promise<void>;listMarketItem:(itemId:string,qty:number,price:number,kind?:'consumable'|'equipment',forge?:EquipmentForgeSnapshot)=>Promise<void>;cancelMarketListing:(listingId:string)=>Promise<void>;buyMarketListing:(listingId:string)=>Promise<void>;settleMarketSale:(listingId:string)=>Promise<void>;coopAttack:(attackBase:number,defenseBase:number,rollBonus?:number,critBoost?:boolean,healChance?:number,healAmount?:number,label?:string,targetMinionId?:string,forceCrit?:boolean,critChancePct?:number,critDamageBonusPct?:number,weaponElement?:Element,forceStatus?:boolean,extraStatusTurn?:boolean)=>Promise<void>;coopAbility:(label:string,damage:number,effect:string)=>Promise<void>;coopUltimate:(damage:number,label:string,description:string)=>Promise<void>;coopSummon:(tipo:SummonType)=>Promise<void>;coopSetStance:(stance:BattleStance)=>Promise<void>;coopFlee:()=>Promise<void>;resolveEnemyTurn:()=>Promise<void>;completeBattle:()=>Promise<void>;sendEmote:(emote:string)=>Promise<void>}
 const CoopContext=React.createContext<CoopContextValue|null>(null),ROOM_KEY='bangalores-coop-room-id'
 // localStorage pode lançar (não só faltar) em navegadores/webviews com armazenamento bloqueado
 // por política de privacidade. A leitura de readRoomId roda num useEffect que dispara em TODO
@@ -179,7 +179,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const naturalAttackRoll=forceCrit||forgedCrit?6:1+Math.floor(Math.random()*6)
   const attackRoll=forceCrit||forgedCrit?6:Math.max(1,Math.min(6,naturalAttackRoll+totalRollBonus+(totalCritBoost&&naturalAttackRoll===5?1:0)))
   const defenseRoll=enemyStun.wasStunned?1:Math.max(1,1+Math.floor(Math.random()*6)-Number(battle.enemyFearPenalty??0)-(target?0:rollPenaltyFrom(battle.enemyStatus)))
-  const buffedAttack=Math.ceil(attackBase*(1+Number(group.attackPct??0)+Number(personal.attackPct??0)))
+  const buffedAttack=Math.ceil(attackBase*(1+Number(group.attackPct??0)+Number(personal.attackPct??0)+STANCE_ATTACK_PCT[(personal.battleStance as BattleStance)??'neutra']))
   // Reaproveita a mesma resolução de dado do modo solo (game.ts) em vez de uma fórmula
   // paralela: antes o crítico e a defesa perfeita do coop tinham magnitude bem diferente
   // do solo, e a falha crítica não causava autodano nenhum no herói.
@@ -232,11 +232,13 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    :`${actor}${tag?` usa ${tag}:`:':'} ataque ${attackRoll} contra defesa ${defenseRoll}; causou ${actual} de dano${target?` a ${foeName}${felled?' (derrotado)':''}`:''}.${phased?` ${enemy.nome} entra em nova fase e convoca reforços!`:''}${keepsTurn?' Ataque Duplo permite atacar novamente.':''}${attackRoll===2?' O inimigo recebe +1 na próxima rolagem.':''}${healTargetUserId?` A energia natural do equipamento cura ${healAmount}${healTargetName?` de ${healTargetName}`:''}.`:''}${enemyStun.wasStunned?` ${foeName} estava atordoado e não conseguiu se defender.`:''}${statusResult.appliedKind?` ${foeName} fica ${STATUS_LABELS[statusResult.appliedKind]}.`:''}`
   return{...current.shared_state,battle:{...battle,...next,extraActions,playerBuffs,enemyRollBonus,enemy,enemyHp,enemyStatus:statusResult.status,combatMinions,damageByPlayer,healingByPlayer,fleeRoll:undefined,status:enemyHp<=0?'won':'playing',activeUserId:enemyHp<=0?null:next.activeUserId,turn:Number(battle.turn??1)+(keepsTurn?0:1),lastRoll:{attacker:'hero',attackerUserId:userId,naturalAttackRoll,attackRoll,attackBonus:totalRollBonus,attackBase:buffedAttack,defenseBase:target?0:defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),defenseRoll,damage:actual,actor,selfDamage,selfDamageUserId:selfDamage>0?userId:undefined,...(healTargetUserId?{healTargetUserId,healAmount}:{})},log:[...(battle.log??[]).slice(-15),message]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
- // Postura defensiva agora é uma escolha persistente (dura até o fim da batalha ou até o
- // jogador desativá-la), não uma ação de um único turno. Ativá-la pela primeira vez na batalha
- // não consome o turno (activeUserId permanece o mesmo); desativar ou reativar depois consome
- // normalmente, igual a qualquer outra ação.
- const coopDefend=async()=>{try{await updateState(current=>{
+ // Postura de combate é uma escolha persistente (dura até o jogador trocar de novo), não uma
+ // ação de um único turno. Trocá-la pela primeira vez na batalha não consome o turno
+ // (activeUserId permanece o mesmo); trocar de novo depois consome normalmente, igual a
+ // qualquer outra ação. battleStance/stanceChangeUsed vivem em playerBuffs[userId] (por
+ // jogador), separados de attackPct/defensePct (que já pertencem aos bônus de classe
+ // temporários e são zerados quando eles expiram).
+ const coopSetStance=async(stance:BattleStance)=>{try{await updateState(current=>{
   const battle=current.shared_state.battle as any
   if(!battle||battle.status!=='playing'||battle.activeUserId!==userId)return current.shared_state
   const personal=battle.playerBuffs?.[userId]??{}
@@ -245,18 +247,15 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
    return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...personal,stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} está atordoado e perde a ação neste turno.`]}}
   }
-  if(personal.braced){
-   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:false}}
-   const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
-   return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} desativou a postura defensiva.`]}}
+  if(stance===(personal.battleStance??'neutra'))return current.shared_state
+  const desc=stance==='ofensiva'?`+${STANCE_ATTACK_PCT.ofensiva*100}% de Ataque e ${STANCE_DEFENSE_PCT.ofensiva*100}% de Defesa`:stance==='defensiva'?`+${STANCE_DEFENSE_PCT.defensiva*100}% de Defesa e ${STANCE_ATTACK_PCT.defensiva*100}% de Ataque`:'sem bônus ou penalidade de Ataque/Defesa'
+  if(!personal.stanceChangeUsed){
+   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,battleStance:stance,stanceChangeUsed:true}}
+   return{...current.shared_state,battle:{...battle,activeUserId:userId,playerBuffs,fleeRoll:undefined,log:[...(battle.log??[]).slice(-15),`${actor} adota Postura ${STANCE_LABELS[stance]}: ${desc}. Pode agir novamente neste turno.`]}}
   }
-  if(!personal.braceBonusUsed){
-   const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:true,braceBonusUsed:true}}
-   return{...current.shared_state,battle:{...battle,activeUserId:userId,playerBuffs,fleeRoll:undefined,log:[...(battle.log??[]).slice(-15),`${actor} assume postura defensiva: +2 de Defesa até o fim da batalha ou até desativar. Pode agir novamente neste turno.`]}}
-  }
-  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,braced:true}}
+  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,battleStance:stance}}
   const next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
-  return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} reativou a postura defensiva: +2 de Defesa até o fim da batalha ou até desativar.`]}}
+  return{...current.shared_state,battle:{...battle,...next,playerBuffs,fleeRoll:undefined,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actor} adota Postura ${STANCE_LABELS[stance]}: ${desc}.`]}}
  })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
  // Como a batalha é compartilhada por todo o grupo, uma fuga bem-sucedida encerra o combate
  // para todos de uma vez (em vez de só quem tentou fugir sumir do meio da luta).
@@ -458,8 +457,8 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const naturalDefenseRoll=1+Math.floor(Math.random()*6)
    const critDefenseBoost=!intercepting&&Boolean(targetVitals.critDefenseBoost)&&naturalDefenseRoll===5
    const defenseRoll=intercepting?Math.max(1,naturalDefenseRoll):targetStun.wasStunned?1:Math.max(1,Math.min(6,naturalDefenseRoll+Number(workingGroupBuff.roll??0)+Number(targetVitals.rollBonus??0)+(critDefenseBoost?1:0)-rollPenaltyFrom(targetStun.status)))
-   const defensePct=Number(workingGroupBuff.defensePct??0)+Number(targetBuffs.defensePct??0)
-   const defenseBase=intercepting?targetSummon!.defesa:Math.ceil(Number(targetVitals.defense??0)*(1+defensePct))+(targetBuffs.braced?2:0)
+   const defensePct=Number(workingGroupBuff.defensePct??0)+Number(targetBuffs.defensePct??0)+STANCE_DEFENSE_PCT[(targetBuffs.battleStance as BattleStance)??'neutra']
+   const defenseBase=intercepting?targetSummon!.defesa:Math.ceil(Number(targetVitals.defense??0)*(1+defensePct))
    const rogueDodge=!intercepting&&(((target.hero_id==='cacadora'||target.hero_id==='cacador')&&Math.random()<.2)||(Boolean(targetVitals.dodgeBoost)&&Math.random()<.05))
    const resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
    const enemyElement=(battle.enemy?.elemento??'fisico') as Element,resisted=!intercepting&&(targetVitals.resistances??[]).includes(enemyElement)
@@ -544,6 +543,6 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   }
   await startMapBattle(subregionId,enemy)
  }
- return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,transferHost,publishProgress,publishMapPos,startMapBattle:safeStartMapBattle,listMarketItem,cancelMarketListing,buyMarketListing,settleMarketSale,coopAttack,coopAbility,coopUltimate,coopSummon,coopDefend,coopFlee,resolveEnemyTurn,completeBattle,sendEmote}}>{children}</CoopContext.Provider>
+ return <CoopContext.Provider value={{room,members,userId,onlineCount,busy,notice,create,join,leave,toggleReady,transferHost,publishProgress,publishMapPos,startMapBattle:safeStartMapBattle,listMarketItem,cancelMarketListing,buyMarketListing,settleMarketSale,coopAttack,coopAbility,coopUltimate,coopSummon,coopSetStance,coopFlee,resolveEnemyTurn,completeBattle,sendEmote}}>{children}</CoopContext.Provider>
 }
 export function useCoop(){const value=React.useContext(CoopContext);if(!value)throw new Error('CoopProvider não encontrado.');return value}
