@@ -159,6 +159,19 @@ export interface RegionMapDef {
   illusoryWalls?: Array<{ x: number; y: number }>
   blocked?: Array<{ x: number; y: number }>
   weather?: 'snow' | 'rain' | 'ash' | 'smoke' // camada atmosférica opcional (ART-012) -- só nas regiões onde faz sentido, não é universal
+  ambience?: 'leaves' | 'embers' | 'steam' | 'snowflakes'
+}
+function RegionMapParticles({ kind }: { kind: NonNullable<RegionMapDef['ambience']> }) {
+  const count = kind === 'steam' ? 12 : kind === 'embers' ? 20 : 18
+  return <div className={`regionmap-particles regionmap-particles-${kind}`} aria-hidden="true">
+    {Array.from({ length: count }, (_, i) => <span key={i} style={{
+      '--x': `${(i * 37 + 11) % 100}%`,
+      '--delay': `${-(i % 9) * .72}s`,
+      '--duration': `${5 + (i % 5) * .85}s`,
+      '--size': `${6 + (i % 4) * 2}px`,
+      '--drift': `${(i % 2 ? 1 : -1) * (12 + (i % 5) * 5)}px`,
+    } as React.CSSProperties} />)}
+  </div>
 }
 
 type Facing = 'up' | 'down' | 'left' | 'right'
@@ -530,7 +543,7 @@ function buildFlorestaLunargenta(): RegionMapDef {
   hline(base, 15, 20, 10, 'bridge')
   vline(base, 8, 13, 18, 'bridge')
   return {
-    id: 'floresta_lunargenta', background: mapAsset('assets/maps/floresta-lunargenta-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), blocked: blockedRects([15, 1, 16, 2], [19, 2, 20, 5], [2, 10, 5, 13]),
+    id: 'floresta_lunargenta', background: mapAsset('assets/maps/floresta-lunargenta-overworld.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), ambience: 'leaves', blocked: blockedRects([15, 1, 16, 2], [19, 2, 20, 5], [2, 10, 5, 13]),
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'west_planicies', x: 1, y: 7, targetRegionId: 'campos_dourados' },
@@ -738,7 +751,7 @@ function buildFrostgard(): RegionMapDef {
   rect(base, 9, 11, 9, 11, 'snow_drift')
   base[4][4] = 'steam_vent' // respiro perto da caldeira noroeste
   return {
-    id: 'frostgard', background: mapAsset('assets/maps/steelmere/frostgard.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'snow',
+    id: 'frostgard', background: mapAsset('assets/maps/steelmere/frostgard.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'snow', ambience: 'snowflakes',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'south_engrenverde', x: 11, y: 14, icon: '↓', targetRegionId: 'engrenverde' },
@@ -779,7 +792,7 @@ function buildEngrenverde(): RegionMapDef {
   rect(base, 2, 5, 5, 11, 'water')
   hline(base, 1, 6, 8, 'bridge')
   return {
-    id: 'engrenverde', background: mapAsset('assets/maps/steelmere/engrenverde.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base),
+    id: 'engrenverde', background: mapAsset('assets/maps/steelmere/engrenverde.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), ambience: 'leaves',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_frostgard', x: 11, y: 1, icon: '↑', targetRegionId: 'frostgard' },
@@ -865,7 +878,7 @@ function buildVulcannis(): RegionMapDef {
   // Frostgard em ART-004).
   rect(base, 8, 9, 10, 10, 'ash_lava_rock')
   return {
-    id: 'vulcannis', background: mapAsset('assets/maps/steelmere/vulcannis.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'ash',
+    id: 'vulcannis', background: mapAsset('assets/maps/steelmere/vulcannis.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'ash', ambience: 'embers',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'west_frostgard', x: 1, y: 7, targetRegionId: 'frostgard' },
@@ -910,7 +923,7 @@ function buildFerrujal(): RegionMapDef {
   // placement ilustrativo, como o gelo do Frostgard em ART-004.
   rect(base, 6, 11, 8, 12, 'mud')
   return {
-    id: 'ferrujal', background: mapAsset('assets/maps/steelmere/ferrujal.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'smoke',
+    id: 'ferrujal', background: mapAsset('assets/maps/steelmere/ferrujal.png'), tileSize: 16, scale: 3, width, height, grid: resolveTerrain(base), weather: 'smoke', ambience: 'steam',
     spawn: { x: 11, y: 13 },
     exits: [
       { id: 'north_engrenverde', x: 10, y: 1, icon: '↑', targetRegionId: 'engrenverde' },
@@ -1348,6 +1361,41 @@ export function TileWorldExplorer({
     }, RIDE_DURATION_MS)
   }, [map, paused])
 
+  const actionTarget = React.useMemo(() => {
+    const current = pos
+    const loc = map.locations.find(l => l.x === current.x && l.y === current.y)
+    const exit = exits.find(e => e.x === current.x && e.y === current.y)
+    const chest = (map.chests ?? []).find(c => c.x === current.x && c.y === current.y && !openedChests?.[c.id])
+    const lever = (map.levers ?? []).find(l => l.x === current.x && l.y === current.y && !activatedLevers?.[l.id])
+    const monolith = (map.monoliths ?? []).find(m => m.x === current.x && m.y === current.y && !discoveredMonoliths?.includes(m.id))
+    const dock = (map.docks ?? []).find(d => d.x === current.x && d.y === current.y)
+    const scenery = (map.scenery ?? []).find(s => s.x === current.x && s.y === current.y)
+    const campfire = (map.campfires ?? []).find(c => Math.abs(c.x - current.x) <= CAMPFIRE_REST_RADIUS && Math.abs(c.y - current.y) <= CAMPFIRE_REST_RADIUS)
+    if (adjacentNpc) return { kind: 'npc', label: `Falar: ${adjacentNpc.nome}`, npc: adjacentNpc } as const
+    if (loc) return { kind: 'location', label: 'Explorar local', loc } as const
+    if (exit) return { kind: 'exit', label: `Viajar: ${exit.label}`, exit } as const
+    if (chest) return { kind: 'chest', label: 'Abrir baú', chest } as const
+    if (lever) return { kind: 'lever', label: `Ativar ${lever.name}`, lever } as const
+    if (monolith) return { kind: 'monolith', label: 'Ativar monólito', monolith } as const
+    if (dock) return { kind: 'dock', label: `Usar ${dock.name}`, dock } as const
+    if (scenery) return { kind: 'scenery', label: scenery.name, scenery } as const
+    if (campfire) return { kind: 'campfire', label: `Descansar: ${campfire.name}`, campfire } as const
+    return undefined
+  }, [pos.x, pos.y, map, exits, openedChests, activatedLevers, discoveredMonoliths, adjacentNpc])
+
+  const performAction = React.useCallback(() => {
+    if (paused || !actionTarget) return
+    if (actionTarget.kind === 'npc') onInteractNpc?.(actionTarget.npc)
+    else if (actionTarget.kind === 'location') onEnterLocation(actionTarget.loc.subId)
+    else if (actionTarget.kind === 'exit') onEnterExit?.(actionTarget.exit.id)
+    else if (actionTarget.kind === 'chest') onOpenChest?.(actionTarget.chest)
+    else if (actionTarget.kind === 'lever') onActivateLever?.(actionTarget.lever.id)
+    else if (actionTarget.kind === 'monolith') onActivateMonolith?.(actionTarget.monolith.id)
+    else if (actionTarget.kind === 'dock') boardDock(actionTarget.dock)
+    else if (actionTarget.kind === 'scenery') setSignpostOpen(actionTarget.scenery)
+    else if (actionTarget.kind === 'campfire') onRestCampfire?.(actionTarget.campfire)
+  }, [paused, actionTarget, onInteractNpc, onEnterLocation, onEnterExit, onOpenChest, onActivateLever, onActivateMonolith, boardDock, onRestCampfire])
+
   // auto=true identifica um passo continuado pelo deslize do gelo (ver terreno 'ice' logo
   // abaixo), não uma entrada nova do jogador -- serve só pra não rolar emboscada de novo a cada
   // tile deslizado (o jogador não escolheu continuar, seria punitivo empilhar chance em cima).
@@ -1589,6 +1637,7 @@ export function TileWorldExplorer({
         {twilightOpacity > 0.02 && <div className="regionmap-daynight twilight" style={{ opacity: twilightOpacity }} />}
         {nightOpacity > 0.02 && <div className="regionmap-daynight night" style={{ opacity: nightOpacity }} />}
         {map.weather && <div className={`regionmap-weather regionmap-weather-${map.weather}`} />}
+        {map.ambience && <RegionMapParticles kind={map.ambience} />}
         {footprints.map(f => (
           <div key={f.id} className="regionmap-footprint-tile" style={{ left: f.x * tilePx, top: f.y * tilePx, width: tilePx, height: tilePx }}>
             <span className={`regionmap-footprint foot-${f.foot}`} />
@@ -1809,6 +1858,7 @@ export function TileWorldExplorer({
         <button type="button" className="dpad-down" onClick={() => step(0, 1)} aria-label="Mover para baixo"><ArrowDown size={16} /></button>
         <button type="button" className="dpad-right" onClick={() => step(1, 0)} aria-label="Mover para direita"><ArrowRight size={16} /></button>
       </div>
+      <button type="button" className="regionmap-action-btn" disabled={!actionTarget} onClick={performAction} aria-label={actionTarget?.label ?? 'Nenhuma ação disponível'}>{actionTarget ? 'AÇÃO' : '...'}</button>
     </div>
   </div>
 }
