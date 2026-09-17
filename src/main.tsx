@@ -805,23 +805,32 @@ function RecipeCatalog(){
 function TalentPanel(){
  const g=useGame(),level=levelInfo(g.xp).lvl,specializations=g.specializations??{}
  type TreeNode={id:string;x:number;y:number;kind:'talent'|'choice'|'subclass';level:number;label:string;text:string;selected?:boolean;unlocked?:boolean;locked?:boolean;disabled?:boolean;onClick?:()=>void}
+ type TreeLink=[string,string]
  const talentById=Object.fromEntries(TALENTS.map(t=>[t.id,t])) as Record<string,typeof TALENTS[number]>
- const baseLayout:[string,number,number][]=[['vigor',50,5],['precisao',38,16],['muralha',62,16],['alquimista',25,28],['cacador',50,28],['destino',75,28],['reflexos',36,42],['poder_interior',64,42],['resiliencia',50,55],['instinto_predador',35,69],['guarda_ancestral',65,69],['apice_heroico',50,84]]
+ const baseLayout:[string,number,number][]=[['vigor',50,8],['precisao',34,21],['muralha',66,21],['alquimista',20,36],['cacador',50,36],['destino',80,36],['reflexos',35,51],['poder_interior',65,51],['resiliencia',50,64],['instinto_predador',35,79],['guarda_ancestral',65,79],['apice_heroico',50,92]]
  const baseNodes:TreeNode[]=baseLayout.map(([id,x,y])=>{const t=talentById[id],unlocked=g.talents.includes(id),locked=level<t.level;return{id,x,y,kind:'talent',level:t.level,label:t.nome,text:t.texto,unlocked,locked,disabled:locked||unlocked,onClick:()=>g.unlockTalent(id)}})
- const tierY:Record<number,number>={10:36,25:49,30:62,50:75,75:91}
- const specializationNodes:TreeNode[]=SPECIALIZATION_CHOICES.flatMap(tier=>{const isSubclass=tier.level===30&&Boolean(g.heroId&&HERO_SUBCLASSES[g.heroId]),options=isSubclass?HERO_SUBCLASSES[g.heroId!]:tier.options,xs=options.length===2?[39,61]:[18,50,82],chosen=specializations[String(tier.level)];return options.map((option,index)=>{const selected=chosen===option.id,locked=level<tier.level,disabled=locked||Boolean(chosen&&!selected);return{id:`spec-${tier.level}-${option.id}`,x:xs[index],y:tierY[tier.level]??50,kind:isSubclass?'subclass':'choice',level:tier.level,label:option.nome,text:(option as any).passiva??option.texto,selected,unlocked:selected,locked,disabled,onClick:()=>g.chooseSpecialization(tier.level,option.id)}})})
- const nodes=[...baseNodes,...specializationNodes],nodeMap=Object.fromEntries(nodes.map(n=>[n.id,n]))
- const baseLinks=[['vigor','precisao'],['vigor','muralha'],['precisao','alquimista'],['precisao','cacador'],['muralha','cacador'],['muralha','destino'],['alquimista','reflexos'],['destino','poder_interior'],['reflexos','resiliencia'],['poder_interior','resiliencia'],['resiliencia','instinto_predador'],['resiliencia','guarda_ancestral'],['instinto_predador','apice_heroico'],['guarda_ancestral','apice_heroico']]
- const tierIds=SPECIALIZATION_CHOICES.map(tier=>{const isSubclass=tier.level===30&&Boolean(g.heroId&&HERO_SUBCLASSES[g.heroId]),options=isSubclass?HERO_SUBCLASSES[g.heroId!]:tier.options;return options.map(option=>`spec-${tier.level}-${option.id}`)})
- const specLinks=tierIds.flatMap((ids,tierIndex)=>ids.map((id,index)=>[tierIndex===0?'destino':tierIds[tierIndex-1][Math.min(index,tierIds[tierIndex-1].length-1)],id]))
- const links=[...baseLinks,...specLinks]
- const isActive=(id:string)=>Boolean(nodeMap[id]?.unlocked||nodeMap[id]?.selected)
- const initials=(label:string)=>label.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('')
+ const baseLinks:TreeLink[]=[['vigor','precisao'],['vigor','muralha'],['precisao','alquimista'],['precisao','cacador'],['muralha','cacador'],['muralha','destino'],['alquimista','reflexos'],['destino','poder_interior'],['reflexos','resiliencia'],['poder_interior','resiliencia'],['resiliencia','instinto_predador'],['resiliencia','guarda_ancestral'],['instinto_predador','apice_heroico'],['guarda_ancestral','apice_heroico']]
+ const specRows=SPECIALIZATION_CHOICES.map(tier=>{const isSubclass=tier.level===30&&Boolean(g.heroId&&HERO_SUBCLASSES[g.heroId]),options=isSubclass?HERO_SUBCLASSES[g.heroId!]:tier.options,y:{[key:number]:number}={10:10,25:31,30:52,50:73,75:92},xs=options.length===2?[36,64]:[19,50,81],chosen=specializations[String(tier.level)];return{level:tier.level,nodes:options.map((option,index)=>{const selected=chosen===option.id,locked=level<tier.level,disabled=locked||Boolean(chosen&&!selected);return{id:`spec-${tier.level}-${option.id}`,x:xs[index],y:y[tier.level]??50,kind:isSubclass?'subclass':'choice',level:tier.level,label:option.nome,text:(option as any).passiva??option.texto,selected,unlocked:selected,locked,disabled,onClick:()=>g.chooseSpecialization(tier.level,option.id)} as TreeNode})}})
+ const specializationNodes=specRows.flatMap(row=>row.nodes)
+ const specLinks:TreeLink[]=specRows.slice(0,-1).flatMap((row,index)=>{const next=specRows[index+1];if(!next)return[];if(row.nodes.length===next.nodes.length)return row.nodes.map((node,nodeIndex)=>[node.id,next.nodes[nodeIndex].id] as TreeLink);if(row.nodes.length===3&&next.nodes.length===2)return[[row.nodes[0].id,next.nodes[0].id],[row.nodes[1].id,next.nodes[0].id],[row.nodes[1].id,next.nodes[1].id],[row.nodes[2].id,next.nodes[1].id]] as TreeLink[];if(row.nodes.length===2&&next.nodes.length===3)return[[row.nodes[0].id,next.nodes[0].id],[row.nodes[0].id,next.nodes[1].id],[row.nodes[1].id,next.nodes[1].id],[row.nodes[1].id,next.nodes[2].id]] as TreeLink[];return[]})
+ const shortLabel=(label:string)=>{const words=label.split(/\s+/).filter(Boolean),meaningful=words.filter(w=>!['a','o','as','os','da','de','do','das','dos','e','caminho','subclasse','especializada'].includes(w.toLowerCase()));const picked=meaningful.length?meaningful:words;return picked.length===1?picked[0].slice(0,2):picked.slice(0,2).map(part=>part[0]).join('')}
+ const renderTree=(nodes:TreeNode[],links:TreeLink[],title:string,subtitle:string,className:string)=>{
+  const nodeMap=Object.fromEntries(nodes.map(n=>[n.id,n])) as Record<string,TreeNode>
+  const isActive=(id:string)=>Boolean(nodeMap[id]?.unlocked||nodeMap[id]?.selected)
+  const connector=(a:TreeNode,b:TreeNode)=>{const mid=(a.y+b.y)/2;return`M ${a.x} ${a.y} L ${a.x} ${mid} L ${b.x} ${mid} L ${b.x} ${b.y}`}
+  return <section className={`talent-branch ${className}`}>
+   <div className="talent-branch-title"><strong>{title}</strong><small>{subtitle}</small></div>
+   <div className="talent-tree-canvas" role="group" aria-label={title}>
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{links.map(([from,to])=>{const a=nodeMap[from],b=nodeMap[to];if(!a||!b)return null;return <path key={`${from}-${to}`} d={connector(a,b)} className={isActive(from)&&isActive(to)?'active':''}/>})}</svg>
+    {nodes.map(node=><button key={node.id} type="button" className={`talent-node ${node.kind}${node.unlocked||node.selected?' unlocked':''}${node.locked?' locked':''}${node.selected?' selected':''}`} style={{left:`${node.x}%`,top:`${node.y}%`}} aria-disabled={node.disabled} onClick={()=>{if(!node.disabled)node.onClick?.()}} aria-label={`${node.label}. Nível ${node.level}. ${node.text}`}><span>{node.kind==='subclass'?'★':shortLabel(node.label)}</span><b>{node.level}</b><em><strong>{node.label}</strong><small>Nível {node.level} • {node.text}</small></em></button>)}
+   </div>
+  </section>
+ }
  return <Panel title="Árvore de talentos"><div className="talent-tree-wrap">
   <div className="talent-tree-head"><span><strong>Nível {level}</strong><small>{g.talents.length}/{TALENTS.length} talentos • {Object.keys(specializations).length}/{SPECIALIZATION_CHOICES.length} caminhos</small></span><button className="danger-action" disabled={!Object.keys(specializations).length} title={!Object.keys(specializations).length?'Nenhum caminho escolhido ainda':undefined} onClick={g.resetSpecializations}>Redefinir caminhos</button></div>
-  <div className="talent-tree-canvas" role="group" aria-label="Árvore visual de talentos e especializações">
-   <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{links.map(([from,to])=>{const a=nodeMap[from],b=nodeMap[to];if(!a||!b)return null;return <line key={`${from}-${to}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={isActive(from)&&isActive(to)?'active':''}/>})}</svg>
-   {nodes.map(node=><button key={node.id} type="button" className={`talent-node ${node.kind}${node.unlocked||node.selected?' unlocked':''}${node.locked?' locked':''}${node.selected?' selected':''}`} style={{left:`${node.x}%`,top:`${node.y}%`}} aria-disabled={node.disabled} onClick={()=>{if(!node.disabled)node.onClick?.()}} aria-label={`${node.label}. Nível ${node.level}. ${node.text}`}><span>{node.kind==='subclass'?'★':initials(node.label)}</span><b>{node.level}</b><em><strong>{node.label}</strong><small>Nível {node.level} • {node.text}</small></em></button>)}
+  <div className="talent-tree-grid">
+   {renderTree(baseNodes,baseLinks,'Talentos gerais','Desbloqueios permanentes por nível','core')}
+   {renderTree(specializationNodes,specLinks,'Caminhos da build','Escolhas por marco de progressão','paths')}
   </div>
  </div></Panel>
 }
