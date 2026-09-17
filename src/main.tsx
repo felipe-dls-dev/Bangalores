@@ -813,7 +813,22 @@ function TalentPanel(){
  const specRows=SPECIALIZATION_CHOICES.map(tier=>{const isSubclass=tier.level===30&&Boolean(g.heroId&&HERO_SUBCLASSES[g.heroId]),options=isSubclass?HERO_SUBCLASSES[g.heroId!]:tier.options,y:{[key:number]:number}={10:10,25:31,30:52,50:73,75:92},xs=options.length===2?[36,64]:[19,50,81],chosen=specializations[String(tier.level)];return{level:tier.level,nodes:options.map((option,index)=>{const selected=chosen===option.id,locked=level<tier.level,disabled=locked||Boolean(chosen&&!selected);return{id:`spec-${tier.level}-${option.id}`,x:xs[index],y:y[tier.level]??50,kind:isSubclass?'subclass':'choice',level:tier.level,label:option.nome,text:(option as any).passiva??option.texto,selected,unlocked:selected,locked,disabled,onClick:()=>g.chooseSpecialization(tier.level,option.id)} as TreeNode})}})
  const specializationNodes=specRows.flatMap(row=>row.nodes)
  const specLinks:TreeLink[]=specRows.slice(0,-1).flatMap((row,index)=>{const next=specRows[index+1];if(!next)return[];if(row.nodes.length===next.nodes.length)return row.nodes.map((node,nodeIndex)=>[node.id,next.nodes[nodeIndex].id] as TreeLink);if(row.nodes.length===3&&next.nodes.length===2)return[[row.nodes[0].id,next.nodes[0].id],[row.nodes[1].id,next.nodes[0].id],[row.nodes[1].id,next.nodes[1].id],[row.nodes[2].id,next.nodes[1].id]] as TreeLink[];if(row.nodes.length===2&&next.nodes.length===3)return[[row.nodes[0].id,next.nodes[0].id],[row.nodes[0].id,next.nodes[1].id],[row.nodes[1].id,next.nodes[1].id],[row.nodes[1].id,next.nodes[2].id]] as TreeLink[];return[]})
- const shortLabel=(label:string)=>{const words=label.split(/\s+/).filter(Boolean),meaningful=words.filter(w=>!['a','o','as','os','da','de','do','das','dos','e','caminho','subclasse','especializada'].includes(w.toLowerCase()));const picked=meaningful.length?meaningful:words;return picked.length===1?picked[0].slice(0,2):picked.slice(0,2).map(part=>part[0]).join('')}
+ const nodeIcon=(node:TreeNode)=>{
+  const meaning=`${node.id} ${node.label} ${node.text}`.toLocaleLowerCase('pt-BR')
+  if(/consum|alquim/.test(meaning))return FlaskConical
+  if(/ouro|fortuna|esp[oó]lio|explorador/.test(meaning))return Coins
+  if(/element|fogo|f[eê]nix/.test(meaning))return Flame
+  if(/vida|vigor|resili|sobrevive|apice|paladino/.test(meaning))return HeartPulse
+  if(/defesa|guarda|muralha|baluarte|colosso/.test(meaning))return Shield
+  if(/cr[ií]t|precis[aã]o/.test(meaning))return Target
+  if(/chefe|tirano|carrasco/.test(meaning))return Skull
+  if(/rolagem|destino/.test(meaning))return Dices
+  if(/reflex|sombra|fantasma/.test(meaning))return Footprints
+  if(/arcano|mago|cronoturgo/.test(meaning))return Wand2
+  if(/ataque|ru[ií]na|berserker|gladiador|assassina/.test(meaning))return Sword
+  if(/poder|instinto/.test(meaning))return Zap
+  return node.kind==='subclass'?(heroClassIcons[g.heroId??'']??Sparkles):Gem
+ }
  const renderTree=(nodes:TreeNode[],links:TreeLink[],title:string,subtitle:string,className:string)=>{
   const nodeMap=Object.fromEntries(nodes.map(n=>[n.id,n])) as Record<string,TreeNode>
   const isActive=(id:string)=>Boolean(nodeMap[id]?.unlocked||nodeMap[id]?.selected)
@@ -822,7 +837,7 @@ function TalentPanel(){
    <div className="talent-branch-title"><strong>{title}</strong><small>{subtitle}</small></div>
    <div className="talent-tree-canvas" role="group" aria-label={title}>
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{links.map(([from,to])=>{const a=nodeMap[from],b=nodeMap[to];if(!a||!b)return null;return <path key={`${from}-${to}`} d={connector(a,b)} className={isActive(from)&&isActive(to)?'active':''}/>})}</svg>
-    {nodes.map(node=><button key={node.id} type="button" className={`talent-node ${node.kind}${node.unlocked||node.selected?' unlocked':''}${node.locked?' locked':''}${node.selected?' selected':''}`} style={{left:`${node.x}%`,top:`${node.y}%`}} aria-disabled={node.disabled} onClick={()=>{if(!node.disabled)node.onClick?.()}} aria-label={`${node.label}. Nível ${node.level}. ${node.text}`}><span>{node.kind==='subclass'?'★':shortLabel(node.label)}</span><b>{node.level}</b><em><strong>{node.label}</strong><small>Nível {node.level} • {node.text}</small></em></button>)}
+    {nodes.map(node=>{const Icon=nodeIcon(node);return <button key={node.id} type="button" className={`talent-node ${node.kind}${node.unlocked||node.selected?' unlocked':''}${node.locked?' locked':''}${node.selected?' selected':''}`} style={{left:`${node.x}%`,top:`${node.y}%`}} aria-disabled={node.disabled} onClick={()=>{if(!node.disabled)node.onClick?.()}} aria-label={`${node.label}. Nível ${node.level}. ${node.text}`}><span><Icon size={node.kind==='subclass'?23:19} strokeWidth={2}/></span><b>{node.level}</b><em role="tooltip"><strong>{node.label}</strong><small>Nível {node.level} • {node.text}</small></em></button>})}
    </div>
   </section>
  }
