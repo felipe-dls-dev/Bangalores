@@ -1,8 +1,8 @@
 import React from 'react'
-import { ArrowLeft, ArrowLeftRight, ArrowRight, Coins, Copy, Crown, Heart, Link2, LogOut, Map, PackageSearch, ScrollText, ShieldHalf, Sword, Trophy, Users, Wifi, WifiOff } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Coins, Copy, Crown, Heart, Link2, LogOut, Map, PackageSearch, ScrollText, ShieldHalf, ShoppingBag, Sword, Tag, Trophy, Users, Wifi, WifiOff, XCircle } from 'lucide-react'
 import { attackValue, buildCoopEnemy, buildCoopRegionBoss, buildCoopSubregionBoss, CONSUMABLES, defenseValue, equipmentBagCapacity, equipmentByRef, HEROES, hasCraftedEffect, heroResistances, heroWeaponAnimationType, isNavigationLocked, levelInfo, maxHp, regionListSort, SUBREGIONS, TERRITORIES, useGame } from '../store/game'
 import { SPECIALIZATION_CHOICES } from '../data/expansion'
-import type { Enemy, Subregion } from '../types'
+import type { Enemy, Subregion, Slot } from '../types'
 import { normalizeRoomCode, onlineConfigured } from './supabase'
 import { useCoop, type MarketListing } from './CoopContext'
 import { getRegionMap, REGION_UI_THEME, TileWorldExplorer } from '../regionMap'
@@ -49,7 +49,7 @@ export default function PersistentCoopScreen(){
  const codeFromLink=React.useMemo(()=>normalizeRoomCode(new URLSearchParams(location.search).get('coop')??''),[])
  const g=useGame(),coop=useCoop(),[name,setName]=React.useState(()=>{try{return localStorage.getItem('bangalores-coop-name')??''}catch{return ''}}),[code,setCode]=React.useState(codeFromLink),[linkCopied,setLinkCopied]=React.useState(false),publishedProgress=React.useRef('')
  const copyInviteLink=(roomCode:string)=>{const url=new URL(location.href);url.search='';url.searchParams.set('coop',roomCode);navigator.clipboard?.writeText(url.toString());setLinkCopied(true);setTimeout(()=>setLinkCopied(false),2000)}
- const {room,members,userId,onlineCount,busy,notice}=coop,me=members.find(member=>member.user_id===userId),isHost=room?.host_id===userId,hostMember=members.find(member=>member.user_id===room?.host_id)
+ const {room,members,userId,onlineCount,busy,notice}=coop,isHost=room?.host_id===userId,hostMember=members.find(member=>member.user_id===room?.host_id)
  const battle=room?.shared_state?.battle as {id?:string;status?:string;subregionId?:string;enemy?:Enemy}|undefined
  const memberVitals=(room?.shared_state?.memberVitals??{}) as Record<string,MemberVitals>,myMaxHp=maxHp(g)
  const sharedMapPos=room?.shared_state?.mapPos as MapPos|undefined,sharedRegionId=sharedMapPos?.regionId??g.regionId
@@ -73,7 +73,7 @@ export default function PersistentCoopScreen(){
   return <article className={`coop-member-card${host?' coop-host':''}${isDown?' coop-down':''}`} key={member.id}>
    <div className="coop-member-card-portrait">{hero&&<img src={art(hero)} alt=""/>}<span>{host?<><Crown size={11}/>LÍDER</>:'AVENTUREIRO'}</span></div>
    <div className="coop-member-card-body">
-    <header><strong>{member.display_name}{isMe?' (você)':''}</strong><b className={member.ready?'ready':''}>{member.ready?'PRONTO':'PREPARANDO'}</b></header>
+    <header><strong>{member.display_name}{isMe?' (você)':''}</strong><b className="ready">PRONTO</b></header>
     <em>{hero?.nome??'—'}{vitals?.level?` • Nível ${vitals.level}`:''}</em>
     <div className="coop-hp-track"><div style={{width:`${hpPct}%`}}/></div>
     <div className="coop-member-stats">
@@ -87,7 +87,7 @@ export default function PersistentCoopScreen(){
     {isHost&&!host&&<button className="coop-transfer-host-btn" disabled={busy} onClick={doTransfer}><ArrowLeftRight size={12}/>Repassar liderança</button>}
    </div>
   </article>
- })}</div><footer><p>Cada jogador atualiza sua campanha; a experiência será proporcional ao dano causado.</p><button className="primary" disabled={!me||busy} onClick={()=>void coop.toggleReady(g.heroId)}>{me?.ready?'Cancelar prontidão':'Marcar como pronto'}</button></footer></section><CoopExplorationPanel isHost={isHost} sharedRegionId={sharedRegionId} sharedMapPos={sharedMapPos} hostHeroId={hostMember?.hero_id} partyGhosts={followerGhosts}/><CoopMarketPanel members={members} userId={userId}/>{notice&&<p className="coop-notice">{notice}</p>}</div>
+ })}</div><footer><p>Cada jogador na sala participa automaticamente; a experiência será proporcional ao dano causado.</p></footer></section><CoopExplorationPanel isHost={isHost} sharedRegionId={sharedRegionId} sharedMapPos={sharedMapPos} hostHeroId={hostMember?.hero_id} partyGhosts={followerGhosts}/><CoopMarketPanel members={members} userId={userId}/>{notice&&<p className="coop-notice">{notice}</p>}</div>
 }
 function CoopExplorationPanel({isHost,sharedRegionId,sharedMapPos,hostHeroId,partyGhosts}:{isHost:boolean;sharedRegionId:string;sharedMapPos?:MapPos;hostHeroId?:string;partyGhosts:Array<{id:string;spriteId:string}>}){
  const g=useGame(),coop=useCoop(),region=TERRITORIES.find(t=>t.id===sharedRegionId)??TERRITORIES[0],world=region.mundo??'havendown',worldLabel=COOP_WORLD_LABELS[world]??world
@@ -99,13 +99,8 @@ function CoopExplorationPanel({isHost,sharedRegionId,sharedMapPos,hostHeroId,par
   <section className="panel region-head coop-region-head"><div className="coop-region-mode"><Map size={16}/>{isHost?'Liderando':'Acompanhando'}</div><div><span className="eyebrow">COOP • {worldLabel.toUpperCase()} • DIFICULDADE {region.dificuldade}</span><h1>{region.nome}</h1><p>{region.descricao}</p></div><div className="region-side-actions"><div className="region-level"><small>Nível recomendado</small><strong>{region.nivelMin}–{region.nivelMax}</strong><span>Seu nível: {level}</span></div></div></section>
   <nav className="region-step-nav coop-region-step-nav" aria-label="Navegação cooperativa entre regiões"><button disabled={!isHost||!weaker} title={!isHost?'Somente o líder move a expedição.':undefined} onClick={()=>moveToRegion(weaker)}><ArrowLeft/><span><small>REGIÃO ANTERIOR</small><strong>{weaker?.nome??'Primeira região'}</strong>{weaker&&<em>Nível {weaker.nivelMin}–{weaker.nivelMax}</em>}</span></button><button disabled={!isHost||!stronger} title={!isHost?'Somente o líder move a expedição.':undefined} onClick={()=>moveToRegion(stronger)}><span><small>PRÓXIMA REGIÃO</small><strong>{stronger?.nome??'Última região'}</strong>{stronger&&<em>Nível {stronger.nivelMin}–{stronger.nivelMax}</em>}</span><ArrowRight/></button></nav>
   <div className="map-index-totals coop-region-totals"><span><Map/><small>REGIÃO</small><strong>{regionIndex+1}/{worldProgression.length}</strong></span><span><ScrollText/><small>SUB-REGIÕES</small><strong>{readySubs}/{subs.length}</strong></span><span><Trophy/><small>GRUPO</small><strong>{coop.members.length}</strong></span></div>
-  <CoopSubregionProgressBoard regionId={region.id}/>
-  <section className="panel coop-map-panel coop-map-panel-solo-layout"><div className="screen-intro"><small>EXPLORAÇÃO COMPARTILHADA</small><p>{isHost?'Ande pelo mapa com WASD ou setas. O grupo segue sua posição e entra nas mesmas emboscadas e batalhas.':'Você está vendo o mesmo mapa do líder. O progresso acima mostra quanto falta em cada sub-região para liberar chefes.'}</p></div>{mapNode}</section>
+  <section className="panel coop-map-panel coop-map-panel-solo-layout"><div className="screen-intro"><small>EXPLORAÇÃO COMPARTILHADA</small><p>{isHost?'Ande pelo mapa com WASD ou setas. O grupo segue sua posição e entra nas mesmas emboscadas e batalhas.':'Você está vendo o mesmo mapa do líder. Passe o mouse pelos pins para ver o progresso e os detalhes de cada sub-região.'}</p></div>{mapNode}</section>
  </section>
-}
-function CoopSubregionProgressBoard({regionId}:{regionId:string}){
- const g=useGame(),coop=useCoop(),subs=SUBREGIONS.filter(sub=>sub.regionId===regionId),memberProgress=(coop.room?.shared_state?.memberProgress??{}) as CoopMemberProgress,level=levelInfo(g.xp).lvl
- return <div className="coop-subregion-board subregion-grid">{subs.map(sub=>{const progress=coopSubProgress(sub,coop.members,memberProgress),danger=coopDangerFor(level,sub.nivelMin,sub.nivelMax),pct=Math.min(100,progress.minimum/Math.max(1,progress.required)*100);return <article key={sub.id} className={`subregion-card coop-subregion-card danger-${danger.cls}`}><div className="subregion-top"><span className="subregion-icon">{sub.icone}</span><div><h2>{sub.nome}</h2><p>Nível {sub.nivelMin}–{sub.nivelMax}</p></div><span className={`danger-badge ${danger.cls}`}>{danger.label}</span></div><p className="subregion-desc">{sub.descricao}</p><div className="subregion-progress"><div><span>Progresso do grupo</span><strong>{progress.minimum}/{progress.required}</strong></div><div className="xp-track"><div style={{width:`${pct}%`}}/></div></div><div className="subregion-meta"><span>★{'★'.repeat(Math.max(0,danger.stars-1))}{'☆'.repeat(Math.max(0,5-danger.stars))}</span><span>{progress.ready?'CHEFE LIBERADO':`Faltam ${progress.left}`}</span></div><div className="coop-subregion-members">{coop.members.map(member=>{const value=Math.min(progress.required,memberProgress[member.user_id]?.[sub.id]??0),memberPct=Math.min(100,value/Math.max(1,progress.required)*100);return <div key={member.user_id} className={value>=progress.required?'ready':''}><span>{member.display_name}</span><b>{value}/{progress.required}</b><i><em style={{width:`${memberPct}%`}}/></i></div>})}</div><div className="subregion-details"><small><b>Loot:</b> {sub.temaLoot}</small><small><b>Desafios:</b> {sub.desafios.slice(0,3).join(' • ')}</small></div></article>})}</div>
 }
 // O Negociador: uma vitrine de itens (consumíveis e equipamentos) só entre quem está na MESMA
 // sala agora (ver o tipo MarketListing em CoopContext.tsx pra entender por que não é uma troca
@@ -115,11 +110,13 @@ function CoopSubregionProgressBoard({regionId}:{regionId:string}){
 // carrega um snapshot desses bônus (listing.forge) que a store re-key pra uma ref nova no
 // comprador ao completar a compra (ver completeMarketEquipmentPurchase em game.ts) -- sem isso o
 // bônus forjado desapareceria ao trocar de dono.
-const EQUIPMENT_RARITY_LABEL:Record<string,string>={comum:'Comum',incomum:'Incomum',raro:'Raro',epico:'Épico',lendario:'Lendário',mitico:'Mítico',heroico:'Heróico'}
+const MARKET_RARITY_LABEL:Record<string,string>={comum:'Comum',incomum:'Incomum',raro:'Raro',epico:'Épico',lendario:'Lendário',mitico:'Mítico',heroico:'Heróico'}
+const MARKET_SLOT_LABEL:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
+const marketArt=(item?:{arte?:string;imagem?:string})=>item?.arte||item?.imagem?'./'+(item.arte??item.imagem):''
 function CoopMarketPanel({members,userId}:{members:{user_id:string;display_name:string}[];userId:string}){
  const g=useGame(),coop=useCoop(),market=(coop.room?.shared_state?.market as MarketListing[]|undefined)??[]
- const ownedConsumables=Object.entries(g.inventory).filter(([,qty])=>qty>0).map(([id,qty])=>({id,qty,item:CONSUMABLES.find(c=>c.id===id)})).filter(entry=>entry.item)
- const ownedEquipment=g.equipmentBag.map(ref=>({ref,e:equipmentByRef(ref),upgrade:g.equipmentUpgrades[ref]??0,gems:g.equipmentGems[ref]?.length??0})).filter(entry=>entry.e&&!g.lockedEquipment?.[entry.ref])
+ const ownedConsumables=Object.entries(g.inventory).filter(([,qty])=>qty>0).map(([id,qty])=>({id,qty,item:CONSUMABLES.find(c=>c.id===id)})).filter((entry):entry is {id:string;qty:number;item:(typeof CONSUMABLES)[number]}=>Boolean(entry.item))
+ const ownedEquipment=g.equipmentBag.map(ref=>({ref,e:equipmentByRef(ref),upgrade:g.equipmentUpgrades[ref]??0,gems:g.equipmentGems[ref]?.length??0})).filter((entry):entry is {ref:string;e:NonNullable<ReturnType<typeof equipmentByRef>>;upgrade:number;gems:number}=>Boolean(entry.e)&&!g.lockedEquipment?.[entry.ref])
  const [kind,setKind]=React.useState<'consumable'|'equipment'>('consumable')
  const [itemId,setItemId]=React.useState(''),[qty,setQty]=React.useState(1),[price,setPrice]=React.useState(10)
  const pool=kind==='consumable'?ownedConsumables.map(entry=>entry.id):ownedEquipment.map(entry=>entry.ref)
@@ -128,6 +125,8 @@ function CoopMarketPanel({members,userId}:{members:{user_id:string;display_name:
  const selectedEquipment=ownedEquipment.find(entry=>entry.ref===itemId)
  const mine=market.filter(listing=>listing.sellerId===userId)
  const others=market.filter(listing=>listing.sellerId!==userId&&listing.status==='listed')
+ const availableCount=kind==='consumable'?ownedConsumables.length:ownedEquipment.length
+ const listedCount=market.filter(listing=>listing.status==='listed').length
  const equipmentLabel=(ref:string,forge?:{upgrade?:number;gems?:string[]})=>{
   const e=equipmentByRef(ref);if(!e)return ref
   const bits=[e.nome]
@@ -135,6 +134,16 @@ function CoopMarketPanel({members,userId}:{members:{user_id:string;display_name:
   if(forge?.gems?.length)bits.push(`💎${forge.gems.length}`)
   return bits.join(' ')
  }
+ const listingItem=(listing:MarketListing)=>listing.kind==='equipment'?equipmentByRef(listing.itemId):CONSUMABLES.find(c=>c.id===listing.itemId)
+ const listingLabel=(listing:MarketListing)=>listing.kind==='equipment'?equipmentLabel(listing.itemId,listing.forge):CONSUMABLES.find(c=>c.id===listing.itemId)?.nome??listing.itemId
+ const listingMeta=(listing:MarketListing)=>{
+  if(listing.kind==='equipment'){const item=equipmentByRef(listing.itemId);return item?`${MARKET_SLOT_LABEL[item.slot]} • ${MARKET_RARITY_LABEL[item.raridade??'comum']}`:'Equipamento'}
+  const item=CONSUMABLES.find(c=>c.id===listing.itemId)
+  return `${item?.tipo??'Consumível'} • x${listing.qty}`
+ }
+ const selectedName=kind==='consumable'?selectedConsumable?.item.nome:selectedEquipment?equipmentLabel(selectedEquipment.ref,{upgrade:selectedEquipment.upgrade,gems:g.equipmentGems[selectedEquipment.ref]}):undefined
+ const selectedImage=kind==='consumable'?marketArt(selectedConsumable?.item):marketArt(selectedEquipment?.e)
+ const selectedMeta=kind==='consumable'?`${selectedConsumable?.qty??0} disponível${(selectedConsumable?.qty??0)===1?'':'is'}`:selectedEquipment?`${MARKET_SLOT_LABEL[selectedEquipment.e.slot]} • ${MARKET_RARITY_LABEL[selectedEquipment.e.raridade??'comum']}`:''
  const doList=async()=>{
   if(price<1)return
   if(kind==='consumable'){
@@ -165,44 +174,57 @@ function CoopMarketPanel({members,userId}:{members:{user_id:string;display_name:
    else g.completeMarketPurchase(listing.itemId,listing.qty,listing.price)
   }catch{}
  }
+ const renderListing=(listing:MarketListing,scope:'mine'|'group')=>{
+  const item=listingItem(listing),image=marketArt(item),blocked=listing.kind==='equipment'&&equipmentBagFull,sold=listing.status!=='listed'
+  return <article key={listing.id} className={`coop-market-listing-card${sold?' sold':''}`}>
+   <span className="coop-market-card-art">{image?<img src={image} alt=""/>:<PackageSearch/>}</span>
+   <span className="coop-market-card-copy">
+    <small>{listingMeta(listing)}</small>
+    <strong>{listingLabel(listing)}</strong>
+    <em>{scope==='mine'?sold?`Vendido a ${listing.buyerName??'aventureiro'}`:'Seu anúncio':`de ${listing.sellerName}`}</em>
+   </span>
+   <span className="coop-market-listing-side">
+    <b className="coop-market-row-price"><Coins size={13}/>{listing.price}</b>
+    {scope==='mine'?(sold?<em>Repassando ouro...</em>:<button disabled={coop.busy} onClick={()=>void doCancel(listing)}><XCircle size={14}/>Cancelar</button>):<button className="primary" disabled={coop.busy||g.gold<listing.price||blocked} title={blocked?'Sua mochila de equipamentos está cheia.':g.gold<listing.price?'Ouro insuficiente.':undefined} onClick={()=>void doBuy(listing)}><ShoppingBag size={14}/>Comprar</button>}
+   </span>
+  </article>
+ }
  return <section className="panel coop-market-panel">
-  <h2><PackageSearch size={17}/> O Negociador</h2>
-  <div className="panel npc-banner"><span className="npc-banner-portrait"><PackageSearch/></span><div className="npc-banner-copy"><span className="npc-banner-name">Otávio Marreco<small>Negociador itinerante da sala</small></span><p>"Sozinho eu só tenho tralha. Com um comprador do lado, isso vira comércio."</p></div></div>
-  <p className="coop-market-hint">Anuncie consumíveis ou equipamentos da sua bolsa pro resto do grupo comprar com ouro. Só funciona enquanto vocês estiverem juntos nesta sala -- ao anunciar, o item sai da sua bolsa na hora; cancelando, ele volta.</p>
-  <div className="coop-market-kind-toggle">
-   <button type="button" className={kind==='consumable'?'primary':''} onClick={()=>setKind('consumable')}>Consumíveis</button>
-   <button type="button" className={kind==='equipment'?'primary':''} onClick={()=>setKind('equipment')}>Equipamentos</button>
-  </div>
-  {kind==='consumable'?(ownedConsumables.length>0?<div className="coop-market-form">
-   <select value={itemId} onChange={e=>setItemId(e.target.value)}>{ownedConsumables.map(entry=><option key={entry.id} value={entry.id}>{entry.item!.nome} (x{entry.qty})</option>)}</select>
-   <input type="number" min={1} max={selectedConsumable?.qty??1} value={qty} onChange={e=>setQty(Math.max(1,Math.min(selectedConsumable?.qty??1,Number(e.target.value)||1)))} title="Quantidade"/>
-   <label className="coop-market-price"><Coins size={14}/><input type="number" min={1} value={price} onChange={e=>setPrice(Math.max(1,Number(e.target.value)||1))} title="Preço em ouro"/></label>
-   <button className="primary" disabled={coop.busy||!selectedConsumable} onClick={doList}>Anunciar</button>
-  </div>:<p className="coop-market-empty">Você não tem consumíveis na bolsa pra anunciar agora.</p>)
-  :(ownedEquipment.length>0?<div className="coop-market-form">
-   <select value={itemId} onChange={e=>setItemId(e.target.value)}>{ownedEquipment.map(entry=><option key={entry.ref} value={entry.ref}>{equipmentLabel(entry.ref,{upgrade:entry.upgrade,gems:g.equipmentGems[entry.ref]})} — {EQUIPMENT_RARITY_LABEL[entry.e!.raridade??'comum']}</option>)}</select>
-   <label className="coop-market-price"><Coins size={14}/><input type="number" min={1} value={price} onChange={e=>setPrice(Math.max(1,Number(e.target.value)||1))} title="Preço em ouro"/></label>
-   <button className="primary" disabled={coop.busy||!selectedEquipment} onClick={doList}>Anunciar</button>
-  </div>:<p className="coop-market-empty">Você não tem equipamentos livres na mochila pra anunciar agora.</p>)}
-  <div className="coop-market-lists">
-   <div>
-    <small>SEUS ANÚNCIOS</small>
-    {mine.length===0&&<p className="coop-market-empty">Nenhum anúncio ativo.</p>}
-    {mine.map(listing=>{const label=listing.kind==='equipment'?equipmentLabel(listing.itemId,listing.forge):`${CONSUMABLES.find(c=>c.id===listing.itemId)?.nome??listing.itemId}`;return <article key={listing.id} className="coop-market-row">
-     <span><strong>{label}</strong>{listing.kind!=='equipment'&&` x${listing.qty}`}</span>
-     <span className="coop-market-row-price"><Coins size={13}/>{listing.price}</span>
-     {listing.status==='listed'?<button disabled={coop.busy} onClick={()=>void doCancel(listing)}>Cancelar</button>:<em>Vendido a {listing.buyerName} — repassando ouro...</em>}
-    </article>})}
-   </div>
-   <div>
-    <small>VITRINE DO GRUPO</small>
-    {others.length===0&&<p className="coop-market-empty">Ninguém anunciou nada ainda.</p>}
-    {others.map(listing=>{const label=listing.kind==='equipment'?equipmentLabel(listing.itemId,listing.forge):`${CONSUMABLES.find(c=>c.id===listing.itemId)?.nome??listing.itemId}`,blocked=listing.kind==='equipment'&&equipmentBagFull;return <article key={listing.id} className="coop-market-row">
-     <span><strong>{label}</strong>{listing.kind!=='equipment'&&` x${listing.qty}`} <em>de {listing.sellerName}</em></span>
-     <span className="coop-market-row-price"><Coins size={13}/>{listing.price}</span>
-     <button className="primary" disabled={coop.busy||g.gold<listing.price||blocked} title={blocked?'Sua mochila de equipamentos está cheia.':undefined} onClick={()=>void doBuy(listing)}>Comprar</button>
-    </article>})}
-   </div>
+  <header className="coop-market-head"><div><h2><PackageSearch size={18}/> O Negociador</h2><p>Itens da sala ficam em depósito até alguém comprar ou até o anúncio ser cancelado.</p></div><div className="coop-market-summary"><span><Coins/><small>SEU OURO</small><strong>{g.gold}</strong></span><span><ShoppingBag/><small>ANÚNCIOS</small><strong>{listedCount}</strong></span></div></header>
+  <div className="coop-market-merchant npc-banner"><span className="npc-banner-portrait"><PackageSearch/></span><div className="npc-banner-copy"><span className="npc-banner-name">Otávio Marreco<small>Negociador itinerante da sala</small></span><p>"Sozinho eu só tenho tralha. Com um comprador do lado, isso vira comércio."</p></div></div>
+  <div className="coop-market-grid">
+   <section className="coop-market-block">
+    <header className="coop-market-block-head"><div><small>SUA BOLSA</small><h3>Itens disponíveis</h3></div><b>{availableCount}</b></header>
+    <div className="coop-market-kind-toggle">
+     <button type="button" className={kind==='consumable'?'primary':''} onClick={()=>setKind('consumable')}>Consumíveis</button>
+     <button type="button" className={kind==='equipment'?'primary':''} onClick={()=>setKind('equipment')}>Equipamentos</button>
+    </div>
+    <div className="coop-market-available-grid">
+     {kind==='consumable'?ownedConsumables.map(entry=>{const image=marketArt(entry.item),selected=itemId===entry.id;return <button key={entry.id} type="button" className={`coop-market-item-card${selected?' selected':''}`} onClick={()=>{setItemId(entry.id);setQty(value=>Math.min(value,entry.qty))}}>
+      <span className="coop-market-card-art">{image?<img src={image} alt=""/>:<PackageSearch/>}</span>
+      <span className="coop-market-card-copy"><small>{MARKET_RARITY_LABEL[entry.item.raridade??'comum']} • Consumível</small><strong>{entry.item.nome}</strong><em>{entry.item.descricao}</em></span>
+      <span className="coop-market-card-meta"><b>x{entry.qty}</b><small>{selected?'Selecionado':'Disponível'}</small></span>
+     </button>}):ownedEquipment.map(entry=>{const image=marketArt(entry.e),selected=itemId===entry.ref;return <button key={entry.ref} type="button" className={`coop-market-item-card${selected?' selected':''}`} onClick={()=>setItemId(entry.ref)}>
+      <span className="coop-market-card-art">{image?<img src={image} alt=""/>:<PackageSearch/>}</span>
+      <span className="coop-market-card-copy"><small>{MARKET_SLOT_LABEL[entry.e.slot]} • {MARKET_RARITY_LABEL[entry.e.raridade??'comum']}</small><strong>{equipmentLabel(entry.ref,{upgrade:entry.upgrade,gems:g.equipmentGems[entry.ref]})}</strong><em>{entry.e.habilidade}</em></span>
+      <span className="coop-market-card-meta"><b>{entry.upgrade?`+${entry.upgrade}`:'Base'}</b><small>{entry.gems?`${entry.gems} gemas`:'sem gemas'}</small></span>
+     </button>})}
+     {availableCount===0&&<p className="coop-market-empty">{kind==='consumable'?'Você não tem consumíveis na bolsa pra anunciar agora.':'Você não tem equipamentos livres na mochila pra anunciar agora.'}</p>}
+    </div>
+    <div className="coop-market-listing-form">
+     <span className="coop-market-selected-preview">{selectedImage?<img src={selectedImage} alt=""/>:<PackageSearch/>}<span><small>{selectedMeta||'Selecione um item'}</small><strong>{selectedName??'Nada selecionado'}</strong></span></span>
+     {kind==='consumable'&&<label>Qtd.<input type="number" min={1} max={selectedConsumable?.qty??1} value={qty} onChange={e=>setQty(Math.max(1,Math.min(selectedConsumable?.qty??1,Number(e.target.value)||1)))}/></label>}
+     <label><Coins size={14}/>Preço<input type="number" min={1} value={price} onChange={e=>setPrice(Math.max(1,Number(e.target.value)||1))}/></label>
+     <button className="primary" disabled={coop.busy||(kind==='consumable'?!selectedConsumable:!selectedEquipment)} onClick={doList}><Tag size={14}/>Anunciar</button>
+    </div>
+   </section>
+   <section className="coop-market-block">
+    <header className="coop-market-block-head"><div><small>VITRINE</small><h3>Anúncios da sala</h3></div><b>{market.length}</b></header>
+    <div className="coop-market-list-sections">
+     <div><small>SEUS ANÚNCIOS</small>{mine.length===0?<p className="coop-market-empty">Nenhum anúncio ativo.</p>:mine.map(listing=>renderListing(listing,'mine'))}</div>
+     <div><small>VITRINE DO GRUPO</small>{others.length===0?<p className="coop-market-empty">Ninguém anunciou nada ainda.</p>:others.map(listing=>renderListing(listing,'group'))}</div>
+    </div>
+   </section>
   </div>
  </section>
 }
@@ -236,7 +258,8 @@ function CoopHostMap({regionId}:{regionId:string}){
  const handleEnter=(subId:string)=>{const sub=subs.find(s=>s.id===subId);if(sub){setActiveSub(sub);setEncounterPrompt(sub)}}
  const handleExit=(exitId:string)=>{const exit=regionExits.find(item=>item.id===exitId);if(!exit)return;const nextMap=getRegionMap(exit.region.id);if(!nextMap)return;const nextPos=g.regionMapPositions?.[exit.region.id]??nextMap.spawn;void coop.publishMapPos(exit.region.id,nextPos.x,nextPos.y)}
  const handleAmbush=(nearestSubId:string)=>{if(ambushPrompt)return;const sub=subs.find(s=>s.id===nearestSubId);const enemy=sub&&buildCoopEnemy(sub.id,level,g.difficultyMode,coop.members.length);if(sub&&enemy)setAmbushPrompt({enemy,subregionId:sub.id})}
- const locationStatus=(subId:string):'ready'|'default'=>{const sub=subs.find(s=>s.id===subId);return sub&&allHaveSubProgress(sub)?'ready':'default'}
+ const locationStatus=(subId:string):'done'|'ready'|'default'=>{const sub=subs.find(s=>s.id===subId);if(!sub)return'default';if(g.subregionBossesDefeated.includes(sub.id))return'done';return allHaveSubProgress(sub)?'ready':'default'}
+ const locationDetails=(subId:string)=>{const sub=subs.find(s=>s.id===subId);if(!sub)return undefined;const progress=subProgress(sub),danger=coopDangerFor(level,sub.nivelMin,sub.nivelMax);return{name:sub.nome,description:sub.descricao,loot:sub.temaLoot,challenges:sub.desafios,levelLabel:`Nível ${sub.nivelMin}-${sub.nivelMax}`,difficultyLabel:danger.label,wins:progress.minimum,required:progress.required,bossName:sub.chefe.nome,bossDefeated:g.subregionBossesDefeated.includes(sub.id)}}
  const handleOpenChest=(chest:{id:string;name:string;x:number;y:number;icon?:string;contents:{gold:number;materials?:Record<string,number>;consumables?:Record<string,number>}})=>{if(!g.openMapChest(chest.id,chest))return;setChestNotice(useGame.getState().explorationNote)}
  const acceptAmbush=()=>{if(!ambushPrompt)return;const{enemy,subregionId}=ambushPrompt;setAmbushPrompt(undefined);void coop.startMapBattle(subregionId,enemy as unknown as Record<string,unknown>)}
  const fleeAmbush=()=>{if(!ambushPrompt)return;const roll=1+Math.floor(Math.random()*6);if(roll>=5){setAmbushPrompt(undefined);return}acceptAmbush()}
@@ -249,7 +272,7 @@ function CoopHostMap({regionId}:{regionId:string}){
  return <div className="regionmap-shell coop-map-shell">
   <div className="regionmap-stage"><div className="regionmap-stage-title"><Map size={18}/><span>Região de {region.nome}</span></div>
    <TileWorldExplorer map={map} playerSprite={mapSpriteFor(g.heroId)} initialPosition={initialPos} paused={Boolean(encounterPrompt||ambushPrompt||chestNotice)}
-    onEnterLocation={handleEnter} locationStatus={locationStatus} exits={regionExits} onEnterExit={handleExit} onAmbush={handleAmbush}
+    onEnterLocation={handleEnter} locationStatus={locationStatus} locationDetails={locationDetails} exits={regionExits} onEnterExit={handleExit} onAmbush={handleAmbush}
     onPositionChange={pos=>{g.setRegionMapPosition(regionId,pos);void coop.publishMapPos(regionId,pos.x,pos.y)}}
     openedChests={g.openedChests} onOpenChest={handleOpenChest} onRestCampfire={campfire=>g.restAtCampfire(regionId,campfire)} onCampfireTick={()=>g.campfireHealTick()}
     exploredTiles={exploredSet} onExplore={tiles=>g.revealMapTiles(regionId,tiles)} defeatedWanderers={g.defeatedWanderers}
@@ -277,11 +300,14 @@ function CoopHostMap({regionId}:{regionId:string}){
 // principal" do TileWorldExplorer aqui representa o líder, e os fantasmas do grupo (inclusive
 // o próprio jogador) aparecem ao lado dele.
 function CoopFollowerMap({mapPos,hostHeroId,partyGhosts}:{mapPos:MapPos;hostHeroId?:string;partyGhosts:Array<{id:string;spriteId:string}>}){
- const map=getRegionMap(mapPos.regionId)
+ const g=useGame(),coop=useCoop(),map=getRegionMap(mapPos.regionId),subs=SUBREGIONS.filter(sub=>sub.regionId===mapPos.regionId),memberProgress=(coop.room?.shared_state?.memberProgress??{}) as CoopMemberProgress
  if(!map)return <p className="coop-notice">Aguardando o anfitrião iniciar a exploração...</p>
+ const subProgress=(sub:Subregion)=>coopSubProgress(sub,coop.members,memberProgress)
+ const locationStatus=(subId:string):'done'|'ready'|'default'=>{const sub=subs.find(s=>s.id===subId);if(!sub)return'default';if(g.subregionBossesDefeated.includes(sub.id))return'done';return subProgress(sub).ready?'ready':'default'}
+ const locationDetails=(subId:string)=>{const sub=subs.find(s=>s.id===subId);if(!sub)return undefined;const progress=subProgress(sub),level=levelInfo(g.xp).lvl,danger=coopDangerFor(level,sub.nivelMin,sub.nivelMax);return{name:sub.nome,description:sub.descricao,loot:sub.temaLoot,challenges:sub.desafios,levelLabel:`Nível ${sub.nivelMin}-${sub.nivelMax}`,difficultyLabel:danger.label,wins:progress.minimum,required:progress.required,bossName:sub.chefe.nome,bossDefeated:g.subregionBossesDefeated.includes(sub.id)}}
  return <div className="regionmap-shell coop-map-shell coop-map-follower">
   <div className="regionmap-stage"><div className="regionmap-stage-title"><Map size={18}/><span>Seguindo o líder pela região</span></div>
-   <TileWorldExplorer map={map} playerSprite={mapSpriteFor(hostHeroId)} paused externalPosition={{x:mapPos.x,y:mapPos.y}} onEnterLocation={()=>{}} partyGhosts={partyGhosts}/>
+   <TileWorldExplorer map={map} playerSprite={mapSpriteFor(hostHeroId)} paused externalPosition={{x:mapPos.x,y:mapPos.y}} onEnterLocation={()=>{}} locationStatus={locationStatus} locationDetails={locationDetails} partyGhosts={partyGhosts}/>
   </div>
   <aside className="regionmap-inspector coop-map-inspector"><span className="eyebrow">MODO ACOMPANHAMENTO</span><p>Você segue o anfitrião pelo mapa e recebe os mesmos acessos, emboscadas, chefes e recompensas do grupo -- sem precisar controlar o movimento.</p></aside>
  </div>

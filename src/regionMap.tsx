@@ -4,7 +4,7 @@
 // jogador pisa num marcador de sub-região. Quem decide o que acontece ao entrar num marcador
 // (abrir card, checar progresso etc.) é o componente que usa <TileWorldExplorer/>.
 import React from 'react'
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, MapPin, Sun, Leaf, Snowflake, Flame, Skull, Anvil, Eclipse, Wheat, Cog, Factory, Wind, type LucideIcon } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, MapPin, Sun, Leaf, Snowflake, Flame, Skull, Anvil, Eclipse, Wheat, Cog, Factory, Wind, Check, CheckCircle2, Trophy, type LucideIcon } from 'lucide-react'
 import type { NpcDefinition } from './data/npcs'
 
 // GitHub Pages serve o app num subcaminho (ex.: /Bangalores/), então caminhos absolutos
@@ -71,6 +71,18 @@ const WALKABLE = new Set<MapTile>([
 ])
 
 export interface RegionMapLocation { subId: string; x: number; y: number; icon?: string }
+export interface RegionMapLocationDetails {
+  name: string
+  description: string
+  loot: string
+  challenges: string[]
+  levelLabel: string
+  difficultyLabel: string
+  wins: number
+  required: number
+  bossName: string
+  bossDefeated: boolean
+}
 export interface RegionMapExit { id: 'prev' | 'next' | string; x: number; y: number; icon?: string; targetRegionId?: string }
 export interface RegionMapChest {
   id: string
@@ -1114,7 +1126,7 @@ const partyGhostOffset = (facing: Facing, index: number): [number, number] => {
 }
 
 export function TileWorldExplorer({
-  map, initialPosition, paused, onEnterLocation, locationStatus, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
+  map, initialPosition, paused, onEnterLocation, locationStatus, locationDetails, exits = [], onEnterExit, npcs = [], onInteractNpc, npcStatus, onAmbush, onPositionChange,
   openedChests = {}, onOpenChest, onRestCampfire, onCampfireTick, playerSprite = 'adventurer', exploredTiles, onExplore, defeatedWanderers, customPins = [], onTogglePin,
   activatedLevers, onActivateLever, discoveredMonoliths, onActivateMonolith, discoveredSecrets, onDiscoverSecret, externalPosition, partyGhosts
 }: {
@@ -1123,6 +1135,7 @@ export function TileWorldExplorer({
   paused?: boolean
   onEnterLocation: (subId: string) => void
   locationStatus?: (subId: string) => 'done' | 'ready' | 'default'
+  locationDetails?: (subId: string) => RegionMapLocationDetails | undefined
   exits?: Array<{ id: string; x: number; y: number; label: string; icon?: string; theme?: string }>
   onEnterExit?: (id: string) => void
   npcs?: NpcDefinition[]
@@ -1653,11 +1666,39 @@ export function TileWorldExplorer({
         ))}
         {map.locations.map(loc => {
           const status = locationStatus?.(loc.subId) ?? 'default'
+          const details = locationDetails?.(loc.subId)
+          const requiredBattles = Math.max(0, details?.required ?? 0)
+          const completedBattles = details?.bossDefeated ? requiredBattles : Math.min(details?.wins ?? 0, requiredBattles)
+          const bossReady = Boolean(details && !details.bossDefeated && details.wins >= details.required)
+          const remainingBattles = Math.max(0, requiredBattles - completedBattles)
+          const popoverClass = [
+            'regionmap-location-popover',
+            loc.x < 3 ? 'edge-left' : '',
+            loc.x > map.width - 4 ? 'edge-right' : '',
+            loc.y < 3 ? 'edge-top' : '',
+          ].filter(Boolean).join(' ')
+          const ariaLabel = details ? `Ir ate ${details.name}. ${details.bossDefeated ? 'Chefe derrotado.' : bossReady ? 'Chefe disponivel.' : `${completedBattles} de ${requiredBattles} batalhas antes do chefe.`}` : `Ir ate ${loc.subId}`
           return <button key={loc.subId} type="button" className={`regionmap-location status-${status}`}
             style={{ left: loc.x * tilePx, top: loc.y * tilePx, width: tilePx, height: tilePx }}
-            onClick={event => { event.stopPropagation(); if (didDragRef.current) { didDragRef.current = false; return }; moveToTile({ x: loc.x, y: loc.y }) }} aria-label={`Ir até ${loc.subId}`}>
+            onClick={event => { event.stopPropagation(); if (didDragRef.current) { didDragRef.current = false; return }; moveToTile({ x: loc.x, y: loc.y }) }} aria-label={ariaLabel}>
             <span className="regionmap-location-pulse" />
-            <span className="regionmap-location-icon">{loc.icon ?? '◆'}</span>
+            <span className="regionmap-location-icon">{status === 'done' ? <CheckCircle2 size={15} strokeWidth={3} /> : loc.icon ?? <MapPin size={13} strokeWidth={3} />}</span>
+            {details && <span className={popoverClass} role="tooltip">
+              <strong>{details.name}</strong>
+              <small>{details.levelLabel} - {details.difficultyLabel}</small>
+              <p>{details.description}</p>
+              <small>{details.bossDefeated ? 'CHEFE DERROTADO' : bossReady ? 'CHEFE DISPONIVEL' : `${completedBattles}/${requiredBattles} BATALHAS`}</small>
+              <span className="regionmap-location-track" aria-hidden="true">
+                {Array.from({ length: requiredBattles }, (_, index) => {
+                  const done = details.bossDefeated || index < completedBattles
+                  return <span key={index} className={`regionmap-location-step${done ? ' done' : ''}`}>{done ? <Check size={10} strokeWidth={3} /> : index + 1}</span>
+                })}
+                <span className={`regionmap-location-step boss${details.bossDefeated ? ' done' : bossReady ? ' ready' : ''}`}>{details.bossDefeated ? <CheckCircle2 size={11} strokeWidth={3} /> : <Trophy size={11} strokeWidth={2.6} />}</span>
+              </span>
+              <em>{details.bossDefeated ? `${details.bossName} vencido.` : bossReady ? `${details.bossName} aguarda.` : `Faltam ${remainingBattles} batalha${remainingBattles === 1 ? '' : 's'}.`}</em>
+              <span className="regionmap-location-info"><b>Loot:</b> {details.loot}</span>
+              <span className="regionmap-location-info"><b>Desafios:</b> {details.challenges.slice(0, 3).join(' - ')}</span>
+            </span>}
           </button>
         })}
         {exits.map(exit => {

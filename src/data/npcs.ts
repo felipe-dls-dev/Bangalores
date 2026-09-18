@@ -379,7 +379,7 @@ export const NPCS: NpcDefinition[] = [
     y: 8,
     facing: 'down',
     sprite: 'assets/npcs/sprites/armor-vendor-simples-sprite.png',
-    portrait: 'assets/heroes/guardiao-montanhas-v2.png',
+    portrait: 'assets/npcs/silas_sterling.webp',
     services: ['quest', 'chronicle'],
     screen: 'chronicle',
     personality: 'nervoso',

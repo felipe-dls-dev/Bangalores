@@ -33,6 +33,12 @@ without pausing:
 
 ## Ground rules
 
+1. Play it like a player would. Do not read or edit source code to verify something — if a
+   bug can only be confirmed by reading code, that's not a playtest finding, describe what you
+   observed on screen instead.
+2. Do not fix bugs directly in code. Report them (see "How to report findings" below) so Claude
+   Code can fix them with full context and re-verify with the automated test suite.
+3. Keep the browser DevTools console open (F12) while playing. A 404 on an image request is
 1. Play it like a player would to find and confirm a bug. Do not treat something as a bug purely
    because reading the code suggests it might be one — if you can't reproduce it by actually
    playing, describe what you observed (or didn't observe) instead of reporting a guess. See
@@ -41,11 +47,14 @@ without pausing:
    exactly how a missing/renamed asset path shows up — report it even if the feature visually
    degraded gracefully (a fallback emoji, a missing background, etc.), since the fallback working
    isn't the same as the asset being wired correctly.
+4. Test at both a wide window size and a narrow one (~400-500px). The layout should never force
 3. Test at both a wide window size and a narrow one (~400-500px). The layout should never force
    horizontal scrolling on the page itself (a map or a wide table scrolling inside its own box is
    fine).
+5. In Configurações, toggle "Reduzir efeitos visuais" once and re-check the animated items below
 4. In Configurações, toggle "Reduzir efeitos visuais" once and re-check the animated items below
    in both states — animations should stop, static art should not disappear.
+6. Where a feature is persistence-sensitive (marked below), test it once on a brand-new campaign
 5. Where a feature is persistence-sensitive (marked below), test it once on a brand-new campaign
    and once on an existing/reloaded one — new-game state and loaded-save state take different
    code paths in this project and have diverged before.
@@ -169,6 +178,8 @@ build):
 
 ## How to report findings
 
+Add one entry per bug under the log below, using this template. Keep it factual (what you saw),
+not a diagnosis (why you think it happens) — Claude Code will investigate the cause.
 Add one entry per bug under the log below, using this template. Describe what you actually
 observed (Steps/Expected/Actual are factual, not a guess) — then, per the Autonomy section above,
 go ahead and fix it yourself and fill in `Fix applied` and `Verification` before moving on. Only
@@ -189,6 +200,7 @@ Verification: typecheck/lint/test/build result after the fix
 
 ## Findings Log
 
+(empty so far)
 ### QA-001 - Fast-path localStorage injection desync with active campaign snapshot
 Found by: Antigravity (QA Specialist)
 Where: `docs/QA_TESTING_GUIDE.md` (Fast Path snippet) / `src/store/game.ts` (`continueGame` & campaign storage)
@@ -238,6 +250,7 @@ Note for Claude Code / Codex: Re-export or crop `campos-dourados-overworld.png` 
 ---
 
 ### QA-003 - Missing favicon.ico generating 404 console error on startup
+Status: resolved by Codex with `public/favicon.svg` and an SVG favicon link in `index.html`.
 Found by: Antigravity (QA Specialist)
 Where: Browser initial load / `public/favicon.ico`
 Steps:
@@ -288,4 +301,3 @@ recording if possible) since the code doesn't support the described behavior on 
 | **Caçadora Ataque Duplo** | 3-turn buff duration & `extraHeroAttacks` rearming | `qa-verification.test.ts` (3-turn lifecycle verified) | Lasts 3 full combat turns, rearms each turn, expires correctly | **PASS** |
 | **Responsive Viewport** | 1280px wide desktop vs 420px narrow mobile | Browser CDP test (`scrollWidth === clientWidth`) | 0 horizontal page-level overflow | **PASS** |
 | **Reduced Motion** | "Reduzir efeitos visuais" settings toggle | Store setting & CSS `.reduced-motion` | Disables looping animations while preserving static art | **PASS** |
-

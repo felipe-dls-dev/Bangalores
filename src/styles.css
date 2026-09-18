@@ -450,6 +450,35 @@ body:has(.combat-v033){overflow:hidden}
 .regionmap-location{position:absolute;display:grid;place-items:center;padding:0!important;border:0!important;border-radius:0!important;appearance:none;background:transparent!important;box-shadow:none!important;cursor:pointer;pointer-events:auto;z-index:4}.regionmap-location:before{content:'';position:absolute;width:23px;height:23px;border:3px solid #fff;border-radius:50% 50% 50% 0;background:#cf4a4a;transform:rotate(-45deg);box-shadow:0 2px 0 #672331,0 0 10px rgba(0,0,0,.45);transition:transform .16s ease,filter .16s ease}.regionmap-location:hover:before,.regionmap-location:focus-visible:before{transform:rotate(-45deg) scale(1.16);filter:brightness(1.18)}.regionmap-location:focus-visible{outline:2px solid #fff;outline-offset:2px}.regionmap-location-icon{position:relative;z-index:1;font-size:.82rem;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}.regionmap-location-pulse{position:absolute;inset:6px;border-radius:50%;border:2px solid #fff5b4;opacity:0}
 .regionmap-exit{position:absolute;display:grid;place-items:center;padding:0!important;border:0!important;border-radius:0!important;appearance:none;background:transparent!important;box-shadow:none!important;cursor:pointer;pointer-events:auto;z-index:4}.regionmap-exit-ring{position:absolute;width:30px;height:30px;border:3px solid var(--exit-accent,#f7e1a4);border-radius:50%;background:radial-gradient(circle,#3d2710 0 38%,#b77a28 39% 68%,#2a1708 69%);box-shadow:0 2px 0 #4b2c0f,0 0 14px color-mix(in srgb,var(--exit-accent,#f6bc52) 60%,transparent);transition:transform .16s ease,filter .16s ease}.regionmap-exit:hover .regionmap-exit-ring,.regionmap-exit:focus-visible .regionmap-exit-ring{transform:scale(1.12);filter:brightness(1.16)}.regionmap-exit:focus-visible{outline:2px solid #fff;outline-offset:2px}.regionmap-exit-icon{position:relative;z-index:1;display:grid;place-items:center;color:#fff8d6;font-weight:900;font-size:1rem;line-height:1;text-shadow:0 1px 2px #000}.regionmap-exit-icon svg{filter:drop-shadow(0 1px 2px #000)}.regionmap-exit-label{position:absolute;left:50%;top:calc(100% - 1px);z-index:2;max-width:132px;padding:3px 7px;border:1px solid #d8a74c;border-radius:4px;background:rgba(27,15,7,.92);color:#ffe7ab;font-size:.58rem;font-weight:800;line-height:1.1;text-align:center;text-transform:uppercase;transform:translateX(-50%);box-shadow:0 2px 0 rgba(0,0,0,.45);white-space:normal}
 .regionmap-location.status-ready .regionmap-location-pulse{opacity:1;animation:regionmap-pulse 1.8s ease-out infinite}
+.regionmap-location:hover,.regionmap-location:focus-visible{z-index:16}
+.regionmap-location-icon{display:grid;place-items:center;width:18px;height:18px;color:#fff;text-shadow:0 1px 2px #000}
+.regionmap-location-icon svg{width:14px;height:14px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.75))}
+.regionmap-location-popover{position:absolute;left:50%;bottom:calc(100% + 13px);z-index:20;display:grid;gap:5px;width:260px;max-width:min(300px,74vw);padding:9px 10px;border:1px solid #d6a451;border-radius:6px;background:linear-gradient(160deg,rgba(35,23,12,.98),rgba(9,7,5,.98));box-shadow:0 10px 24px rgba(0,0,0,.72),0 0 14px rgba(216,164,81,.18);color:#f0d69b;text-align:left;letter-spacing:0;line-height:1.15;image-rendering:auto;pointer-events:none;opacity:0;visibility:hidden;transform:translateX(-50%) translateY(4px) scale(.96);transform-origin:50% 100%;transition:opacity .14s ease,visibility .14s ease,transform .14s ease}
+.regionmap-location-popover:after{content:'';position:absolute;left:50%;top:100%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#d6a451}
+.regionmap-location:hover .regionmap-location-popover,.regionmap-location:focus-visible .regionmap-location-popover{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0) scale(1)}
+.regionmap-location-popover.edge-left{left:0;transform:translateY(4px) scale(.96);transform-origin:0 100%}
+.regionmap-location:hover .regionmap-location-popover.edge-left,.regionmap-location:focus-visible .regionmap-location-popover.edge-left{transform:translateY(0) scale(1)}
+.regionmap-location-popover.edge-left:after{left:13px;transform:none}
+.regionmap-location-popover.edge-right{left:auto;right:0;transform:translateY(4px) scale(.96);transform-origin:100% 100%}
+.regionmap-location:hover .regionmap-location-popover.edge-right,.regionmap-location:focus-visible .regionmap-location-popover.edge-right{transform:translateY(0) scale(1)}
+.regionmap-location-popover.edge-right:after{left:auto;right:13px;transform:none}
+.regionmap-location-popover.edge-top{bottom:auto;top:calc(100% + 13px);transform-origin:50% 0}
+.regionmap-location-popover.edge-top:after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#d6a451}
+.regionmap-location-popover.edge-left.edge-top,.regionmap-location-popover.edge-right.edge-top{transform-origin:0 0}
+.regionmap-location-popover.edge-right.edge-top{transform-origin:100% 0}
+.regionmap-location-popover strong{display:block;overflow:hidden;text-overflow:ellipsis;max-width:238px;color:#ffe0a2;font:800 .72rem Georgia,serif;white-space:nowrap}
+.regionmap-location-popover small{display:block;color:#a9844c;font-size:.49rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+.regionmap-location-popover p{margin:0;color:#dcc7a3;font-size:.58rem;line-height:1.35;white-space:normal}
+.regionmap-location-track{display:flex;align-items:center;gap:4px;min-height:18px}
+.regionmap-location-step{display:grid;place-items:center;flex:0 0 17px;width:17px;height:17px;border:1px solid #6b4a24;border-radius:50%;background:#110b07;color:#9b845e;font-size:.5rem;font-weight:900;line-height:1}
+.regionmap-location-step svg{width:10px;height:10px}
+.regionmap-location-step.done{border-color:#74aa63;background:#1b3418;color:#c9f1b8;box-shadow:0 0 8px rgba(116,170,99,.28)}
+.regionmap-location-step.boss{border-color:#a46f2f;color:#efc775;background:#231507}
+.regionmap-location-step.boss.ready{border-color:#f1be63;background:#51330d;color:#fff0bd;box-shadow:0 0 10px rgba(241,190,99,.45)}
+.regionmap-location-step.boss.done{border-color:#74aa63;background:#1d3a19;color:#c9f1b8}
+.regionmap-location-popover em{display:block;color:#c8b493;font-size:.58rem;font-style:normal;white-space:normal}
+.regionmap-location-info{display:block;padding-top:4px;border-top:1px solid rgba(214,164,81,.22);color:#c8b493;font-size:.55rem;line-height:1.32;white-space:normal}
+.regionmap-location-info b{color:#efc775}
 .regionmap-campfire{position:absolute;display:grid;place-items:center;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;cursor:pointer;pointer-events:auto;z-index:4}.regionmap-campfire-aura{position:absolute;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle,rgba(255,140,0,.6) 0,rgba(255,69,0,.3) 50%,transparent 70%);animation:campfire-flicker 1.4s infinite alternate;pointer-events:none}.regionmap-campfire-icon{position:relative;z-index:1;font-size:1.1rem;line-height:1;filter:drop-shadow(0 0 6px rgba(255,120,0,.8))}
 img.regionmap-campfire-icon{width:80%;height:80%;object-fit:contain;image-rendering:pixelated}
 .regionmap-campfire:hover .regionmap-campfire-icon{transform:scale(1.2);transition:transform .15s ease}
@@ -703,8 +732,18 @@ html.reduce-effects .regionmap-particles span{animation:none;opacity:.22}
 .gallery-card .game-card.ornate-card>.ornate-frame{width:100%;height:100%;max-width:none;max-height:none}
 .gallery-card .game-card.ornate-card .ornate-art img{width:100%;height:100%;max-width:none;max-height:none}
 @media(max-width:760px){.game-card.ornate-card{width:min(360px,100%)}.ornate-name{font-size:clamp(.75rem,4vw,1.15rem)}.ornate-badge{font-size:.58rem}.ornate-stat{font-size:1rem}.ornate-effect{font-size:.58rem}}
-.combat-card-fighter{position:relative;display:flex;flex-direction:column;align-items:center;padding:5px!important;background:linear-gradient(#17100b,#090605)}
-.combat-card-fighter .ornate-card{height:calc(100% - 38px);width:auto;max-width:100%;max-height:100%;flex:none;min-height:0;aspect-ratio:2/3}
+.combat-card-fighter{position:relative;display:flex;flex-direction:column;align-items:center;padding:6px!important;background:linear-gradient(#17100b,#090605);box-sizing:border-box}
+.combat-card-fighter .fighter-card-motion{position:relative;flex:1 1 auto;min-height:0;width:100%;height:calc(100% - 42px);display:flex;justify-content:center;align-items:center}
+.combat-card-fighter .fighter-flip-container{position:relative;width:100%;height:100%;max-width:100%;max-height:100%;display:flex;justify-content:center;align-items:center;perspective:1200px;-webkit-perspective:1200px;cursor:pointer;user-select:none;touch-action:manipulation}
+.combat-card-fighter .fighter-flip-container:focus-visible{outline:2px solid var(--gold,#d4af37);outline-offset:2px;border-radius:8px}
+.combat-card-fighter .fighter-flip-inner{position:relative;width:100%;height:100%;display:flex;justify-content:center;align-items:center;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .65s cubic-bezier(.23,1,.32,1)}
+.combat-card-fighter .fighter-flip-container.is-flipped .fighter-flip-inner{transform:rotateY(180deg)}
+.combat-card-fighter .fighter-flip-face{position:absolute;inset:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.combat-card-fighter .fighter-flip-front{transform:rotateY(0deg);z-index:2}
+.combat-card-fighter .fighter-flip-back{transform:rotateY(180deg);z-index:1}
+.combat-card-fighter .fighter-flip-container.is-flipped .fighter-flip-front{z-index:1;pointer-events:none}
+.combat-card-fighter .fighter-flip-container.is-flipped .fighter-flip-back{z-index:2;pointer-events:auto}
+.combat-card-fighter .fighter-flip-front .ornate-card,.combat-card-fighter .ornate-card{position:relative;height:100%;width:auto;max-width:100%;max-height:100%;flex:none;min-height:0;aspect-ratio:2/3;margin:0 auto}
 .combat-card-fighter .ornate-card>.ornate-frame{inset:0;width:100%!important;height:100%!important;min-height:0!important;max-width:none!important;max-height:none!important;object-fit:fill!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 .combat-card-fighter .ornate-art .art-preview-trigger,.combat-card-fighter .ornate-art .art-preview-trigger>img{inset:0;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;object-fit:cover!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 .combat-card-fighter .ornate-card>.ornate-emblem{right:5.8%;top:6.4%;width:17.5%!important;height:auto!important;min-height:0!important;max-width:17.5%!important;max-height:none!important;aspect-ratio:1;object-fit:contain!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
@@ -717,6 +756,17 @@ html.reduce-effects .regionmap-particles span{animation:none;opacity:.22}
 .combat-card-fighter>.hp-track{margin:2px 0 0!important;height:7px!important}
 .combat-card-phase{position:absolute;z-index:6;top:23%;right:8%;padding:2px 5px;border-radius:4px;background:#270d08;color:#f2b45d;font-size:.55rem;letter-spacing:.08em}
 .combat-card-fighter>.floating-damage{z-index:8;left:45%;top:42%}
+
+/* Palco de Batalha do Lutador 2D Arcade (docs/BATTLE_SPRITE_PROMPTS.md) */
+.battle-sprite-stage{position:relative;width:auto;height:100%;max-width:100%;max-height:100%;aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;background:radial-gradient(circle at 50% 65%,rgba(65,45,28,.85) 0%,rgba(18,12,8,.96) 75%),#0c0806;border:2px solid var(--gold,#d4af37);box-shadow:inset 0 0 35px rgba(0,0,0,.9),0 8px 24px rgba(0,0,0,.65);overflow:hidden;margin:0 auto}
+.battle-sprite-stage.enemy{border-color:#8c2a2a;background:radial-gradient(circle at 50% 65%,rgba(70,22,22,.85) 0%,rgba(20,8,8,.96) 75%),#0d0505;box-shadow:inset 0 0 35px rgba(0,0,0,.9),0 8px 24px rgba(60,10,10,.5)}
+.battle-sprite-image{position:relative;z-index:2;width:90%;height:85%;max-width:260px;max-height:260px;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;filter:drop-shadow(0 6px 14px rgba(0,0,0,.8));user-select:none;-webkit-user-drag:none}
+.battle-sprite-stage.enemy .battle-sprite-image{transform:scaleX(-1)}
+.battle-sprite-shadow{position:absolute;bottom:12%;left:50%;transform:translateX(-50%);width:55%;height:16px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.85) 0%,rgba(0,0,0,0) 72%);z-index:1;pointer-events:none}
+.reduced-motion .combat-card-fighter .fighter-flip-inner,.reduce-effects .combat-card-fighter .fighter-flip-inner{transform:none!important;transition:opacity .25s ease!important}
+.reduced-motion .combat-card-fighter .fighter-flip-inner:not(.is-flipped) .fighter-flip-back,.reduce-effects .combat-card-fighter .fighter-flip-inner:not(.is-flipped) .fighter-flip-back{display:none!important}
+.reduced-motion .combat-card-fighter .fighter-flip-inner.is-flipped .fighter-flip-front,.reduce-effects .combat-card-fighter .fighter-flip-inner.is-flipped .fighter-flip-front{display:none!important}
+.reduced-motion .combat-card-fighter .fighter-flip-inner.is-flipped .fighter-flip-back,.reduce-effects .combat-card-fighter .fighter-flip-inner.is-flipped .fighter-flip-back{transform:none!important;display:flex!important}
 
 /* Efeitos de ataque (por tipo de arma) e de suporte (fortificação/cura), como imagens
    sobrepostas à carta com fade+escala ao aparecer e sumir. A duração de cada variante
@@ -1157,23 +1207,57 @@ body::after{content:"VERSÃO 0.5.3 • 15/09/2026 10:35 • Conjurador: removida
 /* Coop persistent session: participant cards + shared navigable map */
 .coop-defeated-notice{display:inline-block;margin-top:2px;padding:3px 7px;border:1px solid #8c342d;border-radius:6px;background:#2b0d0bcc;color:#ef9c91;font-size:.62rem;font-weight:700}
 .coop-locked-notice{display:inline-block;margin-top:2px;padding:3px 7px;border:1px solid #7a5a1f;border-radius:6px;background:#2b210bcc;color:#e8c583;font-size:.62rem;font-weight:700}
-.coop-market-panel .npc-banner{margin-top:10px;padding:14px 16px}
-.coop-market-hint{margin:10px 0 14px;color:#a99879;font-size:.78rem;line-height:1.5}
-.coop-market-kind-toggle{display:flex;gap:8px;margin-bottom:12px}
-.coop-market-kind-toggle button{padding:.45rem .9rem;font-size:.78rem}
-.coop-market-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;padding:12px;border:1px solid #47321d;border-radius:9px;background:#100b08}
-.coop-market-form select{flex:1;min-width:160px}
-.coop-market-form input[type=number]{width:64px}
-.coop-market-price{display:flex;align-items:center;gap:5px;color:#d9a64f}
-.coop-market-price input{width:72px}
-.coop-market-empty{color:#8d7c63;font-size:.72rem;font-style:italic;padding:6px 0}
-.coop-market-lists{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.coop-market-lists>div>small{display:block;margin-bottom:7px;color:#a2783d;font-size:.6rem;font-weight:900;letter-spacing:.1em}
-.coop-market-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;padding:9px 11px;margin-bottom:7px;border:1px solid #3f2c1b;border-radius:8px;background:#0f0b08}
-.coop-market-row strong{color:#ddba74}
-.coop-market-row em{color:#8d7c63;font-size:.68rem;font-style:normal}
-.coop-market-row-price{display:flex;align-items:center;gap:4px;color:#d9a64f;font-weight:700}
-@media(max-width:850px){.coop-market-lists{grid-template-columns:1fr}}
+.coop-market-panel{display:grid;gap:12px}
+.coop-market-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:14px}
+.coop-market-head h2{display:flex;align-items:center;gap:8px;margin:0 0 4px;color:#e7c178;font-family:Georgia,serif}
+.coop-market-head p{margin:0;color:#a99879;font-size:.78rem;line-height:1.45}
+.coop-market-summary{display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:8px}
+.coop-market-summary span{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;padding:9px 11px;border:1px solid rgba(202,158,82,.18);border-radius:8px;background:#100b08}
+.coop-market-summary svg{grid-row:1/3;width:16px;color:#d9a64f}
+.coop-market-summary small{color:#8d7c63;font-size:.56rem;font-weight:900;letter-spacing:.1em}
+.coop-market-summary strong{color:#efca7b}
+.coop-market-merchant.npc-banner{margin:0;padding:14px 16px;border-radius:8px}
+.coop-market-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:14px;align-items:start}
+.coop-market-block{min-width:0;display:grid;gap:12px;padding:14px;border:1px solid #47321d;border-radius:8px;background:linear-gradient(180deg,rgba(18,12,8,.96),rgba(10,7,5,.96))}
+.coop-market-block-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.coop-market-block-head small,.coop-market-list-sections>div>small{display:block;color:#a2783d;font-size:.58rem;font-weight:900;letter-spacing:.12em}
+.coop-market-block-head h3{margin:2px 0 0;color:#e7c178;font:700 1.05rem Georgia,serif}
+.coop-market-block-head>b{display:grid;place-items:center;min-width:32px;height:28px;padding:0 9px;border:1px solid rgba(202,158,82,.26);border-radius:999px;background:#171009;color:#efca7b}
+.coop-market-kind-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.coop-market-kind-toggle button{min-height:38px;padding:.5rem .75rem;border-radius:7px;font-size:.78rem}
+.coop-market-available-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;max-height:420px;overflow:auto;padding-right:3px;scrollbar-width:thin;scrollbar-color:#6f4f26 transparent}
+.coop-market-item-card,.coop-market-listing-card{min-width:0;display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border:1px solid #3f2c1b;border-radius:8px;background:#0f0b08;text-align:left}
+.coop-market-item-card{width:100%;min-height:94px}
+.coop-market-item-card.selected{border-color:#c89743;background:linear-gradient(135deg,rgba(174,117,40,.2),#100b08 62%);box-shadow:0 0 0 1px rgba(232,185,95,.12) inset}
+.coop-market-card-art{display:grid;place-items:center;width:64px;height:76px;overflow:hidden;border:1px solid #5b4021;border-radius:7px;background:#090706;color:#d9a64f}
+.coop-market-card-art img{width:100%;height:100%;object-fit:cover}
+.coop-market-card-copy{min-width:0;display:grid;gap:3px}
+.coop-market-card-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a2783d;font-size:.58rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.coop-market-card-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ddba74}
+.coop-market-card-copy em{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#8d7c63;font-size:.68rem;font-style:normal;line-height:1.25}
+.coop-market-card-meta{display:grid;justify-items:end;gap:2px;color:#d9a64f;text-align:right}
+.coop-market-card-meta b{font-size:.82rem}
+.coop-market-card-meta small{color:#8d7c63;font-size:.58rem;white-space:nowrap}
+.coop-market-listing-form{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:10px;border:1px solid #5a3d1f;border-radius:8px;background:#140d08}
+.coop-market-selected-preview{min-width:0;display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;align-items:center}
+.coop-market-selected-preview>img,.coop-market-selected-preview>svg{width:42px;height:46px;border:1px solid #5b4021;border-radius:6px;background:#090706;object-fit:cover;color:#d9a64f}
+.coop-market-selected-preview span{min-width:0;display:grid;gap:2px}
+.coop-market-selected-preview small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8d7c63;font-size:.62rem}
+.coop-market-selected-preview strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e7c178}
+.coop-market-listing-form label{display:flex;align-items:center;gap:6px;color:#d9a64f;font-size:.68rem;font-weight:800}
+.coop-market-listing-form input{width:70px}
+.coop-market-listing-form button,.coop-market-listing-side button{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.coop-market-empty{grid-column:1/-1;margin:0;color:#8d7c63;font-size:.72rem;font-style:italic;padding:8px 2px}
+.coop-market-list-sections{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.coop-market-list-sections>div{min-width:0;display:grid;align-content:start;gap:7px}
+.coop-market-listing-card{grid-template-columns:58px minmax(0,1fr) auto;min-height:88px}
+.coop-market-listing-card.sold{opacity:.78}
+.coop-market-listing-side{display:grid;justify-items:end;gap:6px}
+.coop-market-row-price{display:flex;align-items:center;gap:4px;color:#d9a64f;font-weight:800}
+.coop-market-listing-side em{color:#8d7c63;font-size:.66rem;font-style:normal;text-align:right}
+@media(max-width:1180px){.coop-market-grid{grid-template-columns:1fr}.coop-market-list-sections{grid-template-columns:1fr 1fr}}
+@media(max-width:850px){.coop-market-head{grid-template-columns:1fr}.coop-market-summary,.coop-market-list-sections{grid-template-columns:1fr}.coop-market-listing-form{grid-template-columns:1fr 1fr}.coop-market-selected-preview{grid-column:1/3}.coop-market-listing-form button{grid-column:1/3}}
+@media(max-width:560px){.coop-market-item-card,.coop-market-listing-card{grid-template-columns:54px minmax(0,1fr)}.coop-market-card-meta,.coop-market-listing-side{grid-column:1/3;justify-items:stretch;text-align:left}.coop-market-listing-side button{width:100%}.coop-market-listing-form{grid-template-columns:1fr}.coop-market-selected-preview,.coop-market-listing-form button{grid-column:1}}
 .coop-risk-overlay{position:fixed;inset:0;z-index:100001;display:grid;place-items:center;padding:20px;background:#050302d9;backdrop-filter:blur(8px)}.coop-risk-overlay section{width:min(520px,100%);padding:28px;border:1px solid #9a692b;border-radius:14px;background:linear-gradient(145deg,#21140c,#0e0906);box-shadow:0 25px 80px #000;color:#dec49a}.coop-risk-overlay small{color:#d69d44;font-weight:800;letter-spacing:.14em}.coop-risk-overlay h2{margin:8px 0;color:#f1c96e;font-family:Georgia,serif;font-size:2rem}.coop-risk-overlay p{line-height:1.6}.coop-risk-overlay div{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}.coop-risk-overlay button{padding:12px}@media(max-width:560px){.coop-risk-overlay div{grid-template-columns:1fr}}
 .coop-map-panel h2{display:flex;align-items:center;gap:8px;margin:0 0 4px;color:#e7c178;font-family:Georgia,serif}
 .coop-map-shell{margin-top:12px}
@@ -1183,21 +1267,10 @@ body::after{content:"VERSÃO 0.5.3 • 15/09/2026 10:35 • Conjurador: removida
 .coop-region-head{grid-template-columns:auto minmax(0,1fr) auto}
 .coop-region-mode{display:flex;align-items:center;justify-content:center;gap:7px;min-width:116px;padding:8px 10px;border:1px solid #604421;border-radius:9px;background:#120d09;color:#e3bd73;font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
 .coop-region-totals{grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
-.coop-subregion-board{grid-template-columns:repeat(3,minmax(0,1fr));max-height:none;overflow:visible;padding:0}
-.coop-subregion-card{min-height:330px}
-.coop-subregion-members{display:grid;gap:5px;padding:7px;border:1px solid #352515;border-radius:7px;background:#0f0b08}
-.coop-subregion-members>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center;font-size:.6rem;color:#9f9079}
-.coop-subregion-members span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.coop-subregion-members b{color:#d7b36d}
-.coop-subregion-members i{grid-column:1/3;height:5px;overflow:hidden;border-radius:999px;background:#25180d}
-.coop-subregion-members em{display:block;height:100%;background:linear-gradient(90deg,#8c4a2b,#d3a34a)}
-.coop-subregion-members .ready b{color:#7bc97e}
-.coop-subregion-members .ready em{background:#6fbd73}
 .coop-map-panel-solo-layout{display:grid;gap:10px}
 .coop-map-panel-solo-layout>.screen-intro{margin:0}
 .coop-map-inspector .coop-region-progress>div.active{border-color:#9f7136;background:#1c120b}
-@media(max-width:1200px){.coop-subregion-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:760px){.coop-region-head{grid-template-columns:1fr}.coop-region-mode{justify-content:flex-start}.coop-region-totals{grid-template-columns:1fr}.coop-subregion-board{grid-template-columns:1fr}.coop-map-shell{grid-template-columns:1fr}.coop-map-shell>.regionmap-inspector{grid-row:auto}}
+@media(max-width:760px){.coop-region-head{grid-template-columns:1fr}.coop-region-mode{justify-content:flex-start}.coop-region-totals{grid-template-columns:1fr}.coop-map-shell{grid-template-columns:1fr}.coop-map-shell>.regionmap-inspector{grid-row:auto}}
 /* Icon-only top nav with animated hover label */
 .topbar nav button{position:relative;overflow:visible}
 .topbar nav .nav-tooltip{position:absolute;top:calc(100% + 6px);left:50%;transform:translate(-50%,-4px) scale(.92);opacity:0;pointer-events:none;white-space:nowrap;padding:.36rem .68rem;border:1px solid #6c522f;border-radius:7px;background:linear-gradient(180deg,#241809,#150e07);color:var(--gold2);font-size:.76rem;letter-spacing:.02em;font-weight:600;box-shadow:0 8px 18px rgba(0,0,0,.4);transition:opacity .16s ease,transform .16s ease;z-index:50}
@@ -1352,6 +1425,8 @@ body::after{animation:version-toast-fade .6s ease 4.4s forwards}
 .loot-page>.panel{width:min(920px,100%);position:relative}
 .loot-page>.panel{display:flex;flex-direction:column;gap:12px}
 .loot-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 14px 0}
+.loot-head.coop-loot-head{justify-content:center}
+.loot-head.coop-loot-head button{min-width:220px}
 .loot-head small{color:#cfac69;letter-spacing:.16em;font-size:.62rem;font-weight:800;text-transform:uppercase}
 .loot-head button{white-space:nowrap;padding:.58rem .9rem}
 .loot-page h1{margin:.2rem 0 0}
@@ -1746,6 +1821,165 @@ button:active:not(:disabled){transform:translateY(0) scale(.95);transition-durat
 .combat-action-callout.impact-self{border-color:#9f4f46;background:linear-gradient(180deg,rgba(63,19,16,.54),rgba(20,8,7,.56))}
 .combat-action-callout.impact-hit{border-color:#9a6a35}
 .combat-action-callout.impact-glance{border-color:#67553e}
+
+/* 3D Card Flip & Battle Sprite Staging (docs/BATTLE_SPRITE_PROMPTS.md) */
+.fighter-flip-container {
+  width: 100%;
+  height: 100%;
+  perspective: 1100px;
+  position: relative;
+  cursor: pointer;
+}
+
+.fighter-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.62s cubic-bezier(0.2, 0.85, 0.32, 1.05);
+}
+
+.fighter-flip-container.is-flipped .fighter-flip-inner,
+.fighter-flip-container.flipped .fighter-flip-inner,
+.fighter-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.fighter-flip-container.is-flipped .fighter-flip-front,
+.fighter-flip-container.flipped .fighter-flip-front {
+  pointer-events: none;
+}
+
+.fighter-flip-container:not(.is-flipped):not(.flipped) .fighter-flip-back {
+  pointer-events: none;
+}
+
+.fighter-flip-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fighter-flip-front {
+  z-index: 2;
+  transform: rotateY(0deg);
+}
+
+.fighter-flip-back {
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+.battle-sprite-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 0.7;
+  max-width: 320px;
+  max-height: 480px;
+  border-radius: 16px;
+  border: 2px solid #5a4528;
+  background: radial-gradient(circle at center 65%, #221a14 0%, #110d0a 75%, #080605 100%);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65), inset 0 0 24px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  overflow: hidden;
+}
+
+.battle-sprite-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12),
+    rgba(0, 0, 0, 0.12) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.battle-sprite-shadow {
+  position: absolute;
+  bottom: 24px;
+  width: 120px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, transparent 72%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.battle-sprite-image {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  user-select: none;
+}
+
+.battle-sprite-stage.enemy .battle-sprite-image {
+  transform: scaleX(-1);
+}
+
+/* Reduzir efeitos visuais: fallback plano para transição de cartas */
+.reduced-motion .fighter-flip-inner,
+.reduce-effects .fighter-flip-inner,
+body.reduced-motion .fighter-flip-inner {
+  transition: opacity 0.2s ease-out !important;
+  transform: none !important;
+}
+
+.reduced-motion .fighter-flip-container.is-flipped .fighter-flip-inner,
+.reduced-motion .fighter-flip-container.flipped .fighter-flip-inner,
+.reduce-effects .fighter-flip-container.is-flipped .fighter-flip-inner,
+.reduce-effects .fighter-flip-container.flipped .fighter-flip-inner,
+body.reduced-motion .fighter-flip-container.is-flipped .fighter-flip-inner {
+  transform: none !important;
+}
+
+.reduced-motion .fighter-flip-container:not(.is-flipped):not(.flipped) .fighter-flip-back,
+.reduce-effects .fighter-flip-container:not(.is-flipped):not(.flipped) .fighter-flip-back,
+body.reduced-motion .fighter-flip-container:not(.is-flipped):not(.flipped) .fighter-flip-back {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  display: none !important;
+}
+
+.reduced-motion .fighter-flip-container.is-flipped .fighter-flip-front,
+.reduced-motion .fighter-flip-container.flipped .fighter-flip-front,
+.reduce-effects .fighter-flip-container.is-flipped .fighter-flip-front,
+.reduce-effects .fighter-flip-container.flipped .fighter-flip-front,
+body.reduced-motion .fighter-flip-container.is-flipped .fighter-flip-front {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  display: none !important;
+}
+
+.reduced-motion .fighter-flip-container.is-flipped .fighter-flip-back,
+.reduced-motion .fighter-flip-container.flipped .fighter-flip-back,
+.reduce-effects .fighter-flip-container.is-flipped .fighter-flip-back,
+.reduce-effects .fighter-flip-container.flipped .fighter-flip-back,
+body.reduced-motion .fighter-flip-container.is-flipped .fighter-flip-back {
+  opacity: 1 !important;
+  display: flex !important;
+  transform: none !important;
+}
 .combat-v033 .combat-dice-panel{display:flex;flex-direction:column;overflow:hidden}
 .combat-v033 .combat-dice-panel>.combat-dice-roll,.combat-v033 .combat-dice-panel>.combat-dice-idle{flex:1}
 .combat-v033 .combat-dice-roll{justify-content:flex-start;gap:5px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#704b25 transparent}

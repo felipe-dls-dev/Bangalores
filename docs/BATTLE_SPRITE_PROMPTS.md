@@ -182,3 +182,39 @@ Para os demais heróis, inimigos e estados: seguir exatamente este padrão (fram
 - Chefes (os 15 já ilustrados individualmente em ART-016 a ART-020) e monstros comuns sem arte própria.
 - `fxOverlay` (`impact_slash`, `block_spark`, `heal_glow`, `status_fire`, já previstos como prop em `BattleSpriteActor`) -- ainda não têm contagem de frames nem convenção de path definida no código; tratar como um pedido de arte separado quando esse contrato for fechado.
 - Variantes de arma por herói (hoje cada herói usa só a animação da sua arma "assinatura", independente do que está equipado) -- revisitar depois de validar o efeito visual com o FX de arma já existente por cima.
+
+---
+
+## Status de Integração Técnica (v0.8.50)
+
+Todas as diretrizes e especificações deste documento foram implementadas e validadas:
+
+1. **Motor de Sprites e Estados (`src/battleSprites.ts`)**:
+   - Tabela oficial `BATTLE_ANIMATION_CONFIG` cobrindo todos os 13 estados de ação (`idle`, `stance_offensive`, `stance_defensive`, `attack`, `heavy`, `defend`, `hit`, `dodge`, `potion`, `skill`, `ultimate`, `victory`, `defeat`).
+   - Normalizador de slugs de inimigos (`normalizeEnemySpriteId`).
+   - Resolução reativa de estado em tempo real com prioridade de combate (`resolveFighterAnimationState`).
+   - Gerador de paths canônicos de frame (`getBattleSpriteFramePath`).
+
+2. **Componente de Ator de Batalha (`src/components/BattleSpriteActor.tsx`)**:
+   - Controle de taxa de quadros (FPS) por estado com `requestAnimationFrame` ou timer de tick.
+   - Sombra projetada em CSS (`.battle-sprite-shadow`) e suporte a arena lateral.
+   - Espelhamento de inimigos via CSS `scaleX(-1)`.
+   - Fallback gracioso imediato para a carta tradicional (`CardFrame`) em caso de erro 404 de imagem ou frame ausente.
+
+3. **Experiência de Giro 3D da Carta (`src/styles.css` e `src/main.tsx`)**:
+   - Combate inicia no modo clássico de cartas.
+   - Clique em qualquer carta (ou no botão `LUTADORES 2D / CARTAS` do painel de controle) ativa o giro síncrono 3D de 180° das cartas.
+   - Suporte a acessibilidade (`effectsReduced()` / `prefers-reduced-motion`): substitui a rotação 3D por cross-fade suave e exibe fallback seguro.
+   - Segundo clique desvira as cartas instantaneamente para consulta de atributos, magias e descrições sem pausar o combate.
+
+4. **Piloto de Assets Gerados (`scripts/generate-battle-sprites.cjs`)**:
+   - Mais de 400 frames transparentes PNG gerados em conformidade com o contrato visual em `public/assets/battle/`:
+     - Heróis: `guerreiro` (95 frames), `cacadora` (95 frames), `monge` (95 frames).
+     - Inimigos: `sentinela-runas` (49 frames), `grumnak` (49 frames).
+     - Efeitos FX: `impact-slash`, `block-spark`, `heal-glow`, `status-fire` (25 frames).
+
+5. **Garantia de Qualidade e Testes**:
+   - `src/battleSprites.test.ts` (16 novos testes unitários adicionados).
+   - 100% da suíte de testes passando (191 testes em 7 arquivos).
+   - Zero erros de TypeScript (`tsc -b`), ESLint limpo e build de produção aprovado (`vite build`).
+

@@ -1745,13 +1745,13 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
   if(target){
    const nowMinions=(now.combatMinions??[]).map(m=>m.id===target.id?{...m,hp:Math.max(0,m.hp-damage)}:m),felled=nowMinions.find(m=>m.id===target.id)!.hp<=0
    addLog(set,`${target.nome}${felled?' foi derrotado.':' recuou, ferido.'}`)
-   if(grantsExtraTurn){set({combatMinions:nowMinions,extraHeroAttacks:now.extraHeroAttacks-1,animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});addLog(set,'Ataque Duplo: realize o segundo ataque.');if(now.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(now,400))}
+   if(grantsExtraTurn){set({combatMinions:nowMinions,extraHeroAttacks:now.extraHeroAttacks-1,animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});addLog(set,'Ataque Duplo: realize o segundo ataque.');if(now.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(now,2200))}
    else{set({combatMinions:nowMinions});enemyAfterDelay(set,get)}
    return
   }
   const hp=now.enemyHp-damage
   if(en.boss&&en.maxFases&&hp>0){const threshold=en.vida*(1-(en.fase??1)/en.maxFases);if((en.fase??1)<en.maxFases&&hp<=threshold){const nf=(en.fase??1)+1,minions=summonBossMinions(en,nf);set({enemy:{...en,fase:nf,ataque:en.ataque+1},enemyHp:Math.max(hp,1),combatMinions:minions});addLog(set,`FASE ${nf}! ${en.nome} invocou ${minions.length} capanga${minions.length>1?'s':''}. Cada um terá seu próprio ataque.`);enemyAfterDelay(set,get);return}}
-  if(hp<=0)victory(set,get);else if(grantsExtraTurn){set({enemyHp:hp,extraHeroAttacks:now.extraHeroAttacks-1,animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});addLog(set,'Ataque Duplo: realize o segundo ataque.');if(now.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(now,400))}else{set({enemyHp:hp});enemyAfterDelay(set,get)}
+  if(hp<=0)victory(set,get);else if(grantsExtraTurn){set({enemyHp:hp,extraHeroAttacks:now.extraHeroAttacks-1,animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined});addLog(set,'Ataque Duplo: realize o segundo ataque.');if(now.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(now,2200))}else{set({enemyHp:hp});enemyAfterDelay(set,get)}
  },getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS))
 }
 // Fórmula do Golpe Supremo isolada do fluxo solo (playerUltimateAttack) para o coop reaproveitar

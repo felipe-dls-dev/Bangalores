@@ -11,3 +11,5 @@ Bangalores/
 swishes.zip
 swishes_extract/
 *.pdf
+__pycache__/
+*.pyc

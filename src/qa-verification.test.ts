@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import { REGION_MAPS, validateRegionMap } from './regionMap'
-import { useGame, HEROES, SUBREGIONS, worldUnlocked, maxHp, attackValue } from './store/game'
+import { useGame, HEROES, SUBREGIONS, EQUIPMENT, TERRITORIES, worldUnlocked, maxHp, attackValue } from './store/game'
+import { NPCS } from './data/npcs'
+import { STORY_QUESTS } from './data/storyQuests'
 import bossArt from './data/bossArt.json'
 
 declare const __dirname: string
@@ -122,6 +124,19 @@ describe('QA Suite: Asset Integrity & 404 Prevention', () => {
     expect(missing, `Missing art in SUBREGIONS: ${missing.join('; ')}`).toEqual([])
   })
 
+  it('all equipment image and art paths exist on disk', () => {
+    const missing: string[] = []
+    for (const item of EQUIPMENT) {
+      for (const key of ['imagem', 'arte'] as const) {
+        const asset = item[key]
+        if (asset && !fs.existsSync(path.join(PUBLIC, asset))) {
+          missing.push(`${item.id}.${key}: ${asset}`)
+        }
+      }
+    }
+    expect(missing, `Missing equipment art files: ${missing.join('; ')}`).toEqual([])
+  })
+
   it('all 7 Steelmere maps have background art files', () => {
     const maps = ['frostgard', 'engrenverde', 'trilhouro', 'vulcannis', 'ferrujal', 'coroferro', 'aetherium']
     for (const m of maps) {
@@ -186,6 +201,27 @@ describe('QA Suite: 2D Maps Reachability & Collision', () => {
         expect(blockedSet.has(`${camp.x}:${camp.y}`), `${id}: campfire ${camp.id} is on a blocked cell`).toBe(false)
       }
     }
+  })
+})
+
+describe('QA Suite: Story Quest Integrity', () => {
+  it('all story quests have unique ids and valid NPC, region, and next-quest references', () => {
+    const ids = new Set<string>()
+    const npcIds = new Set(NPCS.map(npc => npc.id))
+    const territoryIds = new Set(TERRITORIES.map(territory => territory.id))
+    const questIds = new Set(STORY_QUESTS.map(quest => quest.id))
+    const errors: string[] = []
+
+    for (const quest of STORY_QUESTS) {
+      if (ids.has(quest.id)) errors.push(`duplicate quest id: ${quest.id}`)
+      ids.add(quest.id)
+      if (!npcIds.has(quest.sourceNpcId)) errors.push(`${quest.id}: missing source NPC ${quest.sourceNpcId}`)
+      if (!npcIds.has(quest.targetNpcId)) errors.push(`${quest.id}: missing target NPC ${quest.targetNpcId}`)
+      if (!territoryIds.has(quest.targetRegionId)) errors.push(`${quest.id}: missing target region ${quest.targetRegionId}`)
+      if (quest.nextQuestId && !questIds.has(quest.nextQuestId)) errors.push(`${quest.id}: missing next quest ${quest.nextQuestId}`)
+    }
+
+    expect(errors, errors.join('; ')).toEqual([])
   })
 })
 
