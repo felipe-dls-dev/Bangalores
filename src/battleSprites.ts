@@ -51,6 +51,33 @@ export const BATTLE_ANIMATION_CONFIG: Record<BattleAnimationState, SpriteStateCo
 }
 
 /**
+ * Sobrescritas especializadas para guerreiro com base nos pacotes de alta fidelidade de Bases/
+ */
+export const WARRIOR_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
+  idle: { frames: 12, loop: true, fps: 8 },
+  attack: { frames: 12, loop: false, fps: 8, durationMs: 1800 },
+  heavy: { frames: 17, loop: false, fps: 8, durationMs: 2200 },
+  defend: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
+  hit: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
+  ultimate: { frames: 17, loop: false, fps: 7, durationMs: 2400 },
+}
+
+/**
+ * Retorna a configuração de animação correta para uma categoria, ID e estado específico
+ */
+export function getSpriteStateConfig(
+  category: 'heroes' | 'enemies' | 'fx',
+  id: string,
+  state: BattleAnimationState
+): SpriteStateConfig {
+  const base = BATTLE_ANIMATION_CONFIG[state] || BATTLE_ANIMATION_CONFIG.idle
+  if (category === 'heroes' && id === 'guerreiro' && WARRIOR_ANIMATION_OVERRIDES[state]) {
+    return WARRIOR_ANIMATION_OVERRIDES[state]!
+  }
+  return base
+}
+
+/**
  * Mapeamento dos 9 heróis do jogo para seus IDs de sprite
  */
 export const HERO_SPRITE_IDS = [
@@ -228,7 +255,7 @@ export function preloadBattleSpriteImages(category: 'heroes' | 'enemies', id: st
   const promises: Promise<void>[] = []
 
   for (const state of states) {
-    const cfg = BATTLE_ANIMATION_CONFIG[state]
+    const cfg = getSpriteStateConfig(category, id, state)
     if (!cfg) continue
     for (let i = 0; i < cfg.frames; i++) {
       const url = getBattleSpriteFrameUrl(category, id, state, i)
@@ -294,17 +321,23 @@ export function resolveFighterAnimationState(ctx: FighterAnimationContext): Batt
     return 'victory'
   }
 
-  // 3. Recebendo dano (shaking ativo)
-  if (ctx.shaking) {
-    return 'hit'
-  }
-
-  // 4. Esquiva
+  // 3. Esquiva
   if (ctx.impactKind === 'dodged') {
     return 'dodge'
   }
 
-  // 5. Bloqueio / Defesa
+  // 4. Recebendo ataque do inimigo
+  // Toda vez que o herói recebe um ataque do inimigo (shaking ativo ou bloqueio), utiliza a animação Defesa (Defesa.png)
+  if (ctx.side === 'hero' && (ctx.shaking || ctx.impactKind === 'blocked')) {
+    return 'defend'
+  }
+
+  // 5. Recebendo dano (shaking ativo para inimigos ou contexto genérico)
+  if (ctx.shaking) {
+    return 'hit'
+  }
+
+  // 6. Bloqueio / Defesa
   if (ctx.impactKind === 'blocked' || ctx.supportFx === 'fortificacao') {
     return 'defend'
   }

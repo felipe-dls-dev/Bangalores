@@ -1,8 +1,8 @@
 import React from 'react'
 import {
   type BattleAnimationState,
-  BATTLE_ANIMATION_CONFIG,
   getBattleSpriteFrameUrl,
+  getSpriteStateConfig,
   isBattleSpriteSupported,
   preloadBattleSpriteImages,
 } from '../battleSprites'
@@ -59,7 +59,7 @@ export const BattleSpriteActor: React.FC<BattleSpriteActorProps> = ({
       return
     }
 
-    const targetConfig = BATTLE_ANIMATION_CONFIG[state]
+    const targetConfig = getSpriteStateConfig(category, id, state)
     if (targetConfig && !targetConfig.loop && !targetConfig.holdLastFrame) {
       // Inicia a execução garantida da ação one-shot do início ao fim
       setLockedAction(state)
@@ -73,7 +73,7 @@ export const BattleSpriteActor: React.FC<BattleSpriteActorProps> = ({
   }, [state, id, category])
 
   const activeState = lockedAction || state
-  const config = BATTLE_ANIMATION_CONFIG[activeState] || BATTLE_ANIMATION_CONFIG.idle
+  const config = getSpriteStateConfig(category, id, activeState)
 
   // Temporizador encadeado: garante que CADA frame seja exibido pelo tempo mínimo exato
   React.useEffect(() => {

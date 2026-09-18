@@ -2285,6 +2285,7 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
  const spriteCategory = side === 'hero' ? 'heroes' : 'enemies'
  const spriteId = side === 'hero' ? (classId || 'guerreiro') : normalizeEnemySpriteId(name)
  const animState = resolveFighterAnimationState({
+  side: side as 'hero' | 'enemy',
   hp,
   maxHp: max,
   shaking,

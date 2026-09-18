@@ -3,6 +3,7 @@ import {
   BATTLE_ANIMATION_CONFIG,
   getBattleSpriteFramePath,
   getBattleSpriteFrameUrl,
+  getSpriteStateConfig,
   isBattleSpriteSupported,
   normalizeEnemySpriteId,
   resolveFighterAnimationState,
@@ -78,12 +79,19 @@ describe('resolveFighterAnimationState', () => {
     expect(resolveFighterAnimationState({ hp: 50, maxHp: 100, isVictorious: true })).toBe('victory')
   })
 
-  it('resolves hit when fighter is shaking from receiving damage', () => {
+  it('resolves hit when fighter is shaking from receiving damage (default or enemy)', () => {
     expect(resolveFighterAnimationState({ hp: 40, maxHp: 100, shaking: true })).toBe('hit')
+    expect(resolveFighterAnimationState({ side: 'enemy', hp: 40, maxHp: 100, shaking: true })).toBe('hit')
+  })
+
+  it('resolves defend whenever hero receives an enemy attack (side: hero and shaking)', () => {
+    expect(resolveFighterAnimationState({ side: 'hero', hp: 40, maxHp: 100, shaking: true })).toBe('defend')
+    expect(resolveFighterAnimationState({ side: 'hero', hp: 40, maxHp: 100, shaking: true, impactKind: 'critical' })).toBe('defend')
   })
 
   it('resolves dodge when impact is dodged', () => {
     expect(resolveFighterAnimationState({ hp: 40, maxHp: 100, impactKind: 'dodged' })).toBe('dodge')
+    expect(resolveFighterAnimationState({ side: 'hero', hp: 40, maxHp: 100, impactKind: 'dodged' })).toBe('dodge')
   })
 
   it('resolves defend when impact is blocked or fortification buff is active', () => {
@@ -121,5 +129,36 @@ describe('resolveFighterAnimationState', () => {
   it('resolves default idle when in neutral standing state', () => {
     expect(resolveFighterAnimationState({ hp: 80, maxHp: 100, currentStance: 'neutra' })).toBe('idle')
     expect(resolveFighterAnimationState({ hp: 100, maxHp: 100 })).toBe('idle')
+  })
+})
+
+describe('getSpriteStateConfig', () => {
+  it('returns specialized high-frame configurations for warrior', () => {
+    const attackCfg = getSpriteStateConfig('heroes', 'guerreiro', 'attack')
+    expect(attackCfg.frames).toBe(12)
+    expect(attackCfg.durationMs).toBe(1800)
+
+    const heavyCfg = getSpriteStateConfig('heroes', 'guerreiro', 'heavy')
+    expect(heavyCfg.frames).toBe(17)
+    expect(heavyCfg.durationMs).toBe(2200)
+
+    const defendCfg = getSpriteStateConfig('heroes', 'guerreiro', 'defend')
+    expect(defendCfg.frames).toBe(12)
+    expect(defendCfg.durationMs).toBe(1400)
+
+    const ultimateCfg = getSpriteStateConfig('heroes', 'guerreiro', 'ultimate')
+    expect(ultimateCfg.frames).toBe(17)
+    expect(ultimateCfg.durationMs).toBe(2400)
+
+    const idleCfg = getSpriteStateConfig('heroes', 'guerreiro', 'idle')
+    expect(idleCfg.frames).toBe(12)
+  })
+
+  it('falls back to standard BATTLE_ANIMATION_CONFIG for other heroes or enemies', () => {
+    const mageAttack = getSpriteStateConfig('heroes', 'arcanista', 'attack')
+    expect(mageAttack.frames).toBe(8)
+
+    const enemyHit = getSpriteStateConfig('enemies', 'grumnak', 'hit')
+    expect(enemyHit.frames).toBe(4)
   })
 })
