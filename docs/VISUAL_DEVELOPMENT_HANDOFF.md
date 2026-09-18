@@ -32,6 +32,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 - Use lowercase kebab-case for object ids and class ids already present in game data.
 - Use PNG with alpha for sprites, props and effects. Use WebP or PNG for full map backgrounds.
 - Every interactive object needs at least `idle`; use `opened`, `active`, `locked`, `broken` or `disabled` only when the mechanic needs it.
+- Battle fighter sprites: `public/assets/battle/sprites/<heroes|enemies>/<id>/<state>_<NN>.png`, one PNG per frame (`NN` = 2-digit zero-padded index starting at `00`), proposed 96x128px per frame, fixed ground-anchor across every frame and state (see ART-030). This exact path shape is read by `getBattleSpriteFramePath()` in `src/battleSprites.ts` -- do not change it without updating that function too.
 
 ## Definition of Done
 
@@ -67,7 +68,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 
 | Priority | Request | Owner now | Status | Visual deliverables |
 | --- | --- | --- | --- | --- |
-| P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | 12 integrated plus Silas delivered in ART-022; 7 portraits remain queued. |
+| P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | 13 integrated; 7 portraits remain queued. |
 | P0 | Steelmere all 7 territory maps | — | DONE | All delivered and integrated, see ART-001 and ART-005 through ART-010. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
 | P1 | Treasure chest variants | — | DONE | `common`/`opened` integrated (ART-011); `locked`/`rare`/`secret` delivered but unused until a chest-gating mechanic exists. |
@@ -89,8 +90,9 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P3 | Boat / carriage shortcut | — | MECHANIC SHIPPED | See ART-025 -- code+art integrated (same-map paired-dock ride), just not placed on a map yet. |
 | P3 | Illusory secret wall | — | MECHANIC SHIPPED | See ART-026 -- code+art integrated (discovery + one-shot reveal fx), just not placed on a map yet. |
 | P3 | Scenery interaction (signposts) | — | MECHANIC SHIPPED | See ART-027 -- code+art integrated (reusable `RegionMapScenery` pattern), just not placed on a map yet. |
-| P2 | Shared equipment art, last 2 pieces | Codex | REQUESTED | See ART-029 -- tier-0 Andarilhos calças/botas are the only 2 equipment pieces (of the full catalog) still missing art; everything else closed since the last audit. |
-| P2 | Steelmere "Act 2" story content (Contrato 11) | Codex | REQUESTED | See CONTENT-001 -- narrative/dialogue text, not visual art. Scope needs confirming: this codebase already has two different, non-aligned "act" systems and neither is a clean match for "Ato 2 completo de Steelmere" as worded in the roadmap. |
+| P1 | Battle stage flip: KOF-style fighter sprites | Codex | REQUESTED | See ART-030 -- animated pixel-art fighter sprites (13 states) for the 9 heroes plus 8 named enemies already scoped in code, replacing the static card portrait once the hero/enemy cards flip into "fighter view" at combat start. A code scaffold (`src/battleSprites.ts`, `src/components/BattleSpriteActor.tsx`) already exists un-committed, not yet wired into the combat screen. |
+| P2 | Shared equipment art, last 2 pieces | — | DONE | ART-029 delivered the tier-0 Andarilhos calças/botas; shared-equipment art audit now has no known missing paths. |
+| P2 | Steelmere "Act 2" story content (Contrato 11) | Codex | INTEGRATED | CONTENT-001 delivered a playable optional Steelmere quest chain in `src/data/storyQuests.ts`, deepening the industrial-rebellion plot without changing the main quest spine. |
 
 ## ART REQUEST Template
 
@@ -428,7 +430,8 @@ Production priority, story quest chain:
 Second priority, region authority and recurring service NPCs:
 - `colm_aldric`, `toby_harlan`, `garrick_laton`, `silas_sterling`, `unidade_73`, `padre_lucian`, `astrid_reclusa`, `alaric_thorne`, `ignatius_drake`, `hamilton_cross`, `vanya_mar`
 Contract for each future delivery: one character-specific vertical portrait at `public/assets/npcs/<npc-id>.webp`, 768x1152 WebP RGB. Claude Code changes only the matching `portrait` field in `src/data/npcs.ts`; sprites and gameplay services remain untouched.
-Integration (Claude Code): swapped `portrait` for all 9 story-quest-chain NPCs (`sela_hartwin`, `lyriel_noite`, `kip_ligeiro`, `torvald_barbaneve`, `ophira_vane`, `cassian_draye`, `oraculo_danika`, `gideon_mascarado`, `diretor_vane`) plus the first 3 second-priority NPCs (`colm_aldric`, `toby_harlan`, `garrick_laton`) -- was reusing Mira Bellwether's portrait or hero card art -- in `src/data/npcs.ts` to their delivered `.webp` files. No sprite/dialogue/service changes. 8 second-priority NPCs (`silas_sterling`, `unidade_73`, `padre_lucian`, `astrid_reclusa`, `alaric_thorne`, `ignatius_drake`, `hamilton_cross`, `vanya_mar`) still pending Codex delivery -- status stays PARTIAL DELIVERY until those land. `npm test` green.
+Integration (Claude Code): swapped `portrait` for all 9 story-quest-chain NPCs (`sela_hartwin`, `lyriel_noite`, `kip_ligeiro`, `torvald_barbaneve`, `ophira_vane`, `cassian_draye`, `oraculo_danika`, `gideon_mascarado`, `diretor_vane`) plus the first 3 second-priority NPCs (`colm_aldric`, `toby_harlan`, `garrick_laton`) -- was reusing Mira Bellwether's portrait or hero card art -- in `src/data/npcs.ts` to their delivered `.webp` files. No sprite/dialogue/service changes.
+Integration (Codex): `silas_sterling` now points at `assets/npcs/silas_sterling.webp` in `src/data/npcs.ts`. 7 second-priority NPCs (`unidade_73`, `padre_lucian`, `astrid_reclusa`, `alaric_thorne`, `ignatius_drake`, `hamilton_cross`, `vanya_mar`) still pending Codex delivery -- status stays PARTIAL DELIVERY until those land.
 
 ### ART-023 - Lever and locked gate
 Status: INTEGRATED (mechanic shipped, not yet placed on any map)
@@ -537,7 +540,7 @@ Acceptance check: walk a visible monster north, east, south and west. It shows a
 Integration (Claude Code): `Wanderer` gained a `facing:'down'|'up'|'right'|'left'` field (default `down`), updated only when a patrol step actually lands (`dy<0`→up, `dy>0`→down, `dx>0`→right, `dx<0`→left -- `WANDER_STEPS` is cardinal-only so this is exhaustive). `wanderAsset(spriteId, facing, frame)` now resolves the directory prefix (`up_`/`right_`/none for down); `left` reuses the `right_*` files with `transform:scaleX(-1)` on the `<img>` only, tile position untouched. The shared idle/walk_1/walk_2 clock (`wanderFrame`) is unchanged -- purely presentational, no collision/patrol/combat/save impact. `npm test` 97/97 green.
 
 ### ART-029 - Shared equipment art, last 2 pieces
-Status: REQUESTED
+Status: INTEGRATED
 Requested by: Claude Code
 Gameplay purpose: close the last gap in shared-equipment art coverage (Contrato 10 of the Quadro de Contratos). An automated audit of every `Equipment` entry's `arte`/`imagem` path against disk (importing `EQUIPMENT` from `src/store/game.ts` and checking `fs.existsSync` for each, same method as `qa-verification.test.ts`'s boss-art check) found only these 2 missing out of the full catalog — everything else has been closed since the last art-regen pass.
 Required asset ids and states:
@@ -552,9 +555,14 @@ Interaction states: none — static item-card art, same as every other tier in t
 Visual references or territory: match the "Andarilhos" theme already established by the 7 other tiers already delivered in both folders (t1 through t7) and by the already-complete `andarilhos_capacete_t0.webp` (tier 0 of the sibling headgear line, same folder family) — light traveler's gear, agile/scout silhouette, earth-tone leather and cloth. Tier 0 should read as the humblest/starting-tier version of the set (plainer than t1), consistent with how every other shared-equipment group's t0 looks a step below its t1.
 Code dependency: none — `sharedArtPath()` in `src/data/sharedEquipment.ts` already points at these exact paths; the entries just need the files to exist. No code change required once delivered.
 Acceptance check: both files exist on disk at the target paths above; re-running the audit script (`EQUIPMENT` catalog vs `fs.existsSync` on every `arte`/`imagem` path) reports zero missing.
+Delivered paths:
+- `public/assets/art/hd/shared-legwear/andarilhos_calcas_t0.webp`
+- `public/assets/art/hd/shared-boots/andarilhos_botas_t0.webp`
+Dimensions and format: `andarilhos_calcas_t0.webp` is 1491x1536 WebP RGB; `andarilhos_botas_t0.webp` is 1536x1342 WebP RGB.
+Integration (Codex): existing `sharedArtPath()` entries already pointed at these files, so no data-path change was needed after asset delivery. Verified with the equipment art audit.
 
 ### CONTENT-001 - Steelmere "Act 2" story content
-Status: REQUESTED
+Status: INTEGRATED
 Requested by: Claude Code, on behalf of Felipe (Contrato 11 of the Quadro de Contratos)
 Type: narrative/dialogue text only -- no image, sprite or visual deliverable. Using this document as the shared request channel anyway, per Felipe's explicit instruction, since it's the established place both sides already check.
 Gameplay purpose: give Steelmere's "Act 2" a complete story beat, as scoped by the roadmap item "Escrever o Ato 2 completo de Steelmere."
@@ -564,7 +572,23 @@ Important context before writing anything -- this codebase currently has two sep
 Open question that must be resolved (with Felipe) before writing new content, so effort isn't spent on the wrong target: does "Ato 2 completo de Steelmere" mean (a) deepen/extend the existing STORY_QUESTS chain's Steelmere acts with more quests, side content and NPC dialogue, or (b) author the `act-02-forge` chapter's own dedicated narrative beats (separate from the fetch-quest chain), or (c) something the numbered roadmap item describes more precisely that isn't fully captured by either system above. Confirm scope before drafting full content.
 Deliverable format once scope is confirmed: plain text/data matching the existing `StoryQuest` interface in `src/data/storyQuests.ts` (`id, act, title, summary, sourceNpcId, targetNpcId, targetRegionId, type, requiredProgress, questItem?, dialogue{offer,inProgress,targetWelcome,completion}, reward{gold,xp,loreTitle?,itemReward?,unlockWorld?}, nextQuestId?`) for option (a), or plain prose/copy for option (b) -- either can be delivered as a document and Claude Code will wire it into the matching system; no need to edit the `.ts` files directly.
 Code dependency: none to start writing -- Claude Code owns wiring any delivered quest entries or chapter copy into the systems described above.
+Integration (Codex): chose scope (a) as the safest implementation path: deepen the live `STORY_QUESTS` system instead of inventing a third act model or rewriting `STORY_CHAPTERS`. Added the optional Steelmere mini-chain `q_steelmere_pressure_survey` -> `q_steelmere_worker_warrants` -> `q_steelmere_rust_protocol` -> `q_steelmere_reactor_conscience`, using Vanya, Drake, Maeve, Unidade 73 and Dra. Vance. The chain is side content, so it does not alter the existing main campaign `nextQuestId` spine.
 Acceptance check: new content matches the established tone and stakes of the existing quest dialogue (see `src/data/storyQuests.ts` for voice/style reference), references real NPCs already in `src/data/npcs.ts` and real Steelmere territories/sub-regions, and does not contradict the "Sindicato do Latão" industrial-rebellion plot already established by the existing acts 5-7.
+
+### ART-030 - Battle stage flip: KOF-style fighter sprites
+Status: REQUESTED
+Requested by: Claude Code, on behalf of Felipe
+Gameplay purpose: a new combat presentation layer. At the start of a battle, the hero's card automatically flips over (and immediately triggers the enemy card to flip too), revealing an animated pixel-art fighter sprite instead of the static painted portrait -- idle breathing, offensive/defensive stance, attack, heavy/critical attack, guard, hit, dodge, potion use, class skill, ultimate, victory and defeat -- in the style of late-90s SNK fighting games (King of Fighters '99). See `docs/BATTLE_SPRITE_PROMPTS.md` for the full art-direction brief and ready-to-paste generation prompts per character and per state; this entry is the pipeline record, that file is the working brief.
+Mid-write discovery: an un-committed code scaffold already exists implementing this exact contract -- `src/battleSprites.ts` (state list, frame counts/fps, path resolver, animation-state hierarchy) and `src/components/BattleSpriteActor.tsx` (the frame-stepping renderer with a graceful fallback to the current static `CardFrame` on 404). Not yet wired into the actual combat screen (`Fighter`/`CardFrame` in `src/main.tsx`). This ART request and the prompts doc were aligned to that scaffold's contract rather than inventing a separate one.
+Scope for this request: the 9 playable heroes (`guerreiro`, `cacadora`, `arcanista`, `guardiao`, `druida`, `cacador`, `monge`, `sacerdotisa`, `conjurador`) plus 8 named enemies that already have unique art and are pre-mapped in `ENEMY_NAME_TO_SPRITE_ID` (Sentinela Menor das Runas, Grumnak/Mestre do Pedágio, Cabra Amaldiçoada de Malgor, Ilusionista das Areias, Guardiã da Seiva Negra, Fanático do Orgulho, Corvo de Ignaroth, Espectro da Rainha Perdida). The 15 individually-illustrated bosses and common monsters without unique art are an intentional later phase, not part of this request.
+Required asset ids and states: one PNG per frame (not a sprite sheet). 13 states per character, taken from `BATTLE_ANIMATION_CONFIG`: `idle`(6f), `stance_offensive`(6f), `stance_defensive`(6f), `attack`(8f), `heavy`(10f), `defend`(5f), `hit`(4f), `dodge`(5f), `potion`(7f), `skill`(10f), `ultimate`(12f), `victory`(8f), `defeat`(8f) -- 95 frames per character. Given the volume (95 x 17 characters ≈ 1,615 frames), `docs/BATTLE_SPRITE_PROMPTS.md` recommends a staged delivery: heroes' `idle`/`attack`/`hit`/`victory`/`defeat` first, then the remaining 8 states for heroes, then the 8 enemies.
+Target paths: `public/assets/battle/sprites/<heroes|enemies>/<id>/<state>_<NN>.png`, `NN` = 2-digit zero-padded frame index starting at `00` (exact shape read by `getBattleSpriteFramePath()` in `src/battleSprites.ts` -- do not deviate).
+Canvas dimensions / tile scale: proposed 96x128px native per frame (portrait, matches the card art region's ~3:4 aspect) -- not yet pinned by any existing CSS, this is the prompts doc's recommendation. All frames of all states for a given character must share the same canvas and the same ground-anchor baseline row so swapping frames/states never jitters.
+Transparency required: yes.
+Interaction states: see the state table in `docs/BATTLE_SPRITE_PROMPTS.md` for the exact trigger-to-state mapping already implemented in `resolveFighterAnimationState()`.
+Visual references or territory: match the silhouette, costume and palette already established by each hero's existing painted card portrait (`assets/heroes/*.png`) / each enemy's existing `arte` portrait in `src/data/subregioes.json`, and each hero's existing top-down overworld walk sprite (`public/assets/maps/sprites/<hero-id>/down_0.png`), reinterpreted as a side-view fighting stance. Do not redesign the character -- translate the existing design into KOF-style pixel art. Heroes face right, enemies face left.
+Code dependency: none to start art -- the consuming code (`BattleSpriteActor`) already exists and degrades safely to the current static card when a frame is missing. Still open on the Claude Code side: wiring `BattleSpriteActor` into the actual `Fighter`/`CardFrame` combat screen (it is not called from `src/main.tsx` yet), the card-flip transition itself, and the `fxOverlay` frame/path contract (`impact_slash`/`block_spark`/`heal_glow`/`status_fire` are defined as prop types but have no frame count or path convention yet -- separate future request).
+Acceptance check: each character's idle loop reads as breathing/alive at rest and loops back to frame 0 without a visible seam; attack/heavy/skill/ultimate read as clearly distinct, escalating poses at a glance; no frame-to-frame jitter when frames or states swap (ground contact point stays fixed); style and palette are recognizably the same character as the existing card portrait and (for heroes) overworld sprite.
 
 ## Handoff Log
 
