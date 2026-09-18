@@ -327,8 +327,8 @@ export function resolveFighterAnimationState(ctx: FighterAnimationContext): Batt
   }
 
   // 4. Recebendo ataque do inimigo
-  // Toda vez que o herói recebe um ataque do inimigo (shaking ativo ou bloqueio), utiliza a animação Defesa (Defesa.png)
-  if (ctx.side === 'hero' && (ctx.shaking || ctx.impactKind === 'blocked')) {
+  // Toda vez que o herói recebe um ataque do inimigo (shaking ativo, dano ou bloqueio), utiliza a animação Defesa (Defesa.png)
+  if (ctx.side === 'hero' && (ctx.shaking || ctx.impactKind === 'blocked' || ctx.impactKind === 'hit' || ctx.impactKind === 'critical' || ctx.impactKind === 'glance')) {
     return 'defend'
   }
 
@@ -342,8 +342,8 @@ export function resolveFighterAnimationState(ctx: FighterAnimationContext): Batt
     return 'defend'
   }
 
-  // 6. Golpe Supremo
-  if (ctx.isUsingUltimate || ctx.impactKind === 'ultimate') {
+  // 7. Golpe Supremo
+  if (ctx.isUsingUltimate || (ctx.side !== 'enemy' && ctx.impactKind === 'ultimate')) {
     return 'ultimate'
   }
 

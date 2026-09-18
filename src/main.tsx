@@ -2161,10 +2161,11 @@ function CombatScreen(){
  const attackerWeaponAnim=isCoop&&attackerUserId&&attackerUserId!==coop.userId?(coop.room?.shared_state?.memberVitals as Record<string,{weaponAnim?:AttackAnimType}>|undefined)?.[attackerUserId]?.weaponAnim:undefined
  const currentAttackType=attacker==='hero'?(attackerWeaponAnim??heroWeaponAnimationType(g.equipped.mao_direita)):attacker==='enemy'?enemyWeaponAnimationType(e):undefined
  const currentSummonAttackType=summonFxIndex>=0?summonFxEvent?.types?.[summonFxIndex] as AttackAnimType|undefined:undefined
- const currentAttackCritical=g.combatRoll?.attackRoll===6
  const currentRoll=g.combatRoll
+ const isHeroUltimate=Boolean(g.animating&&(currentRoll?.attacker==='hero'||(isCoop&&sharedRoll?.attacker==='hero'))&&(currentRoll?.attackEffect?.includes('SUPREMO')||(currentRoll as any)?.ultimate||sharedRoll?.attackEffect?.includes('SUPREMO')||(sharedRoll as any)?.ultimate))
+ const currentAttackCritical=!isHeroUltimate&&(g.combatRoll?.attackRoll===6||(isCoop&&sharedRoll?.attackRoll===6))
  const currentSupportFx=g.supportFx?.type
- const heroActing=Boolean(g.animating&&(currentSupportFx||currentRoll?.attacker==='hero'||currentSummonAttackType))
+ const heroActing=Boolean(g.animating&&(currentSupportFx||currentRoll?.attacker==='hero'||currentSummonAttackType||(isCoop&&sharedRoll?.attacker==='hero')))
  const enemyActing=Boolean(g.animating&&currentRoll?.attacker==='enemy'&&!currentRoll?.selfDamage)
  const impactState=combatImpactFromState(currentRoll,currentSupportFx)
  const heroImpact=impactState.target==='hero'?impactState.kind:undefined
@@ -2190,7 +2191,7 @@ function CombatScreen(){
      <button className={`combat-auto-toggle${g.autoCombat?' active':''}`} onClick={()=>g.toggleAutoCombat()} title="Auto-combate: ações executadas automaticamente no seu turno"><Zap size={14}/><span>AUTO {g.autoCombat?'LIGADO':'DESLIGADO'}</span></button>
    </div>
    <div className="combat-hero-area">
-     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds} attacking={heroActing} impactKind={heroImpact} turnOwner={myTurn&&!g.animating} battleViewMode={battleViewMode} onToggleBattleViewMode={toggleBattleViewMode} currentStance={currentStance}/>
+     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds} attacking={heroActing} impactKind={heroImpact} turnOwner={myTurn&&!g.animating} battleViewMode={battleViewMode} onToggleBattleViewMode={toggleBattleViewMode} currentStance={currentStance} isUsingUltimate={isHeroUltimate}/>
     {isCoop&&<CoopTeammatesRow coop={coop} battle={battle}/>}
     {isCoop&&<CoopEmoteBar className="combat-emote-bar"/>}
     {isCoop&&<CoopEmoteToast/>}
@@ -2265,7 +2266,7 @@ function StatusBadge({kind,turns,amount}:{kind:string;turns?:number;amount?:numb
  const [open,setOpen]=React.useState(false),copy=STATUS_TOOLTIP_COPY[kind],label=statusLabel(kind),turnText=kind==='stunned'?'Uso único':turns!=null&&turns>0?`${turns} turno${turns===1?'':'s'} restante${turns===1?'':'s'}`:'Sem duração fixa'
  return <button type="button" className={`status-badge status-${kind}${open?' open':''}`} onClick={()=>setOpen(v=>!v)} onBlur={()=>setOpen(false)} aria-label={`${label}: ${copy?.effect??STATUS_DURATION_NOTE[kind]??''}`}>{label}{turns!=null&&turns>0?` ×${turns}`:''}<span className="status-tooltip" role="tooltip"><strong>{label}</strong><small>{copy?.element??'Condição'}</small><em>{copy?.effect??STATUS_DURATION_NOTE[kind]??'Efeito temporário em combate.'}</em><b>{turnText}{amount!=null?` • Intensidade ${amount}`:''}</b></span></button>
 }
-function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity:_rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds,attacking,impactKind,turnOwner,staggerCurrent,staggerMax,isStaggered,weakness,battleViewMode,onToggleBattleViewMode,currentStance}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly{kind:string;turns?:number;amount?:number}[];attacking?:boolean;impactKind?:CombatImpactKind;turnOwner?:boolean;staggerCurrent?:number;staggerMax?:number;isStaggered?:boolean;weakness?:string;battleViewMode?:BattleViewMode;onToggleBattleViewMode?:()=>void;currentStance?:BattleStance}){
+function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity:_rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds,attacking,impactKind,turnOwner,staggerCurrent,staggerMax,isStaggered,weakness,battleViewMode,onToggleBattleViewMode,currentStance,isUsingUltimate}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly{kind:string;turns?:number;amount?:number}[];attacking?:boolean;impactKind?:CombatImpactKind;turnOwner?:boolean;staggerCurrent?:number;staggerMax?:number;isStaggered?:boolean;weakness?:string;battleViewMode?:BattleViewMode;onToggleBattleViewMode?:()=>void;currentStance?:BattleStance;isUsingUltimate?:boolean}){
  const galleryKind=side==='hero'?'Herói':boss?'Chefe':kind==='ELITE'?'Elite':'Monstro'
  const card={id:classId,nome:name,arte:image,habilidade:ability,ataque:attack,defesa:defense,vida:max,boss,elite:kind==='ELITE',raridade:side==='hero'?'heroico':boss?'lendario':kind==='ELITE'?'raro':'comum'}
  const shakeAnim=!shaking?{x:0,rotate:0}:effectsReduced()?{x:[0,-3,0],rotate:0}:attackCritical?{x:[0,-16,14,-10,6,-3,0],rotate:[0,-2.5,2.5,-1.5,0]}:{x:[0,-9,8,-5,0],rotate:0}
@@ -2279,8 +2280,8 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
   const timer=setTimeout(()=>setPhaseFlash(false),1300)
   return()=>clearTimeout(timer)
  },[phase,boss])
- const strikeAnim=!attacking?{x:0,y:0,scale:1,filter:'brightness(1)'}:effectsReduced()?{x:side==='hero'?[0,8,0]:[0,-8,0],y:0,scale:[1,1.015,1],filter:['brightness(1)','brightness(1.06)','brightness(1)']}:{x:side==='hero'?[0,18,6,0]:[0,-18,-6,0],y:[0,-4,0],scale:attackCritical?[1,1.04,1.01,1]:[1,1.025,1],filter:['brightness(1)','brightness(1.12)','brightness(1.04)','brightness(1)']}
- const strikeDuration = attacking ? 2.0 : 0.24
+ const strikeAnim=!attacking?{x:0,y:0,scale:1,filter:'brightness(1)'}:effectsReduced()?{x:side==='hero'?[0,8,0]:[0,-8,0],y:0,scale:[1,1.015,1],filter:['brightness(1)','brightness(1.06)','brightness(1)']}:{x:side==='hero'?[0,18,6,0]:[0,-18,-6,0],y:[0,-4,0],scale:isUsingUltimate?[1,1.08,1.02,1]:attackCritical?[1,1.04,1.01,1]:[1,1.025,1],filter:['brightness(1)',isUsingUltimate?'brightness(1.2)':'brightness(1.12)','brightness(1.04)','brightness(1)']}
+ const strikeDuration = attacking ? (isUsingUltimate ? 2.4 : 2.0) : 0.24
  const isFlipped = battleViewMode === 'sprites'
  const spriteCategory = side === 'hero' ? 'heroes' : 'enemies'
  const spriteId = side === 'hero' ? (classId || 'guerreiro') : normalizeEnemySpriteId(name)
@@ -2290,10 +2291,11 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
   maxHp: max,
   shaking,
   attacking,
-  attackCritical,
+  attackCritical: isUsingUltimate ? false : attackCritical,
   impactKind,
   supportFx,
   currentStance,
+  isUsingUltimate,
  })
  const cardFrameNode = (
   <CardFrame

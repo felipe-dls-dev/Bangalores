@@ -102,6 +102,11 @@ describe('resolveFighterAnimationState', () => {
   it('resolves ultimate when ultimate action is executing', () => {
     expect(resolveFighterAnimationState({ hp: 80, maxHp: 100, isUsingUltimate: true })).toBe('ultimate')
     expect(resolveFighterAnimationState({ hp: 80, maxHp: 100, impactKind: 'ultimate' })).toBe('ultimate')
+    expect(resolveFighterAnimationState({ side: 'hero', hp: 80, maxHp: 100, attacking: true, attackCritical: true, isUsingUltimate: true })).toBe('ultimate')
+  })
+
+  it('resolves hit when enemy is struck by an ultimate', () => {
+    expect(resolveFighterAnimationState({ side: 'enemy', hp: 80, maxHp: 100, shaking: true, impactKind: 'ultimate' })).toBe('hit')
   })
 
   it('resolves skill when special class skill is active', () => {
