@@ -172,8 +172,11 @@ describe('getSpriteStateConfig', () => {
     expect(getSpriteStateConfig('heroes', 'druida', 'attack').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'druida', 'heavy').frames).toBe(9)
     expect(getSpriteStateConfig('heroes', 'druida', 'ultimate').frames).toBe(12)
+    expect(getSpriteStateConfig('heroes', 'druida', 'defend').frames).toBe(5)
+    // levar dano reaproveita a Defesa, então tem o mesmo número de quadros
+    expect(getSpriteStateConfig('heroes', 'druida', 'hit').frames).toBe(getSpriteStateConfig('heroes', 'druida', 'defend').frames)
     // sem override: cai no padrão do estado
-    expect(getSpriteStateConfig('heroes', 'druida', 'defend')).toBe(BATTLE_ANIMATION_CONFIG.defend)
+    expect(getSpriteStateConfig('heroes', 'druida', 'dodge')).toBe(BATTLE_ANIMATION_CONFIG.dodge)
   })
 
   it('falls back to standard BATTLE_ANIMATION_CONFIG for other heroes or enemies', () => {
@@ -208,7 +211,7 @@ describe('getFrameDurationMs', () => {
   })
 
   it('druid weighted states have one weight per frame and keep the total duration', () => {
-    for (const state of ['attack', 'heavy', 'ultimate'] as const) {
+    for (const state of ['attack', 'heavy', 'defend', 'hit', 'ultimate'] as const) {
       const cfg = DRUID_ANIMATION_OVERRIDES[state]!
       expect(cfg.frameWeights, state).toHaveLength(cfg.frames)
       const total = Array.from({ length: cfg.frames }, (_, i) => getFrameDurationMs(cfg, i)).reduce((a, b) => a + b, 0)
@@ -255,6 +258,7 @@ describe('getSpriteFrameStyle', () => {
 describe('warrior frame files on disk', () => {
   it('hit reuses the defend frames instead of duplicating files', () => {
     expect(getBattleSpriteFramePath('heroes', 'guerreiro', 'hit', 4)).toBe(getBattleSpriteFramePath('heroes', 'guerreiro', 'defend', 4))
+    expect(getBattleSpriteFramePath('heroes', 'druida', 'hit', 3)).toBe('assets/battle/sprites/heroes/druida/defend_03.png')
     expect(getBattleSpriteFramePath('heroes', 'monge', 'hit', 4)).toBe('assets/battle/sprites/heroes/monge/hit_04.png')
   })
 
@@ -288,7 +292,7 @@ describe('druid frame sequences (states without their own sheet)', () => {
   })
 
   it('only points at frames that exist in the states the druid has sheets for', () => {
-    const own = ['idle', 'attack', 'heavy', 'ultimate'] as const
+    const own = ['idle', 'attack', 'heavy', 'defend', 'ultimate'] as const
     for (const [state, seq] of Object.entries(sequences)) {
       for (const [src, index] of seq!) {
         expect(own, `${state} -> ${src}`).toContain(src)
@@ -299,14 +303,14 @@ describe('druid frame sequences (states without their own sheet)', () => {
 
   it('covers every state the game can ask for', () => {
     for (const state of Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]) {
-      const owned = ['idle', 'attack', 'heavy', 'ultimate'].includes(state)
+      const owned = ['idle', 'attack', 'heavy', 'defend', 'hit', 'ultimate'].includes(state)
       expect(Boolean(sequences[state]) || owned, state).toBe(true)
     }
   })
 
   it('resolves stand-in frames to the file of the pose they borrow and clamps out-of-range indexes', () => {
-    expect(getBattleSpriteFramePath('heroes', 'druida', 'defend', 1)).toBe('assets/battle/sprites/heroes/druida/heavy_02.png')
-    expect(getBattleSpriteFramePath('heroes', 'druida', 'defend', 99)).toBe('assets/battle/sprites/heroes/druida/idle_00.png')
+    expect(getBattleSpriteFramePath('heroes', 'druida', 'dodge', 1)).toBe('assets/battle/sprites/heroes/druida/attack_06.png')
+    expect(getBattleSpriteFramePath('heroes', 'druida', 'dodge', 99)).toBe('assets/battle/sprites/heroes/druida/idle_00.png')
     expect(getBattleSpriteFramePath('heroes', 'druida', 'attack', 3)).toBe('assets/battle/sprites/heroes/druida/attack_03.png')
     expect(getBattleSpriteFramePath('heroes', 'monge', 'defend', 1)).toBe('assets/battle/sprites/heroes/monge/defend_01.png')
   })

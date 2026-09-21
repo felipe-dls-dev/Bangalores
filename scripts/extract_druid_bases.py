@@ -19,8 +19,9 @@ Diferenças em relação ao guerreiro:
   * Cada folha foi gerada numa escala diferente. `scale` de cada folha é medido a partir da altura
     do corpo (núcleo sólido) nos quadros em pé de cada uma, para o druida ter o mesmo tamanho em
     todas as animações.
-  * Defesa.png NÃO é usada: veio com o corpo quase todo transparente (RGB zerado sob o alpha 0, não
-    dá para recuperar). Ver docs/BATTLE_SPRITE_PROMPTS.md, seção do druida.
+  * A primeira Defesa.png veio com o corpo quase todo transparente (RGB zerado sob o alpha 0, sem
+    recuperação) e foi regerada pelo Codex (ART-031); a atual é a versão nova. `hit` não tem arquivos
+    próprios: getBattleSpriteFramePath() aponta hit -> defend.
 """
 import argparse
 import io
@@ -51,12 +52,15 @@ FEET_BAND = 40  # px da folha acima da sola que definem a largura dos pés (bota
 
 # layout = quadros por linha; min_core = área mínima do núcleo para contar como corpo (crescentes
 # sólidos, orbes e detritos ficam abaixo disso e são distribuídos ao quadro certo por propagação);
-# stand = quadros em pé usados para medir a escala da folha.
+# stand = quadros em pé usados para medir a escala da folha; own_ground = cada quadro usa o próprio chão
+# em vez da mediana da linha (a Defesa foi gerada com o quadro em pé 14 px abaixo dos agachados, e o druida
+# nunca sai do chão, então as botas de cada quadro é que definem o chão).
 SHEETS = {
     'Descanso': dict(state='idle', layout=[6], min_core=40000, stand=[0, 5]),
     'Ataque': dict(state='attack', layout=[4, 4], min_core=30000, stand=[0, 7]),
     'Ataque_Critico': dict(state='heavy', layout=[9], min_core=20000, stand=[0, 8]),
     'Ultimate': dict(state='ultimate', layout=[3, 3, 3, 3], min_core=12000, stand=[0, 11]),
+    'Defesa': dict(state='defend', layout=[3, 2], min_core=30000, stand=[0, 4], own_ground=True),  # também serve o estado `hit`
 }
 
 # Sobreposições da folha que a propagação por vizinhança não consegue separar. A ponta do cajado do
@@ -101,7 +105,7 @@ def save_png(im, path, quantize=False):
             time.sleep(0.3)
 
 
-def analyse(rgba, L, order, layout):
+def analyse(rgba, L, order, layout, own_ground=False):
     """Marcos por quadro: bbox, solado das botas e centro dos pés."""
     alpha = rgba[..., 3]
     frames = []
@@ -132,7 +136,7 @@ def analyse(rgba, L, order, layout):
         for c, f in enumerate(row):
             cell = (c + 0.5) * W_ / cnt
             ok = f['feet'] is not None and f['feet'][1] - f['feet'][0] >= 60
-            f['ground'] = ground
+            f['ground'] = f['bottom'] if own_ground else ground
             f['cx_ok'] = ok
             f['cell'] = cell
             f['cx'] = (f['feet'][0] + f['feet'][1]) / 2 if ok else None
@@ -202,7 +206,7 @@ def process(names=None):
         print(f'Processando {name}.png -> {cfg["state"]} ...')
         rgba = clean_alpha(np.array(Image.open(os.path.join(BASES_DIR, name + '.png')).convert('RGBA')))
         L, order = W.segment(rgba[..., 3], cfg['layout'], min_core=cfg['min_core'])
-        frames = analyse(rgba, L, order, cfg['layout'])
+        frames = analyse(rgba, L, order, cfg['layout'], cfg.get('own_ground', False))
         own = apply_fixes(rgba, L, order, frames, FIXES.get(name, []))
         scale, h = sheet_scale(frames, cfg['stand'])
         print(f'  corpo em pé = {h:.0f}px na folha -> escala {scale:.3f}')

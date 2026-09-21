@@ -81,7 +81,7 @@ export const WARRIOR_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, S
 
 /**
  * Sobrescritas do druida (folhas de Bases/ em scripts/extract_druid_bases.py). Contagens de quadros
- * vêm das folhas: Descanso 6, Ataque 8, Ataque_Critico 9, Ultimate 12.
+ * vêm das folhas: Descanso 6, Ataque 8, Ataque_Critico 9, Ultimate 12, Defesa 5.
  */
 export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
   idle: { frames: 6, loop: true, fps: 6 },
@@ -94,6 +94,15 @@ export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, Spr
   heavy: {
     frames: 9, loop: false, fps: 8, durationMs: 2000,
     frameWeights: [1.2, 1, 1.2, 1, 1.4, 0.55, 0.8, 1, 1.2],
+  },
+  // guarda (3) -> escudo de folhas abrindo (1) -> retorno (1); o escudo segura um pouco mais
+  defend: {
+    frames: 5, loop: false, fps: 10, durationMs: 900,
+    frameWeights: [0.8, 1, 1, 1.4, 1],
+  },
+  hit: {
+    frames: 5, loop: false, fps: 10, durationMs: 900,
+    frameWeights: [0.8, 1, 1, 1.4, 1],
   },
   // raízes (3) -> aura de galhos (3) -> liberação + crescente (3) -> recuperação (3)
   ultimate: {
@@ -306,10 +315,11 @@ export function isBattleSpriteSupported(category: 'heroes' | 'enemies', id: stri
 
 /**
  * Estados que reaproveitam os quadros de outro estado do mesmo lutador (sem arquivos próprios).
- * O guerreiro leva dano com a mesma folha da Defesa.
+ * Guerreiro e druida levam dano com a mesma folha da Defesa.
  */
 const SPRITE_STATE_FRAME_ALIAS: Partial<Record<string, Partial<Record<BattleAnimationState, BattleAnimationState>>>> = {
   'heroes/guerreiro': { hit: 'defend' },
+  'heroes/druida': { hit: 'defend' },
 }
 
 /** Um quadro de outro estado: [estado, índice do quadro]. */
@@ -319,17 +329,14 @@ const idleLoop: SpriteFrameRef[] = [0, 1, 2, 3, 4, 5].map(i => ['idle', i] as co
 
 /**
  * Estados montados a partir de quadros de OUTROS estados (um por quadro da animação). O druida só
- * tem folhas de idle/attack/heavy/ultimate; os demais estados são montados com poses dessas folhas
- * até existirem folhas próprias (Defesa.png do druida veio com o corpo transparente, ver
- * docs/BATTLE_SPRITE_PROMPTS.md). O tamanho de cada lista precisa bater com o `frames` do estado.
+ * tem folhas de idle/attack/heavy/ultimate/defend; os demais estados são montados com poses dessas
+ * folhas até existirem folhas próprias (ver docs/BATTLE_SPRITE_PROMPTS.md). O tamanho de cada lista
+ * precisa bater com o `frames` do estado.
  */
 export const SPRITE_FRAME_SEQUENCES: Partial<Record<string, Partial<Record<BattleAnimationState, readonly SpriteFrameRef[]>>>> = {
   'heroes/druida': {
     stance_offensive: idleLoop,
     stance_defensive: idleLoop,
-    // agachado com o cajado à frente = guarda
-    defend: [['idle', 0], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['idle', 0]],
-    hit: [['heavy', 2], ['heavy', 2], ['heavy', 2], ['idle', 0]],
     // recua o corpo (cajado para cima) e volta
     dodge: [['idle', 0], ['attack', 6], ['attack', 6], ['attack', 6], ['idle', 0]],
     // cajado erguido com o orbe brilhando
