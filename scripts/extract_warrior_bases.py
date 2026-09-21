@@ -231,14 +231,18 @@ def _disk(r):
     return (x * x + y * y) <= r * r
 
 
-def segment(alpha, layout, thr=8):
-    """Devolve (mapa de rótulos por pixel, rótulos na ordem de leitura)."""
+def segment(alpha, layout, thr=8, min_core=4000):
+    """Devolve (mapa de rótulos por pixel, rótulos na ordem de leitura).
+
+    min_core = área mínima (px do núcleo erodido) para um bloco contar como corpo de personagem;
+    o que for menor (crescentes sólidos, orbes, detritos) é distribuído por propagação.
+    """
     solid = alpha >= 250
     er = ndi.binary_erosion(solid, structure=np.ones((3, 3), bool), iterations=7)
     lab, n = ndi.label(er)
     ar = ndi.sum(er, lab, index=np.arange(1, n + 1))
     keep = np.zeros(n + 1, bool)
-    keep[1:] = ar >= 4000
+    keep[1:] = ar >= min_core
     cores, n = ndi.label(keep[lab])
     total = sum(layout)
     if n != total:

@@ -238,3 +238,27 @@ O `guerreiro` **não** segue o canvas 96x128 acima. Ele usa arte gerada em folha
 - **Estados sem folha nova** (`dodge`, `potion`, `skill`, `stance_*`, `victory`, `defeat`) continuam com os quadros antigos de `bkp/` (96x128), reenquadrados no canvas novo pelo script para não mudarem de tamanho.
 - **Exibição**: a carta é estreita, então o canvas não usa `object-fit: contain`. `getSpriteFrameStyle()` + `.battle-sprite-stage.framed` posicionam o quadro pelos pés (corpo com `SPRITE_STAGE_VIEW.bodyFraction` da altura da carta); efeitos largos passam da carta e são cortados pela borda dela.
 - **Ritmo**: `frameWeights` em `WARRIOR_ANIMATION_OVERRIDES` reparte `durationMs` (preparação lenta, corte rápido, recuperação).
+
+## Druida em alta fidelidade (folhas grandes em `Bases/`)
+
+O `druida` também usa folhas grandes (`public/assets/battle/sprites/heroes/druida/Bases/`), recortadas por `scripts/extract_druid_bases.py`
+(`pip install pillow numpy scipy`; `python scripts/extract_druid_bases.py --preview <pasta>`). O script reaproveita a segmentação e o render do
+`extract_warrior_bases.py`.
+
+| Folha | Estado | Quadros | Layout |
+|---|---|---|---|
+| `Descanso.png` | `idle` | 6 | 1 linha (2172x724) |
+| `Ataque.png` | `attack` | 8 | 4+4 (1536x1024) |
+| `Ataque_Critico.png` | `heavy` | 9 | 1 linha (2172x724) |
+| `Ultimate.png` | `ultimate` | 12 | 3+3+3+3 (1086x1448) |
+| `Defesa.png` | **não usada** | 5 | 3+2 (1536x1024) |
+
+- **Canvas próprio de 400x410** (pés em x=170, chão em y=380), diferente do guerreiro: o cajado erguido e o halo do orbe chegam a ~365 px acima do chão. Precisa bater com `HERO_SPRITE_CANVAS.druida` (um teste confere os PNGs no disco). `bodyHeight` continua 198, a mesma referência de escala do guerreiro, então os dois ficam com porte parecido na carta.
+- **Escala por folha** (`stand` em `SHEETS`): medida pela altura do corpo nos quadros em pé de cada folha (Descanso 0.575, Ataque 0.854, Crítico 1.07, Ultimate 1.196), para o druida ter o mesmo tamanho em todas as animações.
+- **Alpha**: as folhas vêm com alpha real, mas o corpo em ~252 e um pó de alpha 1..7 pelo fundo; `clean_alpha` normaliza. Não há xadrez falso.
+- **Núcleos que não são personagem**: crescentes sólidos, orbes e detritos são menores que `min_core` e vão para o quadro certo por propagação.
+- **Sobreposição corrigida à mão** (`FIXES`): a ponta do cajado do quadro 02 do Crítico (agachado) invade o manto do 03; um polígono devolve a ponta ao 02 e o manto do 03 é preenchido com o mesmo ponto do quadro 04 (mesma pose, manto limpo).
+- **Estados sem folha** (`stance_*`, `defend`, `hit`, `dodge`, `potion`, `skill`, `victory`, `defeat`) são **montados com poses das folhas existentes** por `SPRITE_FRAME_SEQUENCES['heroes/druida']` em `src/battleSprites.ts` (sem arquivos duplicados). São provisórios: a defesa usa o quadro agachado do Crítico (`heavy_02`), a esquiva o recuo do Ataque (`attack_06`), poção/habilidade/vitória o cajado erguido (`heavy_03/04`), a derrota o mesmo agachado, parado no fim.
+- **`Defesa.png` veio inutilizável**: quase todo o corpo está transparente (só contornos, realces e o escudo de folhas ficaram opacos) e o RGB sob o alpha 0 está zerado, então não dá para recuperar. Regeneração pedida em ART-031 (`docs/VISUAL_DEVELOPMENT_HANDOFF.md`). Quando chegar, adicione-a a `SHEETS` (`state='defend'`) e troque `defend`/`hit` em `SPRITE_FRAME_SEQUENCES` por `defend_00..04`.
+- **`Bases/Ultimate_frames/`** (12 PNGs 512x512 totalmente transparentes) é resto de uma tentativa de corte e não é usada.
+- **Ritmo**: `DRUID_ANIMATION_OVERRIDES` reparte `durationMs` com `frameWeights` (preparação lenta, golpe rápido, recuperação lenta), como no guerreiro.

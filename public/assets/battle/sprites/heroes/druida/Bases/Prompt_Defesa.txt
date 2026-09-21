@@ -1,0 +1,36 @@
+SPRITE SHEET - DRUIDA - DEFESA / BLOCK
+
+Objetivo:
+Gerar uma sprite sheet do druida em defesa, no estilo pixel art de luta arcade dos anos 90, inspirado em The King of Fighters 99, mantendo consistencia visual com as sprites ja geradas do mesmo personagem.
+
+Personagem:
+- Druida idoso, barba branca longa, expressao serena e concentrada.
+- Manto escuro com detalhes naturais, folhas, galhos e tons verdes.
+- Cajado de madeira com orbe claro no topo.
+- Silhueta lateral de batalha, pronto para combate.
+- Mesma escala, proporcao, direcao e estilo das sprites anteriores do druida.
+
+Animacao:
+Criar 5 frames de defesa:
+1. Postura inicial de batalha, corpo pronto.
+2. Corpo baixa o centro de gravidade, cajado se aproxima do torso.
+3. Cajado plantado na diagonal, postura compacta de bloqueio.
+4. Escudo magico de folhas e energia verde se abre diante do druida.
+5. Retorno controlado para a postura inicial.
+
+Layout:
+- PNG com fundo totalmente transparente, alpha 0 em toda area vazia.
+- Sprite sheet em grade 3 colunas x 2 linhas.
+- Cada celula deve ter exatamente 512x512 px.
+- Tamanho final esperado: 1536x1024 px.
+- Usar apenas 5 sprites; a sexta celula deve ficar vazia e totalmente transparente.
+- Cada sprite deve ficar centralizada dentro da sua propria celula.
+- Manter margem transparente minima de 18 px em todos os lados de cada celula.
+- Nenhuma parte do corpo, cajado, folhas, brilho, magia ou sombra pode invadir outra celula.
+- Nao desenhar linhas de grade, textos, numeros, molduras, cenario ou fundo colorido.
+
+Estilo:
+- Pixel art detalhada, alta qualidade, leitura clara de silhueta.
+- Animacao com postura defensiva forte, sem exagerar em efeitos que atrapalhem o recorte.
+- Energia da defesa em verde natural, folhas e brilho organico.
+- Fundo transparente real, nao preto, nao verde, nao gradiente.

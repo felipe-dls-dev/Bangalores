@@ -91,6 +91,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P3 | Illusory secret wall | — | MECHANIC SHIPPED | See ART-026 -- code+art integrated (discovery + one-shot reveal fx), just not placed on a map yet. |
 | P3 | Scenery interaction (signposts) | — | MECHANIC SHIPPED | See ART-027 -- code+art integrated (reusable `RegionMapScenery` pattern), just not placed on a map yet. |
 | P1 | Battle stage flip: KOF-style fighter sprites | Codex | REQUESTED | See ART-030 -- animated pixel-art fighter sprites (13 states) for the 9 heroes plus 8 named enemies already scoped in code, replacing the static card portrait once the hero/enemy cards flip into "fighter view" at combat start. A code scaffold (`src/battleSprites.ts`, `src/components/BattleSpriteActor.tsx`) already exists un-committed, not yet wired into the combat screen. |
+| P1 | Druid Defesa sheet, regeneration | Codex | REQUESTED | See ART-031 -- `druida/Bases/Defesa.png` arrived with the body mostly transparent and is unusable; the druid's defend/hit currently borrow the crouched pose from the critical sheet. |
 | P2 | Shared equipment art, last 2 pieces | — | DONE | ART-029 delivered the tier-0 Andarilhos calças/botas; shared-equipment art audit now has no known missing paths. |
 | P2 | Steelmere "Act 2" story content (Contrato 11) | Codex | INTEGRATED | CONTENT-001 delivered a playable optional Steelmere quest chain in `src/data/storyQuests.ts`, deepening the industrial-rebellion plot without changing the main quest spine. |
 
@@ -588,6 +589,19 @@ Integration (Antigravity & Claude Code):
 Delivered paths: `public/assets/battle/sprites/heroes/`, `public/assets/battle/sprites/enemies/`, `public/assets/battle/fx/`.
 Acceptance check: Passed. All combat actions trigger corresponding arcade sprite animations with instantaneous card inspection fallback.
 
+
+### ART-031 - Druid Defesa sheet (regeneration)
+Status: REQUESTED
+Requested by: Claude Code, on behalf of Felipe
+Gameplay purpose: the hero's `defend` animation plays every time the hero is hit or blocks, so it is the most-seen druid state after idle. Idle, attack, critical and ultimate sheets were integrated (see `docs/BATTLE_SPRITE_PROMPTS.md`, "Druida em alta fidelidade"); `defend`/`hit` currently borrow the crouched pose from `Ataque_Critico.png` as a stand-in.
+Problem: `public/assets/battle/sprites/heroes/druida/Bases/Defesa.png` (1536x1024, 5 frames, 3x2 grid) came back with most of the body transparent -- only outlines, highlights, the belt/tabard and the leaf-shield effect are opaque, the dark green robe and cloak are see-through. The RGB under the transparent pixels is all zero, so it cannot be recovered in code. Most likely the background removal keyed out the dark greens.
+Requirements:
+- Same brief as `Bases/Prompt_Defesa.txt` (5 frames: ready, lowers stance, staff planted diagonally, leaf/energy shield opens, controlled return).
+- Fully opaque body: every pixel of the character must be alpha >= 252; only glows, leaves and the shield may be partially transparent. Before delivering, composite the sheet over a light and a dark flat colour and check that no part of the robe/cloak shows through.
+- Same figure scale, proportions and side-view direction as `Descanso.png` / `Ataque.png` (compare against them), feet on a consistent ground line inside each row, nothing crossing into a neighbouring cell.
+- If background removal keeps eating dark greens, generate on a flat chroma-key colour that does not appear in the art and key it out in a separate step.
+Delivered paths: overwrite `public/assets/battle/sprites/heroes/druida/Bases/Defesa.png`.
+Integration once delivered (Claude Code): add `Defesa` to `SHEETS` in `scripts/extract_druid_bases.py` (`state='defend'`, layout `[3, 2]`), rerun it, and replace the `defend`/`hit` entries of `SPRITE_FRAME_SEQUENCES['heroes/druida']` in `src/battleSprites.ts` with `defend_00..04`.
 
 ## Handoff Log
 

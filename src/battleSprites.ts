@@ -80,6 +80,34 @@ export const WARRIOR_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, S
 }
 
 /**
+ * Sobrescritas do druida (folhas de Bases/ em scripts/extract_druid_bases.py). Contagens de quadros
+ * vêm das folhas: Descanso 6, Ataque 8, Ataque_Critico 9, Ultimate 12.
+ */
+export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
+  idle: { frames: 6, loop: true, fps: 6 },
+  // preparação (3) -> golpe + crescente (2) -> recuperação (3)
+  attack: {
+    frames: 8, loop: false, fps: 8, durationMs: 1800,
+    frameWeights: [1.3, 1, 1, 0.6, 0.55, 0.8, 1, 1.3],
+  },
+  // preparação (3) -> orbe carregando (1) -> golpe + crescente (1) -> recuperação (4)
+  heavy: {
+    frames: 9, loop: false, fps: 8, durationMs: 2000,
+    frameWeights: [1.2, 1, 1.2, 1, 1.4, 0.55, 0.8, 1, 1.2],
+  },
+  // raízes (3) -> aura de galhos (3) -> liberação + crescente (3) -> recuperação (3)
+  ultimate: {
+    frames: 12, loop: false, fps: 8, durationMs: 2600,
+    frameWeights: [1.2, 1, 1.1, 1, 1, 1.3, 1, 0.55, 0.55, 0.8, 0.9, 1.3],
+  },
+}
+
+const HERO_ANIMATION_OVERRIDES: Record<string, Partial<Record<BattleAnimationState, SpriteStateConfig>>> = {
+  guerreiro: WARRIOR_ANIMATION_OVERRIDES,
+  druida: DRUID_ANIMATION_OVERRIDES,
+}
+
+/**
  * Duração de um quadro em ms. Com frameWeights, reparte durationMs proporcionalmente; sem, divide
  * igualmente; sem durationMs, usa o fps.
  */
@@ -107,8 +135,13 @@ export interface SpriteCanvasMeta {
   bodyHeight: number
 }
 
+// bodyHeight é só a referência de escala (px do canvas que ocupam bodyFraction do palco): guerreiro e
+// druida usam o mesmo 198, então 1 px de canvas vale o mesmo na carta e os dois têm porte parecido. O
+// druida tem canvas próprio, mais alto, por causa do cajado erguido e do halo do orbe
+// (scripts/extract_druid_bases.py).
 export const HERO_SPRITE_CANVAS: Partial<Record<string, SpriteCanvasMeta>> = {
   guerreiro: { width: 448, height: 332, anchorX: 196, groundY: 301, bodyHeight: 198 },
+  druida: { width: 400, height: 410, anchorX: 170, groundY: 380, bodyHeight: 198 },
 }
 
 /**
@@ -146,10 +179,8 @@ export function getSpriteStateConfig(
   state: BattleAnimationState
 ): SpriteStateConfig {
   const base = BATTLE_ANIMATION_CONFIG[state] || BATTLE_ANIMATION_CONFIG.idle
-  if (category === 'heroes' && id === 'guerreiro' && WARRIOR_ANIMATION_OVERRIDES[state]) {
-    return WARRIOR_ANIMATION_OVERRIDES[state]!
-  }
-  return base
+  const override = category === 'heroes' ? HERO_ANIMATION_OVERRIDES[id]?.[state] : undefined
+  return override ?? base
 }
 
 /**
@@ -281,6 +312,34 @@ const SPRITE_STATE_FRAME_ALIAS: Partial<Record<string, Partial<Record<BattleAnim
   'heroes/guerreiro': { hit: 'defend' },
 }
 
+/** Um quadro de outro estado: [estado, índice do quadro]. */
+export type SpriteFrameRef = readonly [BattleAnimationState, number]
+
+const idleLoop: SpriteFrameRef[] = [0, 1, 2, 3, 4, 5].map(i => ['idle', i] as const)
+
+/**
+ * Estados montados a partir de quadros de OUTROS estados (um por quadro da animação). O druida só
+ * tem folhas de idle/attack/heavy/ultimate; os demais estados são montados com poses dessas folhas
+ * até existirem folhas próprias (Defesa.png do druida veio com o corpo transparente, ver
+ * docs/BATTLE_SPRITE_PROMPTS.md). O tamanho de cada lista precisa bater com o `frames` do estado.
+ */
+export const SPRITE_FRAME_SEQUENCES: Partial<Record<string, Partial<Record<BattleAnimationState, readonly SpriteFrameRef[]>>>> = {
+  'heroes/druida': {
+    stance_offensive: idleLoop,
+    stance_defensive: idleLoop,
+    // agachado com o cajado à frente = guarda
+    defend: [['idle', 0], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['idle', 0]],
+    hit: [['heavy', 2], ['heavy', 2], ['heavy', 2], ['idle', 0]],
+    // recua o corpo (cajado para cima) e volta
+    dodge: [['idle', 0], ['attack', 6], ['attack', 6], ['attack', 6], ['idle', 0]],
+    // cajado erguido com o orbe brilhando
+    potion: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 7], ['idle', 0]],
+    skill: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 4], ['heavy', 7], ['heavy', 8], ['idle', 0]],
+    victory: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 4], ['heavy', 4]],
+    defeat: [['idle', 0], ['attack', 1], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2]],
+  },
+}
+
 /**
  * Gera o caminho canônico do arquivo de frame
  * Exemplo: assets/battle/sprites/heroes/monge/idle_00.png
@@ -291,8 +350,12 @@ export function getBattleSpriteFramePath(
   state: BattleAnimationState,
   frameIndex: number
 ): string {
-  const paddedIndex = String(frameIndex).padStart(2, '0')
-  const frameState = SPRITE_STATE_FRAME_ALIAS[`${category}/${id}`]?.[state] ?? state
+  const key = `${category}/${id}`
+  const sequence = SPRITE_FRAME_SEQUENCES[key]?.[state]
+  const [frameState, index] = sequence
+    ? sequence[Math.min(Math.max(frameIndex, 0), sequence.length - 1)]
+    : [SPRITE_STATE_FRAME_ALIAS[key]?.[state] ?? state, frameIndex]
+  const paddedIndex = String(index).padStart(2, '0')
   return `assets/battle/sprites/${category}/${id}/${frameState}_${paddedIndex}.png`
 }
 

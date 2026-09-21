@@ -1,0 +1,46 @@
+Use case: stylized-concept
+Asset type: transparent game battle sprite sheet for Bangalores
+
+Input images:
+- Image 1: public/assets/heroes/druida-lunargenta.png, original druid identity reference.
+- Image 2: public/assets/battle/sprites/heroes/druida/Bases/Descanso.png, druid idle/battle stance.
+- Image 3: public/assets/battle/sprites/heroes/druida/Bases/Ataque.png, common attack.
+- Image 4: public/assets/battle/sprites/heroes/druida/Bases/Ataque_Critico.png, critical attack.
+
+Primary request:
+Create the druid's ultimate attack / supreme attack sprite sheet. Exactly 12 frames in a single horizontal row, with clear transparent spacing between frames. This must be a transparent-background sprite sheet, not a painted scene.
+
+Subject:
+The same mature elder forest druid, long gray hair and beard, branch circlet, layered green robes, leaf-and-moss mantle, wooden branch staff with pale moon orb, calm but overwhelming forest-mage power.
+
+Style/medium:
+Hand-pixeled late-1990s 2D arcade fighting game pixel art, crisp square pixels, hard edges, high contrast, limited rich forest palette, readable fighter silhouette, not chibi, not photorealistic.
+
+Ultimate action:
+An ancient forest-and-moon supreme strike, stronger and more magical than the critical attack but still usable as a character sprite animation.
+
+Frame order left to right:
+00 battle ready stance.
+01 lowers stance and plants the staff.
+02 roots and leaves begin rising at his feet.
+03 staff orb glows with moon-green light.
+04 raises staff overhead, cloak and hair lifting.
+05 a circular leaf-and-root aura forms around him.
+06 gathers energy into the staff orb.
+07 explosive forward release.
+08 large green-gold crescent/spiral of nature energy surges from the staff.
+09 peak impact with bright moonlit forest particles and root shards.
+10 follow-through with cloak trailing and leaves dispersing.
+11 recovery toward idle stance.
+
+Composition/framing:
+Side-view fighter pose, character faces right, full body visible in every frame, same approximate scale as the existing druid sheets, feet anchored to a consistent ground line except for strong combat weight shift. Leave generous transparent margin around raised staff, aura, roots, leaves, and crescent so nothing is cropped. The energy effects should be dramatic but not cover the entire sheet.
+
+Background:
+Genuinely transparent alpha background. No scenery, no gradient, no floor, no shadow plate, no card frame.
+
+Constraints:
+Preserve exact druid costume and mature proportions across all frames. No extra characters, no animals, no UI, no text, no watermark, no logo, no visible grid lines. Avoid copying any existing fighting game character or exact franchise style.
+
+Suggested output path:
+public/assets/battle/sprites/heroes/druida/Bases/Ultimate.png
