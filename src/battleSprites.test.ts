@@ -4,18 +4,24 @@ import {
   BATTLE_ANIMATION_CONFIG,
   DRUID_ANIMATION_OVERRIDES,
   HERO_SPRITE_CANVAS,
+  INITIAL_SPRITE_PLAYBACK,
   SPRITE_FRAME_SEQUENCES,
   SPRITE_STAGE_VIEW,
   WARRIOR_ANIMATION_OVERRIDES,
   getBattleSpriteFramePath,
   getBattleSpriteFrameUrl,
+  getDisplayedSpriteState,
   getFrameDurationMs,
   getSpriteFrameStyle,
   getSpriteStateConfig,
   isBattleSpriteSupported,
+  isOneShotConfig,
   normalizeEnemySpriteId,
+  playbackOnRequest,
+  playbackOnTick,
   resolveFighterAnimationState,
   type BattleAnimationState,
+  type SpritePlayback,
 } from './battleSprites'
 
 describe('Battle Sprites Configuration (docs/BATTLE_SPRITE_PROMPTS.md)', () => {
@@ -313,5 +319,133 @@ describe('druid frame sequences (states without their own sheet)', () => {
     expect(getBattleSpriteFramePath('heroes', 'druida', 'dodge', 99)).toBe('assets/battle/sprites/heroes/druida/idle_00.png')
     expect(getBattleSpriteFramePath('heroes', 'druida', 'attack', 3)).toBe('assets/battle/sprites/heroes/druida/attack_03.png')
     expect(getBattleSpriteFramePath('heroes', 'monge', 'defend', 1)).toBe('assets/battle/sprites/heroes/monge/defend_01.png')
+  })
+})
+
+describe('sprite playback: one execution per act', () => {
+  const hero = 'druida'
+  const cfgOf = (state: BattleAnimationState) => getSpriteStateConfig('heroes', hero, state)
+
+  /** Simula o BattleSpriteActor: pedido novo -> playbackOnRequest; cada tick -> playbackOnTick. */
+  const makeSim = (resting: BattleAnimationState = 'idle') => {
+    let pb: SpritePlayback = INITIAL_SPRITE_PLAYBACK
+    let requested: BattleAnimationState = 'idle'
+    const request = (state: BattleAnimationState) => {
+      requested = state
+      pb = playbackOnRequest(pb, state, isOneShotConfig(cfgOf(state)))
+    }
+    const shown = () => {
+      const state = getDisplayedSpriteState(pb, requested, resting)
+      return { state, frame: Math.min(pb.frame, cfgOf(state).frames - 1) }
+    }
+    const tick = () => {
+      const state = getDisplayedSpriteState(pb, requested, resting)
+      pb = playbackOnTick(pb, requested, cfgOf(state))
+    }
+    /** Estados exibidos ao longo de n ticks (o primeiro é o do início). */
+    const run = (n: number) => {
+      const seen = [shown()]
+      for (let i = 0; i < n; i++) { tick(); seen.push(shown()) }
+      return seen
+    }
+    return { request, shown, tick, run }
+  }
+
+  it.each(['attack', 'heavy', 'defend', 'ultimate'] as const)('%s plays its frames once and then rests while the request stays on', action => {
+    const sim = makeSim()
+    sim.request(action)
+    const frames = cfgOf(action).frames
+    // pedido continua ligado por muito mais tempo do que a animação dura
+    const seen = sim.run(frames * 4)
+    const playedFrames = seen.filter(s => s.state === action).map(s => s.frame)
+    expect(playedFrames).toEqual(Array.from({ length: frames }, (_, i) => i))
+    // depois da ação só repouso, sem voltar a mostrar a ação
+    expect(seen.slice(frames).every(s => s.state === 'idle')).toBe(true)
+  })
+
+  it('applies to the warrior too (hit reuses the defend frames)', () => {
+    const cfgFor = (state: BattleAnimationState) => getSpriteStateConfig('heroes', 'guerreiro', state)
+    let pb: SpritePlayback = playbackOnRequest(INITIAL_SPRITE_PLAYBACK, 'hit', true)
+    const frames = cfgFor('hit').frames
+    const shown: BattleAnimationState[] = []
+    for (let i = 0; i < frames * 3; i++) {
+      const state = getDisplayedSpriteState(pb, 'hit', 'idle')
+      shown.push(state)
+      pb = playbackOnTick(pb, 'hit', cfgFor(state))
+    }
+    expect(shown.filter(s => s === 'hit')).toHaveLength(frames)
+    expect(shown.slice(frames).every(s => s === 'idle')).toBe(true)
+  })
+
+  it('plays the action again when the request leaves and comes back', () => {
+    const sim = makeSim()
+    sim.request('attack')
+    sim.run(cfgOf('attack').frames * 2)
+    expect(sim.shown().state).toBe('idle')
+    sim.request('idle')
+    sim.request('attack')
+    expect(sim.shown()).toEqual({ state: 'attack', frame: 0 })
+    const seen = sim.run(cfgOf('attack').frames)
+    expect(seen.filter(s => s.state === 'attack')).toHaveLength(cfgOf('attack').frames)
+  })
+
+  it('lets a running action finish when the request drops back to rest, without repeating', () => {
+    const sim = makeSim()
+    sim.request('attack')
+    sim.run(3)
+    sim.request('idle')
+    expect(sim.shown().state).toBe('attack')
+    const frames = cfgOf('attack').frames
+    const seen = sim.run(frames * 2)
+    const attackFrames = seen.filter(s => s.state === 'attack').map(s => s.frame)
+    expect(attackFrames[attackFrames.length - 1]).toBe(frames - 1)
+    expect(seen.slice(-frames).every(s => s.state === 'idle')).toBe(true)
+  })
+
+  it('restarts from frame 0 when a different action is requested mid-way', () => {
+    const sim = makeSim()
+    sim.request('attack')
+    sim.run(4)
+    sim.request('defend')
+    expect(sim.shown()).toEqual({ state: 'defend', frame: 0 })
+  })
+
+  it('keeps looping the resting animation forever', () => {
+    const sim = makeSim()
+    sim.request('idle')
+    const frames = cfgOf('idle').frames
+    const seen = sim.run(frames * 5)
+    expect(seen.every(s => s.state === 'idle')).toBe(true)
+    expect(seen.map(s => s.frame)).toEqual(Array.from({ length: frames * 5 + 1 }, (_, i) => i % frames))
+  })
+
+  it('rests on the active stance after an action instead of plain idle', () => {
+    const sim = makeSim('stance_defensive')
+    sim.request('defend')
+    const seen = sim.run(cfgOf('defend').frames * 3)
+    expect(seen[seen.length - 1].state).toBe('stance_defensive')
+    expect(seen.filter(s => s.state === 'defend')).toHaveLength(cfgOf('defend').frames)
+  })
+
+  it('holds the last frame of victory and defeat', () => {
+    for (const end of ['victory', 'defeat'] as const) {
+      const sim = makeSim()
+      sim.request(end)
+      const seen = sim.run(cfgOf(end).frames * 3)
+      expect(seen[seen.length - 1]).toEqual({ state: end, frame: cfgOf(end).frames - 1 })
+    }
+  })
+
+  it('defeat cuts a running action immediately', () => {
+    const sim = makeSim()
+    sim.request('ultimate')
+    sim.run(2)
+    sim.request('defeat')
+    expect(sim.shown()).toEqual({ state: 'defeat', frame: 0 })
+  })
+
+  it('a request that is not an action never locks', () => {
+    const pb = playbackOnRequest(INITIAL_SPRITE_PLAYBACK, 'stance_offensive', isOneShotConfig(cfgOf('stance_offensive')))
+    expect(pb).toEqual(INITIAL_SPRITE_PLAYBACK)
   })
 })

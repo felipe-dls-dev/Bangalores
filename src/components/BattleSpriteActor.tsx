@@ -1,11 +1,17 @@
 import React from 'react'
 import {
   type BattleAnimationState,
+  INITIAL_SPRITE_PLAYBACK,
+  type SpritePlayback,
   getBattleSpriteFrameUrl,
+  getDisplayedSpriteState,
   getFrameDurationMs,
   getSpriteFrameStyle,
   getSpriteStateConfig,
   isBattleSpriteSupported,
+  isOneShotConfig,
+  playbackOnRequest,
+  playbackOnTick,
   preloadBattleSpriteImages,
 } from '../battleSprites'
 
@@ -37,9 +43,8 @@ export const BattleSpriteActor: React.FC<BattleSpriteActorProps> = ({
   defaultState = 'idle',
   fxOverlay,
 }) => {
-  const [frameIndex, setFrameIndex] = React.useState(0)
+  const [playback, setPlayback] = React.useState<SpritePlayback>(INITIAL_SPRITE_PLAYBACK)
   const [loadError, setLoadError] = React.useState(false)
-  const [lockedAction, setLockedAction] = React.useState<BattleAnimationState | null>(null)
 
   const isSupported = isBattleSpriteSupported(category, id)
 
@@ -50,32 +55,26 @@ export const BattleSpriteActor: React.FC<BattleSpriteActorProps> = ({
     }
   }, [category, id, isSupported])
 
-  // Gerenciamento de ação: quando entra um golpe one-shot (attack, heavy, etc.), trava a reprodução
-  // completa de todos os passos para que nenhuma oscilação externa corte os frames pela metade.
+  // O jogo mantém o estado pedido (attack, defend...) ligado pelo turno todo, mais tempo que a
+  // animação. Uma ação (attack, heavy, defend, ultimate...) toca UMA vez por pedido, do início ao fim,
+  // sem ser cortada por oscilações externas; ao terminar o lutador volta ao repouso e só repete se o
+  // pedido sair e voltar. Repouso e posturas seguem em loop. Regras em playbackOnRequest/Tick.
   React.useEffect(() => {
-    // Derrota tem prioridade absoluta imediata
-    if (state === 'defeat') {
-      setLockedAction(null)
-      setFrameIndex(0)
+    // sem relógio (reduzir efeitos) uma ação travada nunca terminaria: só mostra a pose do estado
+    if (reducedMotion) {
+      setPlayback(INITIAL_SPRITE_PLAYBACK)
       setLoadError(false)
       return
     }
+    const oneShot = isOneShotConfig(getSpriteStateConfig(category, id, state))
+    setPlayback(pb => playbackOnRequest(pb, state, oneShot))
+    setLoadError(false)
+  }, [state, id, category, reducedMotion])
 
-    const targetConfig = getSpriteStateConfig(category, id, state)
-    if (targetConfig && !targetConfig.loop && !targetConfig.holdLastFrame) {
-      // Inicia a execução garantida da ação one-shot do início ao fim
-      setLockedAction(state)
-      setFrameIndex(0)
-      setLoadError(false)
-    } else if (!lockedAction) {
-      // Estado de repouso ou permanente (idle, posturas, vitória)
-      setFrameIndex(0)
-      setLoadError(false)
-    }
-  }, [state, id, category])
-
-  const activeState = lockedAction || state
+  const activeState = getDisplayedSpriteState(playback, state, defaultState)
   const config = getSpriteStateConfig(category, id, activeState)
+  // o quadro do estado anterior pode passar do último quadro do novo por um instante
+  const frameIndex = Math.min(playback.frame, config.frames - 1)
 
   // Temporizador encadeado: garante que CADA frame seja exibido pelo tempo mínimo exato
   React.useEffect(() => {
@@ -86,25 +85,11 @@ export const BattleSpriteActor: React.FC<BattleSpriteActorProps> = ({
     const intervalMs = Math.max(16, Math.round(baseIntervalMs / speedMultiplier))
 
     const timer = setTimeout(() => {
-      setFrameIndex(prev => {
-        const next = prev + 1
-        if (next >= config.frames) {
-          if (config.loop) {
-            return 0
-          }
-          if (config.holdLastFrame) {
-            return config.frames - 1
-          }
-          // Todos os passos da ação foram executados integralmente!
-          setLockedAction(null)
-          return 0
-        }
-        return next
-      })
+      setPlayback(pb => playbackOnTick(pb, state, config))
     }, intervalMs)
 
     return () => clearTimeout(timer)
-  }, [activeState, frameIndex, config, speed, reducedMotion, loadError])
+  }, [activeState, frameIndex, config, state, speed, reducedMotion, loadError])
 
   // Se não suportado ou se houve falha ao carregar a imagem, renderiza o fallback gracioso para CardFrame
   if (!isSupported || loadError) {

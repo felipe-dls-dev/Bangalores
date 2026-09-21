@@ -200,6 +200,7 @@ Todas as diretrizes e especificações deste documento foram implementadas e val
    - Sombra projetada em CSS (`.battle-sprite-shadow`) e suporte a arena lateral.
    - Espelhamento de inimigos via CSS `scaleX(-1)`.
    - Fallback gracioso imediato para a carta tradicional (`CardFrame`) em caso de erro 404 de imagem ou frame ausente.
+   - **Uma execução por ato**: o combate mantém `attacking`/`shaking` ligados pelo turno todo (mais que a duração da animação). Ataque, crítico, defesa/dano, esquiva, poção, habilidade e golpe supremo tocam UMA vez por pedido e o lutador volta ao repouso (postura ativa) até o pedido sair e voltar; repouso e posturas seguem em loop; vitória/derrota seguram o último quadro. A regra é a máquina pura `playbackOnRequest` / `playbackOnTick` / `getDisplayedSpriteState` em `src/battleSprites.ts` (testada em `battleSprites.test.ts`).
 
 3. **Experiência de Giro 3D da Carta (`src/styles.css` e `src/main.tsx`)**:
    - Combate inicia no modo clássico de cartas.

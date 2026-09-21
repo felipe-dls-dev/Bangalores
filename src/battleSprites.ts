@@ -132,6 +132,57 @@ export function getFrameDurationMs(cfg: SpriteStateConfig, frameIndex: number): 
 }
 
 /**
+ * Reprodução de um lutador (usada por BattleSpriteActor). O jogo PEDE um estado (`requested`) e o
+ * mantém ligado enquanto durar o turno, que costuma ser mais longo que a animação. Ações de uma
+ * execução só (ataque, defesa, golpe supremo...) tocam UMA vez por pedido: ao terminar, o lutador
+ * volta ao repouso e só repete se o pedido sair e voltar. Repouso, posturas e vitória/derrota
+ * mantêm o comportamento próprio (loop / segurar o último quadro).
+ */
+export interface SpritePlayback {
+  /** Ação de uma execução em andamento: segue até o fim mesmo que o pedido do jogo mude. */
+  locked: BattleAnimationState | null
+  /** Ação já executada para o pedido atual: o pedido continua ativo, mas não repete. */
+  spent: BattleAnimationState | null
+  frame: number
+}
+
+export const INITIAL_SPRITE_PLAYBACK: SpritePlayback = { locked: null, spent: null, frame: 0 }
+
+/** Ação que toca uma vez e acaba (não é loop nem segura o último quadro). */
+export function isOneShotConfig(cfg: SpriteStateConfig): boolean {
+  return !cfg.loop && !cfg.holdLastFrame
+}
+
+/** O pedido do jogo mudou (ou o componente montou). Um pedido novo de ação começa do quadro 0. */
+export function playbackOnRequest(pb: SpritePlayback, requested: BattleAnimationState, oneShot: boolean): SpritePlayback {
+  // derrota tem prioridade absoluta: corta qualquer ação em andamento
+  if (requested === 'defeat') return { locked: null, spent: null, frame: 0 }
+  if (oneShot) return { locked: requested, spent: null, frame: 0 }
+  // repouso/postura/vitória: deixa uma ação em andamento terminar; sem ação, recomeça do quadro 0
+  return pb.locked ? { ...pb, spent: null } : { locked: null, spent: null, frame: 0 }
+}
+
+/** Estado que aparece na tela: a ação em andamento; ação já gasta com o pedido ainda ativo vira repouso. */
+export function getDisplayedSpriteState(
+  pb: SpritePlayback,
+  requested: BattleAnimationState,
+  resting: BattleAnimationState
+): BattleAnimationState {
+  if (pb.locked) return pb.locked
+  return pb.spent === requested ? resting : requested
+}
+
+/** O relógio dos quadros avançou. `cfg` é a configuração do estado exibido (getDisplayedSpriteState). */
+export function playbackOnTick(pb: SpritePlayback, requested: BattleAnimationState, cfg: SpriteStateConfig): SpritePlayback {
+  const next = pb.frame + 1
+  if (next < cfg.frames) return { ...pb, frame: next }
+  if (cfg.loop) return { ...pb, frame: 0 }
+  if (cfg.holdLastFrame) return { ...pb, frame: cfg.frames - 1 }
+  // ação de uma execução terminou: não repete enquanto o mesmo pedido continuar ligado
+  return { locked: null, spent: pb.locked ?? requested, frame: 0 }
+}
+
+/**
  * Canvas dos quadros de um lutador cujos PNGs foram recortados de folhas grandes
  * (scripts/extract_warrior_bases.py). Todos os quadros do lutador compartilham o mesmo canvas, com
  * o centro dos pés em anchorX e a sola das botas em groundY, para que trocar de animação nunca
