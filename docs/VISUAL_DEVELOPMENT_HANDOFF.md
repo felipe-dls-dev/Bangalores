@@ -91,7 +91,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P3 | Illusory secret wall | — | MECHANIC SHIPPED | See ART-026 -- code+art integrated (discovery + one-shot reveal fx), just not placed on a map yet. |
 | P3 | Scenery interaction (signposts) | — | MECHANIC SHIPPED | See ART-027 -- code+art integrated (reusable `RegionMapScenery` pattern), just not placed on a map yet. |
 | P1 | Battle stage flip: KOF-style fighter sprites | Codex | REQUESTED | See ART-030 -- animated pixel-art fighter sprites (13 states) for the 9 heroes plus 8 named enemies already scoped in code, replacing the static card portrait once the hero/enemy cards flip into "fighter view" at combat start. A code scaffold (`src/battleSprites.ts`, `src/components/BattleSpriteActor.tsx`) already exists un-committed, not yet wired into the combat screen. |
-| P1 | Druid Defesa sheet, regeneration | Codex | INTEGRATED | See ART-031 -- new `druida/Bases/Defesa.png` delivered with an opaque body; cut into `defend_00..04` (also serves `hit`). |
+| P1 | Druid Defesa sheet, regeneration | Codex | INTEGRATED | See ART-031 -- new `druida/Bases/Defesa.png` delivered with an opaque body; cut into `defend_00..07` (8 frames, 4x2; also serves `hit`). |
 | P2 | Shared equipment art, last 2 pieces | — | DONE | ART-029 delivered the tier-0 Andarilhos calças/botas; shared-equipment art audit now has no known missing paths. |
 | P2 | Steelmere "Act 2" story content (Contrato 11) | Codex | INTEGRATED | CONTENT-001 delivered a playable optional Steelmere quest chain in `src/data/storyQuests.ts`, deepening the industrial-rebellion plot without changing the main quest spine. |
 
@@ -601,7 +601,7 @@ Requirements:
 - Same figure scale, proportions and side-view direction as `Descanso.png` / `Ataque.png` (compare against them), feet on a consistent ground line inside each row, nothing crossing into a neighbouring cell.
 - If background removal keeps eating dark greens, generate on a flat chroma-key colour that does not appear in the art and key it out in a separate step.
 Delivered paths: overwrite `public/assets/battle/sprites/heroes/druida/Bases/Defesa.png`.
-Integration (Claude Code): the regenerated sheet was added to `SHEETS` in `scripts/extract_druid_bases.py` (`state='defend'`, layout `[3, 2]`, `own_ground`), cut into `defend_00..04`, and `hit` now aliases `defend`. The stand-in sequences for `defend`/`hit` were removed from `SPRITE_FRAME_SEQUENCES['heroes/druida']`.
+Integration (Claude Code): the regenerated sheet was added to `SHEETS` in `scripts/extract_druid_bases.py` (`state='defend'`, layout `[4, 4]`, `own_ground`), cut into `defend_00..07` (the second delivery has 8 frames, smoother shield growth), and `hit` now aliases `defend`. The stand-in sequences for `defend`/`hit` were removed from `SPRITE_FRAME_SEQUENCES['heroes/druida']`.
 
 ## Handoff Log
 

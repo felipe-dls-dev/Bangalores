@@ -172,7 +172,7 @@ describe('getSpriteStateConfig', () => {
     expect(getSpriteStateConfig('heroes', 'druida', 'attack').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'druida', 'heavy').frames).toBe(9)
     expect(getSpriteStateConfig('heroes', 'druida', 'ultimate').frames).toBe(12)
-    expect(getSpriteStateConfig('heroes', 'druida', 'defend').frames).toBe(5)
+    expect(getSpriteStateConfig('heroes', 'druida', 'defend').frames).toBe(8)
     // levar dano reaproveita a Defesa, então tem o mesmo número de quadros
     expect(getSpriteStateConfig('heroes', 'druida', 'hit').frames).toBe(getSpriteStateConfig('heroes', 'druida', 'defend').frames)
     // sem override: cai no padrão do estado

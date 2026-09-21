@@ -81,7 +81,7 @@ export const WARRIOR_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, S
 
 /**
  * Sobrescritas do druida (folhas de Bases/ em scripts/extract_druid_bases.py). Contagens de quadros
- * vêm das folhas: Descanso 6, Ataque 8, Ataque_Critico 9, Ultimate 12, Defesa 5.
+ * vêm das folhas: Descanso 6, Ataque 8, Ataque_Critico 9, Ultimate 12, Defesa 8.
  */
 export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
   idle: { frames: 6, loop: true, fps: 6 },
@@ -95,14 +95,15 @@ export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, Spr
     frames: 9, loop: false, fps: 8, durationMs: 2000,
     frameWeights: [1.2, 1, 1.2, 1, 1.4, 0.55, 0.8, 1, 1.2],
   },
-  // guarda (3) -> escudo de folhas abrindo (1) -> retorno (1); o escudo segura um pouco mais
+  // guarda (2) -> faíscas (1) -> escudo crescendo 35% e 65% (2) -> escudo cheio, segura mais (1)
+  // -> dissipa (1) -> retorno (1)
   defend: {
-    frames: 5, loop: false, fps: 10, durationMs: 900,
-    frameWeights: [0.8, 1, 1, 1.4, 1],
+    frames: 8, loop: false, fps: 10, durationMs: 1100,
+    frameWeights: [0.7, 0.7, 0.7, 0.7, 0.8, 1.6, 0.9, 1],
   },
   hit: {
-    frames: 5, loop: false, fps: 10, durationMs: 900,
-    frameWeights: [0.8, 1, 1, 1.4, 1],
+    frames: 8, loop: false, fps: 10, durationMs: 1100,
+    frameWeights: [0.7, 0.7, 0.7, 0.7, 0.8, 1.6, 0.9, 1],
   },
   // raízes (3) -> aura de galhos (3) -> liberação + crescente (3) -> recuperação (3)
   ultimate: {

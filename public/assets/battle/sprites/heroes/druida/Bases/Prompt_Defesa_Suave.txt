@@ -1,0 +1,39 @@
+SPRITE SHEET - DRUIDA - DEFESA SUAVE / SMOOTH BLOCK
+
+Objetivo:
+Gerar uma nova sprite sheet de defesa do druida com mais frames do que a versao inicial, suavizando a transicao do escudo de folhas.
+
+Personagem:
+- Mesmo druida das sprites anteriores.
+- Druida idoso, barba branca longa, manto verde escuro com folhas, galhos e detalhes naturais.
+- Cajado de madeira com orbe claro no topo.
+- Postura lateral de batalha, escala e silhueta consistentes com as bases Descanso, Ataque e Ataque_Critico.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirado em The King of Fighters 99.
+- Silhueta clara, contraste forte, leitura boa em combate.
+- Animacao fluida, com poses incrementais e sem saltos bruscos.
+
+Animacao:
+Criar exatamente 8 frames, em leitura da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Postura inicial de batalha, cajado firme.
+2. Druida abaixa o centro de gravidade e traz o cajado para dentro.
+3. Pequenas faiscas verdes e folhas comecam a surgir diante do cajado.
+4. Crescente parcial de folhas e vinhas aparece, cerca de 35% do escudo.
+5. Escudo cresce para cerca de 65%, folhas girando e brilho mais forte.
+6. Escudo completo de folhas, vinhas e energia verde, postura de bloqueio maxima.
+7. Escudo comeca a dissipar, retornando para um crescente menor.
+8. Retorno para postura pronta, com poucas folhas soltas ao redor.
+
+Layout:
+- PNG com fundo totalmente transparente, alpha 0 em toda area vazia.
+- Sprite sheet em grade 4 colunas x 2 linhas.
+- Cada celula deve ter exatamente 512x512 px.
+- Tamanho final esperado: 2048x1024 px.
+- Cada sprite deve ficar centralizada dentro da sua propria celula.
+- Manter margem transparente minima de 32 px em todos os lados de cada celula.
+- Nenhuma parte do corpo, cajado, folhas, brilho, magia, escudo, sombra ou particula pode invadir a celula vizinha.
+- Nao desenhar linhas de grade, textos, numeros, molduras, cenario, chao ou fundo colorido.
+
+Observacao:
+A versao final foi normalizada para 2048x1024 e recebeu padding interno por celula para garantir separacao segura dos frames.

@@ -53,14 +53,14 @@ FEET_BAND = 40  # px da folha acima da sola que definem a largura dos pés (bota
 # layout = quadros por linha; min_core = área mínima do núcleo para contar como corpo (crescentes
 # sólidos, orbes e detritos ficam abaixo disso e são distribuídos ao quadro certo por propagação);
 # stand = quadros em pé usados para medir a escala da folha; own_ground = cada quadro usa o próprio chão
-# em vez da mediana da linha (a Defesa foi gerada com o quadro em pé 14 px abaixo dos agachados, e o druida
+# em vez da mediana da linha (a Defesa foi gerada com o quadro em pé mais baixo que os agachados, e o druida
 # nunca sai do chão, então as botas de cada quadro é que definem o chão).
 SHEETS = {
     'Descanso': dict(state='idle', layout=[6], min_core=40000, stand=[0, 5]),
     'Ataque': dict(state='attack', layout=[4, 4], min_core=30000, stand=[0, 7]),
     'Ataque_Critico': dict(state='heavy', layout=[9], min_core=20000, stand=[0, 8]),
     'Ultimate': dict(state='ultimate', layout=[3, 3, 3, 3], min_core=12000, stand=[0, 11]),
-    'Defesa': dict(state='defend', layout=[3, 2], min_core=30000, stand=[0, 4], own_ground=True),  # também serve o estado `hit`
+    'Defesa': dict(state='defend', layout=[4, 4], min_core=25000, stand=[0, 7], own_ground=True),  # também serve o estado `hit`
 }
 
 # Sobreposições da folha que a propagação por vizinhança não consegue separar. A ponta do cajado do
