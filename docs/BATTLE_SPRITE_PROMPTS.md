@@ -218,3 +218,23 @@ Todas as diretrizes e especificações deste documento foram implementadas e val
    - 100% da suíte de testes passando (191 testes em 7 arquivos).
    - Zero erros de TypeScript (`tsc -b`), ESLint limpo e build de produção aprovado (`vite build`).
 
+## Guerreiro em alta fidelidade (folhas grandes em `Bases/`)
+
+O `guerreiro` **não** segue o canvas 96x128 acima. Ele usa arte gerada em folhas de 1536x1024
+(`public/assets/battle/sprites/heroes/guerreiro/Bases/`) e recortada por `scripts/extract_warrior_bases.py`
+(`pip install pillow numpy scipy`; `python scripts/extract_warrior_bases.py --preview <pasta>` grava tiras/GIFs de conferência).
+
+| Folha | Estado | Quadros | Layout |
+|---|---|---|---|
+| `Descanso.png` | `idle` | 12 | 4+4+4 |
+| `Ataque.png` | `attack` | 12 | 4+4+4 |
+| `Defesa.png` | `defend` e `hit` (`hit` não tem arquivos: `SPRITE_STATE_FRAME_ALIAS` aponta para `defend_*.png`) | 12 | 4+4+4 |
+| `Critico.png` | `heavy` | 17 | 5+4+4+4 |
+| `Ultimate.png` | `ultimate` | 17 | 5+4+4+4 |
+
+- **Canvas único de 448x332** para todos os quadros de todos os estados, com o centro dos pés em x=196 e a sola das botas em y=301. Precisa bater com `HERO_SPRITE_CANVAS` em `src/battleSprites.ts` (um teste confere os PNGs no disco).
+- **Escala normalizada**: cada folha tem um fator `scale` em `SHEETS` para o guerreiro ter o mesmo tamanho em todas as animações (Crítico/Ultimate foram geradas com 4 linhas e o personagem sai ~30% menor que nas de 3 linhas).
+- **Ao gerar folhas novas**: mantenha o layout em grade com o personagem inteiro em cada célula (efeitos podem passar da célula, mas não devem ser cortados em linha reta na borda da folha), a mesma linha de chão dentro de cada linha da folha e fundo transparente ou xadrez uniforme de 12px. Se um feixe de luz for cortado pela folha, liste o quadro em `TOP_CUT_FRAMES` para ganhar degradê no topo.
+- **Estados sem folha nova** (`dodge`, `potion`, `skill`, `stance_*`, `victory`, `defeat`) continuam com os quadros antigos de `bkp/` (96x128), reenquadrados no canvas novo pelo script para não mudarem de tamanho.
+- **Exibição**: a carta é estreita, então o canvas não usa `object-fit: contain`. `getSpriteFrameStyle()` + `.battle-sprite-stage.framed` posicionam o quadro pelos pés (corpo com `SPRITE_STAGE_VIEW.bodyFraction` da altura da carta); efeitos largos passam da carta e são cortados pela borda dela.
+- **Ritmo**: `frameWeights` em `WARRIOR_ANIMATION_OVERRIDES` reparte `durationMs` (preparação lenta, corte rápido, recuperação).

@@ -2,6 +2,8 @@ import React from 'react'
 import {
   type BattleAnimationState,
   getBattleSpriteFrameUrl,
+  getFrameDurationMs,
+  getSpriteFrameStyle,
   getSpriteStateConfig,
   isBattleSpriteSupported,
   preloadBattleSpriteImages,
@@ -80,9 +82,7 @@ export const BattleSpriteActor: React.FC<BattleSpriteActorProps> = ({
     if (reducedMotion || loadError) return
 
     const speedMultiplier = Math.max(0.25, speed ?? 1)
-    const baseIntervalMs = config.durationMs
-      ? config.durationMs / Math.max(1, config.frames)
-      : 1000 / Math.max(1, config.fps)
+    const baseIntervalMs = getFrameDurationMs(config, frameIndex)
     const intervalMs = Math.max(16, Math.round(baseIntervalMs / speedMultiplier))
 
     const timer = setTimeout(() => {
@@ -112,10 +112,13 @@ export const BattleSpriteActor: React.FC<BattleSpriteActorProps> = ({
   }
 
   const frameUrl = getBattleSpriteFrameUrl(category, id, activeState, frameIndex)
+  // lutadores com canvas grande (guerreiro) são encaixados por variáveis CSS em vez de "contain"
+  const frameStyle = getSpriteFrameStyle(category, id) as React.CSSProperties | undefined
 
   return (
     <div
-      className={`battle-sprite-stage ${side} state-${activeState}`}
+      className={`battle-sprite-stage ${side} state-${activeState}${frameStyle ? ' framed' : ''}`}
+      style={frameStyle}
       data-side={side}
       data-state={activeState}
       aria-label={`${name} (${activeState})`}

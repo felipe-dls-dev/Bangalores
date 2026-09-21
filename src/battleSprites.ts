@@ -28,6 +28,11 @@ export interface SpriteStateConfig {
   holdLastFrame?: boolean
   fps: number
   durationMs?: number
+  /**
+   * Peso relativo de cada quadro dentro de durationMs (um valor por quadro). Sem isso todos os
+   * quadros duram o mesmo; com isso a preparação pode ser lenta e o corte rápido.
+   */
+  frameWeights?: number[]
 }
 
 /**
@@ -55,11 +60,81 @@ export const BATTLE_ANIMATION_CONFIG: Record<BattleAnimationState, SpriteStateCo
  */
 export const WARRIOR_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
   idle: { frames: 12, loop: true, fps: 8 },
-  attack: { frames: 12, loop: false, fps: 8, durationMs: 1800 },
-  heavy: { frames: 17, loop: false, fps: 8, durationMs: 2200 },
+  // preparação (5) -> corte (4) -> recuperação (3)
+  attack: {
+    frames: 12, loop: false, fps: 8, durationMs: 1800,
+    frameWeights: [1.3, 1.1, 1, 1, 1, 0.55, 0.45, 0.45, 0.6, 1, 1.2, 1.4],
+  },
+  // preparação (4) -> golpe (4) -> impacto/poeira (4) -> recuperação (5)
+  heavy: {
+    frames: 17, loop: false, fps: 8, durationMs: 2200,
+    frameWeights: [1.3, 1, 1, 1, 0.55, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1, 1, 1, 1.1, 1.3],
+  },
   defend: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
   hit: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
-  ultimate: { frames: 17, loop: false, fps: 7, durationMs: 2400 },
+  // salto (5) -> giro (4) -> impacto (4) -> pilar de luz (4, segura o último)
+  ultimate: {
+    frames: 17, loop: false, fps: 7, durationMs: 2400,
+    frameWeights: [1.2, 1, 1, 1, 1, 0.6, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.3, 1.5, 1.7, 2.2],
+  },
+}
+
+/**
+ * Duração de um quadro em ms. Com frameWeights, reparte durationMs proporcionalmente; sem, divide
+ * igualmente; sem durationMs, usa o fps.
+ */
+export function getFrameDurationMs(cfg: SpriteStateConfig, frameIndex: number): number {
+  if (!cfg.durationMs) return 1000 / Math.max(1, cfg.fps)
+  const weights = cfg.frameWeights
+  if (weights && weights.length === cfg.frames) {
+    const total = weights.reduce((sum, w) => sum + w, 0)
+    return (cfg.durationMs * (weights[frameIndex] ?? 1)) / total
+  }
+  return cfg.durationMs / Math.max(1, cfg.frames)
+}
+
+/**
+ * Canvas dos quadros de um lutador cujos PNGs foram recortados de folhas grandes
+ * (scripts/extract_warrior_bases.py). Todos os quadros do lutador compartilham o mesmo canvas, com
+ * o centro dos pés em anchorX e a sola das botas em groundY, para que trocar de animação nunca
+ * mude o tamanho nem a posição do personagem. Precisa bater com as constantes do script.
+ */
+export interface SpriteCanvasMeta {
+  width: number
+  height: number
+  anchorX: number
+  groundY: number
+  bodyHeight: number
+}
+
+export const HERO_SPRITE_CANVAS: Partial<Record<string, SpriteCanvasMeta>> = {
+  guerreiro: { width: 448, height: 332, anchorX: 196, groundY: 301, bodyHeight: 198 },
+}
+
+/**
+ * Como o canvas é encaixado no palco (uma carta em pé, com overflow escondido): o corpo ocupa
+ * bodyFraction da altura do palco, os pés ficam groundBottom acima da base e o centro dos pés em
+ * anchorLeft da largura. Efeitos largos passam da carta e são cortados pela borda dela.
+ */
+export const SPRITE_STAGE_VIEW = { bodyFraction: 0.52, groundBottom: 0.07, anchorLeft: 0.53 }
+
+/** Variáveis CSS que posicionam o quadro no palco; undefined = usa o encaixe padrão (contain). */
+export function getSpriteFrameStyle(
+  category: 'heroes' | 'enemies' | 'fx',
+  id: string
+): Record<string, string> | undefined {
+  const meta = category === 'heroes' ? HERO_SPRITE_CANVAS[id] : undefined
+  if (!meta) return undefined
+  const { bodyFraction, groundBottom, anchorLeft } = SPRITE_STAGE_VIEW
+  const heightPct = bodyFraction * (meta.height / meta.bodyHeight) * 100
+  const belowGroundPct = ((meta.height - meta.groundY) / meta.height) * heightPct
+  const round = (n: number) => String(Math.round(n * 100) / 100)
+  return {
+    '--sprite-height': `${round(heightPct)}%`,
+    '--sprite-bottom': `${round(groundBottom * 100 - belowGroundPct)}%`,
+    '--sprite-left': `${round(anchorLeft * 100)}%`,
+    '--sprite-shift': `${round(-(meta.anchorX / meta.width) * 100)}%`,
+  }
 }
 
 /**
@@ -199,6 +274,14 @@ export function isBattleSpriteSupported(category: 'heroes' | 'enemies', id: stri
 }
 
 /**
+ * Estados que reaproveitam os quadros de outro estado do mesmo lutador (sem arquivos próprios).
+ * O guerreiro leva dano com a mesma folha da Defesa.
+ */
+const SPRITE_STATE_FRAME_ALIAS: Partial<Record<string, Partial<Record<BattleAnimationState, BattleAnimationState>>>> = {
+  'heroes/guerreiro': { hit: 'defend' },
+}
+
+/**
  * Gera o caminho canônico do arquivo de frame
  * Exemplo: assets/battle/sprites/heroes/monge/idle_00.png
  */
@@ -209,7 +292,8 @@ export function getBattleSpriteFramePath(
   frameIndex: number
 ): string {
   const paddedIndex = String(frameIndex).padStart(2, '0')
-  return `assets/battle/sprites/${category}/${id}/${state}_${paddedIndex}.png`
+  const frameState = SPRITE_STATE_FRAME_ALIAS[`${category}/${id}`]?.[state] ?? state
+  return `assets/battle/sprites/${category}/${id}/${frameState}_${paddedIndex}.png`
 }
 
 /**

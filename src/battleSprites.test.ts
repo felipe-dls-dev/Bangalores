@@ -1,8 +1,14 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   BATTLE_ANIMATION_CONFIG,
+  HERO_SPRITE_CANVAS,
+  SPRITE_STAGE_VIEW,
+  WARRIOR_ANIMATION_OVERRIDES,
   getBattleSpriteFramePath,
   getBattleSpriteFrameUrl,
+  getFrameDurationMs,
+  getSpriteFrameStyle,
   getSpriteStateConfig,
   isBattleSpriteSupported,
   normalizeEnemySpriteId,
@@ -165,5 +171,88 @@ describe('getSpriteStateConfig', () => {
 
     const enemyHit = getSpriteStateConfig('enemies', 'grumnak', 'hit')
     expect(enemyHit.frames).toBe(4)
+  })
+})
+
+describe('getFrameDurationMs', () => {
+  it('splits durationMs evenly when there are no weights', () => {
+    expect(getFrameDurationMs({ frames: 10, loop: false, fps: 8, durationMs: 2000 }, 3)).toBe(200)
+  })
+
+  it('falls back to fps when there is no durationMs', () => {
+    expect(getFrameDurationMs({ frames: 6, loop: true, fps: 8 }, 0)).toBe(125)
+  })
+
+  it('splits durationMs proportionally to frameWeights and keeps the total', () => {
+    const cfg = { frames: 4, loop: false, fps: 8, durationMs: 1000, frameWeights: [2, 1, 1, 4] }
+    expect(getFrameDurationMs(cfg, 0)).toBe(250)
+    expect(getFrameDurationMs(cfg, 3)).toBe(500)
+    const total = [0, 1, 2, 3].reduce((sum, i) => sum + getFrameDurationMs(cfg, i), 0)
+    expect(total).toBeCloseTo(1000)
+  })
+
+  it('ignores frameWeights whose length does not match the frame count', () => {
+    const cfg = { frames: 4, loop: false, fps: 8, durationMs: 1000, frameWeights: [1, 1] }
+    expect(getFrameDurationMs(cfg, 0)).toBe(250)
+  })
+
+  it('warrior weighted states have one weight per frame and a fast slash', () => {
+    for (const state of ['attack', 'heavy', 'ultimate'] as const) {
+      const cfg = WARRIOR_ANIMATION_OVERRIDES[state]!
+      expect(cfg.frameWeights, state).toHaveLength(cfg.frames)
+      const total = Array.from({ length: cfg.frames }, (_, i) => getFrameDurationMs(cfg, i)).reduce((a, b) => a + b, 0)
+      expect(total).toBeCloseTo(cfg.durationMs!)
+    }
+    const attack = WARRIOR_ANIMATION_OVERRIDES.attack!
+    expect(getFrameDurationMs(attack, 6)).toBeLessThan(getFrameDurationMs(attack, 0))
+  })
+})
+
+describe('getSpriteFrameStyle', () => {
+  it('only frames fighters with a large-canvas entry', () => {
+    expect(getSpriteFrameStyle('heroes', 'guerreiro')).toBeDefined()
+    expect(getSpriteFrameStyle('heroes', 'monge')).toBeUndefined()
+    expect(getSpriteFrameStyle('enemies', 'grumnak')).toBeUndefined()
+  })
+
+  it('puts the feet on the ground line and the body at the configured stage fraction', () => {
+    const meta = HERO_SPRITE_CANVAS.guerreiro!
+    const style = getSpriteFrameStyle('heroes', 'guerreiro')!
+    const heightPct = parseFloat(style['--sprite-height'])
+    const bottomPct = parseFloat(style['--sprite-bottom'])
+    // corpo ocupa bodyFraction da altura do palco
+    expect(heightPct * (meta.bodyHeight / meta.height)).toBeCloseTo(SPRITE_STAGE_VIEW.bodyFraction * 100, 1)
+    // distância do chão à base do palco = bottom da imagem + parte da imagem abaixo do chão
+    const groundFromBottom = bottomPct + ((meta.height - meta.groundY) / meta.height) * heightPct
+    expect(groundFromBottom).toBeCloseTo(SPRITE_STAGE_VIEW.groundBottom * 100, 1)
+    // âncora dos pés cai em anchorLeft da largura
+    expect(parseFloat(style['--sprite-shift'])).toBeCloseTo(-(meta.anchorX / meta.width) * 100, 1)
+    expect(style['--sprite-left']).toBe(`${SPRITE_STAGE_VIEW.anchorLeft * 100}%`)
+  })
+})
+
+describe('warrior frame files on disk', () => {
+  it('hit reuses the defend frames instead of duplicating files', () => {
+    expect(getBattleSpriteFramePath('heroes', 'guerreiro', 'hit', 4)).toBe(getBattleSpriteFramePath('heroes', 'guerreiro', 'defend', 4))
+    expect(getBattleSpriteFramePath('heroes', 'monge', 'hit', 4)).toBe('assets/battle/sprites/heroes/monge/hit_04.png')
+  })
+
+  const states = ['idle', 'stance_offensive', 'stance_defensive', 'attack', 'heavy', 'defend', 'hit', 'dodge', 'potion', 'skill', 'ultimate', 'victory', 'defeat'] as const
+
+  // Lê largura/altura do cabeçalho IHDR do PNG (bytes 16..23), sem depender de biblioteca de imagem.
+  const pngSize = (file: string) => {
+    const buf = readFileSync(file)
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }
+  }
+
+  it('every frame of every state has the canvas declared in HERO_SPRITE_CANVAS', () => {
+    const meta = HERO_SPRITE_CANVAS.guerreiro!
+    for (const state of states) {
+      const { frames } = getSpriteStateConfig('heroes', 'guerreiro', state)
+      for (let i = 0; i < frames; i++) {
+        const file = `public/${getBattleSpriteFramePath('heroes', 'guerreiro', state, i)}`
+        expect(pngSize(file), file).toEqual({ width: meta.width, height: meta.height })
+      }
+    }
   })
 })

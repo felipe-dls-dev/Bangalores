@@ -1937,6 +1937,28 @@ button:active:not(:disabled){transform:translateY(0) scale(.95);transition-durat
   transform: scaleX(-1);
 }
 
+/* Lutador com canvas grande (guerreiro): o quadro traz o personagem inteiro + efeitos, então em
+   vez de "contain" ele é posicionado pelos pés. As variáveis vêm de getSpriteFrameStyle():
+   corpo com altura fixa em % do palco, pés no chão da carta e efeitos largos cortados pela borda. */
+.battle-sprite-stage.framed .battle-sprite-image {
+  position: absolute;
+  left: var(--sprite-left);
+  bottom: var(--sprite-bottom);
+  width: auto;
+  height: var(--sprite-height);
+  max-width: none;
+  max-height: none;
+  transform: translateX(var(--sprite-shift));
+  object-fit: fill;
+  image-rendering: auto;
+}
+
+.battle-sprite-stage.framed .battle-sprite-shadow {
+  left: var(--sprite-left);
+  width: 58%;
+  transform: translateX(-50%);
+}
+
 /* Reduzir efeitos visuais: fallback plano para transição de cartas */
 .reduced-motion .fighter-flip-inner,
 .reduce-effects .fighter-flip-inner,
@@ -2082,6 +2104,7 @@ body::after{content:"VERSÃO 0.8.89 • 16/09/2026\A Coop: rateio de ouro/XP ago
 body::after{content:"VERSÃO 0.8.90 • 16/09/2026\A Fix: masmorra solo dentro de uma sala coop zerava a vida do monstro antes do primeiro ataque, por causa de dados de uma batalha coop anterior ainda presos na sala";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.91 • 16/09/2026\A Fix: rota para Steelmere nunca abria -- o mundo so destravava ao ENTREGAR a missao da travessia, mas o alvo da entrega mora em Steelmere; agora aceitar a missao ja libera a viagem";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.92 • 16/09/2026\A Botao de teste no Mapa: viajar para Steelmere sem precisar da missao da travessia (so aparece enquanto o mundo ainda nao foi desbloqueado)";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.93 • 21/09/2026\A Guerreiro: sprites de batalha recortados de novo das folhas novas (Descanso, Ataque, Defesa, Critico e Ultimate). Mesmo tamanho e chao em todas as animacoes, espada e efeitos sem cortes, fundo limpo e ritmo por quadro no golpe";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
