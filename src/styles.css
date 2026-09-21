@@ -2109,6 +2109,7 @@ body::after{content:"VERSÃO 0.8.94 • 21/09/2026\A Druida: sprites de batalha 
 body::after{content:"VERSÃO 0.8.95 • 21/09/2026\A Druida: nova animacao de Defesa (escudo de folhas) integrada, tambem usada ao levar dano. Corpo opaco, mesmo tamanho e chao das outras animacoes.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.96 • 21/09/2026\A Druida: Defesa com 8 quadros - o escudo de folhas cresce, segura e se dissipa de forma suave. Tambem usada ao levar dano.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.97 • 21/09/2026\A Combate 2D: animacoes de ataque, defesa e demais acoes tocam uma unica vez por ato (antes repetiam em loop enquanto o turno durava); so o descanso e as posturas ficam em loop.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.98 • 21/09/2026\A Fix: o modo automatico do combate solo travava (habilidade de item ja usada, Ataque Duplo da Cacadora, depois de reviver) e um timer velho interrompia o golpe do heroi, causando acoes duplas e 'Fluxo do combate recuperado'. O Conjurador agora conjura as feras sozinho no automatico.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

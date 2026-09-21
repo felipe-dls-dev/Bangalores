@@ -30,6 +30,7 @@ import { buildForgeRecipes } from '../data/forgeRecipes'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard, EquipmentActiveEffect, EquipmentSetId } from '../types'
 import { ALL_MONOLITHS } from '../regionMap'
 import { selectAutoItemSkill } from '../autoCombat'
+import { selectCoopAutoSummonType } from '../online/coopAutoCombat'
 
 const HD_ART:Record<string,string> = {
   'assets/art/monsters/cabra_malgor.webp':'assets/art/hd/monsters/cabra-malgor-hd.webp',
@@ -941,7 +942,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    if(!s.stanceChangeUsed){set({battleStance:stance,stanceChangeUsed:true});addLog(set,`Postura ${STANCE_LABELS[stance]} adotada: ${desc}, até você trocar de postura novamente. Você ainda pode agir neste turno.`);return}
    set({battleStance:stance,playerTurn:false});addLog(set,`Postura ${STANCE_LABELS[stance]} adotada: ${desc}, até você trocar de postura novamente.`);enemyAfterDelay(set,get)},
   useFervor:()=>{const s=get();if((s.fervor??0)<3||!s.playerTurn||s.animating||!s.enemy)return;playerAttack(set,get,'Fervor de Combate',0,false,undefined,true)},
-   heroSkill:()=>{const s=get();if((s.heroSkillCooldown??0)>0||!s.playerTurn||s.animating||!s.enemy)return;if(s.heroId==='conjurador')return;if(heroStunned(set,get))return;set({heroSkillUses:(s.heroSkillUses??0)+1,heroSkillCooldown:3});if(s.heroId==='guardiao'){set({guardianTaunt:true,combatDefensePct:.15,classBuffTurns:3});addLog(set,'PROVOCAR: +15% de Defesa base por até 3 turnos (e, em combate cooperativo, os inimigos passam a priorizar o Guardião).');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='guerreiro'){const refreshedBleed=s.enemyStatus?.bleed?{...s.enemyStatus,bleed:{...s.enemyStatus.bleed,turns:3}}:s.enemyStatus;set({combatAttackPct:.1,combatDefensePct:.1,enemyFearPenalty:1,classBuffTurns:3,enemyStatus:refreshedBleed});addLog(set,`Ímpeto Marcial: Ataque e Defesa base aumentados em 10% (arredondados para cima) e Medo no inimigo (-1 em todas as rolagens dele), por até 3 turnos.${s.enemyStatus?.bleed?' O sangramento do inimigo foi renovado para 3 turnos.':''}`);triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='cacadora'){set({extraHeroAttacks:1,classBuffTurns:3});addLog(set,'Ataque Duplo: você pode atacar duas vezes por turno, por até 3 turnos.');return}if(s.heroId==='arcanista'){set({classRollBonus:1,combatAttackPct:.1,combatDefensePct:.1,classBuffTurns:3});addLog(set,'Ascensão Arcana: +1 nas rolagens e +10% de Ataque e Defesa para o grupo, por até 3 turnos.');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='druida'){const heal=Math.max(1,Math.ceil(maxHp(s)*.3)),amount=Math.min(heal,maxHp(s)-s.hp),hadStatus=Boolean(s.heroStatus&&Object.keys(s.heroStatus).length);set({hp:s.hp+amount,heroStatus:{}});addLog(set,`Brisa Revigorante: recuperou ${amount} de vida do campeão mais ferido${hadStatus?' e purificou seus efeitos negativos':''}.`);triggerSupportFx(set,get,'cura');enemyAfterDelay(set,get);return}if(s.heroId==='cacador'){set({groupCriticalBoost:true,classBuffTurns:2});addLog(set,'Marca do Predador: resultados 5 e 6 passam a causar ataques críticos para o grupo, por 2 turnos.');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='monge'){playerAttack(set,get,'Golpe Flamejante',2,true,undefined,false,'fogo');return}if(s.heroId==='sacerdotisa'){set({lifeWardActive:true});addLog(set,'Bênção da Vida: se você for derrotada nesta batalha, sobreviverá uma vez com 30% da vida máxima.');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get)}},
+   heroSkill:()=>{const s=get();if((s.heroSkillCooldown??0)>0||!s.playerTurn||s.animating||!s.enemy)return;if(s.heroId==='conjurador')return;if(heroStunned(set,get))return;set({heroSkillUses:(s.heroSkillUses??0)+1,heroSkillCooldown:3});if(s.heroId==='guardiao'){set({guardianTaunt:true,combatDefensePct:.15,classBuffTurns:3});addLog(set,'PROVOCAR: +15% de Defesa base por até 3 turnos (e, em combate cooperativo, os inimigos passam a priorizar o Guardião).');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='guerreiro'){const refreshedBleed=s.enemyStatus?.bleed?{...s.enemyStatus,bleed:{...s.enemyStatus.bleed,turns:3}}:s.enemyStatus;set({combatAttackPct:.1,combatDefensePct:.1,enemyFearPenalty:1,classBuffTurns:3,enemyStatus:refreshedBleed});addLog(set,`Ímpeto Marcial: Ataque e Defesa base aumentados em 10% (arredondados para cima) e Medo no inimigo (-1 em todas as rolagens dele), por até 3 turnos.${s.enemyStatus?.bleed?' O sangramento do inimigo foi renovado para 3 turnos.':''}`);triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='cacadora'){set({extraHeroAttacks:1,classBuffTurns:3});addLog(set,'Ataque Duplo: você pode atacar duas vezes por turno, por até 3 turnos.');if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(get(),700));return}if(s.heroId==='arcanista'){set({classRollBonus:1,combatAttackPct:.1,combatDefensePct:.1,classBuffTurns:3});addLog(set,'Ascensão Arcana: +1 nas rolagens e +10% de Ataque e Defesa para o grupo, por até 3 turnos.');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='druida'){const heal=Math.max(1,Math.ceil(maxHp(s)*.3)),amount=Math.min(heal,maxHp(s)-s.hp),hadStatus=Boolean(s.heroStatus&&Object.keys(s.heroStatus).length);set({hp:s.hp+amount,heroStatus:{}});addLog(set,`Brisa Revigorante: recuperou ${amount} de vida do campeão mais ferido${hadStatus?' e purificou seus efeitos negativos':''}.`);triggerSupportFx(set,get,'cura');enemyAfterDelay(set,get);return}if(s.heroId==='cacador'){set({groupCriticalBoost:true,classBuffTurns:2});addLog(set,'Marca do Predador: resultados 5 e 6 passam a causar ataques críticos para o grupo, por 2 turnos.');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get);return}if(s.heroId==='monge'){playerAttack(set,get,'Golpe Flamejante',2,true,undefined,false,'fogo');return}if(s.heroId==='sacerdotisa'){set({lifeWardActive:true});addLog(set,'Bênção da Vida: se você for derrotada nesta batalha, sobreviverá uma vez com 30% da vida máxima.');triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get)}},
   summonMonster:(tipo:SummonType)=>{const s=get(),existing=(s.heroSkillUses??0)>0?(s.summons??(s.summon?[s.summon]:[])):[];if(s.heroId!=='conjurador'||existing.length>=2||(s.heroSkillUses??0)>=2||!s.playerTurn||s.animating||!s.enemy)return;if(heroStunned(set,get))return;const level=deriveLevel(s.xp).lvl,summon=buildSummon(tipo,level),typeLabel=tipo==='atacante'?'ofensiva':tipo==='defensor'?'defensiva':'arcana',summons=[...existing,summon]
    set({heroSkillUses:(s.heroSkillUses??0)+1,summons,summon:summons[0],...(summons.some(fera=>fera.tipo==='arcano')?{combatAttackPct:.1,combatDefensePct:.1}:{})})
    addLog(set,`Conjurar Fera Espectral (${typeLabel}) • ${summons.length}/2: ${summon.nome} surge ao seu lado com ${summon.maxHp} de vida, ${summon.ataque} de ataque e ${summon.defesa} de defesa.${tipo==='arcano'?' Enquanto estiver viva, concede +10% de Ataque e Defesa a você.':tipo==='defensor'?' Tem alta chance de interceptar ataques inimigos no seu lugar.':' Ataca ao seu lado a cada turno.'}`)
@@ -974,7 +975,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
    else{resultMessage=`${it.nome}: +${value} de ataque até o fim do próximo combate.`;set({inventory:inv,pendingAttackBonus:s.pendingAttackBonus+Math.max(1,value),activePotionIds,explorationNote:resultMessage})}
    if(s.screen==='combat'){addLog(set,resultMessage);if(it.tipo==='cura')triggerSupportFx(set,get,'cura-item');else if(it.tipo==='escudo')triggerSupportFx(set,get,'fortificacao');enemyAfterDelay(set,get)}
   },
-  flee:()=>{const s=get();if(!s.playerTurn||s.animating)return;const roll=Math.floor(Math.random()*6)+1;const outcome:FleeRoll['outcome']=roll>=5?'success':roll===4?'neutral':'failed';set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:{roll,outcome}});addLog(set,roll>=5?`Fuga: dado ${roll}. Você conseguiu escapar!`:roll===4?'Fuga: dado 4. Você não escapou, mas manteve sua ação.':`Fuga: dado ${roll}. A tentativa falhou e você perdeu o turno.`);setTimeout(()=>{const current=get();if(current.screen!=='combat'||!current.enemy)return;if(outcome==='success'){set({screen:current.subregionId?'region':'map',subregionId:undefined,explorationNote:undefined,enemy:undefined,pendingAttackBonus:0,shield:0,battleStance:'neutra',stanceChangeUsed:false,fervor:0,firstStrikeBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,groupCriticalBoost:false,heroStatus:{},enemyStatus:{},animating:false,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,dungeonActive:false,dungeonDepth:0});return}if(outcome==='neutral'){set({animating:false,playerTurn:true,fleeRoll:undefined});if(current.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(current,400));return}set({fleeRoll:undefined});enemyAfterDelay(set,get)},getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS))},
+  flee:()=>{const s=get();if(!s.playerTurn||s.animating)return;disarmEnemyPhaseWatchdog();const roll=Math.floor(Math.random()*6)+1;const outcome:FleeRoll['outcome']=roll>=5?'success':roll===4?'neutral':'failed';set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:{roll,outcome}});addLog(set,roll>=5?`Fuga: dado ${roll}. Você conseguiu escapar!`:roll===4?'Fuga: dado 4. Você não escapou, mas manteve sua ação.':`Fuga: dado ${roll}. A tentativa falhou e você perdeu o turno.`);setTimeout(()=>{const current=get();if(current.screen!=='combat'||!current.enemy)return;if(outcome==='success'){set({screen:current.subregionId?'region':'map',subregionId:undefined,explorationNote:undefined,enemy:undefined,pendingAttackBonus:0,shield:0,battleStance:'neutra',stanceChangeUsed:false,fervor:0,firstStrikeBonus:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,groupCriticalBoost:false,heroStatus:{},enemyStatus:{},animating:false,fleeRoll:undefined,heroRollBonus:0,enemyRollBonus:0,dungeonActive:false,dungeonDepth:0});return}if(outcome==='neutral'){set({animating:false,playerTurn:true,fleeRoll:undefined});if(current.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(current,400));return}set({fleeRoll:undefined});enemyAfterDelay(set,get)},getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS))},
   buyConsumable:(id:string)=>{const s=get(),it=CONSUMABLES.find(x=>x.id===id),key=`consumable:${id}`,known=s.discoveredCards??[];if(!it||s.gold<it.preco)return;set({gold:s.gold-it.preco,inventory:{...s.inventory,[id]:(s.inventory[id]??0)+1},discoveredCards:known.includes(key)?known:[...known,key]})},
   buyEquipment:(id:string)=>{const s=get(),e=eqById(id),key=`equipment:${e?.id}`,known=s.discoveredCards??[];if(!e||!equipmentClassAllowed(e,s.heroId)||!equipmentLevelAllowed(e,s.xp)||e.raridade==='epico'||e.raridade==='lendario'||s.gold<e.preco||s.equipmentBag.length>=equipmentBagCapacity(s))return;set({gold:s.gold-e.preco,equipmentBag:[...s.equipmentBag,createEquipmentInstance(e.id)],discoveredCards:known.includes(key)?known:[...known,key]})},
   sellConsumable:(id:string)=>{const s=get(),it=CONSUMABLES.find(x=>x.id===id);if(!it||(s.inventory[id]??0)<=0)return;const inv={...s.inventory,[id]:(s.inventory[id]??0)-1};if(inv[id]<=0)delete inv[id];set({inventory:inv,gold:s.gold+Math.max(1,Math.floor(it.preco/2))})},
@@ -1441,16 +1442,32 @@ export function runAutoCombatTurn(set:any,get:any){
   if(heroStunned(set,get))return
   if((s.ultimateGauge??0)>=100){s.ultimateAttack();return}
   if(s.hp<maxHp(s)*.35&&(s.inventory['pocao_cura']??0)>0){s.useConsumable('pocao_cura');return}
-  const autoItemSkills=equippedAutoItemSkills(s),autoItemState=autoItemSkillState(s)
+  // A habilidade de item só pode ser usada uma vez por combate (itemSkillUsed). Sem esta trava o
+  // auto continuava "escolhendo" o item nos turnos seguintes, s.itemSkill() retornava em silêncio
+  // e, como nada gastava o turno, ninguém reagendava o auto -- o combate travava até o jogador
+  // desligar e religar o AUTO (e travava de novo). O auto coop já tinha essa checagem.
+  const autoItemSkills=s.itemSkillUsed?[]:equippedAutoItemSkills(s),autoItemState=autoItemSkillState(s)
   const urgentItem=selectAutoItemSkill(autoItemSkills,autoItemState,{mode:'urgent'})
   if(urgentItem){s.itemSkill(urgentItem);return}
-  if((s.heroSkillCooldown??0)===0&&s.heroId!=='conjurador'){s.heroSkill();return}
+  // O Conjurador nunca usava heroSkill() (que retorna cedo pra ele) nem chamava summonMonster(),
+  // então no auto ele lutava sem nenhuma fera. Mesma escolha de fera do auto coop.
+  if(s.heroId==='conjurador'){
+   const summonType=selectAutoSummonType(s)
+   if(summonType){s.summonMonster(summonType);return}
+  }else if((s.heroSkillCooldown??0)===0){s.heroSkill();return}
   if((s.fervor??0)>=3){s.useFervor();return}
   const minion=(s.combatMinions??[]).find(m=>m.hp>0)
   if(minion){s.attack(minion.id);return}
   const tacticalItem=selectAutoItemSkill(autoItemSkills,autoItemState,{mode:'tactical'})
   if(tacticalItem){s.itemSkill(tacticalItem);return}
   s.attack()
+}
+
+function selectAutoSummonType(s:GameState){
+ if((s.heroSkillUses??0)>=2)return undefined
+ const existing=(s.heroSkillUses??0)>0?(s.summons??(s.summon?[s.summon]:[])):[]
+ const vitals={hp:s.hp,maxHp:maxHp(s)}
+ return selectCoopAutoSummonType(existing.map(fera=>({tipo:fera.tipo,hp:fera.hp})),vitals,[{user_id:'solo'}],{solo:vitals})
 }
 
 function equippedAutoItemSkills(s:GameState){
@@ -1462,7 +1479,7 @@ function autoItemSkillState(s:GameState){
  return{hp:s.hp,maxHp:maxHp(s),shield:s.shield,heroRollBonus:s.heroRollBonus+(s.classRollBonus??0),heroStatus:s.heroStatus as Record<string,unknown>|undefined,enemyHp:s.enemyHp,enemyMaxHp:s.enemy?.vida,enemyIsBoss:Boolean(s.enemy?.boss),enemyIsElite:Boolean(s.enemy?.elite),enemyIntentType:intent?.type,hasActiveMinions:Boolean((s.combatMinions??[]).some(minion=>minion.hp>0))}
 }
 
-function beginCombat(set:any,get:any,enemy:Enemy){const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState,key=enemyDisplayKey(enemy.nome),discovery=`${enemy.boss?'boss':enemy.elite?'elite':'monster'}:${key}`,discoveries=s.discoveredCards??[];const known=s.bestiary[key]??{encontros:0,vitorias:0},sets=equipmentSetCounts(s),setShield=sets.khar>=4?3:0,setRoll=enemy.boss&&sets.eclipse>=4?1:0,setStrike=sets.cinzas>=4?2:0,warriorLuck=s.heroId==='guerreiro'&&Math.random()<.5;const enemyElement=enemy.elemento??(enemy.boss?'sombra':'fisico');const enemyWeakness=ELEMENT_ADVANTAGES[enemyElement]?.weakAgainst?.[0];const staggerMax=Math.max(12,Math.ceil(enemy.vida*.35));set({screen:'combat',enemy:{...enemy,fraqueza:enemyWeakness},enemyHp:enemy.vida,ultimateGauge:0,staggerCurrent:0,staggerMax,isStaggered:false,heroSkillCooldown:0,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Afinidade elemental: ${enemyElement}.${enemyWeakness?` Fraqueza: ${enemyWeakness} (+35% dano).`:''}`,...(warriorLuck?['Fortuna do Guerreiro ativada: +1 em todos os dados nesta batalha.']:[]),...(setShield?[`Conjunto de Kholgard: +${setShield} de escudo inicial.`]:[]),...(setRoll?[`Conjunto do Sol Negro: +1 nas rolagens contra chefes.`]:[]),...(setStrike?[`Arsenal das Cinzas: +${setStrike} de dano no primeiro ataque.`]:[]),`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:(s.talents.includes('destino')?1:0)+setRoll+(warriorLuck?1:0)+equipmentRollBonus(s),enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:s.shield+setShield,classRollBonus:warriorLuck?1:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,battleStance:'neutra',stanceChangeUsed:false,fervor:0,firstStrikeBonus:setStrike,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false,bestiary:{...s.bestiary,[key]:{...known,encontros:known.encontros+1}},discoveredCards:discoveries.includes(discovery)?discoveries:[...discoveries,discovery]});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),getCombatDelay(s,800));else if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(s,500))}
+function beginCombat(set:any,get:any,enemy:Enemy){disarmEnemyPhaseWatchdog();const coin=Math.random()<.5?'cara':'coroa';const s=get() as GameState,key=enemyDisplayKey(enemy.nome),discovery=`${enemy.boss?'boss':enemy.elite?'elite':'monster'}:${key}`,discoveries=s.discoveredCards??[];const known=s.bestiary[key]??{encontros:0,vitorias:0},sets=equipmentSetCounts(s),setShield=sets.khar>=4?3:0,setRoll=enemy.boss&&sets.eclipse>=4?1:0,setStrike=sets.cinzas>=4?2:0,warriorLuck=s.heroId==='guerreiro'&&Math.random()<.5;const enemyElement=enemy.elemento??(enemy.boss?'sombra':'fisico');const enemyWeakness=ELEMENT_ADVANTAGES[enemyElement]?.weakAgainst?.[0];const staggerMax=Math.max(12,Math.ceil(enemy.vida*.35));set({screen:'combat',enemy:{...enemy,fraqueza:enemyWeakness},enemyHp:enemy.vida,ultimateGauge:0,staggerCurrent:0,staggerMax,isStaggered:false,heroSkillCooldown:0,combatTurn:1,combatLog:[`${enemy.variante&&enemy.variante!=='Comum'?enemy.variante+' • ':''}Nível ${enemy.nivel??enemy.dificuldade}.`,`Afinidade elemental: ${enemyElement}.${enemyWeakness?` Fraqueza: ${enemyWeakness} (+35% dano).`:''}`,...(warriorLuck?['Fortuna do Guerreiro ativada: +1 em todos os dados nesta batalha.']:[]),...(setShield?[`Conjunto de Kholgard: +${setShield} de escudo inicial.`]:[]),...(setRoll?[`Conjunto do Sol Negro: +1 nas rolagens contra chefes.`]:[]),...(setStrike?[`Arsenal das Cinzas: +${setStrike} de dano no primeiro ataque.`]:[]),`Moeda: ${coin.toUpperCase()}. ${coin==='cara'?'Você':'Inimigo'} começa.`],coin,playerTurn:coin==='cara',animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined,heroRollBonus:(s.talents.includes('destino')?1:0)+setRoll+(warriorLuck?1:0)+equipmentRollBonus(s),enemyRollBonus:0,enemyFearPenalty:0,heroSkillUses:0,itemSkillUsed:false,shield:s.shield+setShield,classRollBonus:warriorLuck?1:0,classBuffTurns:0,summon:undefined,lifeWardActive:false,phoenixUsed:false,groupCriticalBoost:false,battleStance:'neutra',stanceChangeUsed:false,fervor:0,firstStrikeBonus:setStrike,heroStatus:{},enemyStatus:{},combatMinions:[],combatAttackPct:0,combatDefensePct:0,extraHeroAttacks:0,guardianTaunt:false,bestiary:{...s.bestiary,[key]:{...known,encontros:known.encontros+1}},discoveredCards:discoveries.includes(discovery)?discoveries:[...discoveries,discovery]});if(coin==='coroa')setTimeout(()=>enemyAttack(set,get),getCombatDelay(s,800));else if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(s,500))}
 function addLog(set:any,msg:string){set((s:GameState)=>({combatLog:[...s.combatLog.slice(-12),msg]}))}
 function triggerSupportFx(set:any,get:any,type:'fortificacao'|'cura'|'cura-item'){set({supportFx:{type}});setTimeout(()=>{if((get() as GameState).supportFx?.type===type)set({supportFx:undefined})},1600)}
 export function summonBossMinions(enemy:Enemy,phase:number):CombatMinion[]{const count=Math.min(2,phase),level=enemy.nivel??enemy.dificuldade??1,hp=Math.max(4,Math.ceil(enemy.vida*.14)),attack=Math.max(2,Math.ceil(enemy.ataque*.45));return Array.from({length:count},(_,index)=>({id:`minion_${phase}_${index}_${Date.now()}`,nome:index?'Capanga veterano':'Capanga do chefe',hp,maxHp:hp,ataque:attack+Math.floor(level/8)}))}
@@ -1618,6 +1635,13 @@ function heroStunned(set:any,get:any):boolean{
  enemyAfterDelay(set,get)
  return true
 }
+// Reviver (Bênção da Vida / Pacto da Fênix) devolve o turno ao herói no meio do combate, mas quem
+// reagenda o auto é o fim da fase inimiga -- que aqui foi interrompida pela derrota. Sem isto o
+// AUTO ficava parado depois de reviver.
+function resumeAutoAfterRevive(set:any,get:any){
+ const s=get() as GameState
+ if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(s,900))
+}
 function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
  const s=get() as GameState
  // Bênção da Vida (Sacerdotisa): se o ward estiver armado, intercepta a derrota uma vez por
@@ -1626,6 +1650,7 @@ function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
   const revived=Math.max(1,Math.ceil(maxHp(s)*.3))
   set({hp:revived,lifeWardActive:false,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,playerTurn:true})
   addLog(set,`Bênção da Vida protege você da derrota! Sobrevive com ${revived} de vida.`)
+  resumeAutoAfterRevive(set,get)
   return
  }
  // Pacto da Fênix (especialização de nível 75): ao contrário da Bênção da Vida (ativação manual
@@ -1634,6 +1659,7 @@ function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
   const revived=Math.max(1,Math.ceil(maxHp(s)*.2))
   set({hp:revived,phoenixUsed:true,animating:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,playerTurn:true})
   addLog(set,`Pacto da Fênix impede sua derrota! Sobrevive com ${revived} de vida.`)
+  resumeAutoAfterRevive(set,get)
   return
  }
  // A penalidade de derrota era sempre a mesma (30% do ouro + 20% de chance de perder um
@@ -1681,6 +1707,7 @@ function playerAttack(set:any,get:any,label:string,bonus=0,alreadyAnimating=fals
  if(!s.enemy||!s.playerTurn||s.animating&&!alreadyAnimating)return
  if(forceCrit&&(s.fervor??0)<3)return
  if(heroStunned(set,get))return
+ disarmEnemyPhaseWatchdog()
  const target=targetMinionId?(s.combatMinions??[]).find(m=>m.id===targetMinionId&&m.hp>0):undefined
  const forgedCrit=!forceCrit&&hasCraftedEffect(s,'critico_forjado')&&Math.random()<.05
  const enemyStun=target?{status:s.enemyStatus??{},wasStunned:false}:consumeStun(s.enemyStatus)
@@ -1779,6 +1806,7 @@ function playerUltimateAttack(set:any,get:any){
   const s=get() as GameState
   if(!s.enemy||!s.playerTurn||s.animating||(s.ultimateGauge??0)<100)return
   if(heroStunned(set,get))return
+  disarmEnemyPhaseWatchdog()
   const heroClass=s.heroId??'guerreiro'
   const ultInfo=HERO_ULTIMATES[heroClass]??{nome:'Golpe Supremo',descricao:'Ataque avassalador'}
   const atk=attackValue(s)
@@ -1899,6 +1927,15 @@ function resolveSummonAttacks(set:any,get:any,onComplete:()=>void){
  }
  strike()
 }
+// Watchdog do turno inimigo: um único timer por vez. Antes, cada turno armava o seu próprio
+// timer de "recuperação" (COMBAT_ROLL_DISPLAY_MS+1800) e ninguém o cancelava -- como o inimigo
+// tem o mesmo id durante a luta toda, o timer velho do turno N disparava (~4,3s depois) bem no
+// meio da animação do golpe do herói no turno N+1 (animating && !playerTurn), devolvia o turno
+// na marra ("Fluxo do combate recuperado") e o auto agendava uma segunda ação por cima da
+// primeira, desencadeando ações duplas e fases inimigas sobrepostas. Agora só existe o timer
+// da fase inimiga em andamento, e toda ação do herói / novo combate o desarma.
+let enemyPhaseWatchdog:ReturnType<typeof setTimeout>|undefined
+function disarmEnemyPhaseWatchdog(){if(enemyPhaseWatchdog!==undefined){clearTimeout(enemyPhaseWatchdog);enemyPhaseWatchdog=undefined}}
 function continueEnemyAfterDelay(set:any,get:any){
  const s=get() as GameState
  const tick=tickStatus(s.heroStatus)
@@ -1928,7 +1965,7 @@ function continueEnemyAfterDelay(set:any,get:any){
   }
  }
   const heroSkillCooldown=Math.max(0,(s.heroSkillCooldown??0)-1);set({heroSkillCooldown});
-  const enemyId=(get() as GameState).enemy?.id;set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined});setTimeout(()=>runEnemyAttack(set,get),getCombatDelay(s,650));setTimeout(()=>{const stalled=get() as GameState;if(stalled.screen==='combat'&&stalled.enemy?.id===enemyId&&stalled.animating&&!stalled.playerTurn){set({animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined});addLog(set,'Fluxo do combate recuperado. Seu turno continua.');if(stalled.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(stalled,400))}},getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS+1800))
+  const enemyId=(get() as GameState).enemy?.id;set({animating:true,playerTurn:false,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined});setTimeout(()=>runEnemyAttack(set,get),getCombatDelay(s,650));disarmEnemyPhaseWatchdog();enemyPhaseWatchdog=setTimeout(()=>{enemyPhaseWatchdog=undefined;const stalled=get() as GameState;if(stalled.screen==='combat'&&stalled.enemy?.id===enemyId&&stalled.animating&&!stalled.playerTurn){set({animating:false,playerTurn:true,animationActor:undefined,lastDamage:undefined,combatRoll:undefined,fleeRoll:undefined});addLog(set,'Fluxo do combate recuperado. Seu turno continua.');if(stalled.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(stalled,400))}},getCombatDelay(s,COMBAT_ROLL_DISPLAY_MS+1800))
 }
 function resolveMinionAttacks(set:any,get:any,onComplete:()=>void){const start=get() as GameState,minions=(start.combatMinions??[]).filter(minion=>minion.hp>0);if(!minions.length){onComplete();return}let index=0;const strike=()=>{const s=get() as GameState,minion=minions[index++];if(!minion||s.screen!=='combat'||s.hp<=0){onComplete();return}const dodged=((s.heroId==='cacadora'||s.heroId==='cacador')&&Math.random()<.2),druidaLuck=s.heroId==='druida'&&Math.random()<.25,attackRoll=Math.max(1,Math.floor(Math.random()*6)+1-(s.enemyFearPenalty??0)-(druidaLuck?1:0)),defenseRoll=Math.floor(Math.random()*6)+1,defenseBase=defenseValue(s),resolved=resolveCombatRoll(minion.ataque,defenseBase,attackRoll,defenseRoll),rawDamage=dodged?0:resolved.damage,blocked=Math.min(s.shield,rawDamage),damage=Math.max(0,rawDamage-blocked),hp=Math.max(0,s.hp-damage);const minionGaugeGained=damage>0?8:(blocked>0?5:2);set({hp,shield:s.shield-blocked,ultimateGauge:Math.min(100,(s.ultimateGauge??0)+minionGaugeGained),animationActor:'enemy',lastDamage:damage,combatRoll:{attacker:'enemy',naturalAttackRoll:attackRoll,attackRoll,attackBonus:0,defenseRoll,attackBase:minion.ataque,defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),damage,selfDamage:0}});addLog(set,dodged?`${minion.nome} atacou, mas você esquivou completamente.`:`${minion.nome} atacou e causou ${damage} de dano${blocked?` (${blocked} bloqueado)`:''}.`);if(hp<=0){setTimeout(()=>applyDefeatPenalty(set,get,'Você foi derrotado pelos capangas do chefe.'),getCombatDelay(s,700));return}if(index<minions.length)setTimeout(strike,getCombatDelay(s,500));else setTimeout(onComplete,getCombatDelay(s,450))};strike()}
 function enemyAttack(set:any,get:any){
