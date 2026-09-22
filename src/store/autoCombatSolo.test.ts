@@ -98,4 +98,38 @@ describe('auto-combate solo', () => {
       expect(state().summons?.[0]?.tipo).toBe('defensor')
     })
   })
+
+  describe('não desperdiça o turno com habilidades de disparo único desnecessárias', () => {
+    it('Druida com vida cheia e sem status negativo ataca em vez de curar', () => {
+      startSoloCombat('druida')
+      auto()
+      expect(state().combatLog.some(l => l.includes('Brisa Revigorante'))).toBe(false)
+      expect(state().animating).toBe(true)
+    })
+
+    it('Druida com vida faltando ainda cura normalmente', () => {
+      startSoloCombat('druida', { hp: Math.ceil(maxHp(useGame.getState()) * 0.5) })
+      auto()
+      expect(state().combatLog.some(l => l.includes('Brisa Revigorante'))).toBe(true)
+    })
+
+    it('Druida com status negativo purifica mesmo com vida cheia', () => {
+      startSoloCombat('druida', { heroStatus: { poison: { amount: 2, turns: 3 } } })
+      auto()
+      expect(state().combatLog.some(l => l.includes('Brisa Revigorante'))).toBe(true)
+    })
+
+    it('Sacerdotisa com a Bênção da Vida já armada ataca em vez de recastar', () => {
+      startSoloCombat('sacerdotisa', { lifeWardActive: true })
+      auto()
+      expect(state().combatLog.some(l => l.includes('Bênção da Vida protege'))).toBe(false)
+      expect(state().animating).toBe(true)
+    })
+
+    it('Sacerdotisa sem a Bênção da Vida armada a lança normalmente', () => {
+      startSoloCombat('sacerdotisa', { lifeWardActive: false })
+      auto()
+      expect(state().lifeWardActive).toBe(true)
+    })
+  })
 })

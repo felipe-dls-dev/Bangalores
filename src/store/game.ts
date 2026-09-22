@@ -30,7 +30,7 @@ import { buildForgeRecipes } from '../data/forgeRecipes'
 import type { Hero, Equipment, Consumable, Enemy, Territory, Subregion, Slot, Screen, Rarity, GameEvent, CustomCard, EquipmentActiveEffect, EquipmentSetId } from '../types'
 import { ALL_MONOLITHS } from '../regionMap'
 import { selectAutoItemSkill } from '../autoCombat'
-import { selectCoopAutoSummonType } from '../online/coopAutoCombat'
+import { selectCoopAutoHealTarget, selectCoopAutoSummonType } from '../online/coopAutoCombat'
 
 const HD_ART:Record<string,string> = {
   'assets/art/monsters/cabra_malgor.webp':'assets/art/hd/monsters/cabra-malgor-hd.webp',
@@ -1454,13 +1454,30 @@ export function runAutoCombatTurn(set:any,get:any){
   if(s.heroId==='conjurador'){
    const summonType=selectAutoSummonType(s)
    if(summonType){s.summonMonster(summonType);return}
-  }else if((s.heroSkillCooldown??0)===0){s.heroSkill();return}
+  }else if((s.heroSkillCooldown??0)===0&&shouldUseAutoHeroSkill(s)){s.heroSkill();return}
   if((s.fervor??0)>=3){s.useFervor();return}
   const minion=(s.combatMinions??[]).find(m=>m.hp>0)
   if(minion){s.attack(minion.id);return}
   const tacticalItem=selectAutoItemSkill(autoItemSkills,autoItemState,{mode:'tactical'})
   if(tacticalItem){s.itemSkill(tacticalItem);return}
   s.attack()
+}
+
+// Ímpeto Marcial / Ascensão Arcana / Marca do Predador / Provocar / Ataque Duplo são buffs cujo
+// classBuffTurns:3 expira bem na hora em que heroSkillCooldown:3 libera de novo -- recastar
+// assim que sai do cooldown já é o timing ótimo, sem checagem extra. Já Brisa Revigorante
+// (Druida) e Bênção da Vida (Sacerdotisa) são efeitos de disparo único (cura/purificação e um
+// escudo contra derrota), não buffs -- sem esta checagem o auto gastava o turno recastando-os
+// mesmo sem necessidade (vida cheia e sem status negativo / ward já armado), quando atacar
+// valia mais. selectCoopAutoHealTarget é a mesma checagem que o auto coop já usa pra decidir
+// se vale a pena a Druida curar, aplicada aqui a um "grupo" de um herói só.
+function shouldUseAutoHeroSkill(s:GameState):boolean{
+ if(s.heroId==='druida'){
+  const vitals={hp:s.hp,maxHp:maxHp(s)}
+  return Boolean(selectCoopAutoHealTarget([{user_id:'solo'}],{solo:vitals},{playerBuffs:{solo:s.heroStatus as Record<string,unknown>|undefined},cleanseNegativeStatus:true}))
+ }
+ if(s.heroId==='sacerdotisa')return !s.lifeWardActive
+ return true
 }
 
 function selectAutoSummonType(s:GameState){
