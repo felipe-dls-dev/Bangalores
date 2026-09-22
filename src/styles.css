@@ -2111,6 +2111,7 @@ body::after{content:"VERSÃO 0.8.96 • 21/09/2026\A Druida: Defesa com 8 quadro
 body::after{content:"VERSÃO 0.8.97 • 21/09/2026\A Combate 2D: animacoes de ataque, defesa e demais acoes tocam uma unica vez por ato (antes repetiam em loop enquanto o turno durava); so o descanso e as posturas ficam em loop.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.98 • 21/09/2026\A Fix: o modo automatico do combate solo travava (habilidade de item ja usada, Ataque Duplo da Cacadora, depois de reviver) e um timer velho interrompia o golpe do heroi, causando acoes duplas e 'Fluxo do combate recuperado'. O Conjurador agora conjura as feras sozinho no automatico.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.99 • 21/09/2026\A Fix: automatico da Druida recastava Brisa Revigorante mesmo com vida cheia e sem status negativo, desperdicando o turno; Sacerdotisa fazia o mesmo recastando a Bencao da Vida ja armada. Ambas agora atacam quando a habilidade nao e necessaria.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.100 • 22/09/2026\A Sprites de batalha da Caçadora recortados das novas folhas do Codex (Descanso/Ataque/Critico/Defesa/Ultimate) e ligados ao combate; demais poses (esquiva/pocao/habilidade/vitoria/derrota) reaproveitam quadros existentes ate ganharem folha propria";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

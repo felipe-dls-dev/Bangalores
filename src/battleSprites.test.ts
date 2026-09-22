@@ -5,6 +5,7 @@ import {
   DRUID_ANIMATION_OVERRIDES,
   HERO_SPRITE_CANVAS,
   INITIAL_SPRITE_PLAYBACK,
+  ROGUE_ANIMATION_OVERRIDES,
   SPRITE_FRAME_SEQUENCES,
   SPRITE_STAGE_VIEW,
   WARRIOR_ANIMATION_OVERRIDES,
@@ -185,6 +186,18 @@ describe('getSpriteStateConfig', () => {
     expect(getSpriteStateConfig('heroes', 'druida', 'dodge')).toBe(BATTLE_ANIMATION_CONFIG.dodge)
   })
 
+  it('returns the rogue (cacadora) frame counts of the sheets in Bases/', () => {
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'idle').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'attack').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'heavy').frames).toBe(10)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'ultimate').frames).toBe(12)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'defend').frames).toBe(6)
+    // levar dano reaproveita a Defesa, então tem o mesmo número de quadros
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'hit').frames).toBe(getSpriteStateConfig('heroes', 'cacadora', 'defend').frames)
+    // sem override: cai no padrão do estado
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'dodge')).toBe(BATTLE_ANIMATION_CONFIG.dodge)
+  })
+
   it('falls back to standard BATTLE_ANIMATION_CONFIG for other heroes or enemies', () => {
     const mageAttack = getSpriteStateConfig('heroes', 'arcanista', 'attack')
     expect(mageAttack.frames).toBe(8)
@@ -235,12 +248,22 @@ describe('getFrameDurationMs', () => {
     const attack = WARRIOR_ANIMATION_OVERRIDES.attack!
     expect(getFrameDurationMs(attack, 6)).toBeLessThan(getFrameDurationMs(attack, 0))
   })
+
+  it('rogue (cacadora) weighted states have one weight per frame and keep the total duration', () => {
+    for (const state of ['attack', 'heavy', 'defend', 'hit', 'ultimate'] as const) {
+      const cfg = ROGUE_ANIMATION_OVERRIDES[state]!
+      expect(cfg.frameWeights, state).toHaveLength(cfg.frames)
+      const total = Array.from({ length: cfg.frames }, (_, i) => getFrameDurationMs(cfg, i)).reduce((a, b) => a + b, 0)
+      expect(total).toBeCloseTo(cfg.durationMs!)
+    }
+  })
 })
 
 describe('getSpriteFrameStyle', () => {
   it('only frames fighters with a large-canvas entry', () => {
     expect(getSpriteFrameStyle('heroes', 'guerreiro')).toBeDefined()
     expect(getSpriteFrameStyle('heroes', 'druida')).toBeDefined()
+    expect(getSpriteFrameStyle('heroes', 'cacadora')).toBeDefined()
     expect(getSpriteFrameStyle('heroes', 'monge')).toBeUndefined()
     expect(getSpriteFrameStyle('enemies', 'grumnak')).toBeUndefined()
   })
@@ -265,6 +288,7 @@ describe('warrior frame files on disk', () => {
   it('hit reuses the defend frames instead of duplicating files', () => {
     expect(getBattleSpriteFramePath('heroes', 'guerreiro', 'hit', 4)).toBe(getBattleSpriteFramePath('heroes', 'guerreiro', 'defend', 4))
     expect(getBattleSpriteFramePath('heroes', 'druida', 'hit', 3)).toBe('assets/battle/sprites/heroes/druida/defend_03.png')
+    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'hit', 2)).toBe('assets/battle/sprites/heroes/cacadora/defend_02.png')
     expect(getBattleSpriteFramePath('heroes', 'monge', 'hit', 4)).toBe('assets/battle/sprites/heroes/monge/hit_04.png')
   })
 
@@ -276,7 +300,7 @@ describe('warrior frame files on disk', () => {
     return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }
   }
 
-  it.each(['guerreiro', 'druida'])('every frame of every state of %s has the canvas declared in HERO_SPRITE_CANVAS', hero => {
+  it.each(['guerreiro', 'druida', 'cacadora'])('every frame of every state of %s has the canvas declared in HERO_SPRITE_CANVAS', hero => {
     const meta = HERO_SPRITE_CANVAS[hero]!
     for (const state of states) {
       const { frames } = getSpriteStateConfig('heroes', hero, state)
@@ -319,6 +343,40 @@ describe('druid frame sequences (states without their own sheet)', () => {
     expect(getBattleSpriteFramePath('heroes', 'druida', 'dodge', 99)).toBe('assets/battle/sprites/heroes/druida/idle_00.png')
     expect(getBattleSpriteFramePath('heroes', 'druida', 'attack', 3)).toBe('assets/battle/sprites/heroes/druida/attack_03.png')
     expect(getBattleSpriteFramePath('heroes', 'monge', 'defend', 1)).toBe('assets/battle/sprites/heroes/monge/defend_01.png')
+  })
+})
+
+describe('cacadora frame sequences (states without their own sheet)', () => {
+  const sequences = SPRITE_FRAME_SEQUENCES['heroes/cacadora']!
+
+  it('has one entry per frame of the state it stands in for', () => {
+    for (const [state, seq] of Object.entries(sequences) as [BattleAnimationState, NonNullable<(typeof sequences)[BattleAnimationState]>][]) {
+      expect(seq, state).toHaveLength(getSpriteStateConfig('heroes', 'cacadora', state).frames)
+    }
+  })
+
+  it('only points at frames that exist in the states the rogue has sheets for', () => {
+    const own = ['idle', 'attack', 'heavy', 'defend', 'ultimate'] as const
+    for (const [state, seq] of Object.entries(sequences)) {
+      for (const [src, index] of seq!) {
+        expect(own, `${state} -> ${src}`).toContain(src)
+        expect(index, `${state} -> ${src}_${index}`).toBeLessThan(getSpriteStateConfig('heroes', 'cacadora', src).frames)
+      }
+    }
+  })
+
+  it('covers every state the game can ask for', () => {
+    for (const state of Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]) {
+      const owned = ['idle', 'attack', 'heavy', 'defend', 'hit', 'ultimate'].includes(state)
+      expect(Boolean(sequences[state]) || owned, state).toBe(true)
+    }
+  })
+
+  it('resolves stand-in frames to the file of the pose they borrow and clamps out-of-range indexes', () => {
+    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'dodge', 1)).toBe('assets/battle/sprites/heroes/cacadora/defend_01.png')
+    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'skill', 9)).toBe('assets/battle/sprites/heroes/cacadora/heavy_09.png')
+    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'dodge', 99)).toBe('assets/battle/sprites/heroes/cacadora/idle_00.png')
+    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'attack', 3)).toBe('assets/battle/sprites/heroes/cacadora/attack_03.png')
   })
 })
 

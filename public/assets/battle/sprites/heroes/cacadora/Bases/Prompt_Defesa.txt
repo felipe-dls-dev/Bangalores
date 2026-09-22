@@ -1,0 +1,40 @@
+SPRITE SHEET - LADINO / CACADORA - DEFESA / PARRY
+
+Objetivo:
+Gerar a sprite sheet de defesa do Ladino, usando bloqueio agil com duas adagas, sem escudo.
+
+Personagem:
+- Ladino masculino encapuzado.
+- Armadura de couro preto, manto escuro com pontas rasgadas, cintos, bolsas e braceletes metalicos.
+- Duas adagas curtas, uma em cada mao.
+- Rosto parcialmente oculto pela sombra do capuz.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor, leitura clara da silhueta.
+- Mesmo nivel visual e escala das folhas `Descanso.png`, `Ataque.png` e `Ataque_Critico.png`.
+
+Animacao:
+Criar exatamente 6 frames de defesa/parry, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda pronta, joelhos flexionados, adagas baixas.
+2. Recuo defensivo rapido, peso vai para tras e torso abaixa.
+3. Duas adagas sobem e cruzam diante do peito/rosto.
+4. Contato do parry: adagas cruzadas seguram o golpe, pequena faisca prateada no ponto de contato.
+5. Absorcao do impacto: corpo de lado, manto cobrindo a silhueta e ombros firmes.
+6. Retorno para guarda, pronto para voltar ao descanso.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 2 linhas.
+- 6 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x1024 px.
+- Manter margem transparente generosa em cada celula.
+- Nenhuma parte do corpo, manto, adaga, brilho ou faisca pode invadir a celula vizinha.
+- Evitar escudo, barreira magica, explosao de impacto ou rastro de ataque.
+
+Arquivos:
+- `Defesa.png`: versao final normalizada para 1536x1024, com limpeza de pequenos fragmentos desconectados.
+- `Defesa_raw_generated.png`: bruto gerado pela IA.
+- `Defesa_normalized_no_padding.png`: versao intermediaria antes do padding interno.

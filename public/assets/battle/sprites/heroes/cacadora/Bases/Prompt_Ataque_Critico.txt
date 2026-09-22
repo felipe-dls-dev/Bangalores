@@ -1,0 +1,44 @@
+SPRITE SHEET - LADINO / CACADORA - ATAQUE CRITICO
+
+Objetivo:
+Gerar apenas a sprite sheet de ataque critico do Ladino, em continuidade visual com `Ataque.png`.
+
+Personagem:
+- Ladino masculino encapuzado.
+- Armadura de couro preto, manto escuro com pontas rasgadas, cintos, bolsas e braceletes metalicos.
+- Duas adagas curtas, uma em cada mao.
+- Rosto parcialmente oculto pela sombra do capuz.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor, leitura clara da silhueta.
+- Mais dramatico que o ataque normal, mas ainda abaixo de um ultimate.
+
+Animacao:
+Criar exatamente 10 frames de ataque critico, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda baixa e tensa.
+2. Agachamento profundo, duas adagas recolhidas.
+3. Inicio de dash sombrio, manto puxado para tras.
+4. Corte diagonal rapido com rastro prateado compacto.
+5. Giro / passo cruzado, segunda adaga formando um brilho em X.
+6. Pose de contato critico, duas adagas estendidas e pequeno impacto vermelho/branco.
+7. Follow-through com torcao do torso e rastro roxo curto.
+8. Recuperacao, uma adaga alta e outra baixa.
+9. Retorno gradual para a guarda.
+10. Guarda final proxima da pose inicial.
+
+Layout:
+- PNG transparente.
+- Grade 5 colunas x 2 linhas.
+- 10 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 2560x1024 px.
+- Manter margem transparente generosa em cada celula.
+- Nenhuma parte do corpo, manto, adaga, brilho, rastro ou impacto pode invadir a celula vizinha.
+- Evitar arcos gigantes; os efeitos devem ser compactos e sem cortes nas bordas.
+
+Arquivos:
+- `Ataque_Critico.png`: versao final normalizada para 2560x1024, com limpeza de fragmentos desconectados.
+- `Ataque_Critico_raw_generated.png`: bruto gerado pela IA.
+- `Ataque_Critico_normalized_no_padding.png`: versao intermediaria antes do padding interno.

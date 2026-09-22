@@ -264,3 +264,27 @@ O `druida` também usa folhas grandes (`public/assets/battle/sprites/heroes/drui
 - **Histórico da Defesa**: a primeira `Defesa.png` veio com quase todo o corpo transparente (RGB zerado sob o alpha 0, irrecuperável); o Codex regenerou o arquivo (ART-031), primeiro com 5 quadros e depois com 8 (`Prompt_Defesa_Suave.txt`: escudo crescendo 35% → 65% → cheio → dissipando), e a versão de 8 quadros é a integrada. `Defesa_Suave*.png` na pasta são variantes/intermediárias do Codex e não são usadas.
 - **`Bases/Ultimate_frames/`** (12 PNGs 512x512 totalmente transparentes) é resto de uma tentativa de corte e não é usada.
 - **Ritmo**: `DRUID_ANIMATION_OVERRIDES` reparte `durationMs` com `frameWeights` (preparação lenta, golpe rápido, recuperação lenta), como no guerreiro.
+
+## Caçadora em alta fidelidade (folhas grandes em `Bases/`)
+
+A `cacadora` (arte estilizada como "Ladino" pelos prompts do Codex, mesma classe "Sombra Veloz") também
+usa folhas grandes (`public/assets/battle/sprites/heroes/cacadora/Bases/`), recortadas por
+`scripts/extract_rogue_bases.py` (`pip install pillow numpy scipy`;
+`python scripts/extract_rogue_bases.py --measure` mede a extensão de canvas necessária sem gravar nada;
+`--preview <pasta>` grava tiras/GIFs de conferência). O script reaproveita a segmentação e o render do
+`extract_warrior_bases.py`, no mesmo molde do druida.
+
+| Folha | Estado | Quadros | Layout |
+|---|---|---|---|
+| `Descanso.png` | `idle` | 6 | 3+3 (1536x1024) |
+| `Ataque.png` | `attack` | 8 | 4+4 (1774x887) |
+| `Critico.png` | `heavy` | 10 | 5+5 (1983x793) |
+| `Ultimate.png` | `ultimate` | 12 | 3+3+3+3 (1086x1448) |
+| `Defesa.png` | `defend` e `hit` (`hit` não tem arquivos: `SPRITE_STATE_FRAME_ALIAS` aponta para `defend_*.png`) | 6 | 3+3 (1536x1024) |
+
+- **Os arquivos entregues não batem com os prompts** (`Prompt_*.txt` pedem 512x512 por célula com grades maiores; o Codex normalizou pra tamanhos menores) e o de crítico chama `Critico.png`, não `Ataque_Critico.png` como os prompts sugerem — os layouts acima foram medidos direto nos arquivos, não copiados dos prompts.
+- **Canvas próprio de 425x265** (pés em x=185, chão em y=245), o mais baixo/estreito dos três: a caçadora não tem arma de alcance nem efeito erguido acima da cabeça. Medido com `--measure` (extensão real de todos os quadros de todas as folhas + margem). Precisa bater com `HERO_SPRITE_CANVAS.cacadora` (um teste confere os PNGs no disco). `bodyHeight` é 200, mesma ordem do guerreiro/druida (198), pra ter porte parecido na carta.
+- **Vazamento real entre células**: ao contrário do guerreiro/druida (bleed pontual, corrigido com `FIXES`), `Critico.png` e `Ultimate.png` têm partes do corpo/efeitos cruzando a borda nominal da célula em várias linhas/colunas (a IA não respeitou "nenhuma parte pode invadir a célula vizinha" do prompt) — é exatamente o caso que a segmentação por núcleo+propagação geodésica resolve sozinha, sem precisar de `FIXES` aqui.
+- **Alpha**: mesmo tratamento do druida (`clean_alpha`): corpo em ~252-254 vira 255, poeira de alpha <8 vira 0.
+- **Estados sem folha** (`stance_*`, `dodge`, `potion`, `skill`, `victory`, `defeat`) são **montados com poses das folhas existentes** por `SPRITE_FRAME_SEQUENCES['heroes/cacadora']` em `src/battleSprites.ts`. São provisórios: a esquiva usa o recuo da Defesa (`defend_01`), a poção não tem gesto de mão livre em nenhuma folha (as duas seguram adaga sempre) e usa o próprio ciclo de respiro do Descanso, a habilidade (Ataque Duplo) reaproveita o floreio inteiro do Crítico (10 quadros, 1 pra 1), vitória/derrota seguram a pose de contato crítico (`heavy_05`) e a absorção de impacto da Defesa (`defend_04`).
+- **Ritmo**: `ROGUE_ANIMATION_OVERRIDES` reparte `durationMs` com `frameWeights` (preparação, golpes rápidos, recuperação), como guerreiro/druida.

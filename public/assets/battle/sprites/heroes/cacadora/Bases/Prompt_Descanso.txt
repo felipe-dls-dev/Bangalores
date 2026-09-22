@@ -1,0 +1,41 @@
+SPRITE SHEET - LADINO / CACADORA - POSTURA DE BATALHA / DESCANSO
+
+Objetivo:
+Gerar a sprite sheet de postura de batalha do Ladino, com movimento sutil de respiro e balanco corporal.
+
+Personagem:
+- Ladino masculino encapuzado.
+- Armadura de couro preto, manto escuro com pontas rasgadas, cintos, bolsas e braceletes metalicos.
+- Duas adagas curtas, uma em cada mao.
+- Rosto parcialmente oculto pela sombra do capuz.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor, leitura clara da silhueta.
+- Mesmo nivel visual e escala das folhas `Ataque.png` e `Ataque_Critico.png`.
+
+Animacao:
+Criar exatamente 6 frames de postura de batalha em loop, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda neutra, joelhos flexionados, duas adagas baixas e prontas.
+2. Inspiracao leve: ombros sobem um pouco, peito expande discretamente.
+3. Peso do corpo desloca levemente para frente, adaga principal muda de angulo.
+4. Pico do respiro/balanco: torso um pouco mais alto, manto e capuz deslocam levemente.
+5. Expiracao: ombros descem e o manto assenta no sentido oposto.
+6. Retorno quase identico ao frame 1, pronto para repetir o loop sem salto.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 2 linhas.
+- 6 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x1024 px.
+- Manter margem transparente generosa em cada celula.
+- Nenhuma parte do corpo, manto, adaga ou sombra pode invadir a celula vizinha.
+- Movimento deve ser sutil: respiro, pequeno bob do torso, leve balanco do manto e microajuste das maos.
+- Nao incluir cortes, rastros de ataque, impactos, magia ou qualquer efeito ofensivo.
+
+Arquivos:
+- `Descanso.png`: versao final normalizada para 1536x1024.
+- `Descanso_raw_generated.png`: bruto gerado pela IA.
+- `Descanso_normalized_no_padding.png`: versao intermediaria antes do padding interno.

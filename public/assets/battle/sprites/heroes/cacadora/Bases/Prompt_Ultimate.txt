@@ -1,0 +1,47 @@
+SPRITE SHEET - LADINO / CACADORA - ULTIMATE / SUPREMO
+
+Objetivo:
+Gerar a sprite sheet de ataque supremo do Ladino, com uma sequencia de assassinato sombrio usando duas adagas.
+
+Personagem:
+- Ladino masculino encapuzado.
+- Armadura de couro preto, manto escuro com pontas rasgadas, cintos, bolsas e braceletes metalicos.
+- Duas adagas curtas, uma em cada mao.
+- Rosto parcialmente oculto pela sombra do capuz.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor, leitura clara da silhueta.
+- Mesmo nivel visual e escala das folhas `Descanso.png`, `Ataque.png`, `Ataque_Critico.png` e `Defesa.png`.
+- Mais dramatico que o ataque critico, mas mantendo leitura limpa de sprite de jogo.
+
+Animacao:
+Criar exatamente 12 frames de ultimate/supremo, lidos da esquerda para a direita, de cima para baixo:
+1. Guarda pronta, adagas baixas.
+2. Agachamento de carga, corpo comprimido.
+3. Energia sombria se junta no manto e nos pes, com pequenas wisps roxas.
+4. Inicio do shadow-step, corpo borrado para frente com afterimage roxo compacto.
+5. Reaparece em dash, primeiro corte diagonal curto.
+6. Segundo corte cruzado, adagas formando um X compacto.
+7. Multi-strike rapido, dois afterimages sombrios contidos na celula.
+8. Contato critico, duas adagas estendidas e impacto vermelho/branco compacto.
+9. Pass-through, manto aberto e rastro roxo curto.
+10. Pouso/recuperacao, um joelho flexionado, uma adaga alta e outra baixa.
+11. Manto assentando, corpo voltando para a guarda.
+12. Guarda final proxima da pose inicial, pronta para voltar ao descanso.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 4 linhas.
+- 12 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x2048 px.
+- Manter margem transparente generosa em cada celula.
+- Nenhuma parte do corpo, manto, adaga, afterimage, rastro, impacto ou particula pode invadir a celula vizinha.
+- Evitar arcos gigantes, circulos magicos, efeitos verdes/druida ou explosoes que atrapalhem o recorte.
+
+Arquivos:
+- `Ultimate.png`: versao final normalizada para 1536x2048, com padding interno de 32 px e limpeza de pequenos fragmentos desconectados.
+- `Ultimate_raw_generated.png`: bruto gerado pela IA.
+- `Ultimate_normalized_no_padding.png`: versao intermediaria antes do padding interno.

@@ -112,9 +112,43 @@ export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, Spr
   },
 }
 
+/**
+ * Sobrescritas da Caçadora (Ladino, no estilo dos prompts) com base nas folhas de Bases/
+ * (scripts/extract_rogue_bases.py). Contagens de quadros vêm das folhas: Descanso 6, Ataque 8,
+ * Critico 10, Ultimate 12, Defesa 6 (a única que não bate com o padrão de `defend`/`hit`, 5/4).
+ */
+export const ROGUE_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
+  idle: { frames: 6, loop: true, fps: 7 },
+  // guarda (2) -> avanço + dois cortes (3) -> extensão total (1) -> recuperação (2)
+  attack: {
+    frames: 8, loop: false, fps: 8, durationMs: 1600,
+    frameWeights: [1.2, 1.1, 0.9, 0.6, 0.55, 0.7, 1, 1.2],
+  },
+  // guarda + agachamento (3) -> dash + corte + giro (3) -> impacto crítico (1) -> recuperação (3)
+  heavy: {
+    frames: 10, loop: false, fps: 8, durationMs: 1900,
+    frameWeights: [1.1, 1, 0.9, 0.55, 0.5, 0.5, 0.6, 0.8, 1, 1.2],
+  },
+  // guarda (1) -> recuo (1) -> adagas sobem (1) -> contato do parry, brilho (1) -> absorção (1) -> retorno (1)
+  defend: {
+    frames: 6, loop: false, fps: 10, durationMs: 1000,
+    frameWeights: [0.8, 0.8, 0.9, 1.3, 1, 0.9],
+  },
+  hit: {
+    frames: 6, loop: false, fps: 10, durationMs: 1000,
+    frameWeights: [0.8, 0.8, 0.9, 1.3, 1, 0.9],
+  },
+  // carga sombria (3) -> shadow-step + dois cortes (3) -> multi-strike + impacto crítico (2) -> recuperação (4)
+  ultimate: {
+    frames: 12, loop: false, fps: 7, durationMs: 2400,
+    frameWeights: [1.2, 1, 1.1, 1, 1, 1.3, 1, 0.55, 0.6, 0.9, 1, 1.3],
+  },
+}
+
 const HERO_ANIMATION_OVERRIDES: Record<string, Partial<Record<BattleAnimationState, SpriteStateConfig>>> = {
   guerreiro: WARRIOR_ANIMATION_OVERRIDES,
   druida: DRUID_ANIMATION_OVERRIDES,
+  cacadora: ROGUE_ANIMATION_OVERRIDES,
 }
 
 /**
@@ -196,13 +230,15 @@ export interface SpriteCanvasMeta {
   bodyHeight: number
 }
 
-// bodyHeight é só a referência de escala (px do canvas que ocupam bodyFraction do palco): guerreiro e
-// druida usam o mesmo 198, então 1 px de canvas vale o mesmo na carta e os dois têm porte parecido. O
-// druida tem canvas próprio, mais alto, por causa do cajado erguido e do halo do orbe
-// (scripts/extract_druid_bases.py).
+// bodyHeight é só a referência de escala (px do canvas que ocupam bodyFraction do palco): guerreiro,
+// druida e caçadora usam ~198-200, então 1 px de canvas vale quase o mesmo na carta e os três têm
+// porte parecido. Druida e caçadora têm canvas próprio: o druida é mais alto por causa do cajado
+// erguido e do halo do orbe (scripts/extract_druid_bases.py); a caçadora é mais baixa e estreita,
+// sem arma de alcance nem efeito erguido acima da cabeça (scripts/extract_rogue_bases.py).
 export const HERO_SPRITE_CANVAS: Partial<Record<string, SpriteCanvasMeta>> = {
   guerreiro: { width: 448, height: 332, anchorX: 196, groundY: 301, bodyHeight: 198 },
   druida: { width: 400, height: 410, anchorX: 170, groundY: 380, bodyHeight: 198 },
+  cacadora: { width: 425, height: 265, anchorX: 185, groundY: 245, bodyHeight: 200 },
 }
 
 /**
@@ -372,6 +408,7 @@ export function isBattleSpriteSupported(category: 'heroes' | 'enemies', id: stri
 const SPRITE_STATE_FRAME_ALIAS: Partial<Record<string, Partial<Record<BattleAnimationState, BattleAnimationState>>>> = {
   'heroes/guerreiro': { hit: 'defend' },
   'heroes/druida': { hit: 'defend' },
+  'heroes/cacadora': { hit: 'defend' },
 }
 
 /** Um quadro de outro estado: [estado, índice do quadro]. */
@@ -396,6 +433,22 @@ export const SPRITE_FRAME_SEQUENCES: Partial<Record<string, Partial<Record<Battl
     skill: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 4], ['heavy', 7], ['heavy', 8], ['idle', 0]],
     victory: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 4], ['heavy', 4]],
     defeat: [['idle', 0], ['attack', 1], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2]],
+  },
+  // A caçadora só tem folhas de idle/attack/heavy/defend/ultimate (scripts/extract_rogue_bases.py);
+  // os demais estados são montados com poses dessas folhas até existirem folhas próprias.
+  'heroes/cacadora': {
+    stance_offensive: idleLoop,
+    stance_defensive: idleLoop,
+    // recuo defensivo (Defesa quadro 1) e volta pra guarda
+    dodge: [['idle', 0], ['defend', 1], ['defend', 1], ['defend', 0], ['idle', 0]],
+    // sem gesto de mão livre em nenhuma folha (as duas seguram adaga sempre): usa o ciclo de respiro
+    potion: [['idle', 0], ['idle', 1], ['idle', 2], ['idle', 3], ['idle', 4], ['idle', 5], ['idle', 0]],
+    // Ataque Duplo: reaproveita o floreio inteiro do Crítico (10 quadros, 1 pra 1)
+    skill: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => ['heavy', i] as const),
+    // guarda -> pose de contato crítico (adagas estendidas), segura no final
+    victory: [['idle', 0], ['heavy', 2], ['heavy', 4], ['heavy', 5], ['heavy', 5], ['heavy', 5], ['heavy', 5], ['heavy', 5]],
+    // guarda -> absorção do impacto (Defesa quadro 4), segura no final
+    defeat: [['idle', 0], ['defend', 1], ['defend', 2], ['defend', 4], ['defend', 4], ['defend', 4], ['defend', 4], ['defend', 4]],
   },
 }
 

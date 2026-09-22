@@ -1,0 +1,42 @@
+SPRITE SHEET - LADINO / CACADORA - ATAQUE NORMAL
+
+Objetivo:
+Gerar apenas a sprite sheet de ataque normal do Ladino, substituindo a versao simples montada a partir dos frames antigos.
+
+Personagem:
+- Ladino masculino encapuzado.
+- Armadura de couro preto, manto escuro com pontas rasgadas, cintos, bolsas e braceletes metalicos.
+- Duas adagas curtas, uma em cada mao.
+- Rosto parcialmente oculto pela sombra do capuz.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor, leitura clara da silhueta.
+- Nao usar o estilo antigo simples/blocado dos frames placeholder.
+
+Animacao:
+Criar exatamente 8 frames de ataque normal, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Postura de batalha, duas adagas baixas.
+2. Antecipacao, corpo abaixado e inclinado para frente.
+3. Passo rapido para frente, adaga traseira preparada.
+4. Primeiro corte curto, com pequeno rastro prateado perto da lamina.
+5. Segundo corte cruzado, manto acompanhando o movimento.
+6. Lunge de extensao total, duas adagas visiveis, efeito compacto perto das pontas.
+7. Recuperacao, peso voltando para tras.
+8. Retorno para guarda, proximo da postura inicial.
+
+Layout:
+- PNG transparente.
+- Grade 4 colunas x 2 linhas.
+- 8 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 2048x1024 px.
+- Manter margem transparente generosa em cada celula.
+- Nenhuma parte do corpo, manto, adaga ou rastro pode invadir a celula vizinha.
+- Evitar arcos grandes de ataque; os rastros devem ser compactos e sem cortes nas bordas.
+
+Arquivos:
+- `Ataque.png`: versao final normalizada para 2048x1024.
+- `Ataque_raw_generated.png`: bruto gerado pela IA.
+- `Ataque_normalized_no_padding.png`: versao intermediaria antes do padding interno.
