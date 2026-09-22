@@ -1474,7 +1474,7 @@ export function runAutoCombatTurn(set:any,get:any){
 function shouldUseAutoHeroSkill(s:GameState):boolean{
  if(s.heroId==='druida'){
   const vitals={hp:s.hp,maxHp:maxHp(s)}
-  return Boolean(selectCoopAutoHealTarget([{user_id:'solo'}],{solo:vitals},{playerBuffs:{solo:s.heroStatus as Record<string,unknown>|undefined},cleanseNegativeStatus:true}))
+  return Boolean(selectCoopAutoHealTarget([{user_id:'solo'}],{solo:vitals},{playerBuffs:{solo:(s.heroStatus??{}) as Record<string,unknown>},cleanseNegativeStatus:true}))
  }
  if(s.heroId==='sacerdotisa')return !s.lifeWardActive
  return true
