@@ -121,6 +121,15 @@ describe('resolveFighterAnimationState', () => {
     expect(resolveFighterAnimationState({ side: 'hero', hp: 80, maxHp: 100, attacking: true, attackCritical: true, isUsingUltimate: true })).toBe('ultimate')
   })
 
+  it('resolves ultimate even when the ultimate itself grants a fortificacao shield buff', () => {
+    // Bug real achado ao integrar as sprites do Guardião: o Golpe Supremo dele concede escudo
+    // (ultimateEffects -> triggerSupportFx(set,get,'fortificacao')), e por ~1.6s (até o supportFx
+    // expirar) essa regra vencia a do ultimate, trocando a animação por Defesa. A Sacerdotisa também
+    // concede escudo no supremo, mas como concede cura também, cai em 'potion' (regra depois da #7),
+    // então só o Guardião expunha o bug.
+    expect(resolveFighterAnimationState({ side: 'hero', hp: 80, maxHp: 100, isUsingUltimate: true, supportFx: 'fortificacao' })).toBe('ultimate')
+  })
+
   it('resolves hit when enemy is struck by an ultimate', () => {
     expect(resolveFighterAnimationState({ side: 'enemy', hp: 80, maxHp: 100, shaking: true, impactKind: 'ultimate' })).toBe('hit')
   })

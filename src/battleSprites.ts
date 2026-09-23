@@ -675,7 +675,10 @@ export function resolveFighterAnimationState(ctx: FighterAnimationContext): Batt
   }
 
   // 6. Bloqueio / Defesa
-  if (ctx.impactKind === 'blocked' || ctx.supportFx === 'fortificacao') {
+  // supportFx 'fortificacao' também dispara quando o Golpe Supremo concede escudo (ex.: Guardião,
+  // Sacerdotisa): sem a exclusão abaixo, essa regra vencia a #7 e a animação de ultimate era
+  // substituída por ~1.6s de Defesa (bug real, achado ao integrar as sprites do Guardião).
+  if (ctx.impactKind === 'blocked' || (ctx.supportFx === 'fortificacao' && !ctx.isUsingUltimate)) {
     return 'defend'
   }
 
