@@ -160,7 +160,7 @@ export const TOUR_STEPS:{screen:Screen;title:string;text:string;highlights:strin
  {screen:'chronicle',title:'Acompanhe as Crônicas',text:'Aqui ficam história, escolhas e consequências, dificuldade, bestiário e a leitura completa da sua build.',highlights:['Modos Aventura, Veterano e Lendário','Marcos do bestiário e bônus de conjunto'],tip:'Consulte a intenção do inimigo e suas resistências antes de cada turno.'},
  {screen:'gallery',title:'Complete a Coleção',text:'Heróis, itens, criaturas, chefes e eventos descobertos viram cartas consultáveis com arte ampliada.',highlights:['Marcos de domínio em 25, 100 e 250 descobertas','Filtros por tipo e progresso visível'],tip:'Explorar novos lugares também fortalece seu domínio da coleção.'},
  {screen:'coop',title:'Aventure-se em dupla',text:'Crie uma sala em tempo real ou entre por código. O grupo confirma o destino e enfrenta o combate em turnos compartilhados.',highlights:['Recompensas por dano e cura realizados','Prontidão, presença e progresso sincronizados'],tip:'O modo online precisa estar configurado para criar salas.'},
- {screen:'tutorial',title:'Seu manual está sempre aqui',text:'Este tutorial reúne início rápido, combate, progressão e todos os sistemas avançados. Abra apenas o capítulo que precisar.',highlights:['Regras detalhadas e dicas práticas','Tour disponível novamente a qualquer momento'],tip:'Agora volte ao Mapa e faça sua primeira exploração.'},
+ {screen:'tutorial',title:'Seu manual está sempre aqui',text:'Este tutorial reúne início rápido, combate, progressão e todos os sistemas avançados. Abra apenas o capítulo que precisar.',highlights:['Regras detalhadas e dicas práticas','Tour disponível novamente a qualquer momento'],tip:'Ao concluir, você segue direto para o Mapa e faz sua primeira exploração.'},
 ]
 
 // Mantidos para a Galeria e compatibilidade com saves antigos.
@@ -452,7 +452,7 @@ interface GameState {
  combatSpeed?: 1 | 2 | 3; autoCombat?: boolean; staggerCurrent?: number; staggerMax?: number; isStaggered?: boolean; heroSkillCooldown?: number; highestDamageDealt?: number; lockedEquipment?: Record<string, boolean>; dailyRewardClaimedAt?: number; ultimateGauge?: number;
  challengeProgress?: Record<string, number>; challengeClaimed?: Record<string, boolean>;
  newGame:(heroId:string)=>void; setScreen:(s:Screen)=>void; travelWorld:(world:string)=>void; debugTravelWorld:(world:string)=>void; startCoopCombat:(enemy:Enemy,subregionId:string)=>void; syncCoopEnemyHp:(hp:number)=>void; completeCoopVictory:(battleId:string,subregionId:string,enemy:Enemy,rewardShare:number)=>void; receiveCoopEnemyAttack:(damage:number,roll:any)=>void; receiveCoopHeroAction:(damage:number,roll:any,mine?:boolean)=>void; receiveCoopSupportFx:(type:'fortificacao'|'cura'|'cura-item')=>void; receiveCoopHeal:(amount:number)=>void; completeCoopDefeat:(battleId:string)=>void; completeCoopFlee:(battleId:string)=>void; continueGame:()=>void; loadCampaign:(id:string)=>void; deleteCampaign:(id:string)=>void; acceptGuildMission:(id:string)=>void; claimGuildMission:(id:string)=>void; openRegion:(t:Territory)=>void; openSubregion:(subregionId:string)=>void; startEncounter:(subregionId:string)=>void; startBoss:()=>void; triggerAmbush:(subregionId:string)=>void; fleeAmbush:()=>void; acceptAmbush:()=>void; setRegionMapPosition:(regionId:string,pos:{x:number;y:number})=>void; revealMapTiles:(regionId:string,tiles:Array<{x:number;y:number}>)=>void; toggleCustomPin:(regionId:string,x:number,y:number)=>void; activateLever:(leverId:string)=>void; discoverMonolith:(monolithId:string)=>void; travelToMonolith:(monolithId:string)=>void; discoverSecret:(key:string)=>void;
- startTour:()=>void; nextTourStep:()=>void; prevTourStep:()=>void; endTour:()=>void;
+ startTour:()=>void; nextTourStep:()=>void; prevTourStep:()=>void; endTour:()=>void; finishTour:()=>void;
  attack:(targetMinionId?:string)=>void; heroSkill:()=>void; ultimateAttack:()=>void; resetAttributes:()=>void; summonMonster:(tipo:SummonType)=>void; itemSkill:(equipmentId?:string)=>void; useConsumable:(id:string)=>void; flee:()=>void; setBattleStance:(stance:BattleStance)=>void; useFervor:()=>void;
  buyConsumable:(id:string)=>void; buyEquipment:(id:string)=>void; sellConsumable:(id:string)=>void; sellEquipment:(id:string)=>void;
  escrowMarketItem:(itemId:string,qty:number)=>boolean; refundMarketItem:(itemId:string,qty:number)=>void; receiveMarketSale:(gold:number)=>void; completeMarketPurchase:(itemId:string,qty:number,price:number)=>void;
@@ -1270,9 +1270,12 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     });
   }
   ,startTour:()=>set({tourStep:0,screen:TOUR_STEPS[0].screen})
-  ,nextTourStep:()=>{const step=(get().tourStep??0)+1;if(step>=TOUR_STEPS.length){set({tourStep:undefined});return}set({tourStep:step,screen:TOUR_STEPS[step].screen})}
+  ,nextTourStep:()=>{const step=(get().tourStep??0)+1;if(step>=TOUR_STEPS.length){get().finishTour();return}set({tourStep:step,screen:TOUR_STEPS[step].screen})}
   ,prevTourStep:()=>{const step=(get().tourStep??0)-1;if(step<0)return;set({tourStep:step,screen:TOUR_STEPS[step].screen})}
   ,endTour:()=>set({tourStep:undefined})
+  // Concluir o tour (último passo) leva o jogador ao Mapa, pronto para a primeira exploração.
+  // Pular/Esc continuam usando endTour e deixam a pessoa na tela em que estava.
+  ,finishTour:()=>set({tourStep:undefined,screen:'map'})
   ,setCombatSpeed:(speed:1|2|3)=>set({combatSpeed:speed})
   ,toggleAutoCombat:()=>{
     const s=get() as GameState

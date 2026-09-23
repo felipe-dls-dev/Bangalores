@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
+import { useGame, TOUR_STEPS, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
 import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
@@ -1476,5 +1476,26 @@ describe('Batch 1: Táticas de Combate & Gestão de Inventário', () => {
   })
 })
 
-
-
+describe('tour guiado', () => {
+  it('concluir o último passo leva o jogador ao Mapa', () => {
+    const last = TOUR_STEPS.length - 1
+    expect(TOUR_STEPS[last].screen).not.toBe('map')
+    useGame.setState({ tourStep: last, screen: TOUR_STEPS[last].screen })
+    useGame.getState().finishTour()
+    expect(useGame.getState().tourStep).toBeUndefined()
+    expect(useGame.getState().screen).toBe('map')
+  })
+  it('avançar além do último passo também termina no Mapa', () => {
+    const last = TOUR_STEPS.length - 1
+    useGame.setState({ tourStep: last, screen: TOUR_STEPS[last].screen })
+    useGame.getState().nextTourStep()
+    expect(useGame.getState().tourStep).toBeUndefined()
+    expect(useGame.getState().screen).toBe('map')
+  })
+  it('pular o tour no meio mantém a tela atual', () => {
+    useGame.setState({ tourStep: 3, screen: TOUR_STEPS[3].screen })
+    useGame.getState().endTour()
+    expect(useGame.getState().tourStep).toBeUndefined()
+    expect(useGame.getState().screen).toBe(TOUR_STEPS[3].screen)
+  })
+})

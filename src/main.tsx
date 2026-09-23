@@ -477,7 +477,7 @@ function TourOverlay(){
    <div className="tour-dots">{TOUR_STEPS.map((_,i)=><span key={i} className={i===g.tourStep?'active':''}/>)}</div>
    <div className="tour-actions">
     <button disabled={isFirst} onClick={g.prevTourStep}>Voltar</button>
-    <button className="primary" onClick={isLast?g.endTour:g.nextTourStep}>{isLast?'Concluir tour':'Próximo'}</button>
+    <button className="primary" onClick={isLast?g.finishTour:g.nextTourStep}>{isLast?'Concluir tour':'Próximo'}</button>
    </div>
   </div>
  </div>
