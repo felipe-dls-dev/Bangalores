@@ -139,6 +139,20 @@ describe('resolveFighterAnimationState', () => {
     expect(resolveFighterAnimationState({ hp: 80, maxHp: 100, isUsingSkill: true })).toBe('skill')
   })
 
+  it('resolves skill even when the skill itself grants a fortificacao buff', () => {
+    // Bug real, mesma classe do achado no Golpe Supremo do Guardião mas afetando 5 das 9
+    // classes: Guardião (Provocar), Guerreiro (Ímpeto Marcial), Arcanista (Ascensão Arcana),
+    // Caçador (Marca do Predador) e Sacerdotisa (Bênção da Vida) chamam
+    // triggerSupportFx(set,get,'fortificacao') no heroSkill() -- sem a exclusão, a animação de
+    // habilidade nunca aparecia, sempre virava Defesa. Achado ao auditar main.tsx: isUsingSkill
+    // nem chegava a ser passado pra resolveFighterAnimationState em lugar nenhum do app real.
+    expect(resolveFighterAnimationState({ side: 'hero', hp: 80, maxHp: 100, isUsingSkill: true, supportFx: 'fortificacao' })).toBe('skill')
+  })
+
+  it('resolves skill even when attacking (Golpe Flamejante do Monge é um ataque de verdade)', () => {
+    expect(resolveFighterAnimationState({ side: 'hero', hp: 80, maxHp: 100, isUsingSkill: true, attacking: true, attackCritical: true })).toBe('skill')
+  })
+
   it('resolves potion when healing items or support FX are applied', () => {
     expect(resolveFighterAnimationState({ hp: 80, maxHp: 100, supportFx: 'cura' })).toBe('potion')
     expect(resolveFighterAnimationState({ hp: 80, maxHp: 100, supportFx: 'cura-item' })).toBe('potion')

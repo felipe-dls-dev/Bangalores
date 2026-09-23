@@ -1358,9 +1358,12 @@ export function resolveFighterAnimationState(ctx: FighterAnimationContext): Batt
 
   // 6. Bloqueio / Defesa
   // supportFx 'fortificacao' também dispara quando o Golpe Supremo concede escudo (ex.: Guardião,
-  // Sacerdotisa): sem a exclusão abaixo, essa regra vencia a #7 e a animação de ultimate era
-  // substituída por ~1.6s de Defesa (bug real, achado ao integrar as sprites do Guardião).
-  if (ctx.impactKind === 'blocked' || (ctx.supportFx === 'fortificacao' && !ctx.isUsingUltimate)) {
+  // Sacerdotisa) OU quando a habilidade de classe é um buff defensivo (Provocar, Ímpeto Marcial,
+  // Ascensão Arcana, Marca do Predador, Bênção da Vida -- 5 das 9 classes): sem as duas exclusões
+  // abaixo, essa regra vencia as #7/#8 e a animação de ultimate/habilidade era substituída por
+  // ~1.6s de Defesa (bug real, achado ao integrar as sprites do Guardião e depois generalizado
+  // ao auditar todas as classes: `isUsingSkill` nunca era nem passado pra este contexto antes).
+  if (ctx.impactKind === 'blocked' || (ctx.supportFx === 'fortificacao' && !ctx.isUsingUltimate && !ctx.isUsingSkill)) {
     return 'defend'
   }
 

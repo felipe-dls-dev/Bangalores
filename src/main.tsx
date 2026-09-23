@@ -1905,12 +1905,16 @@ function CombatDiceRoll({roll}:{roll:CombatDiceRollData}){
  return <motion.aside className={`combat-dice-roll ${roll.attacker}`} initial={{opacity:0,y:-18,scale:.9}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-12}} aria-live="assertive"><small>{roll.attacker==='hero'?'SEU ATAQUE':'ATAQUE DO INIMIGO'}</small><div className="combat-dice-pair">{roll.attacker==='hero'?<>{attackDie}<i>VS</i>{defenseDie}</>:<>{defenseDie}<i>VS</i>{attackDie}</>}</div><div className="damage-result"><span>{finalLabel}</span><strong>{roll.selfDamage||roll.damage}</strong></div>{isUltimate?<ol className="damage-steps"><li><span>1</span><p><b>Golpe Supremo:</b> usa a fórmula própria da habilidade.</p></li><li><span>2</span><p><b>Defesa:</b> o golpe é indefensável nesta ação.</p></li><li><span>3</span><p><b>Resultado:</b> {roll.damage} de dano final.</p></li></ol>:roll.selfDamage?<ol className="damage-steps"><li><span>1</span><p><b>Falha crítica:</b> o alvo não recebe dano.</p></li><li><span>2</span><p><b>Dano próprio:</b> 10% da força do golpe vira {roll.selfDamage} de dano.</p></li></ol>:<ol className="damage-steps"><li><span>1</span><p><b>Conta inicial:</b> {math.attackStep} força - {roll.defenseBase} defesa = {math.initialDamage}.</p></li><li><span>2</span><p><b>Dados:</b> {attackDieSummary(roll)}; {defenseDieSummary(roll)} = {math.diceDamage}.</p></li><li><span>3</span><p><b>Final:</b> {math.shield>0?`escudo bloqueou ${math.shield}. `:''}{math.finalDelta!==0?`ajustes ${signedRollValue(math.finalDelta)}. `:''}{roll.damage} de dano.</p></li></ol>}</motion.aside>
 }
 function FleeDiceRoll({roll}:{roll:{roll:number;outcome:'failed'|'neutral'|'success'}}){const message=roll.outcome==='success'?'Fuga bem-sucedida!':roll.outcome==='neutral'?'Você mantém sua ação':'Fuga falhou — turno perdido';return <motion.aside className={`flee-dice-roll ${roll.outcome}`} initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:.92}} aria-live="assertive"><small>TESTE DE FUGA</small><motion.b className="combat-die flee-die" animate={{rotate:[0,130,280,420,360],scale:[.7,1.22,.88,1]}} transition={{duration:.65}}>{roll.roll}</motion.b><strong>{message}</strong><span>1–3 perde o turno • 4 mantém a ação • 5–6 foge</span></motion.aside>}
-type CombatImpactKind='hit'|'critical'|'ultimate'|'blocked'|'glance'|'self'|'heal'|'buff'
-function combatImpactFromState(roll:{attacker:'hero'|'enemy';damage:number;selfDamage:number;shieldBlocked?:number;attackRoll:number;attackEffect?:string}|undefined,supportFx?:'fortificacao'|'cura'|'cura-item'):{target?:'hero'|'enemy';kind?:CombatImpactKind}{
+type CombatImpactKind='hit'|'critical'|'ultimate'|'blocked'|'glance'|'self'|'heal'|'buff'|'dodged'
+function combatImpactFromState(roll:{attacker:'hero'|'enemy';damage:number;selfDamage:number;shieldBlocked?:number;attackRoll:number;attackEffect?:string;dodged?:boolean}|undefined,supportFx?:'fortificacao'|'cura'|'cura-item'):{target?:'hero'|'enemy';kind?:CombatImpactKind}{
  if(supportFx)return{target:'hero' as const,kind:(supportFx==='fortificacao'?'buff':'heal') as CombatImpactKind}
  if(!roll)return{target:undefined,kind:undefined}
  if(roll.selfDamage>0)return{target:roll.attacker,kind:'self' as CombatImpactKind}
  const target=roll.attacker==='hero'?'enemy':'hero'
+ // Esquiva (20% Caçadora/Caçador, ou a chance de "esquiva_forjada"): sem isso, um ataque
+ // desviado tinha damage=0 e caía em 'glance' -- do lado do herói, resolveFighterAnimationState
+ // trata 'glance' como golpe recebido e mostrava a animação de Defesa, nunca a de Esquiva.
+ if(roll.dodged)return{target,kind:'dodged' as CombatImpactKind}
  if(roll.attackEffect?.startsWith('SUPREMO'))return{target,kind:'ultimate' as CombatImpactKind}
  if(roll.attackRoll===6&&roll.damage>0)return{target,kind:'critical' as CombatImpactKind}
  if((roll.shieldBlocked??0)>0)return{target,kind:(roll.damage>0?'blocked':'glance') as CombatImpactKind}
@@ -1921,6 +1925,7 @@ function combatEventHeadline(kind?:CombatImpactKind){
  if(kind==='ultimate')return'⚡ Golpe Supremo Desferido!'
  if(kind==='critical')return'Impacto crítico'
  if(kind==='blocked')return'Golpe parcialmente bloqueado'
+ if(kind==='dodged')return'Esquiva completa!'
  if(kind==='glance')return'Golpe sem impacto decisivo'
  if(kind==='self')return'Falha crítica'
  if(kind==='heal')return'Cura canalizada'
@@ -1932,6 +1937,7 @@ function combatEventDescription(kind?:CombatImpactKind,side?:'hero'|'enemy'){
  if(kind==='ultimate')return side==='hero'?'Seu herói desencadeou toda a fúria do seu Golpe Supremo!':'O inimigo foi assolado pelo poder supremo!'
  if(kind==='critical')return side==='hero'?'O inimigo encontrou um ponto fraco no seu herói.':'Você abriu a guarda do inimigo com um golpe pesado.'
  if(kind==='blocked')return side==='hero'?'Seu escudo segurou parte do impacto.':'A resistência do alvo absorveu parte do dano.'
+ if(kind==='dodged')return side==='hero'?'Você desviou completamente do golpe.':'O alvo desviou completamente do seu golpe.'
  if(kind==='glance')return side==='hero'?'Você resistiu ao impacto sem perder o controle.':'O alvo segurou o golpe e permaneceu firme.'
  if(kind==='self')return'Uma falha crítica devolveu o golpe contra o próprio atacante.'
  if(kind==='heal')return'Sinais visuais reforçam que a recuperação já foi aplicada.'
@@ -2017,6 +2023,25 @@ function CombatScreen(){
   const type=summonFxEvent?.types?.[0] as AttackAnimType|undefined
   if(type)playSfx(g.heroId==='conjurador'?'summonTroll':ATTACK_SFX[type])
  },[summonFxEvent?.nonce])
+ // A animação de habilidade de classe (Fighter isUsingSkill -> resolveFighterAnimationState)
+ // nunca tinha um sinal pra disparar: heroSkill()/summonMonster() (solo) e useCoopHeroSkill()/
+ // performSummon() (coop) incrementam heroSkillUses mas raramente ligam `animating` (a maioria
+ // são buffs sem rolagem, ex.: Provocar, Ascensão Arcana), então a habilidade de toda classe
+ // caía sempre no fallback (Defesa, se usa 'fortificacao', ou nem isso) -- nunca mostrava a
+ // pose própria da habilidade. heroSkillUses sobe tanto no solo quanto no coop (useCoopHeroSkill/
+ // performSummon escrevem no mesmo campo), então um único watcher cobre os dois modos.
+ const heroSkillUsesRef=React.useRef(g.heroSkillUses??0)
+ const [heroSkillFlash,setHeroSkillFlash]=React.useState(false)
+ React.useEffect(()=>{
+  const uses=g.heroSkillUses??0
+  if(uses>heroSkillUsesRef.current){
+   setHeroSkillFlash(true)
+   const timer=window.setTimeout(()=>setHeroSkillFlash(false),2000)
+   heroSkillUsesRef.current=uses
+   return()=>window.clearTimeout(timer)
+  }
+  heroSkillUsesRef.current=uses
+ },[g.heroSkillUses])
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
  const defeated=g.hp<=0,disabled=!myTurn||g.animating||defeated,sharedRoll=isCoop?battle.lastRoll:undefined,intent=enemyIntentFor(e,g.combatTurn)
  // Sem limite de quantos tipos aparecem aqui -- a lista já rola (combat-v033 .combat-consumables
@@ -2206,7 +2231,7 @@ function CombatScreen(){
      <button className={`combat-auto-toggle${g.autoCombat?' active':''}`} onClick={()=>g.toggleAutoCombat()} title="Auto-combate: ações executadas automaticamente no seu turno"><Zap size={14}/><span>AUTO {g.autoCombat?'LIGADO':'DESLIGADO'}</span></button>
    </div>
    <div className="combat-hero-area">
-     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds} attacking={heroActing} impactKind={heroImpact} turnOwner={myTurn&&!g.animating} battleViewMode={battleViewMode} onToggleBattleViewMode={toggleBattleViewMode} currentStance={currentStance} isUsingUltimate={isHeroUltimate}/>
+     <Fighter side="hero" classId={h.id} name={h.nome} image={cardArt(h)} hp={g.hp} max={maxHp(g)} attack={attackValue(g)} defense={defenseValue(g)} ability={h.habilidade} kind="HERÓI" rarity="HERÓICO" shaking={g.animating&&g.animationActor==='enemy'} damage={g.animating&&g.animationActor==='enemy'?g.lastDamage:undefined} attackType={currentAttackType} attackCritical={currentAttackCritical} supportFx={g.supportFx?.type} statusKinds={heroStatusKinds} attacking={heroActing} impactKind={heroImpact} turnOwner={myTurn&&!g.animating} battleViewMode={battleViewMode} onToggleBattleViewMode={toggleBattleViewMode} currentStance={currentStance} isUsingUltimate={isHeroUltimate} isUsingSkill={heroSkillFlash}/>
     {isCoop&&<CoopTeammatesRow coop={coop} battle={battle}/>}
     {isCoop&&<CoopEmoteBar className="combat-emote-bar"/>}
     {isCoop&&<CoopEmoteToast/>}
@@ -2281,7 +2306,7 @@ function StatusBadge({kind,turns,amount}:{kind:string;turns?:number;amount?:numb
  const [open,setOpen]=React.useState(false),copy=STATUS_TOOLTIP_COPY[kind],label=statusLabel(kind),turnText=kind==='stunned'?'Uso único':turns!=null&&turns>0?`${turns} turno${turns===1?'':'s'} restante${turns===1?'':'s'}`:'Sem duração fixa'
  return <button type="button" className={`status-badge status-${kind}${open?' open':''}`} onClick={()=>setOpen(v=>!v)} onBlur={()=>setOpen(false)} aria-label={`${label}: ${copy?.effect??STATUS_DURATION_NOTE[kind]??''}`}>{label}{turns!=null&&turns>0?` ×${turns}`:''}<span className="status-tooltip" role="tooltip"><strong>{label}</strong><small>{copy?.element??'Condição'}</small><em>{copy?.effect??STATUS_DURATION_NOTE[kind]??'Efeito temporário em combate.'}</em><b>{turnText}{amount!=null?` • Intensidade ${amount}`:''}</b></span></button>
 }
-function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity:_rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds,attacking,impactKind,turnOwner,staggerCurrent,staggerMax,isStaggered,weakness,battleViewMode,onToggleBattleViewMode,currentStance,isUsingUltimate}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly{kind:string;turns?:number;amount?:number}[];attacking?:boolean;impactKind?:CombatImpactKind;turnOwner?:boolean;staggerCurrent?:number;staggerMax?:number;isStaggered?:boolean;weakness?:string;battleViewMode?:BattleViewMode;onToggleBattleViewMode?:()=>void;currentStance?:BattleStance;isUsingUltimate?:boolean}){
+function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rarity:_rarity,shaking,boss,phase,damage,frameTheme,attackType,summonAttackType,attackCritical,supportFx,statusKinds,attacking,impactKind,turnOwner,staggerCurrent,staggerMax,isStaggered,weakness,battleViewMode,onToggleBattleViewMode,currentStance,isUsingUltimate,isUsingSkill}:{side:string;classId?:string;name:string;image:string;hp:number;max:number;attack:number;defense:number;ability:string;kind:string;rarity:string;shaking:boolean;boss?:boolean;phase?:number;damage?:number;frameTheme?:string;attackType?:AttackAnimType;summonAttackType?:AttackAnimType;attackCritical?:boolean;supportFx?:'fortificacao'|'cura'|'cura-item';statusKinds?:readonly{kind:string;turns?:number;amount?:number}[];attacking?:boolean;impactKind?:CombatImpactKind;turnOwner?:boolean;staggerCurrent?:number;staggerMax?:number;isStaggered?:boolean;weakness?:string;battleViewMode?:BattleViewMode;onToggleBattleViewMode?:()=>void;currentStance?:BattleStance;isUsingUltimate?:boolean;isUsingSkill?:boolean}){
  const galleryKind=side==='hero'?'Herói':boss?'Chefe':kind==='ELITE'?'Elite':'Monstro'
  const card={id:classId,nome:name,arte:image,habilidade:ability,ataque:attack,defesa:defense,vida:max,boss,elite:kind==='ELITE',raridade:side==='hero'?'heroico':boss?'lendario':kind==='ELITE'?'raro':'comum'}
  const shakeAnim=!shaking?{x:0,rotate:0}:effectsReduced()?{x:[0,-3,0],rotate:0}:attackCritical?{x:[0,-16,14,-10,6,-3,0],rotate:[0,-2.5,2.5,-1.5,0]}:{x:[0,-9,8,-5,0],rotate:0}
@@ -2311,6 +2336,7 @@ function Fighter({side,classId,name,image,hp,max,attack,defense,ability,kind,rar
   supportFx,
   currentStance,
   isUsingUltimate,
+  isUsingSkill,
  })
  const cardFrameNode = (
   <CardFrame
