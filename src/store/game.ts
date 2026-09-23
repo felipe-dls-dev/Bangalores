@@ -113,6 +113,11 @@ export const TERRITORIES = [...(territories as Territory[]).map(t=>({...t,mundo:
 // dificuldade como critério, sem lista fixa) -- usada tanto na tela de região (navegação
 // anterior/próxima) quanto no mapa navegável do Coop, pra resolver saídas 'prev'/'next'.
 export const REGION_LIST_ORDER:Record<string,number>={campos_dourados:1,floresta_lunargenta:2,khar_dur:3,montanhas_cinzentas:4,pico_escarlate:5,terras_mortas:6,coracao_eclipse:7}
+// Planícies de Alvora é a região inicial e sempre fica aberta no mapa-mundi, de qualquer lugar
+// (viagem rápida no marcador, na lista lateral e nas sub-regiões) -- é o ponto de retorno seguro
+// do jogador. As demais regiões com mapa navegável só abrem caminhando a partir da região atual.
+export const HOME_REGION_ID='campos_dourados'
+export function canFastTravelToRegion(regionId:string,currentRegionId:string,hasWalkableMap:boolean){return !hasWalkableMap||regionId===currentRegionId||regionId===HOME_REGION_ID}
 export function regionListSort(a:Territory,b:Territory){return (REGION_LIST_ORDER[a.id]??a.dificuldade)-(REGION_LIST_ORDER[b.id]??b.dificuldade)||a.dificuldade-b.dificuldade}
 // q_cross_oceans só pode ser ENTREGUE em Frostgard (Steelmere) -- Capitã Vanya, o alvo da
 // entrega, mora lá (ver npcs.ts). Antes esta função só liberava o mundo quando a missão já
@@ -150,7 +155,7 @@ const starter: Record<string,{equipped:Partial<Record<Slot,string>>, items:Recor
 // que uma campanha nova é criada (newGame) e pode ser refeito a qualquer momento pelo botão
 // na tela de Tutorial. tourStep undefined = tour inativo; um índice válido = passo atual.
 export const TOUR_STEPS:{screen:Screen;title:string;text:string;highlights:string[];tip:string}[] = [
- {screen:'map',title:'Comece pelo Mapa',text:'Explore Havendown e Steelmere por regiões e sub-regiões. Em Havendown você caminha de verdade pelo mapa (WASD, setas ou clique) e passa de uma região pra outra pelas saídas nas bordas, sem precisar voltar ao mapa-mundi.',highlights:['Viagem rápida some até você derrotar todos os chefes da região','Chefes, masmorras e revanche progressiva'],tip:'Comece por Planícies de Alvora, a única região sempre liberada para viagem rápida.'},
+ {screen:'map',title:'Comece pelo Mapa',text:'Explore Havendown e Steelmere por regiões e sub-regiões. Em Havendown você caminha de verdade pelo mapa (WASD, setas ou clique) e passa de uma região pra outra pelas saídas nas bordas, sem precisar voltar ao mapa-mundi.',highlights:['Planícies de Alvora está sempre aberta para viagem rápida','Chefes, masmorras e revanche progressiva'],tip:'Comece por Planícies de Alvora: ela nunca se fecha, então você sempre pode voltar por lá.'},
  {screen:'character',title:'Construa seu herói',text:'Na Ficha você distribui atributos, consulta habilidades e transforma uma das nove classes em uma build própria.',highlights:['12 talentos desbloqueados até o nível 90','Especializações nos níveis 10, 25, 50 e 75'],tip:'Vida, Ataque e Defesa têm efeitos diferentes; leia o resumo antes de investir.'},
  {screen:'inventory',title:'Prepare a Mochila',text:'Consumíveis e equipamentos guardados ficam aqui. Poções, elixires, óleos e utilitários podem mudar uma luta difícil.',highlights:['Consumíveis não ocupam espaços de equipamento','A bolsa equipada define a capacidade'],tip:'Leve cura antes de enfrentar um chefe ou entrar em uma masmorra.'},
  {screen:'equipment',title:'Monte sua build',text:'Equipe até dez slots, compare atributos e respeite requisitos de nível, classe e afinidade.',highlights:['Conjuntos concedem bônus combinados','Elementos, resistências, pedras e efeitos ativos'],tip:'O maior Ataque nem sempre vence uma boa combinação de conjunto e resistência.'},

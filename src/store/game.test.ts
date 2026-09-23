@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, TOUR_STEPS, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
+import { useGame, TERRITORIES, TOUR_STEPS, HOME_REGION_ID, canFastTravelToRegion, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
 import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
@@ -1497,5 +1497,36 @@ describe('tour guiado', () => {
     useGame.getState().endTour()
     expect(useGame.getState().tourStep).toBeUndefined()
     expect(useGame.getState().screen).toBe(TOUR_STEPS[3].screen)
+  })
+})
+
+describe('Planícies de Alvora sempre disponível', () => {
+  it('a região inicial é campos_dourados e existe no catálogo de territórios', () => {
+    expect(HOME_REGION_ID).toBe('campos_dourados')
+    expect(TERRITORIES.some(t => t.id === HOME_REGION_ID && (t.mundo ?? 'havendown') === 'havendown')).toBe(true)
+  })
+  it('abre por viagem rápida de qualquer região, mesmo com mapa navegável e sem ser a região atual', () => {
+    for (const current of ['floresta_lunargenta', 'khar_dur', 'coracao_eclipse', HOME_REGION_ID]) {
+      expect(canFastTravelToRegion(HOME_REGION_ID, current, true)).toBe(true)
+    }
+  })
+  it('as demais regiões com mapa navegável continuam fechadas, exceto a região atual', () => {
+    expect(canFastTravelToRegion('floresta_lunargenta', 'campos_dourados', true)).toBe(false)
+    expect(canFastTravelToRegion('coracao_eclipse', 'campos_dourados', true)).toBe(false)
+    expect(canFastTravelToRegion('floresta_lunargenta', 'floresta_lunargenta', true)).toBe(true)
+  })
+  it('regiões sem mapa navegável seguem abertas como antes', () => {
+    expect(canFastTravelToRegion('qualquer_regiao_sem_mapa', 'campos_dourados', false)).toBe(true)
+  })
+  it('newGame começa em Planícies de Alvora e reabri-la pelo mapa funciona de outra região', () => {
+    useGame.getState().newGame('guerreiro')
+    expect(useGame.getState().regionId).toBe(HOME_REGION_ID)
+    const far = TERRITORIES.find(t => t.id === 'floresta_lunargenta')!
+    useGame.getState().openRegion(far)
+    expect(useGame.getState().regionId).toBe('floresta_lunargenta')
+    const home = TERRITORIES.find(t => t.id === HOME_REGION_ID)!
+    useGame.getState().openRegion(home)
+    expect(useGame.getState().regionId).toBe(HOME_REGION_ID)
+    expect(useGame.getState().screen).toBe('region')
   })
 })

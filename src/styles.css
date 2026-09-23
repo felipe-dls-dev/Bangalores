@@ -2130,6 +2130,7 @@ body::after{content:"VERSÃO 0.8.103 • 23/09/2026\A Fix: Golpe Supremo do Guar
 body::after{content:"VERSÃO 0.8.104 • 23/09/2026\A Segundo lote de sprites do Codex: Arcanista (Descanso/Ataque/Ascensao Arcana/Supremo Arcano) e Sacerdotisa (Descanso/Ataque/Bencao da Vida/Julgamento da Aurora) ganham idle/ataque/habilidade/supremo proprios; Cacador, Monge e Conjurador ganham o golpe supremo (Marca do Predador/Golpe Flamejante/Fera Espectral); corrigido bug real onde a Sacerdotisa caia em sprites de defesa/dano corrompidos";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.105 • 23/09/2026\A Fix: animacoes de Habilidade de classe (Provocar, Impeto Marcial, Ascensao Arcana, Marca do Predador, Bencao da Vida etc.) e de Esquiva nunca apareciam em nenhum heroi (isUsingSkill nunca era passado, e Esquiva nao tinha valor 'dodged' no sistema de dano); tambem corrigido corte de cabeca nos sprites de Arcanista/Sacerdotisa/Cacador/Monge/Conjurador (regra CSS generica .fighter img vencia a do sprite)";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.106 • 23/09/2026\A Ao concluir o tour guiado, o jogador agora segue direto para a tela do Mapa (Pular/Esc continuam deixando na tela atual)";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.107 • 23/09/2026\A Planícies de Alvora agora está sempre disponível no mapa-mundi: o marcador, a lista lateral e as sub-regiões abrem de qualquer região, sem precisar caminhar de volta";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
