@@ -1,0 +1,39 @@
+SPRITE SHEET - GUARDIAO - POSTURA DE BATALHA / DESCANSO
+
+Objetivo:
+Gerar a sprite sheet de postura de batalha do Guardiao, com movimento sutil de respiro e balanco corporal.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada em varias trancas.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto e pesado na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor, leitura clara da silhueta.
+- Personagem inteiro, mesma identidade, escala e equipamento em todos os frames.
+
+Animacao:
+Criar exatamente 6 frames de postura de batalha em loop, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda neutra e firme, joelhos flexionados, escudo avancado e martelo baixo.
+2. Inspiracao leve: ombros e peito sobem poucos pixels.
+3. Peso se desloca suavemente para frente, angulo do escudo e do martelo muda um pouco.
+4. Pico do respiro: torso mais alto e pequenos movimentos na barba e no tabardo.
+5. Expiracao: ombros descem e tecido/armadura assentam suavemente.
+6. Retorno quase identico ao frame 1, pronto para repetir sem salto.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 2 linhas.
+- 6 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem fundo, cenario, sombra de chao, efeitos, impactos, texto ou marca d'agua.
+
+Arquivos:
+- Descanso.png: versao final com padding interno.
+- Descanso_raw_generated.png: bruto gerado pela IA.
+- Descanso_normalized_no_padding.png: versao intermediaria antes do padding interno.

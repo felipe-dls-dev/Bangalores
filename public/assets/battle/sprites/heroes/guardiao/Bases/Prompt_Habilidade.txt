@@ -1,0 +1,40 @@
+SPRITE SHEET - GUARDIAO - HABILIDADE COMUM / INVESTIDA DE ESCUDO
+
+Objetivo:
+Gerar a sprite sheet da habilidade comum do Guardiao como uma investida curta de escudo.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Mesmo nivel visual, escala e identidade de `Defesa.png`.
+
+Animacao:
+Criar exatamente 8 frames de investida de escudo, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda inicial.
+2. Joelhos comprimem e o escudo recua pouco.
+3. Torso baixa atras do escudo.
+4. Primeiro passo para frente.
+5. Investida curta de escudo para a direita.
+6. Continuidade baixa do movimento, com escudo estendido.
+7. Recuperacao controlada.
+8. Retorno proximo da guarda.
+
+Layout:
+- PNG transparente.
+- Grade 4 colunas x 2 linhas.
+- 8 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 2048x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem impacto brilhante, magia, rastros, inimigos, sangue, texto ou marca d'agua.
+
+Arquivos:
+- Habilidade.png: versao final com padding interno.
+- Habilidade_raw_generated.png: bruto gerado pela IA.
+- Habilidade_normalized_no_padding.png: versao intermediaria antes do padding interno.

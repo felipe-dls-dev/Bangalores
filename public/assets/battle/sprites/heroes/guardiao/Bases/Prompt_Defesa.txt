@@ -1,0 +1,39 @@
+SPRITE SHEET - GUARDIAO - DEFESA
+
+Objetivo:
+Gerar a sprite sheet da defesa do Guardiao com escudo-torre runico.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor e leitura clara da silhueta.
+- Mesmo nivel visual, escala e identidade de `Descanso.png`.
+
+Animacao:
+Criar exatamente 6 frames de defesa, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda de combate.
+2. Joelhos descem e o escudo comeca a subir.
+3. Corpo se fecha atras do escudo.
+4. Bloqueio completo, escudo voltado para a direita e cobrindo o torso.
+5. Recuo curto de absorcao, com pequeno movimento na barba e no tabardo.
+6. Retorno suave para a guarda.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 2 linhas.
+- 6 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem barreira magica, efeitos, impactos, inimigos, texto ou marca d'agua.
+
+Arquivos:
+- Defesa.png: versao final com padding interno.
+- Defesa_raw_generated.png: bruto gerado pela IA.
+- Defesa_normalized_no_padding.png: versao intermediaria antes do padding interno.

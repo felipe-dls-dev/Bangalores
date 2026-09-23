@@ -1,0 +1,41 @@
+SPRITE SHEET - GUARDIAO - ATAQUE NORMAL
+
+Objetivo:
+Gerar a sprite sheet do ataque normal do Guardiao com martelo de guerra.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto e pesado na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor, leitura clara da silhueta.
+- Mesmo nivel visual, escala e identidade da folha `Descanso.png`.
+
+Animacao:
+Criar exatamente 8 frames de ataque normal, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda inicial com martelo baixo.
+2. Preparacao: joelhos comprimem e o martelo recua.
+3. Torso gira para armar o golpe e o martelo sobe.
+4. Pico da preparacao, martelo alto atras do ombro.
+5. Golpe curto de martelo para a direita, com arco de impacto pequeno e contido.
+6. Continuidade do golpe, corpo avanca e escudo contrabalanca.
+7. Recuperacao: martelo baixa e a postura se recompone.
+8. Retorno proximo da guarda inicial.
+
+Layout:
+- PNG transparente.
+- Grade 4 colunas x 2 linhas.
+- 8 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 2048x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba, tabardo ou arco de impacto pode invadir a celula vizinha.
+- Sem cenario, inimigos, sangue, texto ou marca d'agua.
+
+Arquivos:
+- Ataque.png: versao final com padding interno.
+- Ataque_raw_generated.png: bruto gerado pela IA.
+- Ataque_normalized_no_padding.png: versao intermediaria antes do padding interno.

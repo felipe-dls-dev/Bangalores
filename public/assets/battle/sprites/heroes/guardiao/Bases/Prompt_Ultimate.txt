@@ -1,0 +1,45 @@
+SPRITE SHEET - GUARDIAO - ULTIMATE / IMPACTO RUNICO DO MARTELO
+
+Objetivo:
+Gerar a sprite sheet da habilidade suprema do Guardiao como um impacto vertical de martelo runico.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto e pesado na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Mesmo nivel visual, escala e identidade de `Ataque_Critico.png`.
+
+Animacao:
+Criar exatamente 12 frames de ultimate, lidos da esquerda para a direita em cada linha e depois de cima para baixo:
+1. Guarda inicial.
+2. Base ampla e estavel.
+3. Escudo se ancora.
+4. Martelo recua.
+5. Martelo sobe.
+6. Runas do martelo comecam um brilho azul-dourado compacto.
+7. Carga total acima da cabeca.
+8. Impacto vertical forte e contido no quadro.
+9. Pequeno anel runico no ponto de impacto, preso ao chao do proprio quadro.
+10. Rebate e pos-impacto sem poeira.
+11. Martelo recupera.
+12. Retorno proximo da guarda.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 4 linhas.
+- 12 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x2048 px.
+- Manter margem transparente minima de 32 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, brilho runico, anel de impacto, barba ou tabardo pode invadir a celula vizinha.
+- Efeitos pequenos e locais ao martelo/ponto de impacto.
+- Sem inimigos, sangue, explosoes grandes, feixes, cenario, texto ou marca d'agua.
+
+Arquivos esperados:
+- Ultimate.png: versao final com padding interno.
+- Ultimate_raw_generated.png: bruto gerado pela IA.
+- Ultimate_normalized_no_padding.png: versao intermediaria antes do padding interno.

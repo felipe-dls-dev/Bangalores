@@ -1,0 +1,40 @@
+SPRITE SHEET - GUARDIAO - USO DE POCAO
+
+Objetivo:
+Gerar a sprite sheet do Guardiao usando uma pocao de cura ambar.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda, martelo baixo e seguro, e frasco pequeno de vidro ambar com rolha.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Mesmo nivel visual, escala e identidade de `Descanso.png`.
+
+Animacao:
+Criar exatamente 8 frames de uso de pocao, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda inicial.
+2. Martelo baixa e a mao busca o cinto.
+3. Frasco pequeno e retirado.
+4. Frasco sobe atras do escudo.
+5. Frasco chega a boca e a cabeca inclina levemente.
+6. Frasco vazio baixa.
+7. Frasco volta ao cinto e a postura se recompone.
+8. Retorno proximo da guarda.
+
+Layout:
+- PNG transparente.
+- Grade 4 colunas x 2 linhas.
+- 8 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 2048x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, frasco, barba ou tabardo pode invadir a celula vizinha.
+- Sem aura, cura magica visivel, efeitos, inimigos, texto ou marca d'agua.
+
+Arquivos:
+- Pocao.png: versao final com padding interno.
+- Pocao_raw_generated.png: bruto gerado pela IA.
+- Pocao_normalized_no_padding.png: versao intermediaria antes do padding interno.

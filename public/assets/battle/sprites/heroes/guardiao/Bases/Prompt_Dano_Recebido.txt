@@ -1,0 +1,36 @@
+SPRITE SHEET - GUARDIAO - DANO RECEBIDO
+
+Objetivo:
+Gerar a sprite sheet da reacao do Guardiao ao receber dano, sem queda.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Mesmo nivel visual, escala e identidade de `Defesa.png`.
+
+Animacao:
+Criar exatamente 4 frames de dano recebido, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Impacto: ombros recuam e o escudo se desloca discretamente.
+2. Pico do recuo: joelhos flexionam, barba e tabardo respondem ao golpe.
+3. Estabilizacao: o corpo recupera o peso e o escudo volta para frente.
+4. Retorno proximo da guarda de combate.
+
+Layout:
+- PNG transparente.
+- Grade 2 colunas x 2 linhas.
+- 4 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1024x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem sangue, ferimentos, inimigos, flashes, efeitos, texto ou marca d'agua.
+
+Arquivos:
+- Dano_Recebido.png: versao final com padding interno.
+- Dano_Recebido_raw_generated.png: bruto gerado pela IA.
+- Dano_Recebido_normalized_no_padding.png: versao intermediaria antes do padding interno.

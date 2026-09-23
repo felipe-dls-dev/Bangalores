@@ -1,0 +1,43 @@
+SPRITE SHEET - GUARDIAO - ATAQUE CRITICO
+
+Objetivo:
+Gerar a sprite sheet do ataque critico do Guardiao com martelo de guerra.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto e pesado na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Contorno escuro forte, volumes em bandas de cor e leitura clara da silhueta.
+- Mesmo nivel visual, escala e identidade de `Descanso.png` e `Ataque_v2.png`.
+
+Animacao:
+Criar exatamente 10 frames de ataque critico, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda inicial.
+2. Joelhos comprimem e o martelo recua.
+3. Torso arma o golpe e o martelo sobe.
+4. Preparacao alta.
+5. Martelo totalmente elevado.
+6. Golpe diagonal forte e compacto para a direita.
+7. Continuidade baixa e pesada do golpe.
+8. Recuo do corpo e do martelo.
+9. Recomposicao da guarda.
+10. Retorno proximo do primeiro frame.
+
+Layout:
+- PNG transparente.
+- Grade 5 colunas x 2 linhas.
+- 10 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 2560x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem efeitos, inimigos, sangue, texto ou marca d'agua.
+
+Arquivos:
+- Ataque_Critico.png: versao final com padding interno.
+- Ataque_Critico_raw_generated.png: bruto gerado pela IA.
+- Ataque_Critico_normalized_no_padding.png: versao intermediaria antes do padding interno.

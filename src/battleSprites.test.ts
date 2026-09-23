@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   BATTLE_ANIMATION_CONFIG,
   DRUID_ANIMATION_OVERRIDES,
+  GUARDIAN_ANIMATION_OVERRIDES,
   HERO_SPRITE_CANVAS,
   INITIAL_SPRITE_PLAYBACK,
   ROGUE_ANIMATION_OVERRIDES,
@@ -198,6 +199,29 @@ describe('getSpriteStateConfig', () => {
     expect(getSpriteStateConfig('heroes', 'cacadora', 'dodge')).toBe(BATTLE_ANIMATION_CONFIG.dodge)
   })
 
+  it('returns the guardian (guardiao) frame counts of the 13 complete sheets in Bases/', () => {
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'idle').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'attack').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'heavy').frames).toBe(10)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'defend').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'dodge').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'potion').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'skill').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'stance_offensive').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'stance_defensive').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'ultimate').frames).toBe(12)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'defeat').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'victory').frames).toBe(8)
+    // ao contrário dos outros heróis, o guardião tem folha própria de Dano_Recebido: não reaproveita a Defesa
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'hit').frames).toBe(4)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'hit').frames).not.toBe(getSpriteStateConfig('heroes', 'guardiao', 'defend').frames)
+  })
+
+  it('guardian postures play once and hold the settled pose instead of looping the transition', () => {
+    expect(GUARDIAN_ANIMATION_OVERRIDES.stance_offensive).toMatchObject({ loop: false, holdLastFrame: true })
+    expect(GUARDIAN_ANIMATION_OVERRIDES.stance_defensive).toMatchObject({ loop: false, holdLastFrame: true })
+  })
+
   it('falls back to standard BATTLE_ANIMATION_CONFIG for other heroes or enemies', () => {
     const mageAttack = getSpriteStateConfig('heroes', 'arcanista', 'attack')
     expect(mageAttack.frames).toBe(8)
@@ -257,6 +281,15 @@ describe('getFrameDurationMs', () => {
       expect(total).toBeCloseTo(cfg.durationMs!)
     }
   })
+
+  it('guardian (guardiao) weighted states have one weight per frame and keep the total duration', () => {
+    for (const state of ['attack', 'heavy', 'defend', 'hit', 'dodge', 'potion', 'skill', 'stance_offensive', 'stance_defensive', 'ultimate', 'defeat', 'victory'] as const) {
+      const cfg = GUARDIAN_ANIMATION_OVERRIDES[state]!
+      expect(cfg.frameWeights, state).toHaveLength(cfg.frames)
+      const total = Array.from({ length: cfg.frames }, (_, i) => getFrameDurationMs(cfg, i)).reduce((a, b) => a + b, 0)
+      expect(total).toBeCloseTo(cfg.durationMs!)
+    }
+  })
 })
 
 describe('getSpriteFrameStyle', () => {
@@ -264,6 +297,7 @@ describe('getSpriteFrameStyle', () => {
     expect(getSpriteFrameStyle('heroes', 'guerreiro')).toBeDefined()
     expect(getSpriteFrameStyle('heroes', 'druida')).toBeDefined()
     expect(getSpriteFrameStyle('heroes', 'cacadora')).toBeDefined()
+    expect(getSpriteFrameStyle('heroes', 'guardiao')).toBeDefined()
     expect(getSpriteFrameStyle('heroes', 'monge')).toBeUndefined()
     expect(getSpriteFrameStyle('enemies', 'grumnak')).toBeUndefined()
   })
@@ -290,6 +324,8 @@ describe('warrior frame files on disk', () => {
     expect(getBattleSpriteFramePath('heroes', 'druida', 'hit', 3)).toBe('assets/battle/sprites/heroes/druida/defend_03.png')
     expect(getBattleSpriteFramePath('heroes', 'cacadora', 'hit', 2)).toBe('assets/battle/sprites/heroes/cacadora/defend_02.png')
     expect(getBattleSpriteFramePath('heroes', 'monge', 'hit', 4)).toBe('assets/battle/sprites/heroes/monge/hit_04.png')
+    // o guardião tem folha própria de Dano_Recebido: hit NÃO reaproveita a defesa
+    expect(getBattleSpriteFramePath('heroes', 'guardiao', 'hit', 2)).toBe('assets/battle/sprites/heroes/guardiao/hit_02.png')
   })
 
   const states = ['idle', 'stance_offensive', 'stance_defensive', 'attack', 'heavy', 'defend', 'hit', 'dodge', 'potion', 'skill', 'ultimate', 'victory', 'defeat'] as const
@@ -300,7 +336,7 @@ describe('warrior frame files on disk', () => {
     return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }
   }
 
-  it.each(['guerreiro', 'druida', 'cacadora'])('every frame of every state of %s has the canvas declared in HERO_SPRITE_CANVAS', hero => {
+  it.each(['guerreiro', 'druida', 'cacadora', 'guardiao'])('every frame of every state of %s has the canvas declared in HERO_SPRITE_CANVAS', hero => {
     const meta = HERO_SPRITE_CANVAS[hero]!
     for (const state of states) {
       const { frames } = getSpriteStateConfig('heroes', hero, state)
@@ -377,6 +413,22 @@ describe('cacadora frame sequences (states without their own sheet)', () => {
     expect(getBattleSpriteFramePath('heroes', 'cacadora', 'skill', 9)).toBe('assets/battle/sprites/heroes/cacadora/heavy_09.png')
     expect(getBattleSpriteFramePath('heroes', 'cacadora', 'dodge', 99)).toBe('assets/battle/sprites/heroes/cacadora/idle_00.png')
     expect(getBattleSpriteFramePath('heroes', 'cacadora', 'attack', 3)).toBe('assets/battle/sprites/heroes/cacadora/attack_03.png')
+  })
+})
+
+describe('guardian (guardiao) has no stand-in frames: all 13 states have their own sheet', () => {
+  it('does not appear in SPRITE_FRAME_SEQUENCES or SPRITE_STATE_FRAME_ALIAS', () => {
+    expect(SPRITE_FRAME_SEQUENCES['heroes/guardiao']).toBeUndefined()
+  })
+
+  it('resolves every state to a file named after that same state', () => {
+    for (const state of Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]) {
+      const { frames } = getSpriteStateConfig('heroes', 'guardiao', state)
+      for (let i = 0; i < frames; i++) {
+        const padded = String(i).padStart(2, '0')
+        expect(getBattleSpriteFramePath('heroes', 'guardiao', state, i)).toBe(`assets/battle/sprites/heroes/guardiao/${state}_${padded}.png`)
+      }
+    }
   })
 })
 

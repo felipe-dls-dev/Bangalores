@@ -1,0 +1,38 @@
+SPRITE SHEET - GUARDIAO - ESQUIVA
+
+Objetivo:
+Gerar a sprite sheet da esquiva do Guardiao como um passo curto e pesado de recuo.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Mesmo nivel visual, escala e identidade de `Defesa.png`.
+
+Animacao:
+Criar exatamente 6 frames de esquiva, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda inicial.
+2. Joelhos comprimem e o peso se desloca para tras.
+3. Inicio do passo curto de recuo para a esquerda, escudo continua voltado para a direita.
+4. Posicao de esquiva baixa e mais recuada.
+5. Recuperacao do corpo para cima.
+6. Retorno para a guarda.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 2 linhas.
+- 6 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem efeitos, poeira, rastros, inimigos, texto ou marca d'agua.
+
+Arquivos:
+- Esquiva.png: versao final com padding interno.
+- Esquiva_raw_generated.png: bruto gerado pela IA.
+- Esquiva_normalized_no_padding.png: versao intermediaria antes do padding interno.

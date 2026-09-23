@@ -145,10 +145,85 @@ export const ROGUE_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, Spr
   },
 }
 
+/**
+ * Sobrescritas do Guardião com base nas folhas de Bases/ (scripts/extract_guardian_bases.py). Ao
+ * contrário do druida e da caçadora, o Codex entregou as 13 folhas COMPLETAS: nenhum estado precisa
+ * de quadro legado nem de alias/sequência montada com poses de outro estado (até o `hit` tem folha
+ * própria, `Dano Recebido.png`; a habilidade comum é `Provocar.png` -- o nome real da habilidade do
+ * Guardião em src/data/herois.json, não "Habilidade" como no prompt). Contagens de quadros vêm das
+ * folhas: Descanso 6, Ataque 8, Critico 10, Defesa 6, Esquiva 6, Dano_Recebido 4, Pocao 8, Provocar 8,
+ * Posturas 6, Ultimate 12, Derrota 8, Vitoria 8.
+ */
+export const GUARDIAN_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
+  idle: { frames: 6, loop: true, fps: 7 },
+  // guarda + preparação (4) -> golpe curto de martelo (2) -> recuperação (2)
+  attack: {
+    frames: 8, loop: false, fps: 8, durationMs: 1700,
+    frameWeights: [1.2, 1.1, 1, 1, 0.5, 0.6, 1, 1.2],
+  },
+  // guarda + preparação (5) -> golpe diagonal forte (2) -> recuperação (3)
+  heavy: {
+    frames: 10, loop: false, fps: 8, durationMs: 2000,
+    frameWeights: [1.2, 1.1, 1, 1, 0.9, 0.5, 0.55, 0.8, 1, 1.2],
+  },
+  // guarda (3) -> bloqueio completo, segura mais (1) -> recuo de absorção + retorno (2)
+  defend: {
+    frames: 6, loop: false, fps: 9, durationMs: 1000,
+    frameWeights: [0.8, 0.8, 0.9, 1.4, 1, 0.9],
+  },
+  // impacto (1) -> pico do recuo, segura mais (1) -> estabilização + retorno (2)
+  hit: {
+    frames: 4, loop: false, fps: 9, durationMs: 700,
+    frameWeights: [0.8, 1.3, 1, 0.9],
+  },
+  // guarda + recuo (3) -> esquiva baixa, segura mais (1) -> recuperação + retorno (2)
+  dodge: {
+    frames: 6, loop: false, fps: 10, durationMs: 800,
+    frameWeights: [0.9, 0.9, 1, 1.2, 1, 0.9],
+  },
+  // guarda + saca o frasco (4) -> bebe, segura mais (1) -> guarda o frasco + retorno (3)
+  potion: {
+    frames: 8, loop: false, fps: 8, durationMs: 1900,
+    frameWeights: [1, 1, 1, 1, 1.5, 1, 1, 1.1],
+  },
+  // investida de escudo (Provocar): mesmo ritmo do ataque normal
+  skill: {
+    frames: 8, loop: false, fps: 8, durationMs: 1700,
+    frameWeights: [1.2, 1.1, 1, 0.9, 0.5, 0.6, 1, 1.2],
+  },
+  // transição de guarda pra postura (não é loop de respiro como nos outros heróis: a folha própria
+  // do Guardião vai de guarda neutra até a postura assumida e PARA lá, então toca uma vez e segura
+  // o último quadro em vez de repetir a transição inteira).
+  stance_offensive: {
+    frames: 6, loop: false, holdLastFrame: true, fps: 8, durationMs: 900,
+    frameWeights: [1, 1, 1, 1, 1.1, 1.3],
+  },
+  stance_defensive: {
+    frames: 6, loop: false, holdLastFrame: true, fps: 8, durationMs: 900,
+    frameWeights: [1, 1, 1, 1, 1.1, 1.3],
+  },
+  // base + carga das runas (6) -> carga total, segura mais (1) -> impacto seco (1) -> pós-impacto (3)
+  ultimate: {
+    frames: 12, loop: false, fps: 8, durationMs: 2600,
+    frameWeights: [1.1, 1, 1, 1, 1, 1.2, 1.6, 0.4, 0.6, 0.9, 1.1, 1.4],
+  },
+  // recuo + desequilíbrio (4) -> queda (2, rápida) -> pousa e segura o final (2)
+  defeat: {
+    frames: 8, loop: false, holdLastFrame: true, fps: 8, durationMs: 2200,
+    frameWeights: [1, 1, 1, 0.9, 0.6, 0.8, 1, 1.4],
+  },
+  // guarda + planta o escudo (4) -> saudação com o martelo (2) -> pose orgulhosa, segura o final (2)
+  victory: {
+    frames: 8, loop: false, holdLastFrame: true, fps: 8, durationMs: 2200,
+    frameWeights: [1, 1, 1, 1, 1, 1.1, 1.2, 1.4],
+  },
+}
+
 const HERO_ANIMATION_OVERRIDES: Record<string, Partial<Record<BattleAnimationState, SpriteStateConfig>>> = {
   guerreiro: WARRIOR_ANIMATION_OVERRIDES,
   druida: DRUID_ANIMATION_OVERRIDES,
   cacadora: ROGUE_ANIMATION_OVERRIDES,
+  guardiao: GUARDIAN_ANIMATION_OVERRIDES,
 }
 
 /**
@@ -231,14 +306,17 @@ export interface SpriteCanvasMeta {
 }
 
 // bodyHeight é só a referência de escala (px do canvas que ocupam bodyFraction do palco): guerreiro,
-// druida e caçadora usam ~198-200, então 1 px de canvas vale quase o mesmo na carta e os três têm
-// porte parecido. Druida e caçadora têm canvas próprio: o druida é mais alto por causa do cajado
+// druida, caçadora e guardião usam ~198-200, então 1 px de canvas vale quase o mesmo na carta e os
+// quatro têm porte parecido. Cada um com canvas próprio: o druida é mais alto por causa do cajado
 // erguido e do halo do orbe (scripts/extract_druid_bases.py); a caçadora é mais baixa e estreita,
-// sem arma de alcance nem efeito erguido acima da cabeça (scripts/extract_rogue_bases.py).
+// sem arma de alcance nem efeito erguido acima da cabeça (scripts/extract_rogue_bases.py); o guardião
+// precisa de bem mais espaço acima da cabeça que os outros três por causa do escudo-torre erguido e
+// do martelo no ápice do golpe supremo (scripts/extract_guardian_bases.py).
 export const HERO_SPRITE_CANVAS: Partial<Record<string, SpriteCanvasMeta>> = {
   guerreiro: { width: 448, height: 332, anchorX: 196, groundY: 301, bodyHeight: 198 },
   druida: { width: 400, height: 410, anchorX: 170, groundY: 380, bodyHeight: 198 },
   cacadora: { width: 425, height: 265, anchorX: 185, groundY: 245, bodyHeight: 200 },
+  guardiao: { width: 395, height: 345, anchorX: 215, groundY: 325, bodyHeight: 200 },
 }
 
 /**

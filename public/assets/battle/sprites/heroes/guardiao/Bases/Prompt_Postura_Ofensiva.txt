@@ -1,0 +1,38 @@
+SPRITE SHEET - GUARDIAO - POSTURA OFENSIVA
+
+Objetivo:
+Gerar a sprite sheet da transicao do Guardiao para postura ofensiva.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Mesmo nivel visual, escala e identidade de `Ataque_v2.png`.
+
+Animacao:
+Criar exatamente 6 frames de transicao para postura ofensiva, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda normal.
+2. Pe da frente avanca e joelhos flexionam.
+3. Escudo muda para uma posicao mais lateral.
+4. Martelo sobe para uma posicao pronta.
+5. Postura ofensiva clara: peso a frente, martelo alto e escudo protegendo o lado.
+6. Postura agressiva se estabiliza com pequeno movimento na barba e no tabardo.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 2 linhas.
+- 6 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem golpe, efeitos, magia, inimigos, texto ou marca d'agua.
+
+Arquivos:
+- Postura_Ofensiva.png: versao final com padding interno.
+- Postura_Ofensiva_raw_generated.png: bruto gerado pela IA.
+- Postura_Ofensiva_normalized_no_padding.png: versao intermediaria antes do padding interno.

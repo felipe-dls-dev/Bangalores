@@ -1,0 +1,38 @@
+SPRITE SHEET - GUARDIAO - POSTURA DEFENSIVA
+
+Objetivo:
+Gerar a sprite sheet da transicao do Guardiao para postura defensiva.
+
+Personagem:
+- Guardiao veterano, largo e muito forte, de cabelo grisalho comprido e barba grisalha trancada.
+- Armadura de placas em grafite escuro com detalhes geometricos dourados e tabardo azul profundo.
+- Escudo-torre retangular runico na mao esquerda e martelo de guerra curto baixo na mao direita.
+- Direcao lateral de combate, voltado para a direita.
+
+Estilo:
+- Pixel art detalhada de luta arcade dos anos 90, inspirada em The King of Fighters 99 / Neo Geo.
+- Mesmo nivel visual, escala e identidade de `Defesa.png`.
+
+Animacao:
+Criar exatamente 6 frames de transicao para postura defensiva, lidos da esquerda para a direita, linha superior primeiro e depois linha inferior:
+1. Guarda normal.
+2. Pes se afastam e joelhos abaixam.
+3. Martelo baixa mais perto do chao.
+4. Escudo se move para o centro do corpo.
+5. Postura defensiva clara: escudo quadrado para frente, torso protegido e base baixa.
+6. Postura se estabiliza com pequeno movimento na barba e no tabardo.
+
+Layout:
+- PNG transparente.
+- Grade 3 colunas x 2 linhas.
+- 6 sprites, sem celulas vazias.
+- Cada celula final tem 512x512 px.
+- Tamanho final: 1536x1024 px.
+- Manter margem transparente minima de 24 px em cada celula.
+- Nenhuma parte do corpo, escudo, martelo, barba ou tabardo pode invadir a celula vizinha.
+- Sem barreira, energia, magia, impactos, inimigos, texto ou marca d'agua.
+
+Arquivos:
+- Postura_Defensiva.png: versao final com padding interno.
+- Postura_Defensiva_raw_generated.png: bruto gerado pela IA.
+- Postura_Defensiva_normalized_no_padding.png: versao intermediaria antes do padding interno.
