@@ -58,26 +58,36 @@ export const BATTLE_ANIMATION_CONFIG: Record<BattleAnimationState, SpriteStateCo
 /**
  * Sobrescritas especializadas para guerreiro com base nos pacotes de alta fidelidade de Bases/
  */
-export const WARRIOR_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
-  idle: { frames: 12, loop: true, fps: 8 },
-  // preparação (5) -> corte (4) -> recuperação (3)
-  attack: {
-    frames: 12, loop: false, fps: 8, durationMs: 1800,
-    frameWeights: [1.3, 1.1, 1, 1, 1, 0.55, 0.45, 0.45, 0.6, 1, 1.2, 1.4],
-  },
-  // preparação (4) -> golpe (4) -> impacto/poeira (4) -> recuperação (5)
-  heavy: {
-    frames: 17, loop: false, fps: 8, durationMs: 2200,
-    frameWeights: [1.3, 1, 1, 1, 0.55, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1, 1, 1, 1.1, 1.3],
-  },
-  defend: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
-  hit: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
-  // salto (5) -> giro (4) -> impacto (4) -> pilar de luz (4, segura o último)
-  ultimate: {
-    frames: 17, loop: false, fps: 7, durationMs: 2400,
-    frameWeights: [1.2, 1, 1, 1, 1, 0.6, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.3, 1.5, 1.7, 2.2],
-  },
-}
+export const WARRIOR_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> =
+  {
+    idle: { frames: 12, loop: true, fps: 8 },
+    // preparação (5) -> corte (4) -> recuperação (3)
+    attack: {
+      frames: 12,
+      loop: false,
+      fps: 8,
+      durationMs: 1800,
+      frameWeights: [1.3, 1.1, 1, 1, 1, 0.55, 0.45, 0.45, 0.6, 1, 1.2, 1.4],
+    },
+    // preparação (4) -> golpe (4) -> impacto/poeira (4) -> recuperação (5)
+    heavy: {
+      frames: 17,
+      loop: false,
+      fps: 8,
+      durationMs: 2200,
+      frameWeights: [1.3, 1, 1, 1, 0.55, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1, 1, 1, 1.1, 1.3],
+    },
+    defend: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
+    hit: { frames: 12, loop: false, fps: 9, durationMs: 1400 },
+    // salto (5) -> giro (4) -> impacto (4) -> pilar de luz (4, segura o último)
+    ultimate: {
+      frames: 17,
+      loop: false,
+      fps: 7,
+      durationMs: 2400,
+      frameWeights: [1.2, 1, 1, 1, 1, 0.6, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.3, 1.5, 1.7, 2.2],
+    },
+  }
 
 /**
  * Sobrescritas do druida (folhas de Bases/ em scripts/extract_druid_bases.py). Contagens de quadros
@@ -87,27 +97,42 @@ export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, Spr
   idle: { frames: 6, loop: true, fps: 6 },
   // preparação (3) -> golpe + crescente (2) -> recuperação (3)
   attack: {
-    frames: 8, loop: false, fps: 8, durationMs: 1800,
+    frames: 8,
+    loop: false,
+    fps: 8,
+    durationMs: 1800,
     frameWeights: [1.3, 1, 1, 0.6, 0.55, 0.8, 1, 1.3],
   },
   // preparação (3) -> orbe carregando (1) -> golpe + crescente (1) -> recuperação (4)
   heavy: {
-    frames: 9, loop: false, fps: 8, durationMs: 2000,
+    frames: 9,
+    loop: false,
+    fps: 8,
+    durationMs: 2000,
     frameWeights: [1.2, 1, 1.2, 1, 1.4, 0.55, 0.8, 1, 1.2],
   },
   // guarda (2) -> faíscas (1) -> escudo crescendo 35% e 65% (2) -> escudo cheio, segura mais (1)
   // -> dissipa (1) -> retorno (1)
   defend: {
-    frames: 8, loop: false, fps: 10, durationMs: 1100,
+    frames: 8,
+    loop: false,
+    fps: 10,
+    durationMs: 1100,
     frameWeights: [0.7, 0.7, 0.7, 0.7, 0.8, 1.6, 0.9, 1],
   },
   hit: {
-    frames: 8, loop: false, fps: 10, durationMs: 1100,
+    frames: 8,
+    loop: false,
+    fps: 10,
+    durationMs: 1100,
     frameWeights: [0.7, 0.7, 0.7, 0.7, 0.8, 1.6, 0.9, 1],
   },
   // raízes (3) -> aura de galhos (3) -> liberação + crescente (3) -> recuperação (3)
   ultimate: {
-    frames: 12, loop: false, fps: 8, durationMs: 2600,
+    frames: 12,
+    loop: false,
+    fps: 8,
+    durationMs: 2600,
     frameWeights: [1.2, 1, 1.1, 1, 1, 1.3, 1, 0.55, 0.55, 0.8, 0.9, 1.3],
   },
 }
@@ -121,26 +146,41 @@ export const ROGUE_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, Spr
   idle: { frames: 6, loop: true, fps: 7 },
   // guarda (2) -> avanço + dois cortes (3) -> extensão total (1) -> recuperação (2)
   attack: {
-    frames: 8, loop: false, fps: 8, durationMs: 1600,
+    frames: 8,
+    loop: false,
+    fps: 8,
+    durationMs: 1600,
     frameWeights: [1.2, 1.1, 0.9, 0.6, 0.55, 0.7, 1, 1.2],
   },
   // guarda + agachamento (3) -> dash + corte + giro (3) -> impacto crítico (1) -> recuperação (3)
   heavy: {
-    frames: 10, loop: false, fps: 8, durationMs: 1900,
+    frames: 10,
+    loop: false,
+    fps: 8,
+    durationMs: 1900,
     frameWeights: [1.1, 1, 0.9, 0.55, 0.5, 0.5, 0.6, 0.8, 1, 1.2],
   },
   // guarda (1) -> recuo (1) -> adagas sobem (1) -> contato do parry, brilho (1) -> absorção (1) -> retorno (1)
   defend: {
-    frames: 6, loop: false, fps: 10, durationMs: 1000,
+    frames: 6,
+    loop: false,
+    fps: 10,
+    durationMs: 1000,
     frameWeights: [0.8, 0.8, 0.9, 1.3, 1, 0.9],
   },
   hit: {
-    frames: 6, loop: false, fps: 10, durationMs: 1000,
+    frames: 6,
+    loop: false,
+    fps: 10,
+    durationMs: 1000,
     frameWeights: [0.8, 0.8, 0.9, 1.3, 1, 0.9],
   },
   // carga sombria (3) -> shadow-step + dois cortes (3) -> multi-strike + impacto crítico (2) -> recuperação (4)
   ultimate: {
-    frames: 12, loop: false, fps: 7, durationMs: 2400,
+    frames: 12,
+    loop: false,
+    fps: 7,
+    durationMs: 2400,
     frameWeights: [1.2, 1, 1.1, 1, 1, 1.3, 1, 0.55, 0.6, 0.9, 1, 1.3],
   },
 }
@@ -154,72 +194,117 @@ export const ROGUE_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, Spr
  * folhas: Descanso 6, Ataque 8, Critico 10, Defesa 6, Esquiva 6, Dano_Recebido 4, Pocao 8, Provocar 8,
  * Posturas 6, Ultimate 12, Derrota 8, Vitoria 8.
  */
-export const GUARDIAN_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
+export const GUARDIAN_ANIMATION_OVERRIDES: Partial<
+  Record<BattleAnimationState, SpriteStateConfig>
+> = {
   idle: { frames: 6, loop: true, fps: 7 },
   // guarda + preparação (4) -> golpe curto de martelo (2) -> recuperação (2)
   attack: {
-    frames: 8, loop: false, fps: 8, durationMs: 1700,
+    frames: 8,
+    loop: false,
+    fps: 8,
+    durationMs: 1700,
     frameWeights: [1.2, 1.1, 1, 1, 0.5, 0.6, 1, 1.2],
   },
   // guarda + preparação (5) -> golpe diagonal forte (2) -> recuperação (3)
   heavy: {
-    frames: 10, loop: false, fps: 8, durationMs: 2000,
+    frames: 10,
+    loop: false,
+    fps: 8,
+    durationMs: 2000,
     frameWeights: [1.2, 1.1, 1, 1, 0.9, 0.5, 0.55, 0.8, 1, 1.2],
   },
   // guarda (3) -> bloqueio completo, segura mais (1) -> recuo de absorção + retorno (2)
   defend: {
-    frames: 6, loop: false, fps: 9, durationMs: 1000,
+    frames: 6,
+    loop: false,
+    fps: 9,
+    durationMs: 1000,
     frameWeights: [0.8, 0.8, 0.9, 1.4, 1, 0.9],
   },
   // impacto (1) -> pico do recuo, segura mais (1) -> estabilização + retorno (2)
   hit: {
-    frames: 4, loop: false, fps: 9, durationMs: 700,
+    frames: 4,
+    loop: false,
+    fps: 9,
+    durationMs: 700,
     frameWeights: [0.8, 1.3, 1, 0.9],
   },
   // guarda + recuo (3) -> esquiva baixa, segura mais (1) -> recuperação + retorno (2)
   dodge: {
-    frames: 6, loop: false, fps: 10, durationMs: 800,
+    frames: 6,
+    loop: false,
+    fps: 10,
+    durationMs: 800,
     frameWeights: [0.9, 0.9, 1, 1.2, 1, 0.9],
   },
   // guarda + saca o frasco (4) -> bebe, segura mais (1) -> guarda o frasco + retorno (3)
   potion: {
-    frames: 8, loop: false, fps: 8, durationMs: 1900,
+    frames: 8,
+    loop: false,
+    fps: 8,
+    durationMs: 1900,
     frameWeights: [1, 1, 1, 1, 1.5, 1, 1, 1.1],
   },
   // investida de escudo (Provocar): mesmo ritmo do ataque normal
   skill: {
-    frames: 8, loop: false, fps: 8, durationMs: 1700,
+    frames: 8,
+    loop: false,
+    fps: 8,
+    durationMs: 1700,
     frameWeights: [1.2, 1.1, 1, 0.9, 0.5, 0.6, 1, 1.2],
   },
   // transição de guarda pra postura (não é loop de respiro como nos outros heróis: a folha própria
   // do Guardião vai de guarda neutra até a postura assumida e PARA lá, então toca uma vez e segura
   // o último quadro em vez de repetir a transição inteira).
   stance_offensive: {
-    frames: 6, loop: false, holdLastFrame: true, fps: 8, durationMs: 900,
+    frames: 6,
+    loop: false,
+    holdLastFrame: true,
+    fps: 8,
+    durationMs: 900,
     frameWeights: [1, 1, 1, 1, 1.1, 1.3],
   },
   stance_defensive: {
-    frames: 6, loop: false, holdLastFrame: true, fps: 8, durationMs: 900,
+    frames: 6,
+    loop: false,
+    holdLastFrame: true,
+    fps: 8,
+    durationMs: 900,
     frameWeights: [1, 1, 1, 1, 1.1, 1.3],
   },
   // base + carga das runas (6) -> carga total, segura mais (1) -> impacto seco (1) -> pós-impacto (3)
   ultimate: {
-    frames: 12, loop: false, fps: 8, durationMs: 2600,
+    frames: 12,
+    loop: false,
+    fps: 8,
+    durationMs: 2600,
     frameWeights: [1.1, 1, 1, 1, 1, 1.2, 1.6, 0.4, 0.6, 0.9, 1.1, 1.4],
   },
   // recuo + desequilíbrio (4) -> queda (2, rápida) -> pousa e segura o final (2)
   defeat: {
-    frames: 8, loop: false, holdLastFrame: true, fps: 8, durationMs: 2200,
+    frames: 8,
+    loop: false,
+    holdLastFrame: true,
+    fps: 8,
+    durationMs: 2200,
     frameWeights: [1, 1, 1, 0.9, 0.6, 0.8, 1, 1.4],
   },
   // guarda + planta o escudo (4) -> saudação com o martelo (2) -> pose orgulhosa, segura o final (2)
   victory: {
-    frames: 8, loop: false, holdLastFrame: true, fps: 8, durationMs: 2200,
+    frames: 8,
+    loop: false,
+    holdLastFrame: true,
+    fps: 8,
+    durationMs: 2200,
     frameWeights: [1, 1, 1, 1, 1, 1.1, 1.2, 1.4],
   },
 }
 
-const HERO_ANIMATION_OVERRIDES: Record<string, Partial<Record<BattleAnimationState, SpriteStateConfig>>> = {
+const HERO_ANIMATION_OVERRIDES: Record<
+  string,
+  Partial<Record<BattleAnimationState, SpriteStateConfig>>
+> = {
   guerreiro: WARRIOR_ANIMATION_OVERRIDES,
   druida: DRUID_ANIMATION_OVERRIDES,
   cacadora: ROGUE_ANIMATION_OVERRIDES,
@@ -263,7 +348,11 @@ export function isOneShotConfig(cfg: SpriteStateConfig): boolean {
 }
 
 /** O pedido do jogo mudou (ou o componente montou). Um pedido novo de ação começa do quadro 0. */
-export function playbackOnRequest(pb: SpritePlayback, requested: BattleAnimationState, oneShot: boolean): SpritePlayback {
+export function playbackOnRequest(
+  pb: SpritePlayback,
+  requested: BattleAnimationState,
+  oneShot: boolean
+): SpritePlayback {
   // derrota tem prioridade absoluta: corta qualquer ação em andamento
   if (requested === 'defeat') return { locked: null, spent: null, frame: 0 }
   if (oneShot) return { locked: requested, spent: null, frame: 0 }
@@ -282,7 +371,11 @@ export function getDisplayedSpriteState(
 }
 
 /** O relógio dos quadros avançou. `cfg` é a configuração do estado exibido (getDisplayedSpriteState). */
-export function playbackOnTick(pb: SpritePlayback, requested: BattleAnimationState, cfg: SpriteStateConfig): SpritePlayback {
+export function playbackOnTick(
+  pb: SpritePlayback,
+  requested: BattleAnimationState,
+  cfg: SpriteStateConfig
+): SpritePlayback {
   const next = pb.frame + 1
   if (next < cfg.frames) return { ...pb, frame: next }
   if (cfg.loop) return { ...pb, frame: 0 }
@@ -380,22 +473,22 @@ export type HeroSpriteId = (typeof HERO_SPRITE_IDS)[number]
  */
 export const ENEMY_NAME_TO_SPRITE_ID: Record<string, string> = {
   'Sentinela Menor das Runas': 'sentinela-runas',
-  'sentinela_runas': 'sentinela-runas',
+  sentinela_runas: 'sentinela-runas',
   'Grumnak, o Cobrador do Pedágio': 'grumnak',
   'Mestre do Pedágio': 'grumnak',
-  'grumnak': 'grumnak',
+  grumnak: 'grumnak',
   'Cabra Amaldiçoada de Malgor': 'cabra-malgor',
-  'cabra_malgor': 'cabra-malgor',
+  cabra_malgor: 'cabra-malgor',
   'Ilusionista das Areias': 'ilusionista-areias',
-  'ilusionista_areias': 'ilusionista-areias',
+  ilusionista_areias: 'ilusionista-areias',
   'Guardiã da Seiva Negra': 'guardia-seiva',
-  'guardia_seiva': 'guardia-seiva',
+  guardia_seiva: 'guardia-seiva',
   'Fanático do Orgulho': 'fanatico-orgulho',
-  'fanatico_orgulho': 'fanatico-orgulho',
+  fanatico_orgulho: 'fanatico-orgulho',
   'Corvo de Ignaroth': 'corvo-ignaroth',
-  'corvo_ignaroth': 'corvo-ignaroth',
+  corvo_ignaroth: 'corvo-ignaroth',
   'Espectro da Rainha Perdida': 'espectro-rainha',
-  'espectro_rainha': 'espectro-rainha',
+  espectro_rainha: 'espectro-rainha',
   // Inimigos e chefes comuns mapeados para os arquétipos visuais gerados
   'Bandido da Estrada': 'grumnak',
   'Lobo dos Campos': 'cabra-malgor',
@@ -442,9 +535,7 @@ export function normalizeEnemySpriteId(rawIdOrName?: string): string {
     return 'grumnak'
   }
 
-  return clean
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  return clean.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
 /**
@@ -483,7 +574,9 @@ export function isBattleSpriteSupported(category: 'heroes' | 'enemies', id: stri
  * Estados que reaproveitam os quadros de outro estado do mesmo lutador (sem arquivos próprios).
  * Guerreiro e druida levam dano com a mesma folha da Defesa.
  */
-const SPRITE_STATE_FRAME_ALIAS: Partial<Record<string, Partial<Record<BattleAnimationState, BattleAnimationState>>>> = {
+const SPRITE_STATE_FRAME_ALIAS: Partial<
+  Record<string, Partial<Record<BattleAnimationState, BattleAnimationState>>>
+> = {
   'heroes/guerreiro': { hit: 'defend' },
   'heroes/druida': { hit: 'defend' },
   'heroes/cacadora': { hit: 'defend' },
@@ -492,7 +585,7 @@ const SPRITE_STATE_FRAME_ALIAS: Partial<Record<string, Partial<Record<BattleAnim
 /** Um quadro de outro estado: [estado, índice do quadro]. */
 export type SpriteFrameRef = readonly [BattleAnimationState, number]
 
-const idleLoop: SpriteFrameRef[] = [0, 1, 2, 3, 4, 5].map(i => ['idle', i] as const)
+const idleLoop: SpriteFrameRef[] = [0, 1, 2, 3, 4, 5].map((i) => ['idle', i] as const)
 
 /**
  * Estados montados a partir de quadros de OUTROS estados (um por quadro da animação). O druida só
@@ -500,17 +593,76 @@ const idleLoop: SpriteFrameRef[] = [0, 1, 2, 3, 4, 5].map(i => ['idle', i] as co
  * folhas até existirem folhas próprias (ver docs/BATTLE_SPRITE_PROMPTS.md). O tamanho de cada lista
  * precisa bater com o `frames` do estado.
  */
-export const SPRITE_FRAME_SEQUENCES: Partial<Record<string, Partial<Record<BattleAnimationState, readonly SpriteFrameRef[]>>>> = {
+export const SPRITE_FRAME_SEQUENCES: Partial<
+  Record<string, Partial<Record<BattleAnimationState, readonly SpriteFrameRef[]>>>
+> = {
   'heroes/druida': {
-    stance_offensive: idleLoop,
-    stance_defensive: idleLoop,
+    stance_offensive: [
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+      ['ultimate', 3],
+    ],
+    stance_defensive: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
     // recua o corpo (cajado para cima) e volta
-    dodge: [['idle', 0], ['attack', 6], ['attack', 6], ['attack', 6], ['idle', 0]],
+    dodge: [
+      ['idle', 0],
+      ['attack', 6],
+      ['attack', 6],
+      ['attack', 6],
+      ['idle', 0],
+    ],
     // cajado erguido com o orbe brilhando
-    potion: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 7], ['idle', 0]],
-    skill: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 4], ['heavy', 7], ['heavy', 8], ['idle', 0]],
-    victory: [['idle', 0], ['heavy', 1], ['heavy', 3], ['heavy', 3], ['heavy', 4], ['heavy', 4], ['heavy', 4], ['heavy', 4]],
-    defeat: [['idle', 0], ['attack', 1], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2], ['heavy', 2]],
+    potion: [
+      ['idle', 0],
+      ['heavy', 1],
+      ['heavy', 3],
+      ['heavy', 4],
+      ['heavy', 4],
+      ['heavy', 7],
+      ['idle', 0],
+    ],
+    skill: [
+      ['idle', 0],
+      ['heavy', 1],
+      ['heavy', 3],
+      ['heavy', 3],
+      ['heavy', 4],
+      ['heavy', 4],
+      ['heavy', 4],
+      ['heavy', 7],
+      ['heavy', 8],
+      ['idle', 0],
+    ],
+    victory: [
+      ['idle', 0],
+      ['heavy', 1],
+      ['heavy', 3],
+      ['heavy', 3],
+      ['heavy', 4],
+      ['heavy', 4],
+      ['heavy', 4],
+      ['heavy', 4],
+    ],
+    defeat: [
+      ['idle', 0],
+      ['attack', 1],
+      ['heavy', 2],
+      ['heavy', 2],
+      ['heavy', 2],
+      ['heavy', 2],
+      ['heavy', 2],
+      ['heavy', 2],
+    ],
   },
   // A caçadora só tem folhas de idle/attack/heavy/defend/ultimate (scripts/extract_rogue_bases.py);
   // os demais estados são montados com poses dessas folhas até existirem folhas próprias.
@@ -518,15 +670,535 @@ export const SPRITE_FRAME_SEQUENCES: Partial<Record<string, Partial<Record<Battl
     stance_offensive: idleLoop,
     stance_defensive: idleLoop,
     // recuo defensivo (Defesa quadro 1) e volta pra guarda
-    dodge: [['idle', 0], ['defend', 1], ['defend', 1], ['defend', 0], ['idle', 0]],
+    dodge: [
+      ['idle', 0],
+      ['defend', 1],
+      ['defend', 1],
+      ['defend', 0],
+      ['idle', 0],
+    ],
     // sem gesto de mão livre em nenhuma folha (as duas seguram adaga sempre): usa o ciclo de respiro
-    potion: [['idle', 0], ['idle', 1], ['idle', 2], ['idle', 3], ['idle', 4], ['idle', 5], ['idle', 0]],
+    potion: [
+      ['idle', 0],
+      ['idle', 1],
+      ['idle', 2],
+      ['idle', 3],
+      ['idle', 4],
+      ['idle', 5],
+      ['idle', 0],
+    ],
     // Ataque Duplo: reaproveita o floreio inteiro do Crítico (10 quadros, 1 pra 1)
-    skill: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => ['heavy', i] as const),
+    skill: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => ['heavy', i] as const),
     // guarda -> pose de contato crítico (adagas estendidas), segura no final
-    victory: [['idle', 0], ['heavy', 2], ['heavy', 4], ['heavy', 5], ['heavy', 5], ['heavy', 5], ['heavy', 5], ['heavy', 5]],
+    victory: [
+      ['idle', 0],
+      ['heavy', 2],
+      ['heavy', 4],
+      ['heavy', 5],
+      ['heavy', 5],
+      ['heavy', 5],
+      ['heavy', 5],
+      ['heavy', 5],
+    ],
     // guarda -> absorção do impacto (Defesa quadro 4), segura no final
-    defeat: [['idle', 0], ['defend', 1], ['defend', 2], ['defend', 4], ['defend', 4], ['defend', 4], ['defend', 4], ['defend', 4]],
+    defeat: [
+      ['idle', 0],
+      ['defend', 1],
+      ['defend', 2],
+      ['defend', 4],
+      ['defend', 4],
+      ['defend', 4],
+      ['defend', 4],
+      ['defend', 4],
+    ],
+  },
+  // A Sacerdotisa possui folhas autorais para descanso, ataque, Bênção da Vida e Supremo. As
+  // ações utilitárias são montadas delas até receberem folhas exclusivas, evitando voltar aos
+  // placeholders antigos durante qualquer estado de combate.
+  'heroes/sacerdotisa': {
+    stance_offensive: idleLoop,
+    stance_defensive: idleLoop,
+    // sem folha própria de defesa/dano: os arquivos legados (defend_*/hit_*.png) ficaram
+    // corrompidos (ilegíveis) e sem isso a Sacerdotisa cairia no card estático nesses dois estados.
+    defend: [
+      ['idle', 0],
+      ['skill', 0],
+      ['skill', 1],
+      ['skill', 0],
+      ['idle', 0],
+    ],
+    hit: [
+      ['idle', 0],
+      ['skill', 1],
+      ['skill', 0],
+      ['idle', 0],
+    ],
+    heavy: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 10],
+    ],
+    dodge: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+    ],
+    potion: [
+      ['idle', 0],
+      ['skill', 0],
+      ['skill', 1],
+      ['skill', 2],
+      ['skill', 3],
+      ['skill', 2],
+      ['skill', 1],
+    ],
+    victory: [
+      ['idle', 0],
+      ['skill', 1],
+      ['skill', 2],
+      ['skill', 3],
+      ['skill', 4],
+      ['skill', 5],
+      ['skill', 6],
+      ['skill', 6],
+    ],
+    defeat: [
+      ['idle', 0],
+      ['attack', 1],
+      ['attack', 2],
+      ['attack', 2],
+      ['attack', 1],
+      ['idle', 0],
+      ['idle', 0],
+      ['idle', 0],
+    ],
+  },
+  'heroes/arcanista': {
+    idle: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    stance_offensive: [
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+      ['ultimate', 3],
+    ],
+    stance_defensive: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    attack: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 5],
+      ['ultimate', 4],
+    ],
+    heavy: [
+      ['attack', 0],
+      ['attack', 1],
+      ['attack', 2],
+      ['attack', 3],
+      ['attack', 3],
+      ['attack', 4],
+      ['attack', 4],
+      ['attack', 5],
+      ['attack', 6],
+      ['attack', 7],
+    ],
+    defend: [
+      ['idle', 0],
+      ['skill', 1],
+      ['skill', 2],
+      ['skill', 1],
+      ['idle', 0],
+    ],
+    hit: [
+      ['idle', 0],
+      ['attack', 1],
+      ['attack', 1],
+      ['idle', 0],
+    ],
+    dodge: [
+      ['idle', 0],
+      ['attack', 1],
+      ['attack', 2],
+      ['attack', 1],
+      ['idle', 0],
+    ],
+    potion: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+    ],
+    skill: [
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 8],
+      ['ultimate', 7],
+      ['ultimate', 6],
+    ],
+    victory: [
+      ['ultimate', 0],
+      ['ultimate', 3],
+      ['ultimate', 5],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 8],
+      ['ultimate', 8],
+      ['ultimate', 8],
+    ],
+    defeat: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 0],
+      ['ultimate', 0],
+    ],
+  },
+  // Caçador, Monge e Conjurador têm uma folha-mestre de 12 poses (repouso, golpe, habilidade e
+  // clímax). Os estados do motor são compostos dela para não exibir os placeholders legados.
+  'heroes/cacador': {
+    idle: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    stance_offensive: [
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+      ['ultimate', 3],
+    ],
+    stance_defensive: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    attack: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 5],
+      ['ultimate', 4],
+    ],
+    heavy: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 10],
+    ],
+    hit: [
+      ['defend', 1],
+      ['defend', 2],
+      ['defend', 1],
+      ['defend', 0],
+    ],
+    dodge: [
+      ['defend', 5],
+      ['defend', 6],
+      ['defend', 7],
+      ['defend', 6],
+      ['defend', 5],
+    ],
+    potion: [
+      ['defend', 8],
+      ['defend', 8],
+      ['defend', 9],
+      ['defend', 9],
+      ['defend', 8],
+      ['defend', 8],
+      ['defend', 8],
+    ],
+    skill: [
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 8],
+      ['ultimate', 7],
+      ['ultimate', 6],
+    ],
+    victory: [
+      ['defend', 10],
+      ['defend', 10],
+      ['defend', 10],
+      ['defend', 10],
+      ['defend', 10],
+      ['defend', 10],
+      ['defend', 10],
+      ['defend', 10],
+    ],
+    defeat: [
+      ['defend', 11],
+      ['defend', 11],
+      ['defend', 11],
+      ['defend', 11],
+      ['defend', 11],
+      ['defend', 11],
+      ['defend', 11],
+      ['defend', 11],
+    ],
+  },
+  'heroes/monge': {
+    idle: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    stance_offensive: [
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+      ['ultimate', 3],
+    ],
+    stance_defensive: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    attack: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 5],
+      ['ultimate', 4],
+    ],
+    heavy: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 10],
+    ],
+    dodge: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+    ],
+    potion: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+    ],
+    skill: [
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 8],
+      ['ultimate', 7],
+      ['ultimate', 6],
+    ],
+    victory: [
+      ['ultimate', 0],
+      ['ultimate', 3],
+      ['ultimate', 5],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 8],
+      ['ultimate', 8],
+      ['ultimate', 8],
+    ],
+    defeat: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 0],
+      ['ultimate', 0],
+    ],
+  },
+  'heroes/conjurador': {
+    idle: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    stance_offensive: [
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+      ['ultimate', 3],
+    ],
+    stance_defensive: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 1],
+    ],
+    attack: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 5],
+      ['ultimate', 4],
+    ],
+    heavy: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 10],
+    ],
+    defend: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+    ],
+    hit: [
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+    ],
+    dodge: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+    ],
+    potion: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 3],
+      ['ultimate', 2],
+    ],
+    skill: [
+      ['ultimate', 3],
+      ['ultimate', 4],
+      ['ultimate', 5],
+      ['ultimate', 6],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 9],
+      ['ultimate', 8],
+      ['ultimate', 7],
+      ['ultimate', 6],
+    ],
+    victory: [
+      ['ultimate', 0],
+      ['ultimate', 3],
+      ['ultimate', 5],
+      ['ultimate', 7],
+      ['ultimate', 8],
+      ['ultimate', 8],
+      ['ultimate', 8],
+      ['ultimate', 8],
+    ],
+    defeat: [
+      ['ultimate', 0],
+      ['ultimate', 1],
+      ['ultimate', 2],
+      ['ultimate', 2],
+      ['ultimate', 1],
+      ['ultimate', 0],
+      ['ultimate', 0],
+      ['ultimate', 0],
+    ],
   },
 }
 
@@ -570,7 +1242,10 @@ const PRELOADED_SPRITE_CACHE = new Set<string>()
  * animação de um lutador, garantindo 0ms de latência e eliminando qualquer
  * salto ou perda de frame durante a execução dos ataques e defesas.
  */
-export function preloadBattleSpriteImages(category: 'heroes' | 'enemies', id: string): Promise<void> {
+export function preloadBattleSpriteImages(
+  category: 'heroes' | 'enemies',
+  id: string
+): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve()
 
   const states: BattleAnimationState[] = [
@@ -665,7 +1340,14 @@ export function resolveFighterAnimationState(ctx: FighterAnimationContext): Batt
 
   // 4. Recebendo ataque do inimigo
   // Toda vez que o herói recebe um ataque do inimigo (shaking ativo, dano ou bloqueio), utiliza a animação Defesa (Defesa.png)
-  if (ctx.side === 'hero' && (ctx.shaking || ctx.impactKind === 'blocked' || ctx.impactKind === 'hit' || ctx.impactKind === 'critical' || ctx.impactKind === 'glance')) {
+  if (
+    ctx.side === 'hero' &&
+    (ctx.shaking ||
+      ctx.impactKind === 'blocked' ||
+      ctx.impactKind === 'hit' ||
+      ctx.impactKind === 'critical' ||
+      ctx.impactKind === 'glance')
+  ) {
     return 'defend'
   }
 

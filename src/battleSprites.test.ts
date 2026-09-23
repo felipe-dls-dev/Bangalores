@@ -1,10 +1,11 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   BATTLE_ANIMATION_CONFIG,
   DRUID_ANIMATION_OVERRIDES,
   GUARDIAN_ANIMATION_OVERRIDES,
   HERO_SPRITE_CANVAS,
+  HERO_SPRITE_IDS,
   INITIAL_SPRITE_PLAYBACK,
   ROGUE_ANIMATION_OVERRIDES,
   SPRITE_FRAME_SEQUENCES,
@@ -438,6 +439,87 @@ describe('guardian (guardiao) has no stand-in frames: all 13 states have their o
         expect(getBattleSpriteFramePath('heroes', 'guardiao', state, i)).toBe(`assets/battle/sprites/heroes/guardiao/${state}_${padded}.png`)
       }
     }
+  })
+})
+
+/**
+ * Segundo lote do Codex: arcanista e sacerdotisa ganharam idle/attack/skill/ultimate próprios;
+ * caçador ganhou ultimate + uma folha de utilidades (Defesa_Utilidades.png, recortada em
+ * defend_*.png); monge e conjurador só ganharam a folha de ultimate. Nenhum dos cinco tem
+ * HERO_SPRITE_CANVAS próprio (o golpe supremo precisa de bem mais margem pros efeitos do que as
+ * outras poses, e só esses heróis não têm as 13 poses cobertas por arte nova o bastante pra
+ * justificar reenquadrar os placeholders legados) -- todos caem no encaixe padrão `contain`.
+ */
+describe('second Codex batch (arcanista, sacerdotisa, cacador, monge, conjurador)', () => {
+  // "own" = resolve direto pra um arquivo válido sem passar por SPRITE_FRAME_SEQUENCES: folha nova
+  // do Codex (arcanista/sacerdotisa idle-attack-skill-ultimate, cacador/monge/conjurador ultimate)
+  // OU sobra dos placeholders legados que continuam válidos (monge ainda tem defend_*/hit_*.png
+  // antigos utilizáveis; cacador tem defend_00..11.png de Defesa_Utilidades.png, um "banco" de
+  // 12 poses que outros estados também recortam por índice, por isso passa de `defend.frames`).
+  const ownStates: Record<string, readonly BattleAnimationState[]> = {
+    arcanista: ['idle', 'attack', 'skill', 'ultimate'],
+    sacerdotisa: ['idle', 'attack', 'skill', 'ultimate'],
+    cacador: ['ultimate', 'defend'],
+    monge: ['ultimate', 'defend', 'hit'],
+    conjurador: ['ultimate'],
+  }
+
+  it.each(Object.keys(ownStates))('%s has no HERO_SPRITE_CANVAS entry (uses the contain fallback)', hero => {
+    expect(HERO_SPRITE_CANVAS[hero]).toBeUndefined()
+  })
+
+  it.each(Object.keys(ownStates))('%s: every SPRITE_FRAME_SEQUENCES entry has one frame per state length', hero => {
+    const sequences = SPRITE_FRAME_SEQUENCES[`heroes/${hero}`]!
+    expect(sequences).toBeDefined()
+    for (const [state, seq] of Object.entries(sequences) as [BattleAnimationState, readonly [BattleAnimationState, number][]][]) {
+      expect(seq, state).toHaveLength(getSpriteStateConfig('heroes', hero, state).frames)
+    }
+  })
+
+  it.each(Object.keys(ownStates))('%s: sequences only point at states it has real sheets for', hero => {
+    const own = ownStates[hero]
+    const sequences = SPRITE_FRAME_SEQUENCES[`heroes/${hero}`]!
+    for (const [state, seq] of Object.entries(sequences)) {
+      for (const [src] of seq!) {
+        expect(own, `${state} -> ${src}`).toContain(src)
+      }
+    }
+    // o índice em si (dentro do arquivo físico, não necessariamente < config.frames do estado
+    // fonte -- caso do "banco de poses" do caçador) é conferido pela existência do arquivo no
+    // describe 'every hero: every referenced frame file exists and is readable' abaixo.
+  })
+
+  it.each(Object.keys(ownStates))('%s covers every state the game can ask for', hero => {
+    const sequences = SPRITE_FRAME_SEQUENCES[`heroes/${hero}`]!
+    const own = ownStates[hero]
+    for (const state of Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]) {
+      expect(Boolean(sequences[state]) || own.includes(state), state).toBe(true)
+    }
+  })
+})
+
+/**
+ * Regressão real achada ao validar este lote: a Sacerdotisa não tinha sequência própria pra
+ * `defend`/`hit`, então caía nos arquivos legados antigos -- que estavam corrompidos (ilegíveis).
+ * Este teste cobre TODOS os heróis (não só os dois lotes recentes) contra qualquer state que resolva
+ * pra um arquivo inexistente ou corrompido, pra pegar esse tipo de lacuna antes de ir pro navegador.
+ */
+describe('every hero: every referenced frame file exists and is readable', () => {
+  const pngSignatureOk = (file: string) => {
+    const buf = readFileSync(file)
+    return buf.length > 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47
+  }
+
+  it.each(HERO_SPRITE_IDS)('%s', hero => {
+    const missing: string[] = []
+    for (const state of Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]) {
+      const { frames } = getSpriteStateConfig('heroes', hero, state)
+      for (let i = 0; i < frames; i++) {
+        const file = `public/${getBattleSpriteFramePath('heroes', hero, state, i)}`
+        if (!existsSync(file) || !pngSignatureOk(file)) missing.push(`${state}[${i}] -> ${file}`)
+      }
+    }
+    expect(missing, missing.join('\n')).toHaveLength(0)
   })
 })
 

@@ -2121,6 +2121,7 @@ body::after{content:"VERSÃO 0.8.100 • 22/09/2026\A Sprites de batalha da Caç
 body::after{content:"VERSÃO 0.8.101 • 22/09/2026\A Fix: menu superior em 2 colunas para nao ultrapassar a altura da tela; corrigido menu abrindo atras de outros elementos no celular";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.102 • 23/09/2026\A Sprites de batalha do Guardiao recortados das 13 folhas completas do Codex (Descanso/Ataque/Critico/Defesa/Esquiva/Dano Recebido/Pocao/Provocar/Posturas/Ultimate/Derrota/Vitoria) e ligados ao combate; e o primeiro heroi com cobertura 100%, sem poses emprestadas de outros estados";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.103 • 23/09/2026\A Fix: Golpe Supremo do Guardiao mostrava a animacao de Defesa por ~1.6s antes de mostrar a de fato (o escudo concedido pelo supremo disparava a mesma regra visual do bloqueio, que tinha prioridade); agora a animacao do supremo toca por completo desde o primeiro quadro";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.104 • 23/09/2026\A Segundo lote de sprites do Codex: Arcanista (Descanso/Ataque/Ascensao Arcana/Supremo Arcano) e Sacerdotisa (Descanso/Ataque/Bencao da Vida/Julgamento da Aurora) ganham idle/ataque/habilidade/supremo proprios; Cacador, Monge e Conjurador ganham o golpe supremo (Marca do Predador/Golpe Flamejante/Fera Espectral); corrigido bug real onde a Sacerdotisa caia em sprites de defesa/dano corrompidos";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
