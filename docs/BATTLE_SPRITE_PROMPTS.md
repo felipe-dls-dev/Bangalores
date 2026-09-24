@@ -221,6 +221,10 @@ Todas as diretrizes e especificações deste documento foram implementadas e val
 
 ## Guerreiro em alta fidelidade (folhas grandes em `Bases/`)
 
+> **Substituída** pela seção "Folhas de 8 quadros do segundo lote do Codex" (fim deste arquivo): o guerreiro agora tem as 13
+> folhas de 8 quadros e `extract_warrior_bases.py` **não deve mais ser rodado** (sobrescreveria idle/attack/defend/heavy/ultimate
+> com a versão antiga de 12/17 quadros). Mantida como histórico.
+
 O `guerreiro` **não** segue o canvas 96x128 acima. Ele usa arte gerada em folhas de 1536x1024
 (`public/assets/battle/sprites/heroes/guerreiro/Bases/`) e recortada por `scripts/extract_warrior_bases.py`
 (`pip install pillow numpy scipy`; `python scripts/extract_warrior_bases.py --preview <pasta>` grava tiras/GIFs de conferência).
@@ -241,6 +245,10 @@ O `guerreiro` **não** segue o canvas 96x128 acima. Ele usa arte gerada em folha
 - **Ritmo**: `frameWeights` em `WARRIOR_ANIMATION_OVERRIDES` reparte `durationMs` (preparação lenta, corte rápido, recuperação).
 
 ## Druida em alta fidelidade (folhas grandes em `Bases/`)
+
+> **Parcialmente substituída**: idle, posturas, ataque, crítico, habilidade e supremo vêm das folhas de 8 quadros (seção "Folhas de
+> 8 quadros do segundo lote do Codex"). Só a **Defesa** (e `hit`, que a reaproveita) ainda vem de `extract_druid_bases.py` --
+> não rode esse script: ele regravaria também idle/attack/heavy/ultimate antigos por cima dos novos.
 
 O `druida` também usa folhas grandes (`public/assets/battle/sprites/heroes/druida/Bases/`), recortadas por `scripts/extract_druid_bases.py`
 (`pip install pillow numpy scipy`; `python scripts/extract_druid_bases.py --preview <pasta>`). O script reaproveita a segmentação e o render do
@@ -288,3 +296,50 @@ usa folhas grandes (`public/assets/battle/sprites/heroes/cacadora/Bases/`), reco
 - **Alpha**: mesmo tratamento do druida (`clean_alpha`): corpo em ~252-254 vira 255, poeira de alpha <8 vira 0.
 - **Estados sem folha** (`stance_*`, `dodge`, `potion`, `skill`, `victory`, `defeat`) são **montados com poses das folhas existentes** por `SPRITE_FRAME_SEQUENCES['heroes/cacadora']` em `src/battleSprites.ts`. São provisórios: a esquiva usa o recuo da Defesa (`defend_01`), a poção não tem gesto de mão livre em nenhuma folha (as duas seguram adaga sempre) e usa o próprio ciclo de respiro do Descanso, a habilidade (Ataque Duplo) reaproveita o floreio inteiro do Crítico (10 quadros, 1 pra 1), vitória/derrota seguram a pose de contato crítico (`heavy_05`) e a absorção de impacto da Defesa (`defend_04`).
 - **Ritmo**: `ROGUE_ANIMATION_OVERRIDES` reparte `durationMs` com `frameWeights` (preparação, golpes rápidos, recuperação), como guerreiro/druida.
+
+## Folhas de 8 quadros do segundo lote do Codex (`extract_eight_frame_sheets.py`)
+
+Guerreiro, arcanista, sacerdotisa, caçador, monge e conjurador têm **uma folha de 8 quadros para cada um dos 13 estados**
+(`Idle`, `Stance_Offensive`, `Stance_Defensive`, `Attack`, `Heavy`, `Skill`, `Ultimate`, `Defend`, `Hit`, `Dodge`, `Potion`,
+`Victory`, `Defeat`), sempre em grade 4x2 com alpha real, em `public/assets/battle/sprites/heroes/<herói>/Bases/`. O druida tem 7
+(`Idle`, `Stance_*`, `Attack`, `Heavy`, `Skill`, `Ultimate`). Nomes: vale `<Nome>_Eight_Frame.png` se existir, senão `<Nome>.png`;
+`Utilidades_Estados.png` é a folha 4x4 antiga de poses e não é usada. Recorte: `python scripts/extract_eight_frame_sheets.py`
+(`pip install pillow numpy scipy`; `arcanista`, `arcanista:attack` restringem; `--measure` só mede o canvas; `--preview DIR` grava
+tira + GIF por estado com a linha do chão e a âncora dos pés; `--cache DIR` guarda a segmentação para iterar mais rápido).
+
+- **Por que não o recorte por célula**: a primeira integração recortava cada célula da grade pelo "bounding box" e encaixava num 512x512. A
+  IA não respeitou a grade (botas e feixes do quadro de cima vazavam para o de baixo, feixes largos estouravam a célula), a escala mudava a
+  cada quadro (um feixe largo encolhia o personagem inteiro) e o personagem "andava" (alinhado pelo centro do bbox). Cada herói
+  ocupava também ~37 MB de PNG; agora ~7-11 MB.
+- **Segmentação**: um núcleo por célula (bloco sólido erodido com mais pixels *dentro* da célula) e propagação geodésica do opaco ao
+  translúcido. O corpo vem com alpha 250-254 e há "poeira" de alpha 1-7; `binary_closing` antes da erosão evita que armadura escura
+  com pixels de alpha ~245 vire vários núcleos pequenos (foi o caso do `Ultimate` do guerreiro).
+- **Escala igual à do Idle**: cada folha foi gerada com um zoom diferente (a poção da sacerdotisa sai ~50% maior que o Idle). A escala é a
+  mediana de três estimativas com o chão alinhado -- IoU da silhueta, IoU do "miolo" do corpo (abertura morfológica) e altura
+  cabeça->chão do quadro 0. O log mostra as três e o `spread`; folha com spread alto e o quadro 0 visivelmente maior/menor que o Idle
+  vai para `OVERRIDES` (hoje: sacerdotisa `ultimate` x0.92; guerreiro `potion` x0.93, `victory` x0.95, `stance_offensive` x0.96).
+  Conferência numérica: altura do corpo do quadro 0 de cada estado / Idle, todos dentro de ±6% depois dos ajustes (fora quadros
+  que já começam agachados, como o `dodge` do caçador).
+- **Registro**: mesmo canvas, chão e centro dos pés em todos os quadros do herói. Chão = mediana da linha da folha; pés = mediana
+  horizontal do quarto inferior do corpo. Efeito cortado em linha reta pela borda da FOLHA some em degradê.
+- **Canvas** (precisa bater com `HERO_SPRITE_CANVAS`, um teste confere todos os PNGs): guerreiro 448x381 (pés 196, chão 350; ganhou
+  49 px de teto para o pilar de luz do supremo, sem mudar a escala), druida 400x410 (170, 380, o de sempre), os cinco novos 440x375
+  (205, 350). `target` em `HEROES` = altura da silhueta do Idle no canvas final (240 guerreiro, 235 druida, 232 os cinco), o que os
+  deixa com porte parecido com o guardião/caçadora (~210-240).
+- **Ritmo** (`EIGHT_FRAME_TIMING`): tudo com 8 quadros; ataque/crítico/supremo com `frameWeights` (preparação lenta, golpe rápido).
+  `stance_offensive` faz laço do ciclo inteiro; `stance_defensive` assume a postura (quadros 0-3) e faz laço só da guarda firme
+  (4-7) -- por isso `SpriteStateConfig.loopFrom`. Vitória/derrota seguram o último quadro.
+- **Sem quadros emprestados**: os seis não aparecem em `SPRITE_FRAME_SEQUENCES` nem em `SPRITE_STATE_FRAME_ALIAS` (o guerreiro deixou de
+  reaproveitar a Defesa como Hit). Um teste garante exatamente 8 arquivos por estado: sobras dos placeholders antigos (`heavy_08/09`,
+  `defend_08..15`, `ultimate_08..11`) misturariam quadros novos e velhos numa animação.
+- **Druida**: `dodge`, `potion`, `victory` e `defeat` ainda são montados com poses das folhas novas (`attack_01` recuo, `skill_01` +
+  `ultimate_03` orbe da lua, `stance_defensive_02` agachado) até o Codex entregar `Defend`, `Hit`, `Dodge`, `Potion`, `Victory` e
+  `Defeat`. Quando chegarem: rodar `extract_eight_frame_sheets.py druida` (ele pega sozinho as folhas que existirem), trocar o druida para
+  `EIGHT_FRAME_TIMING` inteiro em `HERO_ANIMATION_OVERRIDES` e apagar `SPRITE_FRAME_SEQUENCES['heroes/druida']` e o alias `hit`.
+- **Ao gerar folhas novas**: 4x2, personagem inteiro em cada célula, mesma linha de chão dentro de cada linha, primeira pose próxima do
+  repouso (o casamento de escala usa os quadros 0 e 7), alpha real e nada de sombra/fundo assado.
+- **Scripts antigos** (`extract_warrior_bases.py`, `extract_druid_bases.py`, `extract_mage_bases.py`, `extract_priestess_bases.py`,
+  `extract_ultimate_only.py`): produzem quadros das folhas antigas e **sobrescreveriam** estes. Ficam só como referência do método.
+- **Verificação no navegador** (vite com `VITE_SUPABASE_URL=` vazio, que desliga a tela de login; Playwright + Chrome): para cada um dos
+  9 heróis, `newGame` + `startEncounter` até cair em combate e uma rodada real de posturas, ataque, habilidade, supremo, poção,
+  golpe final crítico e derrota; um amostrador de 40 ms registra o quadro exibido e as respostas HTTP dos PNGs (nenhum 404).
