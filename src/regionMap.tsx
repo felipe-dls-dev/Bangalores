@@ -1210,6 +1210,10 @@ export function TileWorldExplorer({
   const posRef = React.useRef(pos)
   const dragRef = React.useRef<{ x: number; y: number; camX: number; camY: number; dragged: boolean } | null>(null)
   const didDragRef = React.useRef(false)
+  const viewportRef = React.useRef<HTMLDivElement | null>(null)
+  const adjustZoom = React.useCallback((direction: -1 | 1) => {
+    setZoom(z => clamp(Math.round((z + direction * ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))
+  }, [])
   // Além dos NPCs, um portão fechado (ART-023) também bloqueia -- fica no mesmo set porque todo
   // lugar que já checava colisão de NPC precisa checar a mesma coisa pra portão, sem duplicar a
   // lista inteira de chamadas de isMapWalkable/routeBetween.
@@ -1594,6 +1598,18 @@ export function TileWorldExplorer({
   // viewport nunca cresce/encolhe com o zoom). O zoom só muda quanto do mundo cabe dentro dessa
   // caixa (visibleW/visibleH) e escala a translação da câmera na hora de desenhar (ver o
   // transform de .regionmap-world logo abaixo).
+  React.useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+      adjustZoom(event.deltaY < 0 ? 1 : -1)
+    }
+    viewport.addEventListener('wheel', onWheel, { passive: false })
+    return () => viewport.removeEventListener('wheel', onWheel)
+  }, [adjustZoom])
+
   const tilePx = map.tileSize * map.scale
   const worldW = map.width * tilePx, worldH = map.height * tilePx
   const viewportW = Math.min(worldW, VIEWPORT_TILES_X * tilePx)
@@ -1607,10 +1623,7 @@ export function TileWorldExplorer({
   const frameSrc = sprite.frames[frame]
 
   return <div className="regionmap-frame">
-    <div className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onWheel={event => {
-      event.preventDefault()
-      setZoom(z => clamp(Math.round((z + (event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP)) * 100) / 100, ZOOM_MIN, ZOOM_MAX))
-    }} onPointerDown={event => {
+    <div ref={viewportRef} className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onPointerDown={event => {
       // setPointerCapture no viewport retarget o "click" resultante pra ELE MESMO (não pro
       // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
       // de um NPC/local nunca disparava o onClick deles, só o fallback de clique-no-tile daqui.
@@ -1872,9 +1885,9 @@ export function TileWorldExplorer({
         }))}
       </div>
       <div className="regionmap-zoom-hud" onClick={event => event.stopPropagation()}>
-        <button type="button" onClick={() => setZoom(z => clamp(Math.round((z - ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))} aria-label="Afastar o mapa" title="Afastar (ou role o mouse)"><ZoomOut size={14} /></button>
+        <button type="button" onClick={() => adjustZoom(-1)} aria-label="Afastar o mapa" title="Afastar (ou role o mouse)"><ZoomOut size={14} /></button>
         <span>{Math.round(zoom * 100)}%</span>
-        <button type="button" onClick={() => setZoom(z => clamp(Math.round((z + ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))} aria-label="Aproximar o mapa" title="Aproximar (ou role o mouse)"><ZoomIn size={14} /></button>
+        <button type="button" onClick={() => adjustZoom(1)} aria-label="Aproximar o mapa" title="Aproximar (ou role o mouse)"><ZoomIn size={14} /></button>
       </div>
       {onTogglePin && <div className="regionmap-pin-hud" onClick={event => event.stopPropagation()}>
         <button type="button" className={pinMode ? 'active' : ''} onClick={() => setPinMode(v => !v)} aria-label={pinMode ? 'Sair do modo de marcar pins' : 'Marcar pin no mapa'} title={pinMode ? 'Clique num tile pra marcar/desmarcar um pin -- clique aqui de novo pra sair do modo' : 'Ativar modo de marcar pins pessoais no mapa'}>

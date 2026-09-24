@@ -90,8 +90,9 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P3 | Boat / carriage shortcut | — | MECHANIC SHIPPED | See ART-025 -- code+art integrated (same-map paired-dock ride), just not placed on a map yet. |
 | P3 | Illusory secret wall | — | MECHANIC SHIPPED | See ART-026 -- code+art integrated (discovery + one-shot reveal fx), just not placed on a map yet. |
 | P3 | Scenery interaction (signposts) | — | MECHANIC SHIPPED | See ART-027 -- code+art integrated (reusable `RegionMapScenery` pattern), just not placed on a map yet. |
-| P1 | Battle stage flip: KOF-style fighter sprites | Codex | REQUESTED | See ART-030 -- animated pixel-art fighter sprites (13 states) for the 9 heroes plus 8 named enemies already scoped in code, replacing the static card portrait once the hero/enemy cards flip into "fighter view" at combat start. A code scaffold (`src/battleSprites.ts`, `src/components/BattleSpriteActor.tsx`) already exists un-committed, not yet wired into the combat screen. |
+| P1 | Battle stage flip: KOF-style fighter sprites | — | INTEGRATED | See ART-030 -- animated pixel-art fighter sprites (13 states) for all 9 heroes, wired into the combat screen's card-flip "fighter view". |
 | P1 | Druid Defesa sheet, regeneration | Codex | INTEGRATED | See ART-031 -- new `druida/Bases/Defesa.png` delivered with an opaque body; cut into `defend_00..07` (8 frames, 4x2; also serves `hit`). |
+| P1 | Eight-frame sheets, third Codex delivery (cacadora, druida, guardiao) | — | INTEGRATED | See ART-032 -- cacadora and druida now have all 13 states as native 8-frame sheets (no more borrowed/stand-in poses); guardiao's Idle/Defesa/Esquiva/Dano_Recebido/Posturas upgraded from their original 4-6 frame counts to the standard 8-frame grid. |
 | P2 | Shared equipment art, last 2 pieces | — | DONE | ART-029 delivered the tier-0 Andarilhos calças/botas; shared-equipment art audit now has no known missing paths. |
 | P2 | Steelmere "Act 2" story content (Contrato 11) | Codex | INTEGRATED | CONTENT-001 delivered a playable optional Steelmere quest chain in `src/data/storyQuests.ts`, deepening the industrial-rebellion plot without changing the main quest spine. |
 
@@ -602,6 +603,18 @@ Requirements:
 - If background removal keeps eating dark greens, generate on a flat chroma-key colour that does not appear in the art and key it out in a separate step.
 Delivered paths: overwrite `public/assets/battle/sprites/heroes/druida/Bases/Defesa.png`.
 Integration (Claude Code): the regenerated sheet was added to `SHEETS` in `scripts/extract_druid_bases.py` (`state='defend'`, layout `[4, 4]`, `own_ground`), cut into `defend_00..07` (the second delivery has 8 frames, smoother shield growth), and `hit` now aliases `defend`. The stand-in sequences for `defend`/`hit` were removed from `SPRITE_FRAME_SEQUENCES['heroes/druida']`.
+
+### ART-032 - Eight-frame sheets, third Codex delivery (cacadora, druida, guardiao)
+Status: INTEGRATED
+Delivered by: Codex; integration: Claude Code
+Gameplay purpose: close the remaining gaps in the animated fighter-sprite system (ART-030) -- cacadora and druida previously had several states built from `SPRITE_FRAME_SEQUENCES` stand-ins (borrowed poses from other states) instead of real art, and guardiao's Idle/Defesa/Esquiva/Dano_Recebido/Posturas sheets were an inconsistent 4-6 frames instead of the standard 4x2 grid.
+Delivered: full 4x2 (8-frame) sheets in `Bases/` for every one of the 13 states for cacadora and druida (previously missing: cacadora's dodge/hit/potion/skill/stance_offensive/stance_defensive/victory/defeat; druida's dodge/hit/potion/victory/defeat), plus re-delivered Idle/Defend/Dodge/Hit/Stance_Offensive/Stance_Defensive sheets for guardiao on the same 8-frame grid.
+Integration (Claude Code):
+- `scripts/extract_eight_frame_sheets.py` gained per-hero canvas calibration entries for `cacadora` and `guardiao` (the other 7 heroes already had theirs); ran the extractor for all three heroes, replacing every affected frame PNG under `public/assets/battle/sprites/heroes/<hero>/`.
+- `src/battleSprites.ts`: cacadora and druida now map straight to `EIGHT_FRAME_TIMING` in `HERO_ANIMATION_OVERRIDES` (no more bespoke `DRUID_ANIMATION_OVERRIDES`/`ROGUE_ANIMATION_OVERRIDES`, both removed as dead code). `GUARDIAN_ANIMATION_OVERRIDES` updated: `idle`, `defend`, `hit` and `dodge` moved from their old 6/6/4/6-frame counts to 8 with new hand-tuned `frameWeights` (guarda -> impacto/pico -> recuperação, timed against the actual delivered frames); `stance_offensive` extended to 8 frames (guarda -> ergue o martelo -> golpe -> avanço final, held); `stance_defensive` extended to 8 frames, uniform timing since the delivered sheet holds the same assumed-guard pose across all 8 cells with no visible transition. `heavy`/`ultimate` (10/12 frames) and `attack`/`potion`/`skill`/`defeat`/`victory` (already 8) were untouched -- those sheets weren't part of this delivery.
+- `SPRITE_FRAME_SEQUENCES` and `SPRITE_STATE_FRAME_ALIAS` are now empty (both heroes' stand-in entries removed at the source instead of patched at runtime); `getBattleSpriteFramePath()` reverted to its plain generic form.
+- Test suite (`src/battleSprites.test.ts`) updated to match: the two dead `describe.skip` blocks that asserted the old stand-in sequences were deleted outright (not left skipped), the guardian frame-count test reflects the new 8-frame counts, and `cacadora`/`druida` joined the shared `EIGHT_FRAME_HEROES` list alongside the other 6 all-native-sheet heroes.
+Acceptance check: `npm run typecheck`, `npm run lint`, `npm test` (305/305) and `npm run build` all pass; every hero resolves all 13 states to real on-disk frame files with no stand-ins and no stale leftover frames.
 
 ## Handoff Log
 

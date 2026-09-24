@@ -81,6 +81,8 @@ FRAMES = COLS * ROWS
 HEROES = {
     'guerreiro': dict(target=240, left=196, right=252, up=350, down=31),
     'druida': dict(target=235, left=170, right=230, up=380, down=30),
+    'cacadora': dict(target=200, left=185, right=240, up=245, down=20),
+    'guardiao': dict(target=200, left=215, right=180, up=325, down=20),
     'arcanista': dict(target=232, left=205, right=235, up=350, down=25),
     'sacerdotisa': dict(target=232, left=205, right=235, up=350, down=25),
     'cacador': dict(target=232, left=205, right=235, up=350, down=25),

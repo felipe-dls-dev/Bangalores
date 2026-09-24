@@ -2,13 +2,11 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   BATTLE_ANIMATION_CONFIG,
-  DRUID_ANIMATION_OVERRIDES,
   EIGHT_FRAME_TIMING,
   GUARDIAN_ANIMATION_OVERRIDES,
   HERO_SPRITE_CANVAS,
   HERO_SPRITE_IDS,
   INITIAL_SPRITE_PLAYBACK,
-  ROGUE_ANIMATION_OVERRIDES,
   SPRITE_FRAME_SEQUENCES,
   SPRITE_STAGE_VIEW,
   getBattleSpriteFramePath,
@@ -27,7 +25,12 @@ import {
   type SpritePlayback,
 } from './battleSprites'
 
-/** Heróis do segundo lote do Codex: 13 folhas de 8 quadros cada, sem nenhum quadro emprestado. */
+/**
+ * Heróis com as 13 folhas completas de 8 quadros do segundo lote do Codex, sem nenhum quadro
+ * emprestado: guerreiro, arcanista, sacerdotisa, caçador, monge e conjurador (primeira entrega);
+ * druida e caçadora (cacadora) entraram depois, quando o Codex completou os estados que faltavam.
+ * O guardião fica de fora: heavy/ultimate ainda têm 10/12 quadros (GUARDIAN_ANIMATION_OVERRIDES).
+ */
 const EIGHT_FRAME_HEROES = [
   'guerreiro',
   'arcanista',
@@ -35,6 +38,8 @@ const EIGHT_FRAME_HEROES = [
   'cacador',
   'monge',
   'conjurador',
+  'druida',
+  'cacadora',
 ] as const
 
 describe('Battle Sprites Configuration (docs/BATTLE_SPRITE_PROMPTS.md)', () => {
@@ -300,12 +305,18 @@ describe('getSpriteStateConfig', () => {
   it('the defensive stance is entered once (frames 0-3) and then loops the settled pose (4-7)', () => {
     const cfg = getSpriteStateConfig('heroes', 'arcanista', 'stance_defensive')
     expect(cfg.loopFrom).toBe(4)
-    expect(playbackOnTick({ locked: null, spent: null, frame: 6 }, 'stance_defensive', cfg).frame).toBe(7)
-    expect(playbackOnTick({ locked: null, spent: null, frame: 7 }, 'stance_defensive', cfg).frame).toBe(4)
+    expect(
+      playbackOnTick({ locked: null, spent: null, frame: 6 }, 'stance_defensive', cfg).frame
+    ).toBe(7)
+    expect(
+      playbackOnTick({ locked: null, spent: null, frame: 7 }, 'stance_defensive', cfg).frame
+    ).toBe(4)
     // a postura ofensiva fecha o ciclo inteiro: volta ao quadro 0
     const off = getSpriteStateConfig('heroes', 'arcanista', 'stance_offensive')
     expect(off.loopFrom).toBeUndefined()
-    expect(playbackOnTick({ locked: null, spent: null, frame: 7 }, 'stance_offensive', off).frame).toBe(0)
+    expect(
+      playbackOnTick({ locked: null, spent: null, frame: 7 }, 'stance_offensive', off).frame
+    ).toBe(0)
   })
 
   it('returns the druid frame counts of the sheets in Bases/', () => {
@@ -327,42 +338,40 @@ describe('getSpriteStateConfig', () => {
       getSpriteStateConfig('heroes', 'druida', 'defend').frames
     )
     // sem folha: cai no padrão do estado e é montado por SPRITE_FRAME_SEQUENCES
-    expect(getSpriteStateConfig('heroes', 'druida', 'dodge')).toBe(BATTLE_ANIMATION_CONFIG.dodge)
-    expect(getSpriteStateConfig('heroes', 'druida', 'potion')).toBe(BATTLE_ANIMATION_CONFIG.potion)
+    expect(getSpriteStateConfig('heroes', 'druida', 'dodge').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'druida', 'potion').frames).toBe(8)
   })
 
   it('returns the rogue (cacadora) frame counts of the sheets in Bases/', () => {
-    expect(getSpriteStateConfig('heroes', 'cacadora', 'idle').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'idle').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'cacadora', 'attack').frames).toBe(8)
-    expect(getSpriteStateConfig('heroes', 'cacadora', 'heavy').frames).toBe(10)
-    expect(getSpriteStateConfig('heroes', 'cacadora', 'ultimate').frames).toBe(12)
-    expect(getSpriteStateConfig('heroes', 'cacadora', 'defend').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'heavy').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'ultimate').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'defend').frames).toBe(8)
     // levar dano reaproveita a Defesa, então tem o mesmo número de quadros
     expect(getSpriteStateConfig('heroes', 'cacadora', 'hit').frames).toBe(
       getSpriteStateConfig('heroes', 'cacadora', 'defend').frames
     )
     // sem override: cai no padrão do estado
-    expect(getSpriteStateConfig('heroes', 'cacadora', 'dodge')).toBe(BATTLE_ANIMATION_CONFIG.dodge)
+    expect(getSpriteStateConfig('heroes', 'cacadora', 'dodge').frames).toBe(8)
   })
 
   it('returns the guardian (guardiao) frame counts of the 13 complete sheets in Bases/', () => {
-    expect(getSpriteStateConfig('heroes', 'guardiao', 'idle').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'idle').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'guardiao', 'attack').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'guardiao', 'heavy').frames).toBe(10)
-    expect(getSpriteStateConfig('heroes', 'guardiao', 'defend').frames).toBe(6)
-    expect(getSpriteStateConfig('heroes', 'guardiao', 'dodge').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'defend').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'dodge').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'guardiao', 'potion').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'guardiao', 'skill').frames).toBe(8)
-    expect(getSpriteStateConfig('heroes', 'guardiao', 'stance_offensive').frames).toBe(6)
-    expect(getSpriteStateConfig('heroes', 'guardiao', 'stance_defensive').frames).toBe(6)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'stance_offensive').frames).toBe(8)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'stance_defensive').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'guardiao', 'ultimate').frames).toBe(12)
     expect(getSpriteStateConfig('heroes', 'guardiao', 'defeat').frames).toBe(8)
     expect(getSpriteStateConfig('heroes', 'guardiao', 'victory').frames).toBe(8)
-    // ao contrário dos outros heróis, o guardião tem folha própria de Dano_Recebido: não reaproveita a Defesa
-    expect(getSpriteStateConfig('heroes', 'guardiao', 'hit').frames).toBe(4)
-    expect(getSpriteStateConfig('heroes', 'guardiao', 'hit').frames).not.toBe(
-      getSpriteStateConfig('heroes', 'guardiao', 'defend').frames
-    )
+    // o guardião tem folha própria de Dano_Recebido (ver 'hero frame files on disk' abaixo pra
+    // confirmar que 'hit' resolve pro arquivo hit_NN.png, não defend_NN.png)
+    expect(getSpriteStateConfig('heroes', 'guardiao', 'hit').frames).toBe(8)
   })
 
   it('guardian postures play once and hold the settled pose instead of looping the transition', () => {
@@ -404,18 +413,6 @@ describe('getFrameDurationMs', () => {
     expect(getFrameDurationMs(cfg, 0)).toBe(250)
   })
 
-  it('druid weighted states have one weight per frame and keep the total duration', () => {
-    for (const state of ['attack', 'heavy', 'defend', 'hit', 'ultimate'] as const) {
-      const cfg = DRUID_ANIMATION_OVERRIDES[state]!
-      expect(cfg.frameWeights, state).toHaveLength(cfg.frames)
-      const total = Array.from({ length: cfg.frames }, (_, i) => getFrameDurationMs(cfg, i)).reduce(
-        (a, b) => a + b,
-        0
-      )
-      expect(total).toBeCloseTo(cfg.durationMs!)
-    }
-  })
-
   it('eight-frame weighted states have one weight per frame, keep the total and strike fast', () => {
     for (const state of ['attack', 'heavy', 'ultimate'] as const) {
       const cfg = EIGHT_FRAME_TIMING[state]
@@ -430,18 +427,6 @@ describe('getFrameDurationMs', () => {
     for (const state of ['attack', 'heavy'] as const) {
       const cfg = EIGHT_FRAME_TIMING[state]
       expect(getFrameDurationMs(cfg, 4), state).toBeLessThan(getFrameDurationMs(cfg, 0))
-    }
-  })
-
-  it('rogue (cacadora) weighted states have one weight per frame and keep the total duration', () => {
-    for (const state of ['attack', 'heavy', 'defend', 'hit', 'ultimate'] as const) {
-      const cfg = ROGUE_ANIMATION_OVERRIDES[state]!
-      expect(cfg.frameWeights, state).toHaveLength(cfg.frames)
-      const total = Array.from({ length: cfg.frames }, (_, i) => getFrameDurationMs(cfg, i)).reduce(
-        (a, b) => a + b,
-        0
-      )
-      expect(total).toBeCloseTo(cfg.durationMs!)
     }
   })
 
@@ -505,10 +490,10 @@ describe('hero frame files on disk', () => {
       'assets/battle/sprites/heroes/guerreiro/hit_04.png'
     )
     expect(getBattleSpriteFramePath('heroes', 'druida', 'hit', 3)).toBe(
-      'assets/battle/sprites/heroes/druida/defend_03.png'
+      'assets/battle/sprites/heroes/druida/hit_03.png'
     )
     expect(getBattleSpriteFramePath('heroes', 'cacadora', 'hit', 2)).toBe(
-      'assets/battle/sprites/heroes/cacadora/defend_02.png'
+      'assets/battle/sprites/heroes/cacadora/hit_02.png'
     )
     expect(getBattleSpriteFramePath('heroes', 'monge', 'hit', 4)).toBe(
       'assets/battle/sprites/heroes/monge/hit_04.png'
@@ -556,119 +541,6 @@ describe('hero frame files on disk', () => {
   )
 })
 
-describe('druid frame sequences (states without their own sheet)', () => {
-  const sequences = SPRITE_FRAME_SEQUENCES['heroes/druida']!
-  // estados do druida com folha própria (Bases/): Defesa antiga + sete folhas novas de 8 quadros
-  const ownStates = [
-    'idle',
-    'stance_offensive',
-    'stance_defensive',
-    'attack',
-    'heavy',
-    'skill',
-    'ultimate',
-    'defend',
-    'hit',
-  ]
-
-  it('has one entry per frame of the state it stands in for', () => {
-    for (const [state, seq] of Object.entries(sequences) as [
-      BattleAnimationState,
-      NonNullable<(typeof sequences)[BattleAnimationState]>,
-    ][]) {
-      expect(seq, state).toHaveLength(getSpriteStateConfig('heroes', 'druida', state).frames)
-    }
-  })
-
-  it('only stands in for the states that still have no sheet (dodge, potion, victory, defeat)', () => {
-    expect(Object.keys(sequences).sort()).toEqual(['defeat', 'dodge', 'potion', 'victory'])
-  })
-
-  it('only points at frames that exist in the states the druid has sheets for', () => {
-    const own = ['idle', 'attack', 'heavy', 'skill', 'ultimate', 'stance_defensive'] as const
-    for (const [state, seq] of Object.entries(sequences)) {
-      for (const [src, index] of seq!) {
-        expect(own, `${state} -> ${src}`).toContain(src)
-        expect(index, `${state} -> ${src}_${index}`).toBeLessThan(
-          getSpriteStateConfig('heroes', 'druida', src).frames
-        )
-      }
-    }
-  })
-
-  it('covers every state the game can ask for', () => {
-    for (const state of Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]) {
-      expect(Boolean(sequences[state]) || ownStates.includes(state), state).toBe(true)
-    }
-  })
-
-  it('resolves stand-in frames to the file of the pose they borrow and clamps out-of-range indexes', () => {
-    expect(getBattleSpriteFramePath('heroes', 'druida', 'dodge', 1)).toBe(
-      'assets/battle/sprites/heroes/druida/attack_01.png'
-    )
-    expect(getBattleSpriteFramePath('heroes', 'druida', 'dodge', 99)).toBe(
-      'assets/battle/sprites/heroes/druida/idle_00.png'
-    )
-    expect(getBattleSpriteFramePath('heroes', 'druida', 'attack', 3)).toBe(
-      'assets/battle/sprites/heroes/druida/attack_03.png'
-    )
-    expect(getBattleSpriteFramePath('heroes', 'monge', 'defend', 1)).toBe(
-      'assets/battle/sprites/heroes/monge/defend_01.png'
-    )
-    // vitória: segura o orbe no último quadro mesmo com índice além do fim
-    expect(getBattleSpriteFramePath('heroes', 'druida', 'victory', 99)).toBe(
-      'assets/battle/sprites/heroes/druida/ultimate_03.png'
-    )
-  })
-})
-
-describe('cacadora frame sequences (states without their own sheet)', () => {
-  const sequences = SPRITE_FRAME_SEQUENCES['heroes/cacadora']!
-
-  it('has one entry per frame of the state it stands in for', () => {
-    for (const [state, seq] of Object.entries(sequences) as [
-      BattleAnimationState,
-      NonNullable<(typeof sequences)[BattleAnimationState]>,
-    ][]) {
-      expect(seq, state).toHaveLength(getSpriteStateConfig('heroes', 'cacadora', state).frames)
-    }
-  })
-
-  it('only points at frames that exist in the states the rogue has sheets for', () => {
-    const own = ['idle', 'attack', 'heavy', 'defend', 'ultimate'] as const
-    for (const [state, seq] of Object.entries(sequences)) {
-      for (const [src, index] of seq!) {
-        expect(own, `${state} -> ${src}`).toContain(src)
-        expect(index, `${state} -> ${src}_${index}`).toBeLessThan(
-          getSpriteStateConfig('heroes', 'cacadora', src).frames
-        )
-      }
-    }
-  })
-
-  it('covers every state the game can ask for', () => {
-    for (const state of Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]) {
-      const owned = ['idle', 'attack', 'heavy', 'defend', 'hit', 'ultimate'].includes(state)
-      expect(Boolean(sequences[state]) || owned, state).toBe(true)
-    }
-  })
-
-  it('resolves stand-in frames to the file of the pose they borrow and clamps out-of-range indexes', () => {
-    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'dodge', 1)).toBe(
-      'assets/battle/sprites/heroes/cacadora/defend_01.png'
-    )
-    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'skill', 9)).toBe(
-      'assets/battle/sprites/heroes/cacadora/heavy_09.png'
-    )
-    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'dodge', 99)).toBe(
-      'assets/battle/sprites/heroes/cacadora/idle_00.png'
-    )
-    expect(getBattleSpriteFramePath('heroes', 'cacadora', 'attack', 3)).toBe(
-      'assets/battle/sprites/heroes/cacadora/attack_03.png'
-    )
-  })
-})
-
 describe('guardian (guardiao) has no stand-in frames: all 13 states have their own sheet', () => {
   it('does not appear in SPRITE_FRAME_SEQUENCES or SPRITE_STATE_FRAME_ALIAS', () => {
     expect(SPRITE_FRAME_SEQUENCES['heroes/guardiao']).toBeUndefined()
@@ -688,11 +560,13 @@ describe('guardian (guardiao) has no stand-in frames: all 13 states have their o
 })
 
 /**
- * Segundo lote do Codex: guerreiro, arcanista, sacerdotisa, caçador, monge e conjurador têm uma
- * folha de 8 quadros para cada um dos 13 estados (scripts/extract_eight_frame_sheets.py). Nenhum
- * precisa de quadro emprestado: SPRITE_FRAME_SEQUENCES e SPRITE_STATE_FRAME_ALIAS não os citam.
+ * Segundo lote do Codex: guerreiro, arcanista, sacerdotisa, caçador, monge, conjurador, druida e
+ * caçadora (cacadora) têm uma folha de 8 quadros para cada um dos 13 estados
+ * (scripts/extract_eight_frame_sheets.py). Nenhum precisa de quadro emprestado: SPRITE_FRAME_SEQUENCES
+ * e SPRITE_STATE_FRAME_ALIAS não os citam. O guardião fica de fora deste grupo -- heavy/ultimate
+ * ainda têm 10/12 quadros, então usa GUARDIAN_ANIMATION_OVERRIDES em vez do EIGHT_FRAME_TIMING puro.
  */
-describe('eight-frame sheet heroes (guerreiro, arcanista, sacerdotisa, cacador, monge, conjurador)', () => {
+describe('eight-frame sheet heroes (guerreiro, arcanista, sacerdotisa, cacador, monge, conjurador, druida, cacadora)', () => {
   const allStates = Object.keys(BATTLE_ANIMATION_CONFIG) as BattleAnimationState[]
 
   it.each(EIGHT_FRAME_HEROES)('%s has its own canvas in HERO_SPRITE_CANVAS', (hero) => {
@@ -707,45 +581,34 @@ describe('eight-frame sheet heroes (guerreiro, arcanista, sacerdotisa, cacador, 
     expect(SPRITE_FRAME_SEQUENCES[`heroes/${hero}`]).toBeUndefined()
   })
 
-  it.each(EIGHT_FRAME_HEROES)('%s resolves every state to a file named after that state', (hero) => {
-    for (const state of allStates) {
-      for (let i = 0; i < 8; i++) {
-        expect(getBattleSpriteFramePath('heroes', hero, state, i)).toBe(
-          `assets/battle/sprites/heroes/${hero}/${state}_${String(i).padStart(2, '0')}.png`
-        )
+  it.each(EIGHT_FRAME_HEROES)(
+    '%s resolves every state to a file named after that state',
+    (hero) => {
+      for (const state of allStates) {
+        for (let i = 0; i < 8; i++) {
+          expect(getBattleSpriteFramePath('heroes', hero, state, i)).toBe(
+            `assets/battle/sprites/heroes/${hero}/${state}_${String(i).padStart(2, '0')}.png`
+          )
+        }
       }
     }
-  })
+  )
 
   // Regressão do estado intermediário deste lote: sobras dos placeholders antigos (heavy_08/09,
   // defend_08..15, ultimate_08..11) ficavam ao lado dos 8 quadros novos e, num estado cujo `frames`
   // ainda fosse o antigo, o herói tocava quadros novos seguidos de quadros velhos.
-  it.each(EIGHT_FRAME_HEROES)('%s has exactly 8 frame files per state, no stale leftovers', (hero) => {
-    const dir = `public/assets/battle/sprites/heroes/${hero}`
-    for (const state of allStates) {
-      const files = readdirSync(dir).filter((f) => new RegExp(`^${state}_\\d+\\.png$`).test(f))
-      expect(files.sort(), `${hero}/${state}`).toEqual(
-        Array.from({ length: 8 }, (_, i) => `${state}_${String(i).padStart(2, '0')}.png`)
-      )
+  it.each(EIGHT_FRAME_HEROES)(
+    '%s has exactly 8 frame files per state, no stale leftovers',
+    (hero) => {
+      const dir = `public/assets/battle/sprites/heroes/${hero}`
+      for (const state of allStates) {
+        const files = readdirSync(dir).filter((f) => new RegExp(`^${state}_\\d+\\.png$`).test(f))
+        expect(files.sort(), `${hero}/${state}`).toEqual(
+          Array.from({ length: 8 }, (_, i) => `${state}_${String(i).padStart(2, '0')}.png`)
+        )
+      }
     }
-  })
-
-  it('the druid has exactly 8 frame files in each state that has a sheet', () => {
-    const dir = 'public/assets/battle/sprites/heroes/druida'
-    for (const state of [
-      'idle',
-      'stance_offensive',
-      'stance_defensive',
-      'attack',
-      'heavy',
-      'skill',
-      'ultimate',
-      'defend',
-    ]) {
-      const files = readdirSync(dir).filter((f) => new RegExp(`^${state}_\\d+\\.png$`).test(f))
-      expect(files, `druida/${state}`).toHaveLength(8)
-    }
-  })
+  )
 })
 
 /**

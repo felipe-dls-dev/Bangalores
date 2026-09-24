@@ -99,98 +99,21 @@ export const EIGHT_FRAME_TIMING: Record<BattleAnimationState, SpriteStateConfig>
 }
 
 /**
- * Sobrescritas do druida (scripts/extract_eight_frame_sheets.py). Sete estados têm folha de 8
- * quadros do segundo lote do Codex: Idle, Stance_Offensive, Stance_Defensive, Attack, Heavy, Skill e
- * Ultimate. A Defesa continua a folha de 8 quadros de extract_druid_bases.py (a nova ainda não
- * chegou); esquiva, poção, vitória e derrota são montadas por SPRITE_FRAME_SEQUENCES.
- */
-export const DRUID_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
-  idle: EIGHT_FRAME_TIMING.idle,
-  stance_offensive: EIGHT_FRAME_TIMING.stance_offensive,
-  stance_defensive: EIGHT_FRAME_TIMING.stance_defensive,
-  attack: EIGHT_FRAME_TIMING.attack,
-  heavy: EIGHT_FRAME_TIMING.heavy,
-  skill: EIGHT_FRAME_TIMING.skill,
-  ultimate: EIGHT_FRAME_TIMING.ultimate,
-  // guarda (2) -> faíscas (1) -> escudo crescendo 35% e 65% (2) -> escudo cheio, segura mais (1)
-  // -> dissipa (1) -> retorno (1)
-  defend: {
-    frames: 8,
-    loop: false,
-    fps: 10,
-    durationMs: 1100,
-    frameWeights: [0.7, 0.7, 0.7, 0.7, 0.8, 1.6, 0.9, 1],
-  },
-  hit: {
-    frames: 8,
-    loop: false,
-    fps: 10,
-    durationMs: 1100,
-    frameWeights: [0.7, 0.7, 0.7, 0.7, 0.8, 1.6, 0.9, 1],
-  },
-}
-
-/**
- * Sobrescritas da Caçadora (Ladino, no estilo dos prompts) com base nas folhas de Bases/
- * (scripts/extract_rogue_bases.py). Contagens de quadros vêm das folhas: Descanso 6, Ataque 8,
- * Critico 10, Ultimate 12, Defesa 6 (a única que não bate com o padrão de `defend`/`hit`, 5/4).
- */
-export const ROGUE_ANIMATION_OVERRIDES: Partial<Record<BattleAnimationState, SpriteStateConfig>> = {
-  idle: { frames: 6, loop: true, fps: 7 },
-  // guarda (2) -> avanço + dois cortes (3) -> extensão total (1) -> recuperação (2)
-  attack: {
-    frames: 8,
-    loop: false,
-    fps: 8,
-    durationMs: 1600,
-    frameWeights: [1.2, 1.1, 0.9, 0.6, 0.55, 0.7, 1, 1.2],
-  },
-  // guarda + agachamento (3) -> dash + corte + giro (3) -> impacto crítico (1) -> recuperação (3)
-  heavy: {
-    frames: 10,
-    loop: false,
-    fps: 8,
-    durationMs: 1900,
-    frameWeights: [1.1, 1, 0.9, 0.55, 0.5, 0.5, 0.6, 0.8, 1, 1.2],
-  },
-  // guarda (1) -> recuo (1) -> adagas sobem (1) -> contato do parry, brilho (1) -> absorção (1) -> retorno (1)
-  defend: {
-    frames: 6,
-    loop: false,
-    fps: 10,
-    durationMs: 1000,
-    frameWeights: [0.8, 0.8, 0.9, 1.3, 1, 0.9],
-  },
-  hit: {
-    frames: 6,
-    loop: false,
-    fps: 10,
-    durationMs: 1000,
-    frameWeights: [0.8, 0.8, 0.9, 1.3, 1, 0.9],
-  },
-  // carga sombria (3) -> shadow-step + dois cortes (3) -> multi-strike + impacto crítico (2) -> recuperação (4)
-  ultimate: {
-    frames: 12,
-    loop: false,
-    fps: 7,
-    durationMs: 2400,
-    frameWeights: [1.2, 1, 1.1, 1, 1, 1.3, 1, 0.55, 0.6, 0.9, 1, 1.3],
-  },
-}
-
-/**
- * Sobrescritas do Guardião com base nas folhas de Bases/ (scripts/extract_guardian_bases.py). Ao
- * contrário do druida e da caçadora, o Codex entregou as 13 folhas COMPLETAS: nenhum estado precisa
- * de quadro legado nem de alias/sequência montada com poses de outro estado (até o `hit` tem folha
- * própria, `Dano Recebido.png`; a habilidade comum é `Provocar.png` -- o nome real da habilidade do
- * Guardião em src/data/herois.json, não "Habilidade" como no prompt). Contagens de quadros vêm das
- * folhas: Descanso 6, Ataque 8, Critico 10, Defesa 6, Esquiva 6, Dano_Recebido 4, Pocao 8, Provocar 8,
- * Posturas 6, Ultimate 12, Derrota 8, Vitoria 8.
+ * Sobrescritas do Guardião com base nas folhas de Bases/ (scripts/extract_guardian_bases.py e, para
+ * o segundo lote, scripts/extract_eight_frame_sheets.py). O Codex entregou as 13 folhas COMPLETAS:
+ * nenhum estado precisa de quadro legado nem de alias/sequência montada com poses de outro estado
+ * (até o `hit` tem folha própria, `Dano Recebido.png`; a habilidade comum é `Provocar.png` -- o nome
+ * real da habilidade do Guardião em src/data/herois.json, não "Habilidade" como no prompt). Um
+ * segundo lote reentregou Idle, Defesa, Esquiva, Dano_Recebido e as duas Posturas na grade padrão de
+ * 8 quadros (extract_eight_frame_sheets.py); Ataque, Critico (heavy), Pocao, Provocar (skill),
+ * Ultimate, Derrota e Vitoria seguem as folhas do primeiro lote, que já eram 8 (ou 10/12 para
+ * heavy/ultimate) e não mudaram. Contagens de quadros: Descanso 8, Ataque 8, Critico 10, Defesa 8,
+ * Esquiva 8, Dano_Recebido 8, Pocao 8, Provocar 8, Posturas 8, Ultimate 12, Derrota 8, Vitoria 8.
  */
 export const GUARDIAN_ANIMATION_OVERRIDES: Partial<
   Record<BattleAnimationState, SpriteStateConfig>
 > = {
-  idle: { frames: 6, loop: true, fps: 7 },
+  idle: { frames: 8, loop: true, fps: 7 },
   // guarda + preparação (4) -> golpe curto de martelo (2) -> recuperação (2)
   attack: {
     frames: 8,
@@ -207,29 +130,29 @@ export const GUARDIAN_ANIMATION_OVERRIDES: Partial<
     durationMs: 2000,
     frameWeights: [1.2, 1.1, 1, 1, 0.9, 0.5, 0.55, 0.8, 1, 1.2],
   },
-  // guarda (3) -> bloqueio completo, segura mais (1) -> recuo de absorção + retorno (2)
+  // guarda (3) -> faísca de impacto (1) -> pico do bloqueio, segura mais (1) -> absorção (2) -> retorno (1)
   defend: {
-    frames: 6,
+    frames: 8,
     loop: false,
     fps: 9,
-    durationMs: 1000,
-    frameWeights: [0.8, 0.8, 0.9, 1.4, 1, 0.9],
+    durationMs: 1100,
+    frameWeights: [0.8, 0.8, 0.8, 0.6, 1.5, 1.1, 1, 0.9],
   },
-  // impacto (1) -> pico do recuo, segura mais (1) -> estabilização + retorno (2)
+  // guarda (2) -> impacto com estilhaços (1) -> pico do recuo (1) -> estabilização + retorno (4)
   hit: {
-    frames: 4,
-    loop: false,
-    fps: 9,
-    durationMs: 700,
-    frameWeights: [0.8, 1.3, 1, 0.9],
-  },
-  // guarda + recuo (3) -> esquiva baixa, segura mais (1) -> recuperação + retorno (2)
-  dodge: {
-    frames: 6,
+    frames: 8,
     loop: false,
     fps: 10,
     durationMs: 800,
-    frameWeights: [0.9, 0.9, 1, 1.2, 1, 0.9],
+    frameWeights: [0.7, 0.7, 0.5, 1.5, 1.1, 1, 1, 1],
+  },
+  // guarda + recuo (3) -> esquiva baixa, segura mais (2) -> recuperação (3)
+  dodge: {
+    frames: 8,
+    loop: false,
+    fps: 10,
+    durationMs: 900,
+    frameWeights: [1, 0.9, 0.8, 1.3, 1.2, 1, 1, 1],
   },
   // guarda + saca o frasco (4) -> bebe, segura mais (1) -> guarda o frasco + retorno (3)
   potion: {
@@ -249,22 +172,25 @@ export const GUARDIAN_ANIMATION_OVERRIDES: Partial<
   },
   // transição de guarda pra postura (não é loop de respiro como nos outros heróis: a folha própria
   // do Guardião vai de guarda neutra até a postura assumida e PARA lá, então toca uma vez e segura
-  // o último quadro em vez de repetir a transição inteira).
+  // o último quadro em vez de repetir a transição inteira). Ofensiva: ergue o martelo (4) -> golpe
+  // descendo (2) -> avanço/thrust final, segura (2).
   stance_offensive: {
-    frames: 6,
+    frames: 8,
     loop: false,
     holdLastFrame: true,
     fps: 8,
-    durationMs: 900,
-    frameWeights: [1, 1, 1, 1, 1.1, 1.3],
+    durationMs: 1000,
+    frameWeights: [1, 1, 1, 0.9, 0.7, 0.6, 1, 1.4],
   },
+  // defensiva: a folha entregue já mostra a postura assumida em todos os 8 quadros (sem transição
+  // visível), então só segura o escudo erguido -- ritmo parelho.
   stance_defensive: {
-    frames: 6,
+    frames: 8,
     loop: false,
     holdLastFrame: true,
     fps: 8,
     durationMs: 900,
-    frameWeights: [1, 1, 1, 1, 1.1, 1.3],
+    frameWeights: [1, 1, 1, 1, 1, 1, 1, 1],
   },
   // base + carga das runas (6) -> carga total, segura mais (1) -> impacto seco (1) -> pós-impacto (3)
   ultimate: {
@@ -299,8 +225,8 @@ const HERO_ANIMATION_OVERRIDES: Record<
   Partial<Record<BattleAnimationState, SpriteStateConfig>>
 > = {
   guerreiro: EIGHT_FRAME_TIMING,
-  druida: DRUID_ANIMATION_OVERRIDES,
-  cacadora: ROGUE_ANIMATION_OVERRIDES,
+  druida: EIGHT_FRAME_TIMING,
+  cacadora: EIGHT_FRAME_TIMING,
   guardiao: GUARDIAN_ANIMATION_OVERRIDES,
   arcanista: EIGHT_FRAME_TIMING,
   cacador: EIGHT_FRAME_TIMING,
@@ -578,120 +504,25 @@ export function isBattleSpriteSupported(category: 'heroes' | 'enemies', id: stri
 
 /**
  * Estados que reaproveitam os quadros de outro estado do mesmo lutador (sem arquivos próprios).
- * Druida e caçadora levam dano com a mesma folha da Defesa (o guerreiro ganhou folha própria de Hit).
+ * Vazio desde que o segundo lote do Codex deu a druida e à caçadora folha própria de cada estado
+ * (o guerreiro já tinha ganhado folha própria de Hit antes disso).
  */
 const SPRITE_STATE_FRAME_ALIAS: Partial<
   Record<string, Partial<Record<BattleAnimationState, BattleAnimationState>>>
-> = {
-  'heroes/druida': { hit: 'defend' },
-  'heroes/cacadora': { hit: 'defend' },
-}
+> = {}
 
 /** Um quadro de outro estado: [estado, índice do quadro]. */
 export type SpriteFrameRef = readonly [BattleAnimationState, number]
 
-const idleLoop: SpriteFrameRef[] = [0, 1, 2, 3, 4, 5].map((i) => ['idle', i] as const)
-
 /**
- * Estados montados a partir de quadros de OUTROS estados (um por quadro da animação). O druida tem
- * folha própria de idle, posturas, ataque, crítico, habilidade, supremo e defesa; esquiva, poção,
- * vitória e derrota ainda não chegaram do Codex e são montadas com poses dessas folhas (ver
- * docs/BATTLE_SPRITE_PROMPTS.md). O tamanho de cada lista precisa bater com o `frames` do estado.
+ * Estados montados a partir de quadros de OUTROS estados (um por quadro da animação), para heróis
+ * cujas folhas de Bases/ ainda não cobrem os 13 estados. Vazio desde que o segundo lote do Codex
+ * completou druida e caçadora (ver docs/BATTLE_SPRITE_PROMPTS.md para o histórico). O tamanho de
+ * cada lista precisa bater com o `frames` do estado que ainda vier a usar isso.
  */
 export const SPRITE_FRAME_SEQUENCES: Partial<
   Record<string, Partial<Record<BattleAnimationState, readonly SpriteFrameRef[]>>>
-> = {
-  'heroes/druida': {
-    // recua o corpo (cajado armado para trás, Ataque quadro 1) e volta
-    dodge: [
-      ['idle', 0],
-      ['attack', 1],
-      ['attack', 1],
-      ['attack', 1],
-      ['idle', 0],
-    ],
-    // mão livre com a luz e o orbe da lua do Supremo brilhando sobre o cajado
-    potion: [
-      ['idle', 0],
-      ['skill', 1],
-      ['ultimate', 3],
-      ['ultimate', 3],
-      ['ultimate', 3],
-      ['skill', 1],
-      ['idle', 0],
-    ],
-    // mão erguida (Habilidade 1) e orbe da lua (Supremo 2-3), segura o orbe no final
-    victory: [
-      ['idle', 0],
-      ['skill', 1],
-      ['ultimate', 2],
-      ['ultimate', 3],
-      ['ultimate', 3],
-      ['ultimate', 3],
-      ['ultimate', 3],
-      ['ultimate', 3],
-    ],
-    // guarda -> corpo recuado -> agachado da Postura Defensiva (quadro 2), segura no final
-    defeat: [
-      ['idle', 0],
-      ['attack', 1],
-      ['stance_defensive', 2],
-      ['stance_defensive', 2],
-      ['stance_defensive', 2],
-      ['stance_defensive', 2],
-      ['stance_defensive', 2],
-      ['stance_defensive', 2],
-    ],
-  },
-  // A caçadora só tem folhas de idle/attack/heavy/defend/ultimate (scripts/extract_rogue_bases.py);
-  // os demais estados são montados com poses dessas folhas até existirem folhas próprias.
-  'heroes/cacadora': {
-    stance_offensive: idleLoop,
-    stance_defensive: idleLoop,
-    // recuo defensivo (Defesa quadro 1) e volta pra guarda
-    dodge: [
-      ['idle', 0],
-      ['defend', 1],
-      ['defend', 1],
-      ['defend', 0],
-      ['idle', 0],
-    ],
-    // sem gesto de mão livre em nenhuma folha (as duas seguram adaga sempre): usa o ciclo de respiro
-    potion: [
-      ['idle', 0],
-      ['idle', 1],
-      ['idle', 2],
-      ['idle', 3],
-      ['idle', 4],
-      ['idle', 5],
-      ['idle', 0],
-    ],
-    // Ataque Duplo: reaproveita o floreio inteiro do Crítico (10 quadros, 1 pra 1)
-    skill: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => ['heavy', i] as const),
-    // guarda -> pose de contato crítico (adagas estendidas), segura no final
-    victory: [
-      ['idle', 0],
-      ['heavy', 2],
-      ['heavy', 4],
-      ['heavy', 5],
-      ['heavy', 5],
-      ['heavy', 5],
-      ['heavy', 5],
-      ['heavy', 5],
-    ],
-    // guarda -> absorção do impacto (Defesa quadro 4), segura no final
-    defeat: [
-      ['idle', 0],
-      ['defend', 1],
-      ['defend', 2],
-      ['defend', 4],
-      ['defend', 4],
-      ['defend', 4],
-      ['defend', 4],
-      ['defend', 4],
-    ],
-  },
-}
+> = {}
 
 /**
  * Gera o caminho canônico do arquivo de frame
