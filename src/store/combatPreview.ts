@@ -60,7 +60,7 @@ export interface PreviewOptions {
 
 const PLAIN_INTENT = { type: 'attack', label: 'Ataque direto', description: '' } as const
 
-interface Outcome {
+export interface Outcome {
   p: number
   damage: number
   crit: boolean
@@ -69,7 +69,7 @@ interface Outcome {
 const FACES = [1, 2, 3, 4, 5, 6] as const
 const clampRoll = (value: number) => Math.max(1, Math.min(6, value))
 
-function summarize(outcomes: Outcome[]): DamagePreview {
+export function summarize(outcomes: Outcome[]): DamagePreview {
   const total = outcomes.reduce((sum, o) => sum + o.p, 0) || 1
   const damages = outcomes.map((o) => o.damage)
   return {

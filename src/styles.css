@@ -2148,6 +2148,7 @@ body::after{content:"VERSÃO 0.8.121 • 25/09/2026\A Forja no modo Moderno: cat
 body::after{content:"VERSÃO 0.8.122 • 25/09/2026\A Correção do menu Acampamento (mostrava o texto camp), achado QA-005 do playtest da interface Moderna.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.123 • 25/09/2026\A Equipamento no modo Moderno: herói no centro com os dez espaços ao redor e, para o espaço escolhido, as peças da mochila comparadas em Ataque, Defesa e Vida com botão Equipar. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.124 • 25/09/2026\A Modo Moderno: Crônicas e Guilda em abas (a Guilda mostra 12 contratos por vez), checklist no Criador de cartas e correção da imagem quebrada na arte vazia da carta. O modo Clássico não mudou.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.125 • 25/09/2026\A Modo Moderno também no cooperativo: Previsão de combate (chance de ser o alvo incluída), resumo do chefe e do grupo antes de enfrentar e painel do grupo na Vitória. Corrigido: inimigo congelado ou assustado acertava mais forte no coop. O modo Clássico não mudou.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4529,3 +4530,52 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
 .cc-checklist li.done{color:#cfe8c4}.cc-checklist li.done span{color:#86c26a}
 .cc-checklist li.todo{color:#ffcfc8}.cc-checklist li.todo span{color:#ef8f88}.cc-checklist li.todo small{color:#ef8f88}
 [data-ui-mode="modern"] .cc-checklist{display:grid}
+.vc-group h2{display:flex;align-items:center;gap:8px}
+.vc-group h2 small{color:#8f8068;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:none}
+.vc-group ul{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.vc-group li{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,1.4fr) minmax(140px,1fr);gap:14px;align-items:center;padding:10px 12px;border:1px solid #3a2a19;border-radius:10px;background:rgba(10,7,5,.7)}
+.vc-group li.me{border-color:#d7a84b;background:linear-gradient(90deg,rgba(90,60,18,.45),rgba(10,7,5,.7))}
+.vc-group-who strong{display:flex;align-items:center;gap:8px;color:#f3e2b8;font:700 .95rem Georgia,serif}
+.vc-group-who em{padding:1px 8px;border-radius:999px;background:#5a3c12;color:#ffe7ae;font:800 .64rem Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.vc-group-who small{color:#9d8c72;font-size:.74rem}
+.vc-group-parts{display:flex;flex-wrap:wrap;gap:4px 14px;color:#a99983;font-size:.78rem}
+.vc-group-share{display:flex;align-items:center;gap:10px}
+.vc-group-share i{flex:1;height:8px;overflow:hidden;border-radius:999px;background:#1d150e;box-shadow:inset 0 0 0 1px #33261a}
+.vc-group-share b{display:block;height:100%;background:linear-gradient(90deg,#4f8a3f,#86c26a)}
+.vc-group-share span{min-width:38px;color:#ffe7ae;font-weight:800;text-align:right}
+@media (max-width:760px){.vc-group li{grid-template-columns:1fr}}
+
+/* Resumo do chefe e do grupo no aviso de chefe do coop (modo Moderno). */
+.cbb{display:grid;gap:10px;margin:10px 0;text-align:left}
+.cbb-boss{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0;color:#cdbf9f;font-size:.82rem}
+.cbb-boss strong{color:#f3d791;font:700 1.05rem Georgia,serif}
+.cbb-boss svg{color:#ef8f88}
+.cbb-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.cbb-grid section{padding:10px 12px;border:1px solid #3a2a19;border-radius:10px;background:rgba(10,7,5,.7)}
+.cbb-grid h3{display:flex;align-items:center;gap:6px;margin:0 0 8px;color:#d4ae65;font-size:.7rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+.cbb-grid ol{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.cbb-grid ol li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:start;color:#e2d6ba;font-size:.8rem}
+.cbb-grid ol b{display:grid;place-items:center;width:22px;height:22px;border:1px solid #b98439;border-radius:50%;color:#f3d791;font:700 .78rem Georgia,serif}
+.cbb-grid ol small{display:block;color:#9d8c72;font-size:.7rem}
+.cbb-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 6px;color:#a99983;font-size:.78rem}
+.cbb-line em{color:#7f705c}
+.cbb-el{padding:2px 9px;border:1px solid currentColor;border-radius:999px;font-size:.72rem;font-weight:800}
+.cbb-matchup{margin:6px 0 0;padding:6px 10px;border:1px solid #3a2a19;border-radius:8px;color:#cdbf9f;font-size:.76rem}
+.cbb-matchup.m-fraqueza{border-color:#4f8a3f;color:#b8e4a8}.cbb-matchup.m-resistencia{border-color:#8a6a35}
+.cbb-party{display:grid;gap:6px;margin:0 0 8px;padding:0;list-style:none}
+.cbb-party li{display:grid;grid-template-columns:minmax(60px,1fr) minmax(50px,1.2fr) auto;gap:8px;align-items:center;color:#d9c9a3;font-size:.76rem}
+.cbb-party li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbb-party i{display:block;height:7px;overflow:hidden;border-radius:999px;background:#1d150e;box-shadow:inset 0 0 0 1px #33261a}
+.cbb-party i b{display:block;height:100%;background:linear-gradient(90deg,#4f8a3f,#86c26a)}
+.cbb-party li.down i b{background:#8c332f}.cbb-party li.locked{opacity:.6}
+.cbb-party em{color:#ffe7ae;font-style:normal;font-weight:700}
+.cbb-advice{display:flex;align-items:center;gap:7px;margin:0;font-size:.76rem}
+.cbb-advice.a-ok{color:#b8e4a8}.cbb-advice.a-warn{color:#f0d9a0}.cbb-advice.a-stop{color:#ffb3aa}
+@media (max-width:760px){.cbb-grid{grid-template-columns:1fr}}
+.regionmap-encounter-prompt:has(.cbb){width:min(780px,94vw);max-width:none}
+.regionmap-encounter-prompt>.cbb{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:12px}
+.regionmap-encounter-prompt .cbb-grid section{border-color:#3b6aa5;background:rgba(4,14,32,.55)}
+.regionmap-encounter-prompt .cbb-grid h3{color:#a9d2ff}
+.regionmap-encounter-prompt .cbb-boss strong{color:#eff7ff;font-family:monospace}
+.regionmap-encounter-prompt .cbb-grid ol b{border-color:#9bc7ff;color:#eff7ff}
+.regionmap-encounter-prompt .cbb-matchup{border-color:#3b6aa5}

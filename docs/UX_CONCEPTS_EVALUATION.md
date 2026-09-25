@@ -78,3 +78,32 @@ para a Forja e um fundo de livro para as Crônicas.
 - `npm test` roda tudo; `combatPreview`, `bossData`, `dropCompare` e `forgeData` comparam a interface com o
   jogo de verdade, então uma regra alterada em `store/game.ts` faz um deles falhar.
 - Verificação no navegador: Playwright com o Chrome instalado, larguras de 360 a 1920, nos dois modos.
+
+## Cooperativo (v0.8.125)
+
+As telas do modo solo foram levadas ao coop, também só no Moderno:
+
+- **Previsão de combate** (`online/coopPreview.ts`): usa as contas do coop, que não são as do solo (o golpe do
+  herói não tem fraqueza elemental nem postura quebrada, a defesa do inimigo vem da dificuldade dele e o
+  inimigo sorteia quem ataca). Por isso mostra também a **chance de ser o alvo** (provocação decide, senão
+  sorteio entre os vivos) e quantos capangas atacam depois. Só entra 1,8 s depois de começar o seu turno, para
+  dar tempo de ler a rolagem anterior.
+- **Resumo do chefe e do grupo** no aviso "Enfrentar chefe" (`CoopBossBriefing`): fases, fraquezas, a sua arma
+  contra ele e a vida de cada membro, com a recomendação (alguém caído ou preso em outra atividade bloqueia).
+- **Vitória com painel do grupo** (`VictoryModern`): dano, cura e dano evitado de cada membro e a parte de cada
+  um na recompensa, pelo mesmo rateio que paga ouro e XP (`coopRewardShare`).
+- As contas de dado do coop viraram funções puras em `online/coopMath.ts`, usadas pelo combate de verdade
+  (`CoopContext.tsx`) e pela previsão, então uma não pode divergir da outra. O rateio da recompensa também.
+
+**Bug corrigido no caminho:** no turno do inimigo do coop, condições do inimigo (congelado, cego, agarrado)
+SOMAVAM no dado de ataque dele (sinal invertido): um inimigo congelado acertava mais forte. No solo a
+condição reduz. Agora reduz nos dois.
+
+**Divergência conhecida, não alterada** (mexe no equilíbrio do coop; decisão de produto): o golpe do herói no
+coop usa `dificuldade − 2` como defesa do inimigo, enquanto o solo usa a defesa real (`enemyDefenseValue`). O
+coop já teve esse mesmo ajuste feito para as feras do Conjurador. A Previsão mostra o que o coop faz de fato.
+
+**Como foi verificado:** testes de unidade contra a conta de referência (e mutações) e um teste de ponta a
+ponta com dois navegadores no Supabase de verdade: sala, entrada, chefe, combate até a vitória. Em 8 golpes
+reais, o dano ficou sempre dentro da faixa prevista; o painel do grupo apareceu para os dois jogadores com
+as partes somando 100%; no Clássico a mesma batalha continua igual (sem Previsão, resumo nem painel).

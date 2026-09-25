@@ -2,6 +2,7 @@ import React from 'react'
 import { attackEffect, applyElementalStatus, buildSummon, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, STANCE_ATTACK_PCT, STANCE_DEFENSE_PCT, STANCE_LABELS, type AttackAnimType, type BattleStance, type EquipmentForgeSnapshot, type StatusEffects, type Summon, type SummonType } from '../store/game'
 import type { Element } from '../data/expansion'
 import { selectCoopAutoHealTarget } from './coopAutoCombat'
+import { coopBuffedAttack, coopEnemyAttackRoll, coopEnemyDamage, coopHeroAttackRoll, coopHeroCritBoost, coopHeroDefenseRoll, coopHeroRollBonus, coopMemberDefenseBase, coopMemberDefensePct, coopMemberDefenseRoll } from './coopMath'
 import { createOnlineRoom, ensureOnlineUser, joinOnlineRoom, leaveOnlineRoom, loadOnlineRoom, publishRoomState, subscribeToOnlineRoom, transferCoopHost, unsubscribeFromOnlineRoom, type OnlineMember, type OnlineRoom } from './supabase'
 type CoopVitals={hp:number;maxHp:number;level:number;attack?:number;defense:number;shield:number;rollBonus:number;critDefenseBoost:boolean;dodgeBoost?:boolean;weaponAnim?:AttackAnimType;resistances?:Element[];locked?:boolean}
 // Anúncio da vitrine do Negociador (sala coop). O item já saiu da bolsa do vendedor no momento
@@ -171,14 +172,14 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const minions:any[]=Array.isArray(battle.combatMinions)?battle.combatMinions:[]
   const target=targetMinionId?minions.find(m=>m.id===targetMinionId&&m.hp>0):undefined
   const enemyStun=target?{status:(battle.enemyStatus??{}) as StatusEffects,wasStunned:false}:consumeStun(battle.enemyStatus)
-  const totalRollBonus=Number(group.roll??0)+Number(personal.roll??0)+Number(personal.nextRoll??0)+rollBonus-rollPenaltyFrom(personal)
-  const totalCritBoost=Boolean(group.critBoost)||critBoost
+  const totalRollBonus=coopHeroRollBonus(group,personal,rollBonus)
+  const totalCritBoost=coopHeroCritBoost(group,critBoost)
   // Crítico forjado é um proc independente da forja (não consome Fervor, ao contrário de forceCrit).
   const forgedCrit=!forceCrit&&critChancePct>0&&Math.random()<critChancePct
   const naturalAttackRoll=forceCrit||forgedCrit?6:1+Math.floor(Math.random()*6)
-  const attackRoll=forceCrit||forgedCrit?6:Math.max(1,Math.min(6,naturalAttackRoll+totalRollBonus+(totalCritBoost&&naturalAttackRoll===5?1:0)))
-  const defenseRoll=enemyStun.wasStunned?1:Math.max(1,1+Math.floor(Math.random()*6)-Number(battle.enemyFearPenalty??0)-(target?0:rollPenaltyFrom(battle.enemyStatus)))
-  const buffedAttack=Math.ceil(attackBase*(1+Number(group.attackPct??0)+Number(personal.attackPct??0)+STANCE_ATTACK_PCT[(personal.battleStance as BattleStance)??'neutra']))
+  const attackRoll=forceCrit||forgedCrit?6:coopHeroAttackRoll(naturalAttackRoll,totalRollBonus,totalCritBoost)
+  const defenseRoll=enemyStun.wasStunned?1:coopHeroDefenseRoll(1+Math.floor(Math.random()*6),Number(battle.enemyFearPenalty??0),target?0:rollPenaltyFrom(battle.enemyStatus))
+  const buffedAttack=coopBuffedAttack(attackBase,group,personal)
   // Reaproveita a mesma resolução de dado do modo solo (game.ts) em vez de uma fórmula
   // paralela: antes o crítico e a defesa perfeita do coop tinham magnitude bem diferente
   // do solo, e a falha crítica não causava autodano nenhum no herói.
@@ -434,7 +435,9 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    return{...current.shared_state,memberVitals:workingVitals,battle:{...battle,...next,playerBuffs:workingBuffs,groupBuff:workingGroupBuff,enemyFearPenalty:workingEnemyFearPenalty,fearTurnsLeft,extraActions:resolvedExtraActions,enemyStatus:enemyStun.status,summonRolls,turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),...statusLogs,`${battle.enemy?.nome} está atordoado e perde a ação neste turno.`]}}
   }
   const enemyRollBonusStart=Number(battle.enemyRollBonus??0)
-  const enemyFear=workingEnemyFearPenalty-rollPenaltyFrom(enemyStun.status)
+  // Medo E condições do inimigo (congelado, cego, agarrado) reduzem o dado dele. Antes a condição SOMAVA no dado
+  // (sinal invertido: um inimigo congelado acertava mais forte), ao contrário do solo, onde ela reduz.
+  const enemyFear=workingEnemyFearPenalty+rollPenaltyFrom(enemyStun.status)
   const pickTarget=()=>{
    const living=membersRef.current.filter(member=>(workingVitals[member.user_id]?.hp??1)>0)
    const taunt=living.find(member=>member.user_id===battle.tauntUserId)
@@ -460,19 +463,16 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const intercepting=Boolean(targetSummon)
    const naturalAttackRoll=1+Math.floor(Math.random()*6)
    const druidaLuck=!intercepting&&target.hero_id==='druida'&&Math.random()<.25
-   const attackRoll=Math.max(1,Math.min(6,naturalAttackRoll+bonus-(druidaLuck?1:0)-enemyFear))
+   const attackRoll=coopEnemyAttackRoll(naturalAttackRoll,bonus,druidaLuck,enemyFear)
    const naturalDefenseRoll=1+Math.floor(Math.random()*6)
    const critDefenseBoost=!intercepting&&Boolean(targetVitals.critDefenseBoost)&&naturalDefenseRoll===5
-   const defenseRoll=intercepting?Math.max(1,naturalDefenseRoll):targetStun.wasStunned?1:Math.max(1,Math.min(6,naturalDefenseRoll+Number(workingGroupBuff.roll??0)+Number(targetVitals.rollBonus??0)+(critDefenseBoost?1:0)-rollPenaltyFrom(targetStun.status)))
-   const defensePct=Number(workingGroupBuff.defensePct??0)+Number(targetBuffs.defensePct??0)+STANCE_DEFENSE_PCT[(targetBuffs.battleStance as BattleStance)??'neutra']
-   const defenseBase=intercepting?targetSummon!.defesa:Math.ceil(Number(targetVitals.defense??0)*(1+defensePct))
+   const defenseRoll=intercepting?Math.max(1,naturalDefenseRoll):targetStun.wasStunned?1:coopMemberDefenseRoll(naturalDefenseRoll,Number(workingGroupBuff.roll??0)+Number(targetVitals.rollBonus??0),critDefenseBoost,rollPenaltyFrom(targetStun.status))
+   const defensePct=coopMemberDefensePct(workingGroupBuff,targetBuffs)
+   const defenseBase=intercepting?targetSummon!.defesa:coopMemberDefenseBase(Number(targetVitals.defense??0),defensePct)
    const rogueDodge=!intercepting&&(((target.hero_id==='cacadora'||target.hero_id==='cacador')&&Math.random()<.2)||(Boolean(targetVitals.dodgeBoost)&&Math.random()<.05))
    const resolved=resolveCombatRoll(attackBase,defenseBase,attackRoll,defenseRoll)
    const enemyElement=(battle.enemy?.elemento??'fisico') as Element,resisted=!intercepting&&(targetVitals.resistances??[]).includes(enemyElement)
-   let rawDamage=rogueDodge?0:resolved.damage
-   if(resisted&&rawDamage>0)rawDamage=Math.max(0,rawDamage-1)
-   const shieldBlocked=intercepting?0:Math.min(Number(targetVitals.shield??0),rawDamage)
-   const damage=rawDamage-shieldBlocked
+   const{damage,shieldBlocked}=coopEnemyDamage({resolvedDamage:resolved.damage,dodged:rogueDodge,resisted,shield:Number(targetVitals.shield??0),intercepting})
    enemyHpNow=Math.max(0,enemyHpNow-resolved.selfDamage)
    let summonDied=false
    if(intercepting){

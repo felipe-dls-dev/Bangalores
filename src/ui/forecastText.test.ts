@@ -43,4 +43,19 @@ describe('texto da previsão de combate', () => {
     const notes = enemyForecast(enemy({ dodgeChance: 0.2, shield: 4 }), 40, { summons: true }).notes
     expect(notes).toEqual(['média 3', 'esquiva 20%', 'escudo absorve até 4', 'feras podem interceptar'])
   })
+
+  it('coop: chance de ser o alvo, capangas, provocação e inimigo atordoado', () => {
+    const coop = (over: Partial<{ targetChance: number; minionsAlive: number; enemyStunned: boolean }> = {}) => ({ targetChance: 0.25, minionsAlive: 0, enemyStunned: false, ...over })
+    expect(enemyForecast(enemy(), 40, { coop: coop() }).notes).toEqual(['média 3', '25% de chance de ser o alvo'])
+    expect(enemyForecast(enemy(), 40, { coop: coop({ targetChance: 1, minionsAlive: 2 }) }).notes).toEqual(['média 3', 'ele vai atacar você', '2 capangas também atacam'])
+    expect(enemyForecast(enemy(), 40, { coop: coop({ targetChance: 0 }) }).notes).toContain('ele está provocado por outro')
+    expect(enemyForecast(enemy({ max: 50, lethal: true }), 40, { coop: coop({ targetChance: 0 }) }).level).toBe('safe') // não pode te atacar
+    expect(enemyForecast(enemy({ max: 50, lethal: true }), 40, { coop: coop({ targetChance: 0.5 }) }).level).toBe('lethal')
+    const stunned = enemyForecast(enemy(), 40, { coop: coop({ enemyStunned: true }) })
+    expect(stunned).toEqual({ range: '0', notes: ['o inimigo está atordoado e perde a vez'], level: 'safe' })
+  })
+
+  it('coop: avisa quando o golpe mais forte derruba o inimigo', () => {
+    expect(heroForecast({ ...hero(), staggered: undefined, finisher: true }).notes).toContain('o golpe mais forte derruba o inimigo')
+  })
 })

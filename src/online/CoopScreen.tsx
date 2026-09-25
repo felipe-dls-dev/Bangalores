@@ -1,11 +1,13 @@
 import React from 'react'
 import { ArrowLeft, ArrowLeftRight, ArrowRight, Coins, Copy, Crown, Heart, Link2, LogOut, Map, PackageSearch, ScrollText, ShieldHalf, ShoppingBag, Sword, Tag, Trophy, Users, Wifi, WifiOff, XCircle } from 'lucide-react'
-import { attackValue, buildCoopEnemy, buildCoopRegionBoss, buildCoopSubregionBoss, CONSUMABLES, defenseValue, equipmentBagCapacity, equipmentByRef, HEROES, hasCraftedEffect, heroResistances, heroWeaponAnimationType, isNavigationLocked, levelInfo, maxHp, regionListSort, SUBREGIONS, TERRITORIES, useGame } from '../store/game'
+import { attackValue, buildCoopEnemy, buildCoopRegionBoss, buildCoopSubregionBoss, CONSUMABLES, defenseValue, equipmentBagCapacity, equipmentByRef, HEROES, hasCraftedEffect, heroResistances, heroWeaponAnimationType, heroWeaponElement, isNavigationLocked, levelInfo, maxHp, regionListSort, SUBREGIONS, TERRITORIES, useGame } from '../store/game'
 import { SPECIALIZATION_CHOICES } from '../data/expansion'
 import type { Enemy, Subregion, Slot } from '../types'
 import { normalizeRoomCode, onlineConfigured } from './supabase'
 import { useCoop, type MarketListing } from './CoopContext'
 import { getRegionMap, REGION_UI_THEME, TileWorldExplorer } from '../regionMap'
+import { useUiMode } from '../ui/uiMode'
+import { CoopBossBriefing } from '../ui/CoopBossBriefing'
 
 const art=(hero:any)=>'./'+(hero?.arte??hero?.imagem??'')
 // Contrato 17 do Quadro de Contratos: emotes rápidos (não chat livre, sem risco de moderação) --
@@ -237,6 +239,7 @@ function CoopHostMap({regionId}:{regionId:string}){
  const subs=SUBREGIONS.filter(sub=>sub.regionId===regionId),region=TERRITORIES.find(t=>t.id===regionId)
  const [activeSub,setActiveSub]=React.useState<Subregion|undefined>(subs[0])
  const [encounterPrompt,setEncounterPrompt]=React.useState<Subregion|undefined>()
+ const briefingModern=useUiMode()==='modern'
  const [ambushPrompt,setAmbushPrompt]=React.useState<{enemy:Enemy;subregionId:string}|undefined>()
  const [chestNotice,setChestNotice]=React.useState<string|undefined>()
  const memberProgress=(coop.room?.shared_state?.memberProgress??{}) as CoopMemberProgress
@@ -266,7 +269,9 @@ function CoopHostMap({regionId}:{regionId:string}){
  const explore=()=>{if(!encounterPrompt)return;const sub=encounterPrompt,bossReady=allHaveSubProgress(sub);setEncounterPrompt(undefined);const enemy=bossReady?buildCoopSubregionBoss(sub.id,g.difficultyMode,coop.members.length):buildCoopEnemy(sub.id,level,g.difficultyMode,coop.members.length);if(enemy)void coop.startMapBattle(sub.id,enemy as unknown as Record<string,unknown>)}
  const handleRegionBoss=()=>{const sub=activeSub??subs[0];if(!sub)return;const enemy=buildCoopRegionBoss(regionId,g.difficultyMode,coop.members.length);if(enemy)void coop.startMapBattle(sub.id,enemy as unknown as Record<string,unknown>)}
  const selectedSub=activeSub??subs[0],selectedProgress=selectedSub?subProgress(selectedSub):undefined,selectedDanger=selectedSub?coopDangerFor(level,selectedSub.nivelMin,selectedSub.nivelMax):undefined
- const encounterDialog=encounterPrompt&&<div className="regionmap-encounter-backdrop" onClick={()=>setEncounterPrompt(undefined)}><section className="regionmap-encounter-prompt" onClick={event=>event.stopPropagation()}><span className="eyebrow">{allHaveSubProgress(encounterPrompt)?'CHEFE DA SUB-REGIÃO':'PONTO DE EXPLORAÇÃO'}</span><h2>{encounterPrompt.nome}</h2><p>{encounterPrompt.descricao}</p><div><button onClick={()=>setEncounterPrompt(undefined)}>Continuar explorando</button><button className="primary" onClick={explore}>{allHaveSubProgress(encounterPrompt)?'Enfrentar chefe':'Explorar (buscar combate)'}</button></div></section></div>
+ // Resumo do chefe e do grupo (modo Moderno): o chefe é o mesmo que "Enfrentar chefe" vai criar, já escalado pelo grupo.
+ const bossBriefing=(sub:Subregion)=>{const boss=buildCoopSubregionBoss(sub.id,g.difficultyMode,coop.members.length);if(!boss)return null;const vitals=(coop.room?.shared_state?.memberVitals??{}) as Record<string,{hp:number;maxHp:number;level?:number;locked?:boolean}>;return <CoopBossBriefing boss={boss} weapon={heroWeaponElement(g)} members={coop.members.map(member=>{const isMe=member.user_id===coop.userId,v=vitals[member.user_id];return{userId:member.user_id,name:member.display_name??'Aventureiro',hp:isMe?g.hp:(v?.hp??0),maxHp:isMe?maxHp(g):(v?.maxHp??1),level:isMe?levelInfo(g.xp).lvl:v?.level,locked:isMe?false:Boolean(v?.locked)}})}/>}
+ const encounterDialog=encounterPrompt&&<div className="regionmap-encounter-backdrop" onClick={()=>setEncounterPrompt(undefined)}><section className="regionmap-encounter-prompt" onClick={event=>event.stopPropagation()}><span className="eyebrow">{allHaveSubProgress(encounterPrompt)?'CHEFE DA SUB-REGIÃO':'PONTO DE EXPLORAÇÃO'}</span><h2>{encounterPrompt.nome}</h2><p>{encounterPrompt.descricao}</p>{briefingModern&&allHaveSubProgress(encounterPrompt)&&bossBriefing(encounterPrompt)}<div><button onClick={()=>setEncounterPrompt(undefined)}>Continuar explorando</button><button className="primary" onClick={explore}>{allHaveSubProgress(encounterPrompt)?'Enfrentar chefe':'Explorar (buscar combate)'}</button></div></section></div>
  const ambushDialog=ambushPrompt&&<div className="regionmap-encounter-backdrop"><section className="regionmap-ambush-prompt"><span className="eyebrow">EMBOSCADA</span><h2>O grupo foi atacado!</h2><div className="regionmap-ambush-enemy"><img src={art(ambushPrompt.enemy)} alt={ambushPrompt.enemy.nome}/><div><strong>{ambushPrompt.enemy.nome}</strong><small>Nível {(ambushPrompt.enemy as any).nivel??ambushPrompt.enemy.dificuldade}</small></div></div><p>Um inimigo surge e bloqueia o caminho do grupo. Fugir usa a mesma chance de uma fuga em combate.</p><div><button onClick={fleeAmbush}>Tentar fugir</button><button className="primary" onClick={acceptAmbush}>Aceitar o desafio</button></div></section></div>
  const chestDialog=chestNotice&&<div className="regionmap-encounter-backdrop" onClick={()=>setChestNotice(undefined)}><section className="regionmap-chest-prompt" onClick={event=>event.stopPropagation()}><span className="eyebrow">BAÚ ABERTO</span><p>{chestNotice}</p><button className="primary" onClick={()=>setChestNotice(undefined)}>Continuar</button></section></div>
  return <div className="regionmap-shell coop-map-shell">

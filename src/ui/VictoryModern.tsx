@@ -1,5 +1,6 @@
 import React from 'react'
-import { Coins, HeartPulse, ShieldCheck, Skull, Sparkles, Star, Trophy } from 'lucide-react'
+import { Coins, HeartPulse, ShieldCheck, Skull, Sparkles, Star, Trophy, Users } from 'lucide-react'
+import type { CoopShareRow } from '../online/coopMath'
 import { equipmentByRef, levelInfo, maxHp, useGame } from '../store/game'
 import { bossPreparation } from './bossData'
 import { xpProgress } from './campData'
@@ -28,13 +29,15 @@ export interface VictoryModernProps {
   itemCard?: React.ReactNode
   /** Número que sobe animado (o mesmo do modo Clássico). */
   animated: (value: number) => React.ReactNode
+  /** Só no coop: como o grupo dividiu a recompensa (mesmo rateio que paga ouro e XP). */
+  group?: { rows: CoopShareRow[]; me: string; classLabel: (heroId?: string) => string }
   /** Avisos e ações que a tela já monta (masmorra, bolsa cheia, botões). */
   children?: React.ReactNode
 }
 
 // Cabeçalho da tela de Vitória no modo Moderno: recompensas, saque com comparação e "Equipar agora", e
 // recuperação. A preparação e a mochila continuam logo abaixo, as mesmas do modo Clássico.
-export function VictoryModern({ loot, defeat, epic, nextStep, equipmentCard, itemCard, animated, children }: VictoryModernProps) {
+export function VictoryModern({ loot, defeat, epic, nextStep, equipmentCard, itemCard, animated, group, children }: VictoryModernProps) {
   const g = useGame()
   const [equipped, setEquipped] = React.useState<string | undefined>()
   // Ao abrir, começa no topo mesmo que a tela anterior estivesse rolada.
@@ -181,6 +184,41 @@ export function VictoryModern({ loot, defeat, epic, nextStep, equipmentCard, ite
           <p className="vc-hint">Use as poções na preparação logo abaixo antes da próxima luta.</p>
         </aside>
       </div>
+
+      {group && group.rows.length > 0 && (
+        <section className="vc-card vc-group" aria-label="Grupo">
+          <h2>
+            <Users size={15} aria-hidden />
+            Grupo
+            <small>divisão da recompensa</small>
+          </h2>
+          <ul>
+            {group.rows.map((row) => (
+              <li key={row.userId} className={row.userId === group.me ? 'me' : ''}>
+                <div className="vc-group-who">
+                  <strong>
+                    {row.name}
+                    {row.userId === group.me && <em>você</em>}
+                  </strong>
+                  <small>{group.classLabel(row.heroId)}</small>
+                </div>
+                <div className="vc-group-parts">
+                  <span title="Dano causado">Dano {row.damage}</span>
+                  <span title="Cura feita">Cura {row.healing}</span>
+                  <span title="Dano que você evitou levar">Evitado {row.resisted}</span>
+                </div>
+                <div className="vc-group-share" role="img" aria-label={`${Math.round(row.share * 100)}% da recompensa`}>
+                  <i>
+                    <b style={{ width: `${Math.round(row.share * 100)}%` }} />
+                  </i>
+                  <span>{Math.round(row.share * 100)}%</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="vc-hint">Ouro e XP são divididos pelo que cada um fez: dano, cura e dano evitado.</p>
+        </section>
+      )}
 
       {children}
     </section>
