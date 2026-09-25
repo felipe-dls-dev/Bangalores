@@ -1,3 +1,4 @@
+import {CRYSTAL_REWARDS} from './crystals'
 export type DifficultyMode='aventura'|'veterano'|'lendario'
 export type Element='fisico'|'fogo'|'gelo'|'natureza'|'sombra'|'luz'|'arcano'
 // Contrato 6 do Quadro de Contratos: "Aventura" já existia, mas só 12% mais fraco que o padrão
@@ -91,19 +92,29 @@ const WEEKLY_CHALLENGE_POOL:ChallengeDef[]=[
  {metric:'combat_win',target:20,label:'Vença 20 combates',reward:140},
 ]
 const DAY_MS=86400000
-function dayIndex(now:number){return Math.floor(now/DAY_MS)}
-// Semana ISO simplificada (segunda a domingo) -- só precisa ser estável e consistente entre
-// jogadores no mesmo dia, não precisa bater com a numeração oficial de semana do calendário.
-function weekIndex(now:number){return Math.floor(dayIndex(now)/7)}
-export interface Challenge{id:string;kind:'daily'|'weekly';metric:ChallengeMetric;target:number;label:string;reward:number}
-export function activeChallenges(now=Date.now()):Challenge[]{
- const di=dayIndex(now),wi=weekIndex(now)
+// O dia dos desafios é o dia LOCAL do jogador. Antes era o dia UTC, então em Brasília (UTC-3) os
+// desafios viravam às 21h. tzOffsetMinutes segue Date#getTimezoneOffset (minutos a oeste de UTC:
+// 180 em Brasília) e é parâmetro para os testes não dependerem do fuso da máquina.
+function tzOffsetOf(now:number){return new Date(now).getTimezoneOffset()}
+function dayIndex(now:number,tzOffsetMinutes=tzOffsetOf(now)){return Math.floor((now-tzOffsetMinutes*60000)/DAY_MS)}
+// Semana de segunda a domingo. O dia 0 do calendário Unix (1970-01-01) foi uma quinta-feira, então
+// a virada da semana cai quando (dia+3) é múltiplo de 7 (segunda = dia 4); o cálculo antigo
+// (dia/7) virava toda quinta apesar do comentário dizer segunda a domingo.
+function weekIndex(now:number,tzOffsetMinutes=tzOffsetOf(now)){return Math.floor((dayIndex(now,tzOffsetMinutes)+3)/7)}
+/** Milissegundos até os desafios diários trocarem (meia-noite local). */
+export function msUntilChallengeReset(now=Date.now(),tzOffsetMinutes=tzOffsetOf(now)){
+ const intoDay=(((now-tzOffsetMinutes*60000)%DAY_MS)+DAY_MS)%DAY_MS
+ return DAY_MS-intoDay
+}
+export interface Challenge{id:string;kind:'daily'|'weekly';metric:ChallengeMetric;target:number;label:string;reward:number;crystals:number}
+export function activeChallenges(now=Date.now(),tzOffsetMinutes=tzOffsetOf(now)):Challenge[]{
+ const di=dayIndex(now,tzOffsetMinutes),wi=weekIndex(now,tzOffsetMinutes)
  const first=DAILY_CHALLENGE_POOL[di%DAILY_CHALLENGE_POOL.length],second=DAILY_CHALLENGE_POOL[(di+1)%DAILY_CHALLENGE_POOL.length]
  const weekly=WEEKLY_CHALLENGE_POOL[wi%WEEKLY_CHALLENGE_POOL.length]
  return[
-  {id:`daily_a_${di}`,kind:'daily',...first},
-  {id:`daily_b_${di}`,kind:'daily',...second},
-  {id:`weekly_${wi}`,kind:'weekly',...weekly}
+  {id:`daily_a_${di}`,kind:'daily',...first,crystals:CRYSTAL_REWARDS.dailyChallenge},
+  {id:`daily_b_${di}`,kind:'daily',...second,crystals:CRYSTAL_REWARDS.dailyChallenge},
+  {id:`weekly_${wi}`,kind:'weekly',...weekly,crystals:CRYSTAL_REWARDS.weeklyChallenge}
  ]
 }
 export function bumpChallengeProgress(progress:Record<string,number>|undefined,metrics:ChallengeMetric[],now=Date.now()):Record<string,number>{

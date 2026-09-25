@@ -2138,6 +2138,7 @@ body::after{content:"VERSÃO 0.8.111 • 25/09/2026\A Guilda: Bênção de Prote
 body::after{content:"VERSÃO 0.8.112 • 25/09/2026\A Combate: face 1 do dado vira Raspão (metade do dano, sem autodano) e consumíveis viram ação rápida (1 por turno, sem gastar o ataque), no solo e no coop.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.113 • 25/09/2026\A Celular: o painel do sininho da Guilda não estoura mais a tela pela direita (texto cortado e rolagem horizontal).";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.114 • 25/09/2026\A Nova opção de interface: botão Clássica/Moderna no topo. A Moderna agrupa a navegação em 6 grupos com menus (mais limpa no celular). A Clássica continua igual e é a padrão.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.115 • 25/09/2026\A Nova moeda: Cristais de Éter, ganhos em desafios e ao concluir capítulos da história. Os desafios diários agora reiniciam à meia-noite do seu fuso (não mais às 21h) e o semanal na segunda-feira.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4030,3 +4031,8 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
   .nav-group-menu{position:fixed;top:auto;left:8px;right:8px;min-width:0;margin-top:8px;max-height:calc(100vh - 160px);overflow-y:auto}
 }
 @media (max-width:760px){.topbar nav .nav-group-btn{font-size:.5rem;letter-spacing:0;padding:.4rem .05rem}}
+
+/* Cristais de Éter (moeda premium): chip no HUD e valor nos desafios. */
+.hud-crystals,.challenge-crystals,.crystal-icon-fallback{color:#b98cff}
+.challenge-crystals{display:inline-flex;align-items:center;gap:4px;margin-left:10px}
+.crystal-icon{display:block;object-fit:contain}
