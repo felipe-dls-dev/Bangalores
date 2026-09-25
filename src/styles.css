@@ -2137,6 +2137,7 @@ body::after{content:"VERSÃO 0.8.110 • 24/09/2026\A Correção crítica: a moc
 body::after{content:"VERSÃO 0.8.111 • 25/09/2026\A Guilda: Bênção de Proteção (gaste ouro para não perder equipamento na derrota) e Depósito da Guilda com slots gratuitos e slots extras comprados com ouro.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.112 • 25/09/2026\A Combate: face 1 do dado vira Raspão (metade do dano, sem autodano) e consumíveis viram ação rápida (1 por turno, sem gastar o ataque), no solo e no coop.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.113 • 25/09/2026\A Celular: o painel do sininho da Guilda não estoura mais a tela pela direita (texto cortado e rolagem horizontal).";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.114 • 25/09/2026\A Nova opção de interface: botão Clássica/Moderna no topo. A Moderna agrupa a navegação em 6 grupos com menus (mais limpa no celular). A Clássica continua igual e é a padrão.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4000,3 +4001,32 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
    e texto cortado). Aqui ele passa a usar as bordas da janela; top:auto mantém a posição vertical
    logo abaixo do sino. */
 @media (max-width:760px){.guild-herald-panel{position:fixed;top:auto;left:8px;right:8px;width:auto;max-width:none;margin-top:10px;max-height:calc(100vh - 140px);overflow-y:auto}}
+
+/* Botão de alternar a interface (Clássica/Moderna) no topo, ao lado do Menu. */
+.ui-mode-toggle{display:inline-flex;align-items:center;gap:6px;padding:.62rem .72rem;border:1px solid var(--line)!important;border-radius:8px;background:linear-gradient(180deg,#21170f,#120d09)!important;color:#a99879;font-size:.7rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.ui-mode-toggle:hover{border-color:#b98439!important;color:#efcc82}
+.ui-mode-toggle.active{border-color:#b98439!important;color:#efcc82;box-shadow:0 0 0 1px rgba(185,132,57,.25) inset}
+@media (max-width:760px){.ui-mode-toggle span{display:none}.ui-mode-toggle{padding:.62rem .64rem}}
+
+/* ===== Topo Moderno: 6 grupos com dropdown (modo de interface Moderna) ===== */
+.topbar nav.nav-modern{display:flex;flex-wrap:nowrap;align-items:center;gap:4px}
+.nav-groups{display:flex;align-items:center;gap:4px}
+.nav-group{position:relative}
+.topbar nav .nav-group-btn{display:inline-flex;align-items:center;gap:7px;padding:.5rem .72rem;font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}
+.nav-group-caret{opacity:.7;transition:transform .15s}
+.nav-group-btn[aria-expanded="true"] .nav-group-caret{transform:rotate(180deg)}
+.nav-group-menu{position:absolute;top:calc(100% + 8px);left:0;z-index:60;display:grid;gap:2px;min-width:190px;padding:6px;border:1px solid #6c522f;border-radius:10px;background:linear-gradient(180deg,#1d160f,#120d09);box-shadow:0 18px 40px rgba(0,0,0,.5);animation:menu-dropdown-in .16s ease}
+.topbar nav .nav-group-menu button{display:flex;align-items:center;justify-content:flex-start;padding:.6rem .8rem;border-color:transparent;border-radius:7px;background:transparent;font-size:.82rem;font-weight:700;letter-spacing:.02em;text-align:left;text-transform:none}
+.topbar nav .nav-group-menu button:hover,.topbar nav .nav-group-menu button:focus-visible{background:#2a1c0d;color:#efcc82}
+.topbar nav .nav-group-menu button.active{border-color:#704c22;background:#2a1c0d;color:var(--gold2)}
+@media (max-width:1500px){.topbar nav .nav-group-btn{gap:6px;padding:.5rem .55rem;font-size:.66rem;letter-spacing:.06em}.nav-group-caret{display:none}}
+@media (max-width:900px){.topbar nav.nav-modern{flex:1 1 100%}.nav-groups{flex:1;justify-content:center}}
+@media (max-width:760px){
+  .topbar nav.nav-modern{display:flex;grid-template-columns:none;align-items:flex-start;gap:2px}
+  .nav-groups{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);flex:1;gap:2px}
+  .topbar nav .nav-group-btn{flex-direction:column;gap:2px;width:100%;padding:.4rem .15rem;font-size:.54rem;letter-spacing:.01em}
+  .nav-group-btn .nav-group-label{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .nav-group{position:static}
+  .nav-group-menu{position:fixed;top:auto;left:8px;right:8px;min-width:0;margin-top:8px;max-height:calc(100vh - 160px);overflow-y:auto}
+}
+@media (max-width:760px){.topbar nav .nav-group-btn{font-size:.5rem;letter-spacing:0;padding:.4rem .05rem}}
