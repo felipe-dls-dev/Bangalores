@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bangalores-orchestrator": {
+      "command": "node",
+      "args": ["tools/agent-orchestrator/server.mjs"]
+    }
+  }
+}

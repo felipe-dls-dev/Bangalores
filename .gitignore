@@ -13,3 +13,5 @@ swishes_extract/
 *.pdf
 __pycache__/
 *.pyc
+# estado local do orquestrador de agentes (quadro de tarefas, logs de execuções)
+.orchestrator/
