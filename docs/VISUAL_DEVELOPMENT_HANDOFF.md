@@ -94,6 +94,8 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P1 | Druid Defesa sheet, regeneration | Codex | INTEGRATED | See ART-031 -- new `druida/Bases/Defesa.png` delivered with an opaque body; cut into `defend_00..07` (8 frames, 4x2; also serves `hit`). |
 | P1 | Eight-frame sheets, third Codex delivery (cacadora, druida, guardiao) | — | INTEGRATED | See ART-032 -- cacadora and druida now have all 13 states as native 8-frame sheets (no more borrowed/stand-in poses); guardiao's Idle/Defesa/Esquiva/Dano_Recebido/Posturas upgraded from their original 4-6 frame counts to the standard 8-frame grid. |
 | P3 | Monster card art that "shows the wrong creature" | — | DELIVERED, NOT INTEGRATED | See ART-033 -- the premise was wrong: the running game already shows the right creature via the name-keyed `monsterArt.json` override. 9 new HD cards (3 wolves, 2 spiders, salamander, goblin, 2 dragons) were delivered anyway and are kept unused as an optional resolution upgrade. |
+| P1 | Acampamento hub art + premium currency icon | Codex | REQUESTED | See ART-034 -- camp banner (desktop + mobile), Cristal de Éter icon (128 + 512), optional shortcut-card backgrounds. Chapter art, hero portraits and map backgrounds are reused. |
+| P1 | Title screen remodel: wallpaper with all nine heroes + login/menu mockup | Codex | REQUESTED | See ART-035 -- 1920x1080 and 1080x1920 wallpapers, plus a design mockup in `docs/design/` (reference only). |
 | P2 | Shared equipment art, last 2 pieces | — | DONE | ART-029 delivered the tier-0 Andarilhos calças/botas; shared-equipment art audit now has no known missing paths. |
 | P2 | Steelmere "Act 2" story content (Contrato 11) | Codex | INTEGRATED | CONTENT-001 delivered a playable optional Steelmere quest chain in `src/data/storyQuests.ts`, deepening the industrial-rebellion plot without changing the main quest spine. |
 
@@ -650,6 +652,32 @@ Delivered (base 253x189 WebP; HD 1086x1448 WebP):
 - `public/assets/art/monsters/dragao_do_vazio.webp` and `public/assets/art/hd/monsters/dragao-do-vazio-hd.webp`
 Not delivered (P2 optional, intentionally out of scope after the P1 set): `minotauro_jovem`, `morcego_de_cristal`, `morcego_das_galerias`.
 Integration (Claude Code): NOT integrated, because the request rested on a wrong reading. This entry was written from `src/data/subregioes.json`, where those enemies do carry the recycled `arte` (goat/raven/plant guardian) -- but that field is only a fallback. At runtime `namedMonsterArt(nome, hdArt(arte))` in `src/store/game.ts` looks the enemy NAME up in `src/data/monsterArt.json` first, and all 9 creatures already resolve to their own correct illustration in `assets/art/hd/named-monsters/` (`monster-002.jpg` Lobo dos Campos, `-007` Lobo de Abdendriel, `-025` Lobo do Gelo, `-017` Viúva de Abdendriel, `-016` Tecelã Gigante, `-028` Salamandra de Ignaris, `-012` Goblin Bombeiro, `-031` Filhote de Dragão Vermelho, `-054` Dragão do Vazio; each ~313x314 JPG). So the player never saw a goat for a wolf, and the audit finding this came from (GAME-005) does not reproduce in the running game. The 18 delivered files are kept in the repo, unused: they are 1086x1448 (much sharper than the 313px named art) and consistent with the base card set, so they are a ready option if Felipe later wants to upgrade these 9 enemies -- that would be done by pointing their `monsterArt.json` entries at the new HD files, and it is a visual-direction decision for Felipe, not a bug fix. Lesson for future requests: check `monsterArt.json` (name override) before treating a JSON `arte` field as what the player sees.
+
+### ART-034 - "Acampamento" hub art and the premium currency icon
+Status: REQUESTED
+Requested by: Claude Code, on behalf of Felipe (Codex's own hub mockup, approved 2026-09-25)
+Gameplay purpose: the new Modern UI mode gets a hub screen, "Acampamento de Expedição", drawn from the mockup Codex proposed. Chapter card art (ART-015 act banners), hero portraits and map backgrounds are REUSED, so this request is only the pieces that do not exist yet. Also a new premium currency, "Cristal de Éter" (Aether Crystal): earned in play, purchasable later. It needs an icon. Do not call it "gemas": forge gems already use that word.
+Required assets (P1):
+- `public/assets/ui/camp/camp-banner.webp` -- hub header banner, 2400x600 (4:1). The mockup's night camp: tents, the crimson banner emblem, campfires, an armored warrior on the right, gothic towers under violet lightning. The LEFT 45% must stay calm and dark (the hub title sits on it). Use the mockup's look as the reference.
+- `public/assets/ui/camp/camp-banner-mobile.webp` -- same scene cropped for phones, 1080x720 (3:2), warrior centred, bottom 35% calm/dark for text.
+- `public/assets/ui/currency/aether-crystal.png` -- currency icon, 128x128 PNG RGBA, transparent background. A violet crystal with one lighter facet, readable at 16x16 (simple silhouette, strong outline, no fine detail). Must feel native to the dark bronze/gold UI.
+- `public/assets/ui/currency/aether-crystal-large.png` -- same design at 512x512 for reward pop-ups.
+Optional (P2, only after the P1 set): shortcut card backgrounds from the mockup, each 1280x480 WebP: `public/assets/ui/camp/card-forge.webp` (anvil/sword), `public/assets/ui/camp/card-allies.webp` (adventurers around a campfire), `public/assets/ui/camp/card-quote.webp` (dim silhouettes of a marching party).
+Style: same painterly dark-fantasy look as the existing story cinematics and monster cards; palette bronze/gold with violet accents. No text or UI baked into any image.
+Code dependency: Claude Code builds the screen and wires the paths above. Codex must not edit `src/`.
+Acceptance check: exact dimensions; banner text-safe area respected; the crystal icon still reads at 16px on a dark background; all final paths listed in the handoff.
+
+### ART-035 - Title screen remodel: wallpaper with all nine heroes and a modern login/menu mockup
+Status: REQUESTED
+Requested by: Claude Code, on behalf of Felipe
+Gameplay purpose: modernize the first thing players see. Today `MainMenu` and `AuthScreen` (`src/main.tsx`) share one wallpaper, `public/assets/ui/menu/eldravar-war-menu.png` (1672x941, menu card on the left, dark gradient over the left 60%). Felipe wants a general wallpaper featuring ALL the heroes and a more modern menu/login layout.
+Required assets (P1):
+- `public/assets/ui/menu/heroes-wallpaper.webp` -- 1920x1080 (16:9). The nine heroes together in a heroic line-up (guerreiro, guardiao, cacadora, cacador, arcanista, conjurador, druida, monge, sacerdotisa), over a Havendown backdrop that fits "A guerra por Havendown". Keep the LEFT 38% low-detail and dark (menu card lives there); put the heroes on the right 62%. Use each hero's existing art as the design reference so they stay recognizable: `public/assets/heroes/*` (see `src/data/herois.json` for the exact file per hero) and `public/assets/battle/sprites/heroes/<id>/idle_00.png`. No text, no logo baked in.
+- `public/assets/ui/menu/heroes-wallpaper-mobile.webp` -- 1080x1920 (9:16). Heroes in the top 55%, bottom 45% dark and calm for the buttons.
+- `docs/design/title-screen-mock.png` -- a 1920x1080 design MOCKUP (reference only, not shipped) of the modernized title screen AND the login screen on top of that wallpaper: logo "Bangalore's", the three actions (Continuar campanha atual / Nova campanha / Criador de cartas), the saved-campaigns list, and the login form with the three states used today (entrar, criar conta, recuperar senha) plus a "jogar sem conta" option. Also show one 390x844 phone variant of the title screen. This is the ONLY deliverable allowed outside `public/assets`, because it is a design reference for Claude Code; create `docs/design/` if needed.
+Style: same dark-fantasy painterly look and bronze/gold UI language as the rest of the game and as Codex's Acampamento mockup, so the title screen and the hub feel like one product.
+Code dependency: Claude Code rebuilds `MainMenu`/`AuthScreen` from the mockup and wires the wallpaper paths. Codex must not edit `src/`.
+Acceptance check: exact dimensions; all nine heroes present and recognizable; the text-safe zones respected; the mockup covers both desktop and phone; all paths listed in the handoff.
 
 ## Handoff Log
 
