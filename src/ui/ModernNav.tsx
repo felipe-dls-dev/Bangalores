@@ -80,7 +80,7 @@ export function ModernNav({ screen, locked, lockTitle, available, labelOf, onGo 
         const isActive = activeGroupId === group.id
         const common = {
           disabled: locked,
-          title: locked ? lockTitle : undefined,
+          title: locked ? lockTitle : group.label, // dica ao passar o mouse: em larguras médias só o ícone aparece
           className: `nav-group-btn${isActive ? ' active' : ''}`,
         }
         if (group.screens.length === 1) {

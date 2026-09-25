@@ -1,6 +1,6 @@
 import type { Element } from './data/expansion'
 export type Slot = 'amuleto'|'capacete'|'bolsa'|'anel_1'|'peitoral'|'anel_2'|'calcas'|'mao_esquerda'|'mao_direita'|'botas'
-export type Screen = 'menu'|'select'|'map'|'guild'|'chronicle'|'forge'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'tutorial'|'coop'|'combat'|'bossIntro'|'loot'|'cardCreator'
+export type Screen = 'menu'|'select'|'map'|'guild'|'chronicle'|'forge'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'tutorial'|'coop'|'combat'|'bossIntro'|'loot'|'cardCreator'|'camp'
 export type Rarity = 'comum'|'incomum'|'raro'|'epico'|'lendario'|'mitico'|'heroico'
 export type ShopCategory = 'arma'|'equipamento'|'consumivel'
 export type ShopTier = 'simples'|'superior'

@@ -2139,6 +2139,7 @@ body::after{content:"VERSÃO 0.8.112 • 25/09/2026\A Combate: face 1 do dado vi
 body::after{content:"VERSÃO 0.8.113 • 25/09/2026\A Celular: o painel do sininho da Guilda não estoura mais a tela pela direita (texto cortado e rolagem horizontal).";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.114 • 25/09/2026\A Nova opção de interface: botão Clássica/Moderna no topo. A Moderna agrupa a navegação em 6 grupos com menus (mais limpa no celular). A Clássica continua igual e é a padrão.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.115 • 25/09/2026\A Nova moeda: Cristais de Éter, ganhos em desafios e ao concluir capítulos da história. Os desafios diários agora reiniciam à meia-noite do seu fuso (não mais às 21h) e o semanal na segunda-feira.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.116 • 25/09/2026\A Modo Moderno: nova tela Acampamento (capítulo e objetivo da história, herói, desafios com resgate e contagem, provisão diária, atalhos) e topo agrupado que cabe em qualquer largura. Ao continuar uma campanha no modo Moderno você cai no Acampamento.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4036,3 +4037,124 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
 .hud-crystals,.challenge-crystals,.crystal-icon-fallback{color:#b98cff}
 .challenge-crystals{display:inline-flex;align-items:center;gap:4px;margin-left:10px}
 .crystal-icon{display:block;object-fit:contain}
+
+/* ===== Acampamento: hub do modo de interface Moderna ===== */
+.camp-page{display:grid;gap:16px;max-width:1500px;margin:0 auto}
+.camp-eyebrow{display:block;color:#d4ae65;font-size:.7rem;font-weight:900;letter-spacing:.14em}
+.camp-banner{position:relative;isolation:isolate;overflow:hidden;min-height:clamp(210px,24vw,340px);display:flex;align-items:center;border:1px solid #594020;border-radius:12px;background:#0b0705}
+.camp-banner picture,.camp-banner-art{position:absolute;inset:0;width:100%;height:100%}
+.camp-banner-art{object-fit:cover;object-position:right center}
+.camp-banner:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(6,4,3,.88) 0%,rgba(6,4,3,.52) 38%,transparent 64%)}
+.camp-banner-text{position:relative;z-index:2;max-width:min(54%,640px);padding:clamp(20px,3vw,42px)}
+.camp-banner-text h1{margin:6px 0 8px;color:#f1ce7d;font:700 clamp(1.7rem,3.6vw,3.2rem) Georgia,serif;line-height:1.05;text-shadow:0 3px 20px #000}
+.camp-banner-text p{margin:0;color:#eadfc4;font-size:clamp(.88rem,1.2vw,1.05rem);text-shadow:0 2px 10px #000}
+.camp-banner-quote{position:absolute;z-index:2;right:clamp(16px,2.5vw,36px);bottom:clamp(14px,2vw,26px);max-width:240px;margin:0;color:#eadfc4;font:italic .92rem Georgia,serif;line-height:1.4;text-shadow:0 2px 10px #000}
+.camp-notice{padding:10px 14px;border:1px solid #6c522f;border-radius:9px;background:#1d160f;color:#efcc82;font-size:.85rem;cursor:pointer}
+.camp-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:stretch}
+.camp-card{position:relative;display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid #594020;border-radius:12px;background:linear-gradient(135deg,#1c130d,#0d0907)}
+.camp-card h2{margin:0;color:#f3e2b8;font:700 1.35rem Georgia,serif;line-height:1.2}
+.camp-chapter-art{height:150px;margin:-16px -16px 0;overflow:hidden;border-radius:11px 11px 0 0;background:#0b0705}
+.camp-chapter-art img{width:100%;height:100%;object-fit:cover}
+.camp-chapter-body{display:flex;flex-direction:column;gap:10px}
+.camp-chapter-text{margin:0;color:#cdbf9f;font-size:.86rem;line-height:1.55}
+.camp-objective{padding:10px 12px;border:1px solid #49341f;border-radius:9px;background:#100b08}
+.camp-objective-label{display:block;margin-bottom:4px;color:#b9a684;font-size:.72rem;letter-spacing:.06em}
+.camp-objective-row{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#f3e2b8;font-size:.9rem}
+.camp-objective-done{color:#7fd08a}
+.camp-link{display:inline-flex;align-items:center;gap:8px;padding:.6rem .8rem;border:1px solid #4c351d;border-radius:8px;background:#150f0a;color:#d9c9a3;font-size:.82rem;font-weight:700;text-align:left}
+.camp-link>span{flex:1}
+.camp-link:hover:not(:disabled){border-color:#b98439;color:#f3e2b8}
+.camp-link-solid{background:linear-gradient(180deg,#26190d,#150f0a);border-color:#6c522f}
+.camp-cta{display:flex;align-items:center;gap:14px;margin-top:auto;padding:14px 16px;border:1px solid #d7a84b;border-radius:10px;background:linear-gradient(180deg,#5a3c12,#2f1e0a);color:#fff2cf;text-align:left;box-shadow:0 0 22px rgba(215,168,75,.22)}
+.camp-cta:hover{background:linear-gradient(180deg,#6a4716,#38240c)}
+.camp-cta>span{flex:1;display:grid;gap:2px}
+.camp-cta strong{font:700 1.05rem Georgia,serif;letter-spacing:.06em;text-transform:uppercase}
+.camp-cta small{color:#e8d3a2;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase}
+.camp-hero-head{display:grid;grid-template-columns:auto minmax(0,1fr) 88px;align-items:center;gap:12px}
+.camp-level{display:grid;place-items:center;width:64px;height:64px;border:2px solid #b98439;border-radius:50%;background:#100b08;color:#f3e2b8}
+.camp-level small{margin-bottom:-4px;color:#b9a684;font-size:.6rem;font-weight:800;letter-spacing:.1em}
+.camp-level strong{font:700 1.6rem Georgia,serif;line-height:1}
+.camp-hero-name span{color:#cdbf9f;font-size:.8rem}
+.camp-hero-portrait{width:88px;height:96px;object-fit:cover;object-position:top;border:1px solid #49341f;border-radius:8px}
+.camp-xp-text{display:flex;justify-content:space-between;margin-bottom:5px;color:#cdbf9f;font-size:.78rem}
+.camp-bar{height:8px;overflow:hidden;border-radius:6px;background:#241809}
+.camp-bar>div{height:100%;border-radius:6px;background:linear-gradient(90deg,#8a5c1c,#e6b855)}
+.camp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0}
+.camp-stats>div{padding:9px 10px;border:1px solid #3e2b1a;border-radius:8px;background:#100b08}
+.camp-stats dt{color:#b9a684;font-size:.72rem;letter-spacing:.05em}
+.camp-stats dd{margin:2px 0 0;color:#f3e2b8;font:700 1.05rem Georgia,serif}
+.camp-points{margin:0;padding:8px 10px;border:1px solid #6c522f;border-radius:8px;background:#22170b;color:#efcc82;font-size:.8rem}
+.camp-hero .camp-link{margin-top:auto}
+.camp-objectives-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.camp-reset{color:#cdbf9f;font-size:.75rem}
+.camp-challenges{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.camp-challenges li{display:grid;gap:8px;padding:10px 12px;border:1px solid #49341f;border-radius:9px;background:#100b08}
+.camp-challenges li.ready{border-color:#b98439}
+.camp-challenges li.claimed{opacity:.7}
+.camp-challenge-top{display:flex;align-items:center;gap:8px}
+.camp-challenge-top strong{color:#f3e2b8;font-size:.88rem}
+.camp-kind{padding:2px 6px;border-radius:5px;background:#2a1c0d;color:#d4ae65;font-size:.62rem;font-weight:900;letter-spacing:.08em}
+.camp-kind-weekly{background:#241a35;color:#c9a9ff}
+.camp-challenge-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:10px}
+.camp-progress-count{color:#cdbf9f;font-size:.75rem}
+.camp-reward{display:inline-flex;align-items:center;gap:4px;color:#efbd58;font-size:.82rem;font-weight:700}
+.camp-reward-crystals{display:inline-flex;align-items:center;gap:3px;margin-left:6px;color:#b98cff}
+.camp-challenge-bottom button{padding:.4rem .7rem;font-size:.74rem}
+.camp-daily{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding:10px 12px;border:1px dashed #49341f;border-radius:9px}
+.camp-daily strong{display:block;color:#f3e2b8;font-size:.86rem}
+.camp-daily small{color:#b9a684;font-size:.74rem}
+.camp-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.camp-shortcut{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:170px;overflow:hidden;border:1px solid #594020;border-radius:12px;background:#0b0705}
+.camp-shortcut-art{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.camp-shortcut:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(6,4,3,.9) 0%,rgba(6,4,3,.62) 55%,rgba(6,4,3,.2) 100%)}
+.camp-shortcut-body{display:grid;gap:8px;max-width:78%;padding:16px}
+.camp-shortcut-body p{margin:0;color:#eadfc4;font-size:.85rem;line-height:1.45}
+.camp-shortcut-quote{align-items:center}
+.camp-shortcut-quote blockquote{margin:0;padding:18px;max-width:72%;color:#f3e2b8;font:italic 1rem Georgia,serif;line-height:1.45;text-shadow:0 2px 10px #000}
+.camp-strip{display:flex;align-items:center;justify-content:center;gap:14px;margin:4px 0 0;padding-top:12px;border-top:1px solid #3e2b1a;color:#b9a684;font-size:.72rem;font-weight:800;letter-spacing:.2em}
+.camp-strip i{color:#7a5a2a;font-style:normal}
+@media (max-width:1100px){
+  .camp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .camp-chapter{grid-column:1/-1}
+  .camp-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .camp-shortcut-quote{grid-column:1/-1}
+}
+@media (max-width:760px){
+  .camp-banner{min-height:230px;align-items:flex-end}
+  .camp-banner:before{background:linear-gradient(0deg,rgba(6,4,3,.92) 0%,rgba(6,4,3,.55) 42%,transparent 70%)}
+  .camp-banner-text{max-width:none;padding:18px}
+  .camp-banner-quote{display:none}
+  .camp-grid,.camp-shortcuts{grid-template-columns:minmax(0,1fr)}
+  .camp-chapter,.camp-shortcut-quote{grid-column:auto}
+  .camp-challenge-bottom{grid-template-columns:minmax(0,1fr) auto}
+  .camp-challenge-bottom .camp-bar{grid-column:1/-1}
+  .camp-shortcut-body{max-width:none}
+  .camp-strip{gap:9px;font-size:.62rem;letter-spacing:.12em}
+}
+
+/* Topo Moderno em larguras médias: com 6 grupos + HUD completo (vida, mochila, ouro, cristais, nível,
+   alternar interface, Menu) o topo passava da largura em 1366px e empurrava a página para o lado.
+   Ordem de sacrifício: primeiro o nome do jogo e o texto do botão de interface; depois, em larguras
+   ainda menores, o rótulo dos grupos não ativos (fica só o ícone, com o nome como dica e para leitores
+   de tela: o texto continua no DOM, apenas visualmente oculto). */
+@media (max-width:1760px){
+  .app-shell[data-ui-mode="modern"] .topbar .brand{display:none}
+  .app-shell[data-ui-mode="modern"] .ui-mode-toggle span{display:none}
+  .app-shell[data-ui-mode="modern"] .ui-mode-toggle{padding:.62rem .64rem}
+}
+@media (max-width:1280px) and (min-width:761px){
+  .topbar nav .nav-group-btn:not(.active) .nav-group-label{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .topbar nav .nav-group-btn:not(.active){padding:.5rem .6rem}
+}
+
+/* Celular estreito (até 480px): 6 grupos com rótulo ficavam truncados ("ACAMPA...", "INVENTÁ..."). Só o
+   grupo ativo mostra o nome completo; os demais ficam só com o ícone (nome como dica e para leitores
+   de tela: o texto segue no DOM, visualmente oculto). */
+@media (max-width:480px){
+  .nav-groups{display:flex;gap:2px;grid-auto-flow:unset}
+  .topbar nav .nav-group-btn{flex:0 0 auto;flex-direction:row;gap:5px;width:auto;padding:.5rem .42rem;font-size:.62rem;letter-spacing:.03em}
+  .topbar nav .nav-group-btn:not(.active) .nav-group-label{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .topbar nav .nav-group-btn.active{flex:1 1 auto;justify-content:center}
+  .nav-group-btn .nav-group-label{max-width:none;overflow:visible;text-overflow:clip}
+}
+.camp-stats-extra{margin-top:-4px}
