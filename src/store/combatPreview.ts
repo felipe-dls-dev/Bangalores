@@ -53,6 +53,13 @@ export interface EnemyThreatPreview extends DamagePreview {
   intentLabel: string
 }
 
+export interface PreviewOptions {
+  /** Ignora a intenção do turno e considera um ataque direto (para telas fora do combate, como a do chefe). */
+  plainAttack?: boolean
+}
+
+const PLAIN_INTENT = { type: 'attack', label: 'Ataque direto', description: '' } as const
+
 interface Outcome {
   p: number
   damage: number
@@ -75,10 +82,10 @@ function summarize(outcomes: Outcome[]): DamagePreview {
 }
 
 /** Prévia do ataque comum do herói contra o inimigo atual. `undefined` fora de um combate solo. */
-export function previewHeroAttack(s: Snapshot): HeroAttackPreview | undefined {
+export function previewHeroAttack(s: Snapshot, options: PreviewOptions = {}): HeroAttackPreview | undefined {
   const enemy = s.enemy
   if (!enemy) return undefined
-  const intent = enemyIntentFor(enemy, s.combatTurn)
+  const intent = options.plainAttack ? PLAIN_INTENT : enemyIntentFor(enemy, s.combatTurn)
   const spec = specializationBonuses(s)
   const attackBase =
     attackValue(s) + s.firstStrikeBonus + (enemy.boss ? spec.bossDamage : 0) + (s.talents.includes('cacador') && enemy.boss ? 2 : 0) + bestiaryDamageBonus(s, enemy)
@@ -119,10 +126,10 @@ export function previewHeroAttack(s: Snapshot): HeroAttackPreview | undefined {
 }
 
 /** Prévia do golpe que o inimigo dá depois da ação do herói neste turno. */
-export function previewEnemyAttack(s: Snapshot): EnemyThreatPreview | undefined {
+export function previewEnemyAttack(s: Snapshot, options: PreviewOptions = {}): EnemyThreatPreview | undefined {
   const enemy = s.enemy
   if (!enemy) return undefined
-  const intent = enemyIntentFor(enemy, s.combatTurn)
+  const intent = options.plainAttack ? PLAIN_INTENT : enemyIntentFor(enemy, s.combatTurn)
   const attackBase = Math.ceil(enemy.ataque * (intent.type === 'heavy' ? 1.35 : 1))
   const defenseBase = defenseValue(s)
   const attackBonus = s.enemyRollBonus - rollPenaltyFrom(s.enemyStatus) - (s.enemyFearPenalty ?? 0)

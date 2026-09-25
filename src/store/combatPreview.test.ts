@@ -86,6 +86,25 @@ describe('previsão do ataque do herói bate com o combate de verdade', () => {
     expect(previewHeroAttack(state())!.critChance).toBeGreaterThan(1 / 6)
   })
 
+  it('plainAttack ignora a intenção do turno (ataque pesado/guarda) e bate com um turno de ataque direto', () => {
+    // Descobre um turno "de ataque direto" e um "pesado" para o mesmo inimigo.
+    const turns = [1, 2, 3, 4, 5, 6, 7, 8]
+    const byIntent = (type: string) => turns.find((turn) => {
+      inCombat('guerreiro', { combatTurn: turn })
+      return previewEnemyAttack(state())!.intentLabel === type
+    })!
+    const plainTurn = byIntent('Ataque direto')
+    const heavyTurn = byIntent('Ataque pesado')
+    inCombat('guerreiro', { combatTurn: plainTurn })
+    const reference = previewEnemyAttack(state())!
+    inCombat('guerreiro', { combatTurn: heavyTurn })
+    const heavy = previewEnemyAttack(state())!
+    const plainOnHeavyTurn = previewEnemyAttack(state(), { plainAttack: true })!
+    expect(heavy.max).toBeGreaterThan(reference.max)
+    expect(plainOnHeavyTurn.max).toBe(reference.max)
+    expect(plainOnHeavyTurn.intentLabel).toBe('Ataque direto')
+  })
+
   it('sem inimigo não há previsão', () => {
     inCombat()
     useGame.setState({ enemy: undefined } as any)
