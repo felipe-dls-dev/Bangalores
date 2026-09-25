@@ -2149,6 +2149,7 @@ body::after{content:"VERSÃO 0.8.122 • 25/09/2026\A Correção do menu Acampam
 body::after{content:"VERSÃO 0.8.123 • 25/09/2026\A Equipamento no modo Moderno: herói no centro com os dez espaços ao redor e, para o espaço escolhido, as peças da mochila comparadas em Ataque, Defesa e Vida com botão Equipar. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.124 • 25/09/2026\A Modo Moderno: Crônicas e Guilda em abas (a Guilda mostra 12 contratos por vez), checklist no Criador de cartas e correção da imagem quebrada na arte vazia da carta. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.125 • 25/09/2026\A Modo Moderno também no cooperativo: Previsão de combate (chance de ser o alvo incluída), resumo do chefe e do grupo antes de enfrentar e painel do grupo na Vitória. Corrigido: inimigo congelado ou assustado acertava mais forte no coop. O modo Clássico não mudou.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.126 • 25/09/2026\A Coop igual ao solo na defesa do inimigo: o golpe do herói no coop passa a usar a mesma defesa do solo (antes usava só dificuldade menos 2 e batia mais forte que o solo). O modo Clássico não mudou.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

@@ -99,9 +99,11 @@ As telas do modo solo foram levadas ao coop, também só no Moderno:
 SOMAVAM no dado de ataque dele (sinal invertido): um inimigo congelado acertava mais forte. No solo a
 condição reduz. Agora reduz nos dois.
 
-**Divergência conhecida, não alterada** (mexe no equilíbrio do coop; decisão de produto): o golpe do herói no
-coop usa `dificuldade − 2` como defesa do inimigo, enquanto o solo usa a defesa real (`enemyDefenseValue`). O
-coop já teve esse mesmo ajuste feito para as feras do Conjurador. A Previsão mostra o que o coop faz de fato.
+**Defesa do inimigo alinhada ao solo (v0.8.126):** o golpe do herói no coop usava só `dificuldade − 2` como
+defesa do inimigo; o solo usa a defesa real (`enemyDefenseValue`: defesa própria, senão nível/dificuldade − 2).
+Agora os dois usam a mesma, e um teste confere isso para todos os monstros e chefes do jogo. Os golpes do coop
+contra inimigos com defesa ou nível próprios ficaram mais fracos, como no solo. Continuam diferentes de propósito
+no coop: o golpe do herói não tem fraqueza elemental nem postura quebrada, e o inimigo sorteia quem ataca.
 
 **Como foi verificado:** testes de unidade contra a conta de referência (e mutações) e um teste de ponta a
 ponta com dois navegadores no Supabase de verdade: sala, entrada, chefe, combate até a vitória. Em 8 golpes

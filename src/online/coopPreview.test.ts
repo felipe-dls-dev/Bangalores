@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { STANCE_ATTACK_PCT, STANCE_DEFENSE_PCT, resolveCombatRoll, rollPenaltyFrom, useGame, type BattleStance } from '../store/game'
+import { BOSSES, MONSTERS, STANCE_ATTACK_PCT, STANCE_DEFENSE_PCT, buildCoopSubregionBoss, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, SUBREGIONS, useGame, type BattleStance } from '../store/game'
 import { coopAttackInputs, previewCoopEnemyAttack, previewCoopHeroAttack, type CoopAttackInputs, type CoopMemberVitals } from './coopPreview'
 import {
   coopBuffedAttack,
@@ -264,6 +264,30 @@ describe('coopAttackInputs: mesmos números que o combate manda', () => {
     expect(coopAttackInputs(useGame.getState(), { boss: true, dificuldade: 1 }).defenseBase).toBe(0)
     const minion = coopAttackInputs(useGame.getState(), { boss: true, dificuldade: 5 }, true)
     expect(minion.attackBase).toBe(normal.attackBase - 2) // capanga não recebe o bônus de primeiro golpe
+  })
+
+  it('a defesa do inimigo é a MESMA do solo (defesa própria, senão nível/dificuldade − 2)', () => {
+    useGame.getState().newGame('guerreiro')
+    const g = useGame.getState()
+    expect(coopAttackInputs(g, { boss: false, dificuldade: 5 }).defenseBase).toBe(3)
+    expect(coopAttackInputs(g, { boss: false, dificuldade: 5, nivel: 12 }).defenseBase).toBe(10) // nível manda sobre a dificuldade
+    expect(coopAttackInputs(g, { boss: false, dificuldade: 5, nivel: 12, defesa: 4 }).defenseBase).toBe(4) // defesa própria manda sobre tudo
+    expect(coopAttackInputs(g, { boss: false, dificuldade: 1 }).defenseBase).toBe(0)
+  })
+
+  it('para todo monstro, chefe e chefe de sub-região do jogo, coop e solo calculam a mesma defesa', () => {
+    useGame.getState().newGame('guerreiro')
+    const g = useGame.getState()
+    const enemies: any[] = [...MONSTERS, ...Object.values(BOSSES), ...SUBREGIONS.map((s) => buildCoopSubregionBoss(s.id, 'veterano', 3))].filter(Boolean)
+    expect(enemies.length).toBeGreaterThan(30)
+    for (const enemy of enemies) expect(coopAttackInputs(g, enemy).defenseBase, enemy.nome).toBe(enemyDefenseValue(enemy))
+  })
+
+  it('contra capanga continua sem defesa nenhuma (fora da conta acima)', () => {
+    useGame.getState().newGame('guerreiro')
+    const preview = previewCoopHeroAttack(battleWith(), ME, { ...baseInput, defenseBase: 0 }, { targetMinion: true })!
+    const withDefense = previewCoopHeroAttack(battleWith(), ME, { ...baseInput, defenseBase: 9 }, { targetMinion: true })!
+    expect(withDefense.max).toBe(preview.max)
   })
 
   it('talento de caçador de chefes soma +2 só contra chefe', () => {

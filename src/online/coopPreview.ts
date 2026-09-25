@@ -1,10 +1,10 @@
 // Previsão de combate no modo cooperativo. Só LÊ o estado compartilhado da batalha: enumera as combinações de
 // dados e resume, usando as MESMAS contas de coopMath.ts que o combate cooperativo usa (CoopContext.tsx).
-// Diferenças de propósito em relação ao solo (store/combatPreview.ts): o coop não tem elemento/postura quebrada
-// no golpe do herói, a defesa do inimigo vem da dificuldade, e o inimigo sorteia quem ataca.
+// Diferenças em relação ao solo (store/combatPreview.ts): o coop não tem elemento/postura quebrada no golpe do
+// herói e o inimigo sorteia quem ataca. A defesa do inimigo é a mesma do solo.
 
 import type { Element } from '../data/expansion'
-import { attackValue, consumeStun, hasCraftedEffect, resolveCombatRoll, rollPenaltyFrom, specializationBonuses, tickStatus, useGame } from '../store/game'
+import { attackValue, consumeStun, enemyDefenseValue, hasCraftedEffect, resolveCombatRoll, rollPenaltyFrom, specializationBonuses, tickStatus, useGame } from '../store/game'
 import { summarize, type DamagePreview, type EnemyThreatPreview, type Outcome } from '../store/combatPreview'
 import type { Enemy } from '../types'
 import {
@@ -36,12 +36,14 @@ export interface CoopAttackInputs {
 }
 
 /** Números do golpe do herói contra o inimigo principal (ou contra um capanga, que não tem defesa). */
-export function coopAttackInputs(g: Snapshot, enemy: Pick<Enemy, 'boss' | 'dificuldade'>, targetMinion = false): CoopAttackInputs {
+export function coopAttackInputs(g: Snapshot, enemy: Pick<Enemy, 'boss' | 'dificuldade' | 'defesa' | 'nivel'>, targetMinion = false): CoopAttackInputs {
   const spec = specializationBonuses(g)
   const bossBonus = targetMinion ? 0 : (g.talents.includes('cacador') && enemy.boss ? 2 : 0) + (enemy.boss ? spec.bossDamage : 0) + g.firstStrikeBonus
   return {
     attackBase: attackValue(g) + bossBonus,
-    defenseBase: Math.max(0, (enemy.dificuldade ?? 1) - 2),
+    // A mesma defesa do inimigo que o solo usa (defesa própria, senão nível/dificuldade − 2). Antes o coop usava só
+    // dificuldade − 2, o que deixava os golpes do coop mais fortes que os do solo contra o mesmo inimigo.
+    defenseBase: enemyDefenseValue(enemy),
     rollBonus: g.heroRollBonus + (g.classRollBonus ?? 0),
     critBoost: hasCraftedEffect(g, 'critico'),
     critChancePct: (hasCraftedEffect(g, 'critico_forjado') ? 0.05 : 0) + spec.crit,
