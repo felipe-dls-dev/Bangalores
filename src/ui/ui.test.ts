@@ -45,6 +45,22 @@ describe('modo de interface (preferência global)', () => {
     expect(calls).toBe(2)
   })
 
+  it('mantém o atributo data-ui-mode do <html> em dia (a tela de login aparece antes do App montar)', () => {
+    const fakeDocument = { documentElement: { dataset: {} as Record<string, string> } }
+    ;(globalThis as any).document = fakeDocument
+    try {
+      resetUiModeCache()
+      expect(getUiMode()).toBe('classic')
+      expect(fakeDocument.documentElement.dataset.uiMode).toBe('classic') // aplicado já na primeira leitura
+      setUiMode('modern')
+      expect(fakeDocument.documentElement.dataset.uiMode).toBe('modern')
+      toggleUiMode()
+      expect(fakeDocument.documentElement.dataset.uiMode).toBe('classic')
+    } finally {
+      delete (globalThis as any).document
+    }
+  })
+
   it('sem localStorage utilizável o botão continua funcionando na sessão', () => {
     const throwing = {
       getItem() { throw new Error('bloqueado') },

@@ -26,12 +26,23 @@ function notify() {
   listeners.forEach((listener) => listener())
 }
 
+// Atributo no <html> para o CSS diferenciar os modos. Fica aqui (e não num efeito do App) porque a
+// tela de login aparece ANTES de o App montar e também precisa do visual certo.
+function applyToDocument(mode: UiMode) {
+  if (typeof document !== 'undefined') document.documentElement.dataset.uiMode = mode
+}
+
 export function getUiMode(): UiMode {
-  return (current ??= readStored())
+  if (current === undefined) {
+    current = readStored()
+    applyToDocument(current)
+  }
+  return current
 }
 
 export function setUiMode(mode: UiMode) {
   current = mode
+  applyToDocument(mode)
   try {
     localStorage.setItem(UI_MODE_KEY, mode)
   } catch {
@@ -61,8 +72,10 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
   window.addEventListener('storage', (event) => {
     if (event.key !== UI_MODE_KEY) return
     current = readStored()
+    applyToDocument(current)
     notify()
   })
+  getUiMode() // aplica o atributo já ao carregar o módulo, antes de qualquer tela desenhar
 }
 
 export function useUiMode(): UiMode {

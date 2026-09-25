@@ -2140,6 +2140,7 @@ body::after{content:"VERSÃO 0.8.113 • 25/09/2026\A Celular: o painel do sinin
 body::after{content:"VERSÃO 0.8.114 • 25/09/2026\A Nova opção de interface: botão Clássica/Moderna no topo. A Moderna agrupa a navegação em 6 grupos com menus (mais limpa no celular). A Clássica continua igual e é a padrão.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.115 • 25/09/2026\A Nova moeda: Cristais de Éter, ganhos em desafios e ao concluir capítulos da história. Os desafios diários agora reiniciam à meia-noite do seu fuso (não mais às 21h) e o semanal na segunda-feira.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.116 • 25/09/2026\A Modo Moderno: nova tela Acampamento (capítulo e objetivo da história, herói, desafios com resgate e contagem, provisão diária, atalhos) e topo agrupado que cabe em qualquer largura. Ao continuar uma campanha no modo Moderno você cai no Acampamento.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.117 • 25/09/2026\A Tela inicial e login remodelados no modo Moderno: wallpaper com os nove heróis, cartão de vidro escuro, abas Entrar / Criar conta / Recuperar senha e versão para celular. O botão Clássica/Moderna também aparece na tela inicial.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4158,3 +4159,53 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
   .nav-group-btn .nav-group-label{max-width:none;overflow:visible;text-overflow:clip}
 }
 .camp-stats-extra{margin-top:-4px}
+
+/* ===== Tela inicial e login: modo de interface Moderna (wallpaper com os 9 heróis, ART-035) ===== */
+.ui-modern-only{display:none}
+[data-ui-mode="modern"] .ui-modern-only{display:block}
+[data-ui-mode="modern"] .ui-classic-only{display:none}
+.menu-corner{position:absolute;top:18px;right:18px;z-index:3;display:flex;align-items:center;gap:8px}
+.menu-corner .menu-account-exit{position:static}
+.menu-logo{margin:0}
+[data-ui-mode="modern"] .menu-hero{flex-direction:column;align-items:flex-start;justify-content:center;gap:22px;background-image:linear-gradient(90deg,rgba(6,5,4,.93) 0%,rgba(6,5,4,.78) 30%,rgba(6,5,4,.16) 58%,rgba(6,5,4,.22) 100%),linear-gradient(0deg,rgba(4,3,2,.72),transparent 38%),url('/assets/ui/menu/heroes-wallpaper.webp');background-position:right center}
+[data-ui-mode="modern"] .menu-logo{display:block}
+[data-ui-mode="modern"] .menu-logo .brand.big{font-size:clamp(2.6rem,4.6vw,4.4rem);line-height:.95}
+[data-ui-mode="modern"] .menu-logo small{display:block;margin-top:6px;color:#d4ae65;font-size:.78rem;font-weight:800;letter-spacing:.2em}
+[data-ui-mode="modern"] .menu-hero .menu-card{width:min(560px,46vw);padding:clamp(24px,2.6vw,36px);border:1px solid rgba(215,168,75,.7);border-radius:16px;background:linear-gradient(160deg,rgba(20,14,9,.93),rgba(10,7,5,.9));box-shadow:0 30px 80px rgba(0,0,0,.6)}
+[data-ui-mode="modern"] .menu-hero .menu-card:before,[data-ui-mode="modern"] .menu-hero .menu-card:after{display:none}
+[data-ui-mode="modern"] .menu-hero .menu-eyebrow{margin:0 0 6px;color:#d4ae65;font-size:.74rem;letter-spacing:.16em}
+[data-ui-mode="modern"] .menu-headline{margin:0 0 18px;color:#f3e2b8;font:700 clamp(1.6rem,2.4vw,2.1rem) Georgia,serif;line-height:1.15}
+[data-ui-mode="modern"] .menu-hero .tagline{margin:0 0 6px;color:#f3e2b8;font:700 clamp(1.5rem,2.2vw,1.95rem) Georgia,serif;letter-spacing:0}
+[data-ui-mode="modern"] .menu-hero .menu-intro{max-width:none;margin:0 0 14px;color:#cdbf9f;font-size:.88rem}
+[data-ui-mode="modern"] .menu-hero .screen-intro{margin:0;padding:0;border:0;background:none}
+[data-ui-mode="modern"] .menu-hero .screen-actions{display:grid;gap:10px}
+[data-ui-mode="modern"] .menu-hero .menu-card button:not(.campaign-load):not(.campaign-delete):not(.auth-tabs button){min-height:52px;border-radius:10px;font:700 1.02rem Georgia,serif;letter-spacing:.02em;text-transform:none}
+[data-ui-mode="modern"] .menu-hero .menu-card .primary{border-color:#d7a84b;background:linear-gradient(180deg,#b98439,#8a5c1c);color:#fff8e6}
+[data-ui-mode="modern"] .menu-hero .campaign-library{margin-top:18px;padding-top:14px;border-top:1px solid rgba(215,168,75,.3)}
+[data-ui-mode="modern"] .menu-hero .campaign-list article{border-radius:10px}
+[data-ui-mode="modern"] .menu-hero .save-note{margin-top:14px;color:#b9a684;font-size:.76rem}
+[data-ui-mode="modern"] .menu-scene-caption{display:none}
+[data-ui-mode="modern"] .auth-tabs{display:flex;gap:8px;margin:14px 0 6px}
+[data-ui-mode="modern"] .menu-hero .menu-card .auth-tabs button{flex:1;min-height:42px;padding:.4rem .5rem;border:1px solid rgba(215,168,75,.35);border-radius:9px;background:rgba(30,22,14,.85);color:#d9c9a3;font:700 .86rem Georgia,serif;letter-spacing:0;text-transform:none}
+[data-ui-mode="modern"] .menu-hero .menu-card .auth-tabs button.active{border-color:#d7a84b;background:linear-gradient(180deg,#b98439,#8a5c1c);color:#fff8e6}
+@media (max-width:760px){
+  [data-ui-mode="modern"] .menu-hero{justify-content:flex-end;align-items:stretch;gap:14px;padding:clamp(16px,5vw,28px);padding-top:42vh;background-image:linear-gradient(0deg,rgba(6,5,4,.96) 0%,rgba(6,5,4,.78) 34%,rgba(6,5,4,.1) 62%,rgba(6,5,4,.3) 100%),url('/assets/ui/menu/heroes-wallpaper-mobile.webp');background-position:center top}
+  [data-ui-mode="modern"] .menu-logo{text-align:center}
+  [data-ui-mode="modern"] .menu-logo .brand.big{font-size:clamp(2.2rem,11vw,3rem)}
+  [data-ui-mode="modern"] .menu-hero .menu-card{width:100%;padding:18px}
+  .menu-corner{top:10px;right:10px}
+}
+
+/* Ajustes da tela inicial Moderna (achados na revisão visual): logotipo deslocado no celular (a regra
+   antiga .brand{text-align:right} do topo vazava para ele), botão "CONTINUAR" cortado na biblioteca de
+   campanhas, botão de apagar tudo pesado demais e texto do botão de interface perdido na tela inicial. */
+.menu-corner .ui-mode-toggle span{display:inline}
+[data-ui-mode="modern"] .menu-logo .brand{order:0;width:auto;text-align:left}
+[data-ui-mode="modern"] .menu-hero .campaign-list article{grid-template-columns:48px minmax(0,1fr) 108px 28px}
+[data-ui-mode="modern"] .menu-hero .campaign-load{padding:0 10px;font-size:.74rem;letter-spacing:.06em;white-space:nowrap}
+[data-ui-mode="modern"] .menu-hero .danger-link{min-height:40px;border-color:rgba(199,126,113,.35);background:transparent;font-size:.86rem}
+@media (max-width:760px){
+  [data-ui-mode="modern"] .menu-logo .brand{width:100%;text-align:center}
+  [data-ui-mode="modern"] .menu-hero .campaign-list article{grid-template-columns:42px minmax(0,1fr) 28px}
+}
+@media (max-width:650px){.menu-corner .ui-mode-toggle span{display:none}}
