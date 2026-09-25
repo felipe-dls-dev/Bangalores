@@ -66,7 +66,9 @@ describe('auto-combate solo', () => {
   })
 
   it('o watchdog de um turno antigo não interrompe o golpe do herói no turno seguinte', () => {
-    startSoloCombat('guerreiro', { combatSpeed: 1 })
+    // Inimigo fraco: sem equipamento o Guerreiro não tem mais a defesa de classe de antes (Armadura só vem de itens),
+    // e este teste é sobre o watchdog, não sobre sobreviver 8 turnos com o punho nu.
+    startSoloCombat('guerreiro', { combatSpeed: 1, enemy: { ...enemy, ataque: 1 } })
     auto()
     // 8 turnos completos em velocidade normal: antes, o timer de "recuperação" do turno N disparava
     // no meio do ataque do turno N+1 e o auto agendava uma segunda ação por cima da primeira.

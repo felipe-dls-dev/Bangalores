@@ -23,10 +23,10 @@ export const CLASS_ELEMENT:Record<'guerreiro'|'guardiao'|'cacadora'|'arcanista'|
 // 6 talentos originais cobriam só os primeiros ~15 níveis de uma jornada de 100, deixando o
 // resto da progressão sem nenhum talento novo pra desbloquear.
 export const TALENTS=[
- {id:'vigor',nome:'Vigor do Aventureiro',texto:'+5 de vida máxima.',level:3},{id:'precisao',nome:'Precisão Mortal',texto:'+1 de ataque.',level:5},{id:'muralha',nome:'Muralha Interior',texto:'+1 de defesa.',level:7},
+ {id:'vigor',nome:'Vigor do Aventureiro',texto:'+5 de vida máxima.',level:3},{id:'precisao',nome:'Precisão Mortal',texto:'+1 de Poder de ataque.',level:5},{id:'muralha',nome:'Muralha Interior',texto:'+1 de Vigor.',level:7},
  {id:'alquimista',nome:'Alquimista de Campo',texto:'Consumíveis restauram ou concedem +1 adicional.',level:9},{id:'cacador',nome:'Caçador de Tiranos',texto:'+2 de dano contra chefes.',level:11},{id:'destino',nome:'Senhor do Destino',texto:'+1 na primeira rolagem de cada combate.',level:14},
- {id:'reflexos',nome:'Reflexos Aguçados',texto:'+1 de defesa.',level:20},{id:'poder_interior',nome:'Poder Interior',texto:'+1 de ataque.',level:30},{id:'resiliencia',nome:'Resiliência de Veterano',texto:'+8 de vida máxima.',level:45},
- {id:'instinto_predador',nome:'Instinto Predador',texto:'+2 de ataque.',level:60},{id:'guarda_ancestral',nome:'Guarda Ancestral',texto:'+2 de defesa.',level:75},{id:'apice_heroico',nome:'Ápice Heroico',texto:'+15 de vida máxima.',level:90}
+ {id:'reflexos',nome:'Reflexos Aguçados',texto:'+1 de Destreza.',level:20},{id:'poder_interior',nome:'Poder Interior',texto:'+1 de Poder de ataque.',level:30},{id:'resiliencia',nome:'Resiliência de Veterano',texto:'+8 de vida máxima.',level:45},
+ {id:'instinto_predador',nome:'Instinto Predador',texto:'+2 de Poder de ataque.',level:60},{id:'guarda_ancestral',nome:'Guarda Ancestral',texto:'+2 de Vigor.',level:75},{id:'apice_heroico',nome:'Ápice Heroico',texto:'+15 de vida máxima.',level:90}
 ] as const
 export const REGION_MATERIALS:Record<string,{id:string;nome:string;elemento:Element}>={campos_dourados:{id:'fibra_dourada',nome:'Fibra Dourada',elemento:'fisico'},floresta_lunargenta:{id:'seiva_lunar',nome:'Seiva Lunar',elemento:'natureza'},montanhas_cinzentas:{id:'minerio_cinzento',nome:'Minério Cinzento',elemento:'gelo'},pico_escarlate:{id:'escama_rubra',nome:'Escama Rubra',elemento:'fogo'},terras_mortas:{id:'essencia_sombria',nome:'Essência Sombria',elemento:'sombra'},khar_dur:{id:'runa_ana',nome:'Runa Anã',elemento:'luz'},coracao_eclipse:{id:'fragmento_eclipse',nome:'Fragmento do Sol Negro',elemento:'arcano'},
 // Steelmere (mundo 'steelmere'): mesma cobertura de 1 material por região, ausente antes --
@@ -146,7 +146,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Berserker',
       titulo: 'Fúria Desenfreada',
       texto: 'Abandona a cautela em favor de poder bruto e golpes vorazes.',
-      passiva: '+4 de Ataque e +8% de chance crítica.',
+      passiva: '+4 de Poder de ataque e +8% de chance crítica.',
       stats: { ataque: 4, crit: 0.08 }
     },
     {
@@ -154,7 +154,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Gladiador',
       titulo: 'Mestre da Arena',
       texto: 'Especialista em combate tático equilibrado, resistência e contra-ataques.',
-      passiva: '+2 de Ataque, +2 de Defesa e +6 de Vida.',
+      passiva: '+2 de Poder de ataque, +2 de Vigor e +6 de Vida.',
       stats: { ataque: 2, defesa: 2, vida: 6 }
     }
   ],
@@ -164,7 +164,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Paladino',
       titulo: 'Arauto da Luz',
       texto: 'Canaliza poder sagrado para purificar inimigos e sustentar batalhas.',
-      passiva: '+2 de Ataque, +2 de Defesa e +12 de Vida.',
+      passiva: '+2 de Poder de ataque, +2 de Vigor e +12 de Vida.',
       stats: { ataque: 2, defesa: 2, vida: 12 }
     },
     {
@@ -172,7 +172,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Colosso',
       titulo: 'Muralha Viva',
       texto: 'Armadura pesada impenetrável e resiliência lendária contra qualquer impacto.',
-      passiva: '+4 de Defesa e +16 de Vida.',
+      passiva: '+4 de Vigor e +16 de Vida.',
       stats: { defesa: 4, vida: 16 }
     }
   ],
@@ -182,7 +182,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Assassina',
       titulo: 'Lâmina Letal',
       texto: 'Foco total em ataques furtivos devastadores e pontos vitais.',
-      passiva: '+5 de Ataque e +12% de chance crítica.',
+      passiva: '+5 de Poder de ataque e +12% de chance crítica.',
       stats: { ataque: 5, crit: 0.12 }
     },
     {
@@ -190,7 +190,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Ladra Fantasma',
       titulo: 'Sombra Ilusória',
       texto: 'Movimentos imprevisíveis, evasão impecável e golpes oportunistas.',
-      passiva: '+2 de Ataque, +2 de Defesa e +6% de chance crítica.',
+      passiva: '+2 de Poder de ataque, +2 de Vigor e +6% de chance crítica.',
       stats: { ataque: 2, defesa: 2, crit: 0.06 }
     }
   ],
@@ -200,7 +200,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Mago Elemental',
       titulo: 'Senhor dos Elementos',
       texto: 'Manipula forças destrutivas puras para incinerar e desintegrar oponentes.',
-      passiva: '+4 de Ataque e +3 de dano contra chefes.',
+      passiva: '+4 de Poder de ataque e +3 de dano contra chefes.',
       stats: { ataque: 4, bossDamage: 3 }
     },
     {
@@ -208,7 +208,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Cronoturgo',
       titulo: 'Tecelão do Tempo',
       texto: 'Dobra o fluxo temporal para mitigar impactos e encontrar aberturas perfeitas.',
-      passiva: '+2 de Ataque, +2 de Defesa e +8 de Vida.',
+      passiva: '+2 de Poder de ataque, +2 de Vigor e +8 de Vida.',
       stats: { ataque: 2, defesa: 2, vida: 8 }
     }
   ],
@@ -218,7 +218,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Guardião do Bosque',
       titulo: 'Protetor Ancestral',
       texto: 'Sintonizado com a casca ancestral de Abdendriel para suportar golpes severos.',
-      passiva: '+2 de Ataque, +2 de Defesa e +14 de Vida.',
+      passiva: '+2 de Poder de ataque, +2 de Vigor e +14 de Vida.',
       stats: { ataque: 2, defesa: 2, vida: 14 }
     },
     {
@@ -226,7 +226,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Predador Selvagem',
       titulo: 'Garras da Matilha',
       texto: 'Adota a fúria das feras predadoras para dilacerar a guarda inimiga.',
-      passiva: '+4 de Ataque e +8% de chance crítica.',
+      passiva: '+4 de Poder de ataque e +8% de chance crítica.',
       stats: { ataque: 4, crit: 0.08 }
     }
   ],
@@ -236,7 +236,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Atirador de Elite',
       titulo: 'Olho de Falcão',
       texto: 'Disparos cirúrgicos de longa distância que encontram brechas milimétricas.',
-      passiva: '+5 de Ataque e +10% de chance crítica.',
+      passiva: '+5 de Poder de ataque e +10% de chance crítica.',
       stats: { ataque: 5, crit: 0.1 }
     },
     {
@@ -244,7 +244,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Mestre das Feras',
       titulo: 'Líder da Alcateia',
       texto: 'Combate harmonioso em dupla, fortalecendo a si e sua resistência física.',
-      passiva: '+2 de Ataque, +2 de Defesa e +10 de Vida.',
+      passiva: '+2 de Poder de ataque, +2 de Vigor e +10 de Vida.',
       stats: { ataque: 2, defesa: 2, vida: 10 }
     }
   ],
@@ -254,7 +254,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Mestre do Chi',
       titulo: 'Harmonia Interior',
       texto: 'Canalização perfeita de energia espiritual tanto para ataque quanto contenção.',
-      passiva: '+3 de Ataque, +2 de Defesa e +8 de Vida.',
+      passiva: '+3 de Poder de ataque, +2 de Vigor e +8 de Vida.',
       stats: { ataque: 3, defesa: 2, vida: 8 }
     },
     {
@@ -262,7 +262,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Punho do Dragão',
       titulo: 'Fúria Flamejante',
       texto: 'Estilo agressivo de ataques explosivos que incendeiam a arena de combate.',
-      passiva: '+5 de Ataque e +10% de chance crítica.',
+      passiva: '+5 de Poder de ataque e +10% de chance crítica.',
       stats: { ataque: 5, crit: 0.1 }
     }
   ],
@@ -272,7 +272,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Inquisidora da Luz',
       titulo: 'Chama Purgadora',
       texto: 'Zelo inflexível que converte preces em dano punitivo contra o mal.',
-      passiva: '+4 de Ataque, +8% de chance crítica e +2 de dano contra chefes.',
+      passiva: '+4 de Poder de ataque, +8% de chance crítica e +2 de dano contra chefes.',
       stats: { ataque: 4, crit: 0.08, bossDamage: 2 }
     },
     {
@@ -280,7 +280,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Alta Clériga',
       titulo: 'Bênção Radiante',
       texto: 'Dedicação sagrada à vida e proteção inabalável para si e seus aliados.',
-      passiva: '+3 de Defesa e +16 de Vida.',
+      passiva: '+3 de Vigor e +16 de Vida.',
       stats: { defesa: 3, vida: 16 }
     }
   ],
@@ -290,7 +290,7 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Necromante',
       titulo: 'Colhedor de Almas',
       texto: 'Comanda energias sombrias que ceifam a essência vital dos adversários.',
-      passiva: '+4 de Ataque, +8 de Vida e +3 de dano contra chefes.',
+      passiva: '+4 de Poder de ataque, +8 de Vida e +3 de dano contra chefes.',
       stats: { ataque: 4, vida: 8, bossDamage: 3 }
     },
     {
@@ -298,18 +298,18 @@ export const HERO_SUBCLASSES: Record<string, SubclassChoice[]> = {
       nome: 'Invocador Abissal',
       titulo: 'Arauto do Éter',
       texto: 'Comunhão profunda com o plano astral que amplifica resistência e presença.',
-      passiva: '+2 de Ataque, +3 de Defesa e +10 de Vida.',
+      passiva: '+2 de Poder de ataque, +3 de Vigor e +10 de Vida.',
       stats: { ataque: 2, defesa: 3, vida: 10 }
     }
   ]
 }
 
 export const SPECIALIZATION_CHOICES=[
- {level:10,options:[{id:'ofensiva',nome:'Caminho da Ruína',texto:'+5% de chance crítica.'},{id:'defensiva',nome:'Caminho da Guarda',texto:'+1 de defesa.'},{id:'utilidade',nome:'Caminho do Destino',texto:'+5 de vida máxima.'}]},
+ {level:10,options:[{id:'ofensiva',nome:'Caminho da Ruína',texto:'+5% de chance crítica.'},{id:'defensiva',nome:'Caminho da Guarda',texto:'+1 de Vigor.'},{id:'utilidade',nome:'Caminho do Destino',texto:'+5 de vida máxima.'}]},
  {level:25,options:[{id:'elemental',nome:'Domínio Elemental',texto:'Condições elementais duram um turno adicional.'},{id:'vital',nome:'Vontade Inabalável',texto:'+10 de vida máxima.'},{id:'tesouro',nome:'Olhar do Explorador',texto:'+10% de chance de espólio.'}]},
  {level:30,options:[{id:'subclasse_1',nome:'Subclasse Especializada A',texto:'Especialização heroica de Nível 30.'},{id:'subclasse_2',nome:'Subclasse Especializada B',texto:'Especialização heroica de Nível 30.'}]},
- {level:50,options:[{id:'carrasco',nome:'Carrasco de Tiranos',texto:'+3 de dano contra chefes.'},{id:'baluarte',nome:'Baluarte Vivo',texto:'+2 de defesa.'},{id:'alquimia',nome:'Mestre Alquimista',texto:'Consumíveis recebem +2 de valor.'}]},
- {level:75,options:[{id:'lenda',nome:'Lenda de Havendown',texto:'+2 ataque e +2 defesa.'},{id:'fênix',nome:'Pacto da Fênix',texto:'Sobrevive uma vez por combate com 20% da vida.'},{id:'fortuna',nome:'Fortuna Real',texto:'+20% de ouro e materiais.'}]}
+ {level:50,options:[{id:'carrasco',nome:'Carrasco de Tiranos',texto:'+3 de dano contra chefes.'},{id:'baluarte',nome:'Baluarte Vivo',texto:'+2 de Vigor.'},{id:'alquimia',nome:'Mestre Alquimista',texto:'Consumíveis recebem +2 de valor.'}]},
+ {level:75,options:[{id:'lenda',nome:'Lenda de Havendown',texto:'+2 de Poder de ataque e +2 de Vigor.'},{id:'fênix',nome:'Pacto da Fênix',texto:'Sobrevive uma vez por combate com 20% da vida.'},{id:'fortuna',nome:'Fortuna Real',texto:'+20% de ouro e materiais.'}]}
 ] as const
 export const BESTIARY_MILESTONES=[{wins:1,label:'Atributos revelados'},{wins:3,label:'Elemento e resistência revelados'},{wins:5,label:'+1 de dano contra esta criatura'}] as const
 // Cada condição é aplicada por acertos do elemento correspondente (natureza, fogo, físico,
@@ -331,8 +331,8 @@ export const ELEMENT_ADVANTAGES: Record<Element, { strongAgainst: Element[]; wea
 }
 export const FORGE_MATERIALS=[{id:'fragmento_fisico',nome:'Fragmento Físico',texto:'Metal, couro e madeira recuperados.'},{id:'essencia_magica',nome:'Essência Mágica',texto:'Energia extraída de itens encantados.'}] as const
 export const FORGE_GEMS=[
- {id:'rubi_forja',nome:'Rubi da Forja',stat:'ataque' as const,value:2,texto:'+2 de Ataque'},
- {id:'safira_guardia',nome:'Safira da Guarda',stat:'defesa' as const,value:1,texto:'+1 de Defesa'},
+ {id:'rubi_forja',nome:'Rubi da Forja',stat:'ataque' as const,value:2,texto:'+2 de Poder de ataque'},
+ {id:'safira_guardia',nome:'Safira da Guarda',stat:'defesa' as const,value:1,texto:'+1 de Armadura'},
  {id:'esmeralda_vital',nome:'Esmeralda Vital',stat:'vida' as const,value:4,texto:'+4 de Vida'},
  {id:'ametista_arcana',nome:'Ametista Arcana',stat:'rolagem' as const,value:1,texto:'+1 na primeira rolagem'}
 ] as const

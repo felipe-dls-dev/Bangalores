@@ -276,10 +276,12 @@ describe('combate: postura de combate e Fervor de Combate', () => {
 
   it('postura ofensiva aumenta Ataque e reduz Defesa; defensiva faz o oposto; neutra não altera nada', () => {
     useGame.getState().newGame('guerreiro')
-    // Ataque/Defesa base do herói recém-criado são baixos o bastante para o Math.ceil do +/-20%
-    // não mudar o resultado (ex.: ceil(4*0.8) === ceil(4)); soma atributos pra garantir uma base
-    // grande o bastante pra revelar a diferença nos dois sentidos.
-    useGame.setState({ attr: { ...useGame.getState().attr, ataque: 20, defesa: 20 }, battleStance: 'neutra' } as any)
+    // Poder de ataque e Armadura do herói recém-criado são baixos o bastante para o Math.ceil do +/-20%
+    // não mudar o resultado; soma Força e uma peça de Armadura pra garantir uma base grande o bastante
+    // pra revelar a diferença nos dois sentidos. (A Defesa antiga virou Armadura: só vem de equipamentos.)
+    useGame.setState({ attr: { ...useGame.getState().attr, forca: 20 }, equipmentBag: [], battleStance: 'neutra' } as any)
+    const armorPiece = EQUIPMENT.find(item => item.slot === 'capacete' && item.defesa >= 6)!
+    useGame.setState({ equipped: { ...useGame.getState().equipped, capacete: armorPiece.id } } as any)
     const baseAtk = attackValue(useGame.getState()), baseDef = defenseValue(useGame.getState())
 
     useGame.setState({ battleStance: 'ofensiva' } as any)
@@ -531,7 +533,7 @@ describe('limite de poções temporárias', () => {
       const attackPotions = CONSUMABLES.filter(item => item.tipo === 'ataque')
       const shieldPotions = CONSUMABLES.filter(item => item.tipo === 'escudo')
       const regenBoostUntil = Date.now() + 3_600_000
-      useGame.setState({ attr: { vida: 4, ataque: 0, defesa: 0 }, regenBoostUntil } as any)
+      useGame.setState({ permanentLife: 4, regenBoostUntil } as any)
       const permanentMaxHp = maxHp(useGame.getState())
       useGame.getState().startDungeon()
 
@@ -568,7 +570,7 @@ describe('limite de poções temporárias', () => {
         expect(state.shield, `preparação de escudo no ciclo ${cycle + 1}`).toBe(shieldPotion.valor)
         expect(state.activePotionIds, `poções reservadas no ciclo ${cycle + 1}`).toEqual([attackPotion.id, shieldPotion.id])
         expect(state.regenBoostUntil, `regeneração no ciclo ${cycle + 1}`).toBe(regenBoostUntil)
-        expect(state.attr.vida, `atributo permanente no ciclo ${cycle + 1}`).toBe(4)
+        expect(state.permanentLife, `vida permanente no ciclo ${cycle + 1}`).toBe(4)
         expect(maxHp(state), `vida total no ciclo ${cycle + 1}`).toBeGreaterThanOrEqual(permanentMaxHp)
       }
     } finally {
@@ -616,7 +618,7 @@ describe('bug corrigido: monstros de masmorra morriam de um golpe', () => {
 
   it('um ataque comum do herói não derruba de uma vez um inimigo de andar avançado', () => {
     useGame.getState().newGame('guerreiro')
-    useGame.setState({ attr: { vida: 10, ataque: 15, defesa: 10 } } as any)
+    useGame.setState({ attr: { forca: 15, magia: 0, vigor: 20, destreza: 0 } } as any)
     useGame.getState().selectDungeon('campos_estrada')
     const heroAtk = attackValue(useGame.getState())
 
@@ -1372,21 +1374,20 @@ describe('Batch 1: Táticas de Combate & Gestão de Inventário', () => {
     useGame.setState({ attributePoints: 5, gold: 50, xp: 50000 })
 
     // Adiciona atributos
-    useGame.getState().addAttribute('vida')
-    useGame.getState().addAttribute('ataque')
-    useGame.getState().addAttribute('defesa')
+    useGame.getState().addAttribute('vigor')
+    useGame.getState().addAttribute('forca')
+    useGame.getState().addAttribute('destreza')
 
     expect(useGame.getState().attributePoints).toBe(2)
-    expect(useGame.getState().allocatedAttr.vida).toBe(1)
-    expect(useGame.getState().allocatedAttr.ataque).toBe(1)
-    expect(useGame.getState().allocatedAttr.defesa).toBe(1)
+    expect(useGame.getState().allocatedAttr.vigor).toBe(1)
+    expect(useGame.getState().allocatedAttr.forca).toBe(1)
+    expect(useGame.getState().allocatedAttr.destreza).toBe(1)
 
     // Respec de atributos
     useGame.getState().resetAttributes()
     expect(useGame.getState().attributePoints).toBe(5)
-    expect(useGame.getState().allocatedAttr.vida).toBe(0)
-    expect(useGame.getState().allocatedAttr.ataque).toBe(0)
-    expect(useGame.getState().allocatedAttr.defesa).toBe(0)
+    expect(useGame.getState().allocatedAttr).toEqual({ forca: 0, magia: 0, vigor: 0, destreza: 0 })
+    expect(useGame.getState().attr).toEqual({ forca: 0, magia: 0, vigor: 0, destreza: 0 })
 
     // Respec de talentos/especializações gratuito
     useGame.getState().chooseSpecialization(30, HERO_SUBCLASSES.guerreiro[0].id)

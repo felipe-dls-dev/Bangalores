@@ -2,11 +2,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { HEROES } from '../store/game'
-import { DIFFICULTY_LABEL, HERO_PROFILES, HERO_SELECT_ART, firstSentence, heroProfile, splitAbility, statBars, stepIndex } from './heroProfiles'
+import { HERO_STAT_PROFILES } from '../data/heroStatProfiles'
+import { DIFFICULTY_LABEL, HERO_EDITORIAL, HERO_SELECT_ART, firstSentence, heroProfile, splitAbility, stepIndex } from './heroProfiles'
 
 describe('perfis de herói (seleção Moderna)', () => {
   it('todo herói do jogo tem perfil, e o perfil não sobra sem herói', () => {
-    expect(Object.keys(HERO_PROFILES).sort()).toEqual(HEROES.map((h) => h.id).sort())
+    expect(Object.keys(HERO_EDITORIAL).sort()).toEqual(HEROES.map((h) => h.id).sort())
+    expect(Object.keys(HERO_STAT_PROFILES).sort()).toEqual(HEROES.map((h) => h.id).sort())
   })
 
   it('cada perfil tem 3 marcas, uma frase de estilo e dificuldade válida', () => {
@@ -23,6 +25,14 @@ describe('perfis de herói (seleção Moderna)', () => {
     const beginners = HEROES.filter((h) => heroProfile(h.id).beginner)
     expect(beginners.length).toBeGreaterThan(0)
     expect(beginners.every((h) => heroProfile(h.id).difficulty === 1)).toBe(true)
+  })
+
+  it('função e etiquetas vêm do perfil de atributos (fonte única)', () => {
+    for (const hero of HEROES) {
+      const profile = heroProfile(hero.id)
+      expect(profile.role, hero.id).toBe(HERO_STAT_PROFILES[hero.id].funcao)
+      expect(profile.tags, hero.id).toEqual(HERO_STAT_PROFILES[hero.id].estilo)
+    }
   })
 
   it('herói desconhecido cai num perfil neutro em vez de quebrar a tela', () => {
@@ -84,33 +94,6 @@ describe('firstSentence', () => {
 
   it('não quebra em "%" nem em números', () => {
     expect(firstSentence('+10% de Ataque e Defesa base. Depois.')).toBe('+10% de Ataque e Defesa base.')
-  })
-})
-
-describe('statBars', () => {
-  it('compara cada atributo com o maior entre todos os heróis', () => {
-    const all = [
-      { vida: 20, ataque: 2, defesa: 6 },
-      { vida: 10, ataque: 6, defesa: 3 },
-    ]
-    const bars = statBars(all[1], all)
-    expect(bars.map((b) => [b.id, b.value, b.percent])).toEqual([
-      ['vida', 10, 50],
-      ['ataque', 6, 100],
-      ['defesa', 3, 50],
-    ])
-  })
-
-  it('tolera defesa ausente e nunca devolve barra invisível', () => {
-    const bars = statBars({ vida: 1, ataque: 1 }, [{ vida: 100, ataque: 100, defesa: 100 }])
-    expect(bars.find((b) => b.id === 'defesa')?.value).toBe(0)
-    expect(bars.every((b) => b.percent >= 6 && b.percent <= 100)).toBe(true)
-  })
-
-  it('usa os números reais: o Guardião tem a maior defesa, o Mago o maior ataque', () => {
-    const percent = (id: string, stat: 'defesa' | 'ataque') => statBars(HEROES.find((h) => h.id === id)!, HEROES).find((b) => b.id === stat)!.percent
-    expect(percent('guardiao', 'defesa')).toBe(100)
-    expect(percent('arcanista', 'ataque')).toBe(100)
   })
 })
 

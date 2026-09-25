@@ -38,7 +38,7 @@ describe('as fases descritas batem com o que o combate faz de verdade', () => {
     state().newGame('guerreiro')
     useGame.setState({
       screen: 'combat', enemy: { ...boss, ...enemyOver }, playerTurn: true, animating: false, autoCombat: false, combatTurn: 3,
-      heroStatus: {}, enemyStatus: {}, hp: 999, attr: { vida: 0, ataque: 10, defesa: 4 }, ...over,
+      heroStatus: {}, enemyStatus: {}, hp: 999, attr: { forca: 10, magia: 0, vigor: 4, destreza: 0 }, ...over,
     } as any)
     const queue = [0.999, 0.55, 0.4] // sem crítico bônus, dado de ataque 4, dado de defesa 3
     vi.spyOn(Math, 'random').mockImplementation(() => (queue.length ? queue.shift()! : 0.999))

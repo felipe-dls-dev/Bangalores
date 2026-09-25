@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChevronRight, Coins, Hammer, ListChecks, Swords, Users } from 'lucide-react'
-import { HEROES, SLOT_ORDER, attackValue, defenseValue, equipmentBagCapacity, maxHp, useGame } from '../store/game'
+import { HEROES, SLOT_ORDER, armorValue, attackValue, equipmentBagCapacity, maxHp, useGame } from '../store/game'
 import { activeChallenges, msUntilChallengeReset } from '../data/expansion'
 import { crystalsLabel } from '../data/crystals'
 import { onlineConfigured } from '../online/supabase'
@@ -135,8 +135,8 @@ export function CampScreen({ assetUrl, heroArt, classLabel, chapterArt, crystalI
           </div>
           <dl className="camp-stats">
             <div><dt>Vida</dt><dd>{numberFormat.format(g.hp)}/{numberFormat.format(maxHp(g))}</dd></div>
-            <div><dt>Ataque</dt><dd>{numberFormat.format(attackValue(g))}</dd></div>
-            <div><dt>Defesa</dt><dd>{numberFormat.format(defenseValue(g))}</dd></div>
+            <div><dt>Poder de ataque</dt><dd>{numberFormat.format(attackValue(g))}</dd></div>
+            <div><dt>Armadura</dt><dd>{numberFormat.format(armorValue(g))}</dd></div>
           </dl>
           <dl className="camp-stats camp-stats-extra">
             <div><dt>Ouro</dt><dd>{numberFormat.format(g.gold)}</dd></div>

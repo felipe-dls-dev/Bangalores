@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { EQUIPMENT, attackValue, defenseValue, equipmentBagCapacity, maxHp, useGame } from '../store/game'
+import { EQUIPMENT, armorValue, attackValue, equipmentBagCapacity, maxHp, useGame } from '../store/game'
 import { compareDrop, equipBlock, equippedAfter, findDroppedRef, signed } from './dropCompare'
 
 const state = () => useGame.getState()
@@ -26,10 +26,10 @@ describe('comparação do equipamento que caiu', () => {
         state().equip(id)
         const after = state()
         if (after.equipmentBag.includes(id)) continue // o jogo recusou (ex.: bolsa menor que o conteúdo)
-        const real = cmp.rows.map((r) => (r.id === 'ataque' ? attackValue(after) : r.id === 'defesa' ? defenseValue(after) : r.id === 'vida' ? maxHp(after) : equipmentBagCapacity(after)))
+        const real = cmp.rows.map((r) => (r.id === 'ataque' ? attackValue(after) : r.id === 'armadura' ? armorValue(after) : r.id === 'vida' ? maxHp(after) : equipmentBagCapacity(after)))
         expect(cmp.rows.map((r) => r.to), `${id} em ${cmp.slot}`).toEqual(real)
         expect(cmp.rows.map((r) => r.from), `${id} antes`).toEqual(
-          cmp.rows.map((r) => (r.id === 'ataque' ? attackValue(before) : r.id === 'defesa' ? defenseValue(before) : r.id === 'vida' ? maxHp(before) : equipmentBagCapacity(before))),
+          cmp.rows.map((r) => (r.id === 'ataque' ? attackValue(before) : r.id === 'armadura' ? armorValue(before) : r.id === 'vida' ? maxHp(before) : equipmentBagCapacity(before))),
         )
         checked++
       }

@@ -16,6 +16,7 @@ import {
   coopHeroDefenseRoll,
   coopHeroRollBonus,
   coopMemberDefenseBase,
+  coopMemberDodge,
   coopMemberDefensePct,
   coopMemberDefenseRoll,
 } from './coopMath'
@@ -90,6 +91,10 @@ export interface CoopMemberVitals {
   hp: number
   maxHp?: number
   defense?: number
+  /** Armadura publicada (novo formato). Sem ela, `defense` já é a mitigação pronta (cliente antigo). */
+  armor?: number
+  dodgeChance?: number
+  elementalResist?: number
   shield?: number
   rollBonus?: number
   critDefenseBoost?: boolean
@@ -140,12 +145,12 @@ export function previewCoopEnemyAttack(input: { battle: Battle | undefined; user
   const enemyPenalty = fear + rollPenaltyFrom(enemyStun.status)
   const bonus = Number(battle.enemyRollBonus ?? 0)
   const druidEdge = heroId === 'druida' ? 0.25 : 0
-  const defenseBase = coopMemberDefenseBase(Number(vitals.defense ?? 0), coopMemberDefensePct(group, personal))
+  const defenseBase = coopMemberDefenseBase(vitals, coopMemberDefensePct(group, personal))
   const statusPenalty = rollPenaltyFrom(myStun.status)
   const rollBonus = Number(group.roll ?? 0) + Number(vitals.rollBonus ?? 0)
   const enemyElement = (enemy.elemento ?? 'fisico') as Element
   const resisted = (vitals.resistances ?? []).includes(enemyElement)
-  const dodgeChance = 1 - (1 - (heroId === 'cacadora' || heroId === 'cacador' ? 0.2 : 0)) * (1 - (vitals.dodgeBoost ? 0.05 : 0))
+  const dodgeChance = coopMemberDodge(vitals, heroId)
 
   const outcomes: Outcome[] = []
   for (const n of FACES) {
@@ -158,7 +163,7 @@ export function previewCoopEnemyAttack(input: { battle: Battle | undefined; user
         if (weight <= 0) continue
         const attackRoll = coopEnemyAttackRoll(n, bonus, luck, enemyPenalty)
         const resolved = resolveCombatRoll(Number(enemy.ataque ?? 1), defenseBase, attackRoll, defenseRoll).damage
-        const { damage } = coopEnemyDamage({ resolvedDamage: resolved, dodged: false, resisted, shield: Number(vitals.shield ?? 0), intercepting: false })
+        const { damage } = coopEnemyDamage({ resolvedDamage: resolved, dodged: false, resisted, shield: Number(vitals.shield ?? 0), intercepting: false, elementalEnemy: enemyElement !== 'fisico', elementalResist: Number(vitals.elementalResist ?? 0) })
         outcomes.push({ p: weight / 36, damage, crit: attackRoll === 6 })
       }
     }

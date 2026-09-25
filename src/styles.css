@@ -2150,6 +2150,7 @@ body::after{content:"VERSÃO 0.8.123 • 25/09/2026\A Equipamento no modo Modern
 body::after{content:"VERSÃO 0.8.124 • 25/09/2026\A Modo Moderno: Crônicas e Guilda em abas (a Guilda mostra 12 contratos por vez), checklist no Criador de cartas e correção da imagem quebrada na arte vazia da carta. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.125 • 25/09/2026\A Modo Moderno também no cooperativo: Previsão de combate (chance de ser o alvo incluída), resumo do chefe e do grupo antes de enfrentar e painel do grupo na Vitória. Corrigido: inimigo congelado ou assustado acertava mais forte no coop. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.126 • 25/09/2026\A Coop igual ao solo na defesa do inimigo: o golpe do herói no coop passa a usar a mesma defesa do solo (antes usava só dificuldade menos 2 e batia mais forte que o solo). O modo Clássico não mudou.";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.0 • 25/09/2026\A Novos atributos: Força, Magia, Vigor e Destreza, com Energia nas habilidades e Armadura só de itens. Nova Carta de Campeão na seleção e na Ficha. Saves antigos são migrados sozinhos.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4580,3 +4581,145 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
 .regionmap-encounter-prompt .cbb-boss strong{color:#eff7ff;font-family:monospace}
 .regionmap-encounter-prompt .cbb-grid ol b{border-color:#9bc7ff;color:#eff7ff}
 .regionmap-encounter-prompt .cbb-matchup{border-color:#3b6aa5}
+
+/* ==== Carta de Campeão (ChampionCard): moldura dark-fantasy por RARIDADE; os valores nunca mudam a moldura ==== */
+.cc{--cc-accent:#e5bf73;--cc-edge:#7a5a24;--cc-glow:rgba(229,191,115,.28);container-type:inline-size;position:relative;display:grid;gap:clamp(6px,2.6cqw,11px);width:100%;max-width:460px;margin-inline:auto;padding:clamp(14px,5cqw,20px) clamp(9px,3.4cqw,14px) clamp(9px,3.4cqw,14px);border-radius:14px;color:#efe5cf;background:linear-gradient(180deg,#16110c,#0a0705);border:1px solid var(--cc-edge);box-shadow:0 0 0 1px #000,0 0 0 3px #1b140e,0 0 0 4px var(--cc-edge),0 18px 40px rgba(0,0,0,.6),0 0 34px var(--cc-glow)}
+.cc:before{content:"";position:absolute;inset:5px;border:1px solid color-mix(in srgb,var(--cc-accent) 45%,transparent);border-radius:10px;pointer-events:none}
+.cc-r-comum{--cc-accent:#b5b0a4;--cc-edge:#5c574c;--cc-glow:rgba(181,176,164,.12)}
+.cc-r-incomum{--cc-accent:#7fcf6a;--cc-edge:#3d6b30;--cc-glow:rgba(127,207,106,.2)}
+.cc-r-raro{--cc-accent:#72a9dc;--cc-edge:#2f5d8f;--cc-glow:rgba(114,169,220,.24)}
+.cc-r-epico{--cc-accent:#b48ae8;--cc-edge:#5f3d98;--cc-glow:rgba(180,138,232,.28)}
+.cc-r-lendario{--cc-accent:#f0a44a;--cc-edge:#94571a;--cc-glow:rgba(240,164,74,.3)}
+.cc-r-mitico{--cc-accent:#ee6f63;--cc-edge:#8f2f28;--cc-glow:rgba(238,111,99,.3)}
+.cc-r-heroico{--cc-accent:#f0d182;--cc-edge:#8a6a2a;--cc-glow:rgba(240,209,130,.34)}
+.cc>*{min-width:0}
+.cc-rarity{position:absolute;top:-1px;left:50%;transform:translateX(-50%);z-index:2;max-width:70%;padding:3px clamp(10px,4cqw,18px);overflow:hidden;border:1px solid var(--cc-edge);border-top:0;border-radius:0 0 9px 9px;background:linear-gradient(180deg,#221a10,#100b07);color:var(--cc-accent);font:800 clamp(.72rem,3cqw,.82rem) Inter,sans-serif;letter-spacing:.16em;text-overflow:ellipsis;text-transform:uppercase;white-space:nowrap}
+.cc-title{padding-top:10px;display:grid;justify-items:center;gap:2px;text-align:center}
+.cc-title h3{max-width:100%;margin:0;overflow:hidden;color:#f5dc9a;font:700 clamp(1.3rem,8.4cqw,2.1rem)/1.05 Georgia,serif;letter-spacing:.06em;text-overflow:ellipsis;text-shadow:0 2px 14px #000;text-transform:uppercase;white-space:nowrap}
+.cc-role{margin:0;color:#c9b98f;font:600 clamp(.82rem,3.6cqw,1rem) Georgia,serif;letter-spacing:.08em}
+.cc-meta{display:grid;grid-template-columns:1fr 1fr;border:1px solid color-mix(in srgb,var(--cc-edge) 80%,#000);border-radius:8px;background:rgba(6,4,3,.7)}
+.cc-meta>span{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:5px 6px}
+.cc-meta>span+span{border-left:1px solid color-mix(in srgb,var(--cc-edge) 70%,#000)}
+.cc-meta small{color:#a99983;font:800 clamp(.7rem,2.9cqw,.78rem) Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.cc-meta strong{color:#fff2cf;font:700 clamp(1.05rem,5.4cqw,1.35rem) Georgia,serif;font-variant-numeric:tabular-nums}
+.cc-art{position:relative;margin:0;aspect-ratio:5/4;overflow:hidden;border:1px solid var(--cc-edge);border-radius:8px;background:#0b0705}
+.cc-art img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 16%}
+.cc-art:after{content:"";position:absolute;inset:auto 0 0;height:22%;background:linear-gradient(180deg,transparent,rgba(8,5,3,.55))}
+.cc-attrs{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,2cqw,8px);margin:0;padding:0;list-style:none}
+.cc-attr{--attr:#e0645a;display:grid;gap:2px;padding:clamp(5px,2cqw,8px) clamp(7px,2.6cqw,10px);border:1px solid color-mix(in srgb,var(--attr) 70%,#000);border-left-width:3px;border-radius:8px;background:linear-gradient(180deg,rgba(24,18,13,.95),rgba(9,6,4,.95))}
+.cc-attr-forca{--attr:#e0645a}.cc-attr-magia{--attr:#a56fe6}.cc-attr-vigor{--attr:#6fc25a}.cc-attr-destreza{--attr:#4fb8d8}
+.cc-attr-head{display:flex;align-items:center;gap:6px;color:#d9c9a3;font:700 clamp(.82rem,3.5cqw,.98rem) Inter,sans-serif}
+.cc-icon{display:inline-grid;flex:none;place-items:center;width:clamp(18px,6cqw,24px);height:clamp(18px,6cqw,24px);color:var(--attr,var(--cc-accent))}
+.cc-icon svg{width:100%;height:100%}
+.cc-attr-body{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px}
+.cc-attr-value{color:#fff2cf;font:700 clamp(1.3rem,7.4cqw,1.9rem)/1 Georgia,serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cc-bonus{display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border:1px solid #3a2a19;border-radius:6px;background:rgba(6,4,3,.7);color:#a99983;font:800 clamp(.78rem,3.3cqw,.92rem) Inter,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cc-bonus-up{border-color:#4f8a3f;color:#b8e4a8}.cc-bonus-down{border-color:#8c332f;color:#ffb3aa}
+.cc-bonus span[aria-hidden]{font-size:.72em}
+.cc-resources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(4px,1.6cqw,7px);margin:0;padding:0;list-style:none}
+.cc-res{--attr:#ee6f63;position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-items:center;gap:2px 6px;padding:clamp(5px,2cqw,8px);overflow:hidden;border:1px solid #3a2a19;border-radius:8px;background:rgba(8,5,3,.85)}
+.cc-res-energy{--attr:#f0c24a}.cc-res-armor{--attr:#9fb4c8}
+.cc-res-text{display:grid;min-width:0}
+.cc-res-text small{color:#a99983;font:800 clamp(.7rem,2.9cqw,.78rem) Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.cc-res-text strong{overflow:hidden;color:#fff2cf;font:700 clamp(.95rem,4.2cqw,1.15rem) Georgia,serif;font-variant-numeric:tabular-nums;text-overflow:ellipsis;white-space:nowrap}
+.cc-res-max{color:#a99983;font-size:.78em;font-weight:600}
+.cc-meter{display:block;grid-column:1/-1;height:5px;overflow:hidden;border-radius:999px;background:#1d150e;box-shadow:inset 0 0 0 1px #33261a}
+.cc-meter b{display:block;height:100%;background:linear-gradient(90deg,#a3332c,#e0645a)}
+.cc-res-energy .cc-meter b{background:linear-gradient(90deg,#b58a1d,#f0c24a)}
+.cc-origin{grid-column:1/-1;padding:1px 6px;border:1px dashed #5b6f83;border-radius:6px;color:#b9cbdc;font:700 clamp(.7rem,2.9cqw,.78rem) Inter,sans-serif;font-style:normal;text-align:center}
+.cc-signature{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(8px,3cqw,12px);padding:clamp(7px,2.6cqw,10px);border:1px solid var(--cc-edge);border-radius:10px;background:linear-gradient(180deg,rgba(28,20,12,.9),rgba(10,7,4,.95))}
+.cc-sig-icon{display:grid;place-items:center;width:clamp(36px,11cqw,48px);height:clamp(36px,11cqw,48px);border:2px solid var(--cc-accent);border-radius:50%;background:radial-gradient(circle,#2a1d10,#0b0705);color:var(--cc-accent)}
+.cc-sig-icon svg{width:55%;height:55%}
+.cc-sig-body{display:grid;gap:5px;min-width:0}
+.cc-sig-name{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:#f5dc9a;font:700 clamp(.98rem,4.6cqw,1.2rem)/1.15 Georgia,serif;overflow-wrap:anywhere}
+.cc-tags{display:flex;flex-wrap:wrap;gap:4px;margin:0;padding:0;list-style:none}
+.cc-tags li{max-width:100%;padding:2px 9px;overflow:hidden;border:1px solid var(--cc-edge);border-radius:6px;background:rgba(6,4,3,.7);color:#d9c9a3;font:700 clamp(.74rem,3.1cqw,.85rem) Inter,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.cc-details-btn{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:0 12px;border-color:var(--cc-edge);color:var(--cc-accent);font:800 .8rem Inter,sans-serif}
+.cc-details-btn svg{width:17px;height:17px}
+.cc :focus-visible,.cc-dialog :focus-visible{outline:2px solid #ffe7ae;outline-offset:2px}
+@container (max-width: 360px){
+  .cc-resources{grid-template-columns:1fr 1fr}
+  .cc-res-armor{grid-column:1/-1}
+  .cc-signature{grid-template-columns:auto minmax(0,1fr)}
+  .cc-details-btn{grid-column:1/-1;justify-content:center}
+}
+.cc-dialog-backdrop{position:fixed;inset:0;z-index:950;display:grid;place-items:center;padding:16px;background:rgba(4,3,2,.78);backdrop-filter:blur(3px)}
+.cc-dialog{width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;padding:18px 20px;border:1px solid #6c522f;border-radius:14px;background:linear-gradient(180deg,#1b140e,#0d0907);color:#efe5cf;box-shadow:0 24px 70px rgba(0,0,0,.7)}
+.cc-dialog header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.cc-dialog header small{color:#d4ae65;font:800 .74rem Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.cc-dialog h2{margin:2px 0 0;color:#f5dc9a;font:700 1.5rem Georgia,serif}
+.cc-dialog h3{margin:14px 0 6px;color:#d4ae65;font:800 .76rem Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.cc-dialog p,.cc-dialog li,.cc-dialog dd{color:#d8ccb1;font-size:.95rem;line-height:1.5}
+.cc-dialog p{margin:6px 0}
+.cc-dialog-close{display:grid;place-items:center;width:44px;height:44px;padding:0}
+.cc-dialog-close svg{width:20px;height:20px}
+.cc-dialog-facts{display:flex;flex-wrap:wrap;gap:6px 14px;color:#a99983}
+.cc-dialog-attrs{display:grid;gap:8px;margin:0}
+.cc-dialog-attrs dt{color:#f3e2b8;font-weight:700}
+.cc-dialog-attrs dt b{color:#fff2cf}
+.cc-dialog-attrs dd{margin:0}
+.cc-dialog-formulas{display:grid;gap:8px;margin:0;padding-left:18px}
+
+/* Seleção de herói com a Carta de Campeão */
+.hs-page-card .hs-stage{grid-template-columns:minmax(0,420px) minmax(0,1fr);align-items:start;gap:clamp(16px,3vw,32px)}
+.hs-card-col{min-width:0;animation:hs-in .35s ease both}
+.reduce-effects .hs-card-col{animation:none}
+.hs-page-card .hs-details{align-self:center}
+.hs-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.hs-fact{display:grid;gap:2px;padding:10px 12px;border:1px solid #3a2a19;border-radius:10px;background:rgba(10,7,5,.7)}
+.hs-fact small{color:#a99983;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.hs-fact strong{color:#f3e2b8;font:700 1rem Georgia,serif;overflow-wrap:anywhere}
+.hs-page-card .hs-badge{width:fit-content;margin:0}
+.hs-page-card .hs-playstyle{margin:0;color:#e2d6ba;font-size:1.05rem;line-height:1.5}
+.hs-page-card .hs-actions{grid-template-columns:auto auto minmax(0,1fr)}
+.hs-more-btn{display:inline-flex;align-items:center;gap:8px;min-height:50px;padding:0 16px;border:1px solid #6c522f;border-radius:10px;background:rgba(21,15,10,.9);color:#e5bf73;font-weight:800}
+@media (max-width:1000px){.hs-page-card .hs-stage{grid-template-columns:minmax(0,1fr)}.hs-page-card .hs-actions{grid-template-columns:1fr 1fr}.hs-page-card .hs-confirm{grid-column:1/-1}}
+@media (max-width:760px){
+  .hs-page-card .hs-stage{gap:12px}
+  .hs-page-card .hs-actions{display:contents}
+  .hs-page-card .hs-more-btn{order:2}
+  .hs-page-card .hs-back{order:3}
+  .hs-page-card .hs-facts{grid-template-columns:1fr 1fr}
+}
+
+/* Atributos: texto de apoio por linha, nome completo do herói e medidor de Energia do combate */
+.attr-row small.attr-hint{display:block;margin-top:2px;color:#a89778;font-size:.72rem;line-height:1.3;font-weight:500}
+.char-fullname{margin:8px 0 2px;text-align:center}
+.hero-energy-meter{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 8px;margin:0 auto 6px;padding:6px 12px;max-width:360px;width:100%;border:1px solid #2f5d78;border-radius:10px;background:rgba(9,14,20,.92)}
+.hero-energy-meter small{display:flex;align-items:center;gap:5px;color:#8fc2df;font-size:.66rem;letter-spacing:.14em}
+.hero-energy-meter strong{justify-self:end;color:#7dd3fc;font-size:.85rem;font-variant-numeric:tabular-nums}
+.hero-energy-meter .energy-track{grid-column:1/-1;height:6px;border:1px solid #1e3a4f;border-radius:999px;background:#0b1620;overflow:hidden}
+.hero-energy-meter .energy-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#0ea5e9,#38bdf8,#7dd3fc);transition:width .35s ease-out}
+.combat-v033 .combat-hero-area>.hero-energy-meter{flex:none;max-width:none;margin:0;padding:6px 12px}
+@media (prefers-reduced-motion:reduce){.hero-energy-meter .energy-fill{transition:none}}
+
+/* Seleção clássica: resumo numérico do kit (mesmos dados da Carta de Campeão) */
+.hero-choice-fullname{margin:-4px 0 0;color:#a89778;font-size:.78rem}
+.hks{display:grid;gap:8px}
+.hks-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0;font-size:.78rem;color:#cdbb95}
+.hks-role{font-weight:800;color:#f0d9a0}
+.hks-beginner{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border:1px solid #6c8f4f;border-radius:999px;color:#b9e08c;font-weight:700}
+.hks-attrs,.hks-res{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.hks-attrs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.hks-res{grid-template-columns:repeat(3,minmax(0,1fr))}
+.hks-attrs li,.hks-res li{display:grid;justify-items:center;gap:1px;min-width:0;padding:5px 4px;border:1px solid rgba(140,98,57,.55);border-radius:8px;background:rgba(16,12,10,.7)}
+.hks-attrs small,.hks-res small{color:#a89778;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hks-attrs strong,.hks-res strong{font-size:1.02rem;font-variant-numeric:tabular-nums;color:#f6e7c4;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hks-res li svg{color:#d4a24a}
+.hks-sig{display:grid;gap:4px}
+.hks-sig>strong{color:#f0d9a0;overflow-wrap:anywhere}
+.hks-details{justify-self:start;display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.hero-confirm-summary{margin:6px 0 10px;color:#cdbb95;font-size:.9rem}
+@media (max-width:420px){.hks-attrs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hero-choice-copy{align-content:start}
+.hks{align-content:start}
+.hks-attrs small{letter-spacing:0;font-size:.62rem}
+
+/* Carta de Campeão e Energia: mesmas preferências de acessibilidade do resto do jogo (alto contraste e menos efeitos) */
+html.high-contrast .cc,html.high-contrast .cc-attr,html.high-contrast .cc-res,html.high-contrast .cc-signature,html.high-contrast .cc-meta,html.high-contrast .hks-attrs li,html.high-contrast .hks-res li,html.high-contrast .hero-energy-meter{border-width:2px;border-color:#a8823f}
+html.high-contrast .cc small,html.high-contrast .cc-role,html.high-contrast .hks small,html.high-contrast .hero-energy-meter small,html.high-contrast .attr-row small.attr-hint{color:#e6d9bd}
+html.high-contrast .cc-bonus{border:1px solid currentColor}
+html.high-contrast .cc-tags li{border-width:2px;color:#fff}
+html.high-contrast .cc :focus-visible,html.high-contrast .hks :focus-visible{outline:3px solid #fff}
+.reduce-effects .hero-energy-meter .energy-fill{transition:none}
+@media (prefers-reduced-motion:reduce){.hs-card-col{animation:none}}

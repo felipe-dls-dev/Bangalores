@@ -3,6 +3,7 @@
 // (Só as contas determinísticas moram aqui; quem sorteia os dados continua sendo o CoopContext.)
 
 import { STANCE_ATTACK_PCT, STANCE_DEFENSE_PCT, rollPenaltyFrom, type BattleStance, type StatusEffects } from '../store/game'
+import { armorMitigation, totalDodge } from '../store/heroStats'
 
 type Buffs = Record<string, any>
 
@@ -48,12 +49,40 @@ export function coopMemberDefensePct(group: Buffs, personal: Buffs): number {
   return Number(group.defensePct ?? 0) + Number(personal.defensePct ?? 0) + STANCE_DEFENSE_PCT[(personal.battleStance as BattleStance) ?? 'neutra']
 }
 
-export const coopMemberDefenseBase = (defense: number, defensePct: number): number => Math.ceil(Number(defense ?? 0) * (1 + defensePct))
+/** O que cada membro publica na sala. `armor` e `dodgeChance` são novos; `defense` é o formato antigo (mitigação já pronta). */
+export interface CoopMemberStats {
+  armor?: number
+  defense?: number
+  dodgeChance?: number
+  dodgeBoost?: boolean
+  elementalResist?: number
+  effectResist?: number
+}
+
+/**
+ * Defesa de um membro contra o golpe do inimigo. Com `armor` publicado, os bônus percentuais (postura, grupo) valem
+ * sobre a Armadura e a mitigação segue a mesma curva de retorno decrescente do solo. Sem `armor` (sala com cliente
+ * antigo), usa a defesa já mitigada como antes.
+ */
+export function coopMemberDefenseBase(member: CoopMemberStats | number, defensePct: number): number {
+  if (typeof member === 'number') return Math.ceil(Number(member ?? 0) * (1 + defensePct))
+  if (Number.isFinite(Number(member.armor))) return Math.ceil(armorMitigation(Math.max(0, Number(member.armor)) * (1 + defensePct)))
+  return Math.ceil(Number(member.defense ?? 0) * (1 + defensePct))
+}
+
+/** Chance de esquiva de um membro: a publicada (Destreza + passiva + forjada, com teto) ou, em cliente antigo, a regra antiga. */
+export function coopMemberDodge(member: CoopMemberStats, heroId?: string): number {
+  if (Number.isFinite(Number(member.dodgeChance))) return Math.max(0, Math.min(1, Number(member.dodgeChance)))
+  const passive = heroId === 'cacadora' || heroId === 'cacador' ? 0.2 : 0
+  return totalDodge(0, passive, member.dodgeBoost ? 0.05 : 0)
+}
 
 /** Dano que chega ao membro depois de esquiva, resistência elemental (−1) e escudo. */
-export function coopEnemyDamage(input: { resolvedDamage: number; dodged: boolean; resisted: boolean; shield: number; intercepting: boolean }): { damage: number; shieldBlocked: number } {
+export function coopEnemyDamage(input: { resolvedDamage: number; dodged: boolean; resisted: boolean; shield: number; intercepting: boolean; elementalEnemy?: boolean; elementalResist?: number }): { damage: number; shieldBlocked: number } {
   let raw = input.dodged ? 0 : input.resolvedDamage
   if (input.resisted && raw > 0) raw = Math.max(0, raw - 1)
+  // Vigor: resistência percentual contra ataques elementais (o físico é coberto pela Armadura), igual ao solo.
+  if (!input.intercepting && input.elementalEnemy && raw > 0) raw = Math.max(1, Math.round(raw * (1 - Math.max(0, Math.min(0.75, Number(input.elementalResist ?? 0))))))
   const shieldBlocked = input.intercepting ? 0 : Math.min(input.shield, raw)
   return { damage: raw - shieldBlocked, shieldBlocked }
 }

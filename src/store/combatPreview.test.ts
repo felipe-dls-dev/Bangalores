@@ -11,7 +11,7 @@ function inCombat(heroId = 'guerreiro', over: Record<string, unknown> = {}, enem
   useGame.setState({
     screen: 'combat', enemy: { ...baseEnemy, ...enemy }, enemyHp: 999, playerTurn: true, animating: false, autoCombat: false,
     combatTurn: 3, heroStatus: {}, enemyStatus: {}, hp: 999, shield: 0, heroRollBonus: 0, enemyRollBonus: 0, enemyFearPenalty: 0,
-    attr: { vida: 0, ataque: 10, defesa: 4 }, // números maiores fazem os multiplicadores (x1,35, x0,75, x1,5...) aparecerem no resultado
+    attr: { forca: 10, magia: 0, vigor: 4, destreza: 0 }, // números maiores fazem os multiplicadores (x1,35, x0,75, x1,5...) aparecerem no resultado
     ...over,
   } as any)
 }

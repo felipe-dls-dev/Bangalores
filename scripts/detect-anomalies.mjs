@@ -48,7 +48,8 @@ const findings = []
 for (const row of rows) {
   const snap = row.snapshot ?? {}
   const xp = Number(snap.xp ?? 0)
-  const attr = snap.attr ?? { vida: 0, ataque: 0, defesa: 0 }
+  // balanceVersion 2 gravava vida/ataque/defesa; a 3 grava forca/magia/vigor/destreza. A soma dos pontos vale para as duas.
+  const attr = snap.attr ?? {}
   const allocated = snap.allocatedAttr ?? attr
   const gold = Number(snap.gold ?? 0)
   const hp = Number(snap.hp ?? 0)
@@ -59,12 +60,12 @@ for (const row of rows) {
   if (xp > MAX_XP) flags.push(`xp ${xp} > teto do nivel 100 (${MAX_XP})`)
 
   // Regra 2 (dura): 1 ponto de atributo é concedido por nivel (nivel-1 pontos
-  // totais ao longo da vida do personagem). Se a soma de vida+ataque+defesa
-  // alocados excede isso, e matematicamente impossivel via jogo legitimo
+  // totais ao longo da vida do personagem). Se a soma dos atributos (vida+ataque+defesa
+  // na v2, forca+magia+vigor+destreza na v3) alocados excede isso, e matematicamente impossivel via jogo legitimo
   // (equipamentos dao bonus separado, nao entram em attr/allocatedAttr).
   const { lvl } = deriveLevel(xp)
   const maxPoints = Math.max(0, lvl - 1)
-  const spentPoints = (allocated.vida ?? 0) + (allocated.ataque ?? 0) + (allocated.defesa ?? 0)
+  const spentPoints = Object.values(allocated).reduce((sum, value) => sum + (Number.isFinite(Number(value)) ? Number(value) : 0), 0)
   if (spentPoints > maxPoints) {
     flags.push(`atributos alocados (${spentPoints}) > pontos possiveis no nivel ${lvl} (${maxPoints})`)
   }

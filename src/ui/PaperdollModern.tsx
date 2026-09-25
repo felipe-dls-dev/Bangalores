@@ -2,6 +2,7 @@ import React from 'react'
 import { Backpack, ShieldCheck, X } from 'lucide-react'
 import { HEROES, equipmentBagCapacity, equipmentByRef, equipmentInstanceBreakdown, equipmentWeaponClass, useGame } from '../store/game'
 import type { Equipment, Slot } from '../types'
+import { offenseLabel } from '../data/heroStatProfiles'
 import { compareDrop, signed } from './dropCompare'
 import { HERO_SELECT_ART } from './heroProfiles'
 
@@ -69,7 +70,7 @@ export function PaperdollModern({ assetUrl, art, slotNames }: PaperdollModernPro
             <strong>{equippedItem ? equippedItem.nome : slot === 'mao_esquerda' && dualWielding ? 'Ocupada pelas facas' : 'Vazio'}</strong>
             {equippedItem && (
               <span className="pd-stats">
-                {equippedItem.slot === 'bolsa' ? `Capacidade ${equippedItem.capacidade ?? 8}` : `Ataque +${equippedTotal?.atk ?? 0} · Defesa +${equippedTotal?.def ?? 0} · Vida +${equippedTotal?.life ?? 0}`}
+                {equippedItem.slot === 'bolsa' ? `Capacidade ${equippedItem.capacidade ?? 8}` : `${offenseLabel(g.heroId)} +${equippedTotal?.atk ?? 0} · Armadura +${equippedTotal?.def ?? 0} · Vida +${equippedTotal?.life ?? 0}`}
               </span>
             )}
           </div>

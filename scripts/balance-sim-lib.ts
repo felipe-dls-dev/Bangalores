@@ -2,9 +2,11 @@ import {
   useGame, SUBREGIONS, TERRITORIES, EQUIPMENT, CONSUMABLES,
   deriveLevel, equipmentClassAllowed, equipmentLevelAllowed, equipmentAttackForHero,
   equipmentWeaponClass, equipmentByRef, equipmentBaseId, equipmentBagCapacity, maxHp,
-  attackValue, defenseValue
+  attackValue, defenseValue, energyNow, heroSkillEnergyCost
 } from '../src/store/game'
 import { SPECIALIZATION_CHOICES } from '../src/data/expansion'
+import fs from 'node:fs'
+import { heroStatProfile, primaryOffense } from '../src/data/heroStatProfiles'
 
 // Shared by balance-sim.test.ts (solo campaigns) and balance-sim-coop.test.ts (coop battles
 // built from that same solo progression) -- kept out of any *.test.ts file so importing it
@@ -92,11 +94,14 @@ function restockPotions() {
   }
 }
 
-const ATTR_PATTERN = ['ataque', 'ataque', 'vida', 'defesa'] as const
-function spendAttributes() {
+// Mesma proporção de antes (2 pontos de ataque : 1 de vida : 1 de defesa), no modelo novo: o antigo Ataque vira o
+// atributo ofensivo da classe (Força ou Magia) e Vida + Defesa viram Vigor.
+function spendAttributes(heroId: string) {
+  const offense = primaryOffense(heroStatProfile(heroId))
+  const pattern = [offense, offense, 'vigor', 'vigor'] as const
   let guard = 0
   while (useGame.getState().attributePoints > 0 && guard < 2000) {
-    useGame.getState().addAttribute(ATTR_PATTERN[guard % ATTR_PATTERN.length] as any)
+    useGame.getState().addAttribute(pattern[guard % pattern.length])
     guard++
   }
 }
@@ -113,7 +118,7 @@ function spendSpecializations() {
 }
 
 function maintenance(heroId: string) {
-  spendAttributes()
+  spendAttributes(heroId)
   spendSpecializations()
   restockPotions()
   equipFromBag(heroId)
@@ -135,12 +140,16 @@ function healingPotionId() {
 function combatStep(heroId: string, counters: Counters) {
   const s = useGame.getState()
   const mh = maxHp(s)
-  if (mh > 0 && s.hp / mh < 0.4) {
+  // Um consumível por turno (ação livre): depois de usar um, o simulador precisa agir, senão o laço fica preso
+  // tentando outro consumível que o jogo recusa ("Você já usou um consumível neste turno").
+  if (mh > 0 && s.hp / mh < 0.4 && s.itemUsedTurn !== s.combatTurn) {
     const potionId = healingPotionId()
     if (potionId) { useGame.getState().useConsumable(potionId); counters.heroActions++; return }
   }
-  if ((s.heroSkillUses ?? 0) < 1 && s.heroId !== 'conjurador') { useGame.getState().heroSkill(); counters.heroActions++; return }
-  if (s.heroId === 'conjurador' && (s.summons?.length ?? 0) < 2 && (s.heroSkillUses ?? 0) < 2) { useGame.getState().summonMonster('atacante'); counters.heroActions++; return }
+  // As habilidades ativas gastam Energia: o simulador só as usa quando há Energia (senão a ação seria ignorada e o laço não avançaria).
+  const hasEnergy = energyNow(s) >= heroSkillEnergyCost(s.heroId)
+  if (hasEnergy && (s.heroSkillCooldown ?? 0) === 0 && (s.heroSkillUses ?? 0) < 1 && s.heroId !== 'conjurador') { useGame.getState().heroSkill(); counters.heroActions++; return }
+  if (hasEnergy && s.heroId === 'conjurador' && (s.summons?.length ?? 0) < 2 && (s.heroSkillUses ?? 0) < 2) { useGame.getState().summonMonster('atacante'); counters.heroActions++; return }
   useGame.getState().attack(); counters.heroActions++
 }
 
@@ -241,7 +250,12 @@ export function runHero(heroId: string, includeSteelmere = false) {
   const havendownRegionIds = new Set(TERRITORIES.filter(t => (t.mundo ?? 'havendown') === 'havendown').map(t => t.id))
   const subs = SUBREGIONS.filter(s => havendownRegionIds.has(s.regionId)).sort((a, b) => a.nivelMin - b.nivelMin)
   const easySubId = subs[0].id
-  for (const sub of subs) clearSubregion(sub, heroId, counters, easySubId)
+  for (const sub of subs) {
+    clearSubregion(sub, heroId, counters, easySubId)
+    // BALANCE_PROGRESS: uma linha por sub-região concluída (o console do vitest só aparece ao fim do teste inteiro).
+    if (process.env.BALANCE_PROGRESS) fs.appendFileSync(process.env.BALANCE_PROGRESS, `${new Date().toISOString()} ${heroId} ${sub.id} level ${deriveLevel(useGame.getState().xp).lvl} battles ${counters.battles} deaths ${counters.deaths} skipped ${counters.bossesSkipped.length}
+`)
+  }
   const havendownBossesSkipped = counters.bossesSkipped.length
 
   let steelmere: { bossesDefeated: number; totalBosses: number; bossesSkipped: string[] } | null = null

@@ -5,7 +5,7 @@
     "vida": 18,
     "ataque": 3,
     "defesa": 6,
-    "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Ataque e Defesa base e amedronta o inimigo (-1 em todas as rolagens dele), por até 3 turnos — e renova o sangramento ativo do inimigo.",
+    "habilidade": "Passivo: 50% de chance de iniciar com +1 em todos os dados. Ativo: +10% de Poder de ataque e Armadura e amedronta o inimigo (-1 em todas as rolagens dele), por até 3 turnos — e renova o sangramento ativo do inimigo.",
     "imagem": "assets/heroes/guerreiro-eldravar-v2.png",
     "arte": "assets/heroes/guerreiro-eldravar-v2.png",
     "raridade": "heroico"
@@ -27,7 +27,7 @@
     "vida": 18,
     "ataque": 6,
     "defesa": 3,
-    "habilidade": "Ativo: +1 nos dados e +10% de Ataque e Defesa para todos os aliados, por até 3 turnos.",
+    "habilidade": "Ativo: +1 nos dados e +10% de Poder de ataque e Armadura para todos os aliados, por até 3 turnos.",
     "imagem": "assets/heroes/arcanista-conclave-v2.png",
     "arte": "assets/heroes/arcanista-conclave-v2.png",
     "raridade": "heroico"
@@ -38,7 +38,7 @@
     "vida": 20,
     "ataque": 2,
     "defesa": 6,
-    "habilidade": "Ativo — Provocar: inimigos priorizam atacar o Guardião. Defesa naturalmente elevada, a mais alta entre os heróis.",
+    "habilidade": "Ativo — Provocar: inimigos priorizam atacar o Guardião. Vigor naturalmente elevado, o mais alto entre os heróis.",
     "imagem": "assets/heroes/guardiao-montanhas-v2.png",
     "arte": "assets/heroes/guardiao-montanhas-v2.png",
     "raridade": "heroico"

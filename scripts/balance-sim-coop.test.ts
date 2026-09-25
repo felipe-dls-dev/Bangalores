@@ -29,7 +29,25 @@ const MAX_ROUNDS = 500
 interface MemberStats { heroId: string; atk: number; def: number; hp: number }
 type StatPool = Record<number, MemberStats[]>
 
+// BALANCE_POOL_FILE: reaproveita os marcos de um balance-sim-results.json já gerado em vez de jogar de novo todas as
+// campanhas solo (horas). Sem a variável, o comportamento é o de sempre.
+function poolFromFile(file: string): StatPool {
+  const pool: StatPool = {}
+  for (const m of MILESTONES) pool[m] = []
+  const data = JSON.parse(fs.readFileSync(file, 'utf8')) as Array<{ heroId: string; runs: Array<{ milestones: Record<string, MemberStats & { atk: number; def: number; hp: number } | null> }> }>
+  for (const hero of data) {
+    for (const run of hero.runs) {
+      for (const m of MILESTONES) {
+        const snapshot = run.milestones?.[m]
+        if (snapshot) pool[m].push({ heroId: hero.heroId, atk: snapshot.atk, def: snapshot.def, hp: snapshot.hp })
+      }
+    }
+  }
+  return pool
+}
+
 function buildStatPool(): StatPool {
+  if (process.env.BALANCE_POOL_FILE) return poolFromFile(path.resolve(process.env.BALANCE_POOL_FILE))
   const pool: StatPool = {}
   for (const m of MILESTONES) pool[m] = []
   for (const hero of HEROES) {
@@ -109,7 +127,7 @@ describe('coop balance simulation', () => {
         }
       }
     }
-    const outPath = path.resolve(__dirname, 'balance-sim-coop-results.json')
+    const outPath = process.env.BALANCE_OUT ? path.resolve(process.env.BALANCE_OUT) : path.resolve(__dirname, 'balance-sim-coop-results.json')
     fs.writeFileSync(outPath, JSON.stringify(results, null, 2))
     console.log('RESULTS_WRITTEN:' + outPath)
   }, 5400000)

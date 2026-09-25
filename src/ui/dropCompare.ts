@@ -1,10 +1,10 @@
 // Comparação do equipamento que caiu com o que o herói já veste (tela de Vitória do modo Moderno).
 // Não recalcula regras de bônus: simula o `equip` da store (mesmo espaço de destino) e pergunta às
-// próprias funções do jogo qual seria o Ataque, a Defesa, a Vida e a bolsa depois da troca.
+// próprias funções do jogo qual seria o Poder de ataque, a Armadura, a Vida e a bolsa depois da troca.
 
 import {
+  armorValue,
   attackValue,
-  defenseValue,
   equipmentBagCapacity,
   equipmentByRef,
   equipmentClassAllowed,
@@ -19,7 +19,7 @@ import type { Equipment, Slot } from '../types'
 type State = ReturnType<typeof useGame.getState>
 
 export interface CompareRow {
-  id: 'ataque' | 'defesa' | 'vida' | 'bolsa'
+  id: 'ataque' | 'armadura' | 'vida' | 'bolsa'
   label: string
   from: number
   to: number
@@ -74,7 +74,7 @@ export function compareDrop(ref: string, state: State): DropCompare | undefined 
   const rows =
     item.slot === 'bolsa'
       ? [row('bolsa', 'Bolsa', equipmentBagCapacity(state), equipmentBagCapacity(next))]
-      : [row('ataque', 'Ataque', attackValue(state), attackValue(next)), row('defesa', 'Defesa', defenseValue(state), defenseValue(next)), row('vida', 'Vida', maxHp(state), maxHp(next))]
+      : [row('ataque', 'Poder de ataque', attackValue(state), attackValue(next)), row('armadura', 'Armadura', armorValue(state), armorValue(next)), row('vida', 'Vida', maxHp(state), maxHp(next))]
   const gains = rows.filter((r) => r.delta > 0).length
   const losses = rows.filter((r) => r.delta < 0).length
   const verdict: DropCompare['verdict'] = gains && losses ? 'mixed' : gains ? 'better' : losses ? 'worse' : 'same'

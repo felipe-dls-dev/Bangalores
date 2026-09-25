@@ -10,7 +10,12 @@ import { runHero, MILESTONES, installFastTimeouts, restoreTimeouts } from './bal
 beforeAll(installFastTimeouts)
 afterAll(restoreTimeouts)
 
-const RUNS_PER_HERO = 3
+// Padrão (npm run test:balance): 3 campanhas por herói, Havendown + Steelmere, todas as classes. Para uma rodada reduzida,
+// BALANCE_RUNS, BALANCE_HEROES (ids separados por vírgula), BALANCE_STEELMERE=0 e BALANCE_OUT (arquivo de saída) ajustam
+// o que roda sem mexer no comportamento padrão.
+const RUNS_PER_HERO = Number(process.env.BALANCE_RUNS ?? 3) || 3
+const ONLY_HEROES = (process.env.BALANCE_HEROES ?? '').split(',').map(id => id.trim()).filter(Boolean)
+const INCLUDE_STEELMERE = process.env.BALANCE_STEELMERE !== '0'
 
 function mean(xs: number[]) { return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0 }
 
@@ -40,10 +45,10 @@ function aggregateBrackets(runs: ReturnType<typeof runHero>[]) {
 
 describe('balance simulation', () => {
   it(`plays every hero class through ${RUNS_PER_HERO} full campaigns each, through Havendown and Steelmere`, () => {
-    const results = HEROES.map(h => {
+    const results = HEROES.filter(h => !ONLY_HEROES.length || ONLY_HEROES.includes(h.id)).map(h => {
       const runs = []
       for (let i = 0; i < RUNS_PER_HERO; i++) {
-        const r = runHero(h.id, true)
+        const r = runHero(h.id, INCLUDE_STEELMERE)
         const steelmereLog = r.steelmere ? ` | steelmere ${r.steelmere.bossesDefeated}/${r.steelmere.totalBosses} (skipped: ${r.steelmere.bossesSkipped.join(', ') || 'none'})` : ''
         console.log(`[${h.id} #${i + 1}] level ${r.finalLevel} | battles ${r.totalBattles} | actions ${r.totalHeroActions} | deaths ${r.deaths} | bosses ${r.bossesDefeated}/${r.totalBosses} | avgDmg ${r.avgDamageOverall.toFixed(2)} | skipped: ${r.bossesSkipped.join(', ') || 'none'}${steelmereLog}`)
         runs.push(r)
@@ -65,7 +70,7 @@ describe('balance simulation', () => {
       }
       return { heroId: h.id, aggregate, runs }
     })
-    const outPath = path.resolve(__dirname, 'balance-sim-results.json')
+    const outPath = process.env.BALANCE_OUT ? path.resolve(process.env.BALANCE_OUT) : path.resolve(__dirname, 'balance-sim-results.json')
     fs.writeFileSync(outPath, JSON.stringify(results, null, 2))
     console.log('RESULTS_WRITTEN:' + outPath)
   // Uma rodada só de Havendown já bateu os 1.8M ms (30min) no limite; com Steelmere
