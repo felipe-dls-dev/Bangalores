@@ -2136,6 +2136,7 @@ body::after{content:"VERSÃO 0.8.109 • 24/09/2026\A Terceiro lote de sprites d
 body::after{content:"VERSÃO 0.8.110 • 24/09/2026\A Correção crítica: a mochila não é mais perdida na derrota (junto com todos os itens guardados). Só equipamentos vestidos entram no sorteio de perda.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.111 • 25/09/2026\A Guilda: Bênção de Proteção (gaste ouro para não perder equipamento na derrota) e Depósito da Guilda com slots gratuitos e slots extras comprados com ouro.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.112 • 25/09/2026\A Combate: face 1 do dado vira Raspão (metade do dano, sem autodano) e consumíveis viram ação rápida (1 por turno, sem gastar o ataque), no solo e no coop.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.113 • 25/09/2026\A Celular: o painel do sininho da Guilda não estoura mais a tela pela direita (texto cortado e rolagem horizontal).";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -3993,3 +3994,9 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
 .guild-vault-lists h4{margin:16px 0 8px;color:#d4ae65;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
 .guild-vault-empty{margin:4px 0 0;color:#87745a;font-size:.7rem}
 @media (max-width:760px){.guild-vault-grid{grid-template-columns:1fr}.guild-vault-panel{padding:14px}}
+
+/* Painel do sininho da Guilda no celular: era absolute com right:-40px e width:340px, ancorado no
+   sino (que fica no meio da barra), e estourava a tela pela direita (60px de rolagem horizontal
+   e texto cortado). Aqui ele passa a usar as bordas da janela; top:auto mantém a posição vertical
+   logo abaixo do sino. */
+@media (max-width:760px){.guild-herald-panel{position:fixed;top:auto;left:8px;right:8px;width:auto;max-width:none;margin-top:10px;max-height:calc(100vh - 140px);overflow-y:auto}}
