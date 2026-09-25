@@ -654,7 +654,7 @@ Not delivered (P2 optional, intentionally out of scope after the P1 set): `minot
 Integration (Claude Code): NOT integrated, because the request rested on a wrong reading. This entry was written from `src/data/subregioes.json`, where those enemies do carry the recycled `arte` (goat/raven/plant guardian) -- but that field is only a fallback. At runtime `namedMonsterArt(nome, hdArt(arte))` in `src/store/game.ts` looks the enemy NAME up in `src/data/monsterArt.json` first, and all 9 creatures already resolve to their own correct illustration in `assets/art/hd/named-monsters/` (`monster-002.jpg` Lobo dos Campos, `-007` Lobo de Abdendriel, `-025` Lobo do Gelo, `-017` Viúva de Abdendriel, `-016` Tecelã Gigante, `-028` Salamandra de Ignaris, `-012` Goblin Bombeiro, `-031` Filhote de Dragão Vermelho, `-054` Dragão do Vazio; each ~313x314 JPG). So the player never saw a goat for a wolf, and the audit finding this came from (GAME-005) does not reproduce in the running game. The 18 delivered files are kept in the repo, unused: they are 1086x1448 (much sharper than the 313px named art) and consistent with the base card set, so they are a ready option if Felipe later wants to upgrade these 9 enemies -- that would be done by pointing their `monsterArt.json` entries at the new HD files, and it is a visual-direction decision for Felipe, not a bug fix. Lesson for future requests: check `monsterArt.json` (name override) before treating a JSON `arte` field as what the player sees.
 
 ### ART-034 - "Acampamento" hub art and the premium currency icon
-Status: REQUESTED
+Status: READY FOR CODE
 Requested by: Claude Code, on behalf of Felipe (Codex's own hub mockup, approved 2026-09-25)
 Gameplay purpose: the new Modern UI mode gets a hub screen, "Acampamento de Expedição", drawn from the mockup Codex proposed. Chapter card art (ART-015 act banners), hero portraits and map backgrounds are REUSED, so this request is only the pieces that do not exist yet. Also a new premium currency, "Cristal de Éter" (Aether Crystal): earned in play, purchasable later. It needs an icon. Do not call it "gemas": forge gems already use that word.
 Required assets (P1):
@@ -666,9 +666,20 @@ Optional (P2, only after the P1 set): shortcut card backgrounds from the mockup,
 Style: same painterly dark-fantasy look as the existing story cinematics and monster cards; palette bronze/gold with violet accents. No text or UI baked into any image.
 Code dependency: Claude Code builds the screen and wires the paths above. Codex must not edit `src/`.
 Acceptance check: exact dimensions; banner text-safe area respected; the crystal icon still reads at 16px on a dark background; all final paths listed in the handoff.
+Delivered by: Codex
+Final paths:
+- `public/assets/ui/camp/camp-banner.webp` — 2400x600 WebP RGB.
+- `public/assets/ui/camp/camp-banner-mobile.webp` — 1080x720 WebP RGB.
+- `public/assets/ui/currency/aether-crystal.png` — 128x128 PNG RGBA.
+- `public/assets/ui/currency/aether-crystal-large.png` — 512x512 PNG RGBA.
+- `public/assets/ui/camp/card-forge.webp` — 1280x480 WebP RGB (P2).
+- `public/assets/ui/camp/card-allies.webp` — 1280x480 WebP RGB (P2).
+- `public/assets/ui/camp/card-quote.webp` — 1280x480 WebP RGB (P2).
+Visual acceptance check: desktop banner preserves a calm dark left 45%; mobile banner retains a dark calm lower third. The crystal has transparent corners, a violet high-contrast silhouette and bronze outline verified at native 128px and reduced 16px preview on dark background. All P1 and optional P2 assets are delivered; nothing was left out.
+Review (Claude Code): accepted after checking exact dimensions, the crystal's alpha channel and every image by eye. Two notes. (1) The desktop banner crops the warrior's head at the top edge (only the torso and chin are visible); the mobile banner shows him full-length and is fine. This can stay as a faceless-silhouette look, or Codex can regenerate the desktop banner with the head in frame (optional, P3). (2) The crystal is a tall shard, so at 16px it reads as a small violet sliver; it is clear from 24px up. Integration status: the crystal icon is wired into the HUD chip; the banner and the three cards are used by the Acampamento hub (in progress).
 
 ### ART-035 - Title screen remodel: wallpaper with all nine heroes and a modern login/menu mockup
-Status: REQUESTED
+Status: READY FOR CODE
 Requested by: Claude Code, on behalf of Felipe
 Gameplay purpose: modernize the first thing players see. Today `MainMenu` and `AuthScreen` (`src/main.tsx`) share one wallpaper, `public/assets/ui/menu/eldravar-war-menu.png` (1672x941, menu card on the left, dark gradient over the left 60%). Felipe wants a general wallpaper featuring ALL the heroes and a more modern menu/login layout.
 Required assets (P1):
@@ -678,6 +689,13 @@ Required assets (P1):
 Style: same dark-fantasy painterly look and bronze/gold UI language as the rest of the game and as Codex's Acampamento mockup, so the title screen and the hub feel like one product.
 Code dependency: Claude Code rebuilds `MainMenu`/`AuthScreen` from the mockup and wires the wallpaper paths. Codex must not edit `src/`.
 Acceptance check: exact dimensions; all nine heroes present and recognizable; the text-safe zones respected; the mockup covers both desktop and phone; all paths listed in the handoff.
+Delivered by: Codex
+Final paths:
+- `public/assets/ui/menu/heroes-wallpaper.webp` — 1920x1080 WebP RGB.
+- `public/assets/ui/menu/heroes-wallpaper-mobile.webp` — 1080x1920 WebP RGB.
+- `docs/design/title-screen-mock.png` — 1920x1080 PNG RGB desktop implementation reference.
+- `docs/design/title-screen-mock-mobile.png` — 390x844 PNG RGB phone title-screen reference.
+Visual acceptance check: both wallpapers depict the nine requested class silhouettes (warrior, guardian, rogue, ranger, arcanist, conjurer plus spectral wolf, druid, monk and priestess). The desktop wallpaper reserves its dark low-detail left 38%; the mobile wallpaper reserves its calm bottom 45%. The desktop reference shows the campaign actions, saved-campaign list and login flow (entrar/criar conta/recuperar senha/jogar sem conta); the companion phone reference shows the title flow. No ART-035 item was left out.
 
 ## Handoff Log
 
