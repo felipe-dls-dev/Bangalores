@@ -1870,7 +1870,7 @@ type CombatDiceRollData={attacker:'hero'|'enemy';naturalAttackRoll:number;attack
 function signedRollValue(value:number){return value>0?`+${value}`:`${value}`}
 function attackDieSummary(roll:CombatDiceRollData){
  if(roll.attackEffect.startsWith('SUPREMO'))return'Dano especial da habilidade'
- if(roll.attackRoll===1)return'Falha crítica: o alvo não sofre dano'
+ if(roll.attackRoll===1)return'Raspão: metade do dano, sem risco para quem ataca'
  if(roll.attackRoll===5)return'Ataque forte: +1 na força'
  if(roll.attackRoll===6)return'Crítico: dano x1,5'
  if(roll.attackRoll===2)return'Ataque desajeitado: alvo ganha +1 depois'
@@ -1878,7 +1878,6 @@ function attackDieSummary(roll:CombatDiceRollData){
 }
 function defenseDieSummary(roll:CombatDiceRollData){
  if(roll.attackEffect.startsWith('SUPREMO'))return'Defesa ignorada'
- if(roll.attackRoll===1)return'Defesa não entra na conta'
  if(roll.defenseRoll===1)return'Falha defensiva: dano x1,5'
  if(roll.defenseRoll===2)return'Defesa fraca: +1 dano'
  if(roll.defenseRoll===5)return'Defesa forte: -1 dano'
@@ -1889,6 +1888,7 @@ function combatDamageMath(roll:CombatDiceRollData){
  const attackStep=roll.attackBase+(roll.attackRoll===5?1:0)
  const initialDamage=Math.max(1,attackStep-roll.defenseBase)
  let diceDamage=initialDamage
+ if(roll.attackRoll===1) diceDamage=Math.max(1,Math.floor(diceDamage*.5))
  if(roll.attackRoll===6) diceDamage=Math.max(1,Math.floor(diceDamage*1.5))
  if(roll.defenseRoll===1) diceDamage=Math.max(1,Math.floor(diceDamage*1.5))
  else if(roll.defenseRoll===2) diceDamage+=1
@@ -1903,7 +1903,7 @@ function CombatDiceRoll({roll}:{roll:CombatDiceRollData}){
  const isUltimate=roll.attackEffect.startsWith('SUPREMO'),math=combatDamageMath(roll),rollNote=roll.attackRoll!==roll.naturalAttackRoll?`Rolagem ${roll.naturalAttackRoll} -> ${roll.attackRoll}`:roll.attackBonus!==0?`Modificador ${signedRollValue(roll.attackBonus)}`:undefined
  const finalLabel=roll.selfDamage?'Dano no atacante':roll.attacker==='hero'?'Dano causado':'Dano recebido'
  const attackDie=<div className="combat-roll-side attack-side"><span className="combat-roll-label">{isUltimate?'PODER':'FORÇA DO GOLPE'} <b>{roll.attackBase}</b></span><motion.b className="combat-die attack-die" animate={{rotate:[0,110,250,370,360],scale:[.75,1.18,.88,1]}} transition={{duration:.55}}>{roll.attackRoll}</motion.b><em><strong>{roll.attackEffect}</strong>{rollNote&&<u>{rollNote}</u>}</em></div>
- const defenseDie=<div className="combat-roll-side defense-side"><span className="combat-roll-label">{isUltimate?'DEFESA':'RESISTÊNCIA DO ALVO'} <b>{roll.defenseBase}</b></span><motion.b className="combat-die defense-die" animate={{rotate:[0,-120,-260,-370,-360],scale:[.75,1.18,.88,1]}} transition={{duration:.55}}>{roll.defenseRoll}</motion.b><em><strong>{roll.attackRoll===1?'Não se aplica':roll.defenseEffect}</strong></em></div>
+ const defenseDie=<div className="combat-roll-side defense-side"><span className="combat-roll-label">{isUltimate?'DEFESA':'RESISTÊNCIA DO ALVO'} <b>{roll.defenseBase}</b></span><motion.b className="combat-die defense-die" animate={{rotate:[0,-120,-260,-370,-360],scale:[.75,1.18,.88,1]}} transition={{duration:.55}}>{roll.defenseRoll}</motion.b><em><strong>{roll.defenseEffect}</strong></em></div>
  return <motion.aside className={`combat-dice-roll ${roll.attacker}`} initial={{opacity:0,y:-18,scale:.9}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-12}} aria-live="assertive"><small>{roll.attacker==='hero'?'SEU ATAQUE':'ATAQUE DO INIMIGO'}</small><div className="combat-dice-pair">{roll.attacker==='hero'?<>{attackDie}<i>VS</i>{defenseDie}</>:<>{defenseDie}<i>VS</i>{attackDie}</>}</div><div className="damage-result"><span>{finalLabel}</span><strong>{roll.selfDamage||roll.damage}</strong></div>{isUltimate?<ol className="damage-steps"><li><span>1</span><p><b>Golpe Supremo:</b> usa a fórmula própria da habilidade.</p></li><li><span>2</span><p><b>Defesa:</b> o golpe é indefensável nesta ação.</p></li><li><span>3</span><p><b>Resultado:</b> {roll.damage} de dano final.</p></li></ol>:roll.selfDamage?<ol className="damage-steps"><li><span>1</span><p><b>Falha crítica:</b> o alvo não recebe dano.</p></li><li><span>2</span><p><b>Dano próprio:</b> 10% da força do golpe vira {roll.selfDamage} de dano.</p></li></ol>:<ol className="damage-steps"><li><span>1</span><p><b>Conta inicial:</b> {math.attackStep} força - {roll.defenseBase} defesa = {math.initialDamage}.</p></li><li><span>2</span><p><b>Dados:</b> {attackDieSummary(roll)}; {defenseDieSummary(roll)} = {math.diceDamage}.</p></li><li><span>3</span><p><b>Final:</b> {math.shield>0?`escudo bloqueou ${math.shield}. `:''}{math.finalDelta!==0?`ajustes ${signedRollValue(math.finalDelta)}. `:''}{roll.damage} de dano.</p></li></ol>}</motion.aside>
 }
 function FleeDiceRoll({roll}:{roll:{roll:number;outcome:'failed'|'neutral'|'success'}}){const message=roll.outcome==='success'?'Fuga bem-sucedida!':roll.outcome==='neutral'?'Você mantém sua ação':'Fuga falhou — turno perdido';return <motion.aside className={`flee-dice-roll ${roll.outcome}`} initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:.92}} aria-live="assertive"><small>TESTE DE FUGA</small><motion.b className="combat-die flee-die" animate={{rotate:[0,130,280,420,360],scale:[.7,1.22,.88,1]}} transition={{duration:.65}}>{roll.roll}</motion.b><strong>{message}</strong><span>1–3 perde o turno • 4 mantém a ação • 5–6 foge</span></motion.aside>}
@@ -1981,6 +1981,7 @@ function CombatScreen(){
  // e este efeito só agenda a chamada -- precisa ficar antes do "if(!e) return" abaixo pra
  // não violar a ordem dos hooks entre renders.
  const autoTurnRunnerRef=React.useRef<()=>void>(()=>{})
+ const myItemUsedRound=battle?.playerBuffs?.[coop.userId]?.itemUsedRound as number|undefined
  // Reagenda sempre que qualquer condição relevante muda -- inclui g.animating de propósito:
  // sem isso, um disparo que caía bem no meio da animação do golpe inimigo (que dura ~1-2s)
  // desistia (guarda dentro do runner) e nada mais reagendava depois, porque só o tamanho do
@@ -1994,7 +1995,9 @@ function CombatScreen(){
   // pedido; o gate de g.animating acima já impede reagendar em cima de uma animação em andamento.
   const timer=window.setTimeout(()=>autoTurnRunnerRef.current(),2000)
   return()=>window.clearTimeout(timer)
- },[isCoop,g.autoCombat,myTurn,g.animating,battle?.log?.length])
+ // itemUsedRound entra nas dependências porque o log da batalha para de crescer quando enche (16
+ // entradas): sem isso, depois de uma poção (ação rápida, o turno continua) nada reagendava o auto.
+ },[isCoop,g.autoCombat,myTurn,g.animating,battle?.log?.length,myItemUsedRound])
  React.useEffect(()=>{window.scrollTo({top:0,left:0,behavior:'auto'});document.documentElement.scrollTop=0;document.body.scrollTop=0},[])
  React.useEffect(()=>{
   if(h?.id)void preloadBattleSpriteImages('heroes',h.id)
@@ -2045,7 +2048,9 @@ function CombatScreen(){
   heroSkillUsesRef.current=uses
  },[g.heroSkillUses])
  if(!e){return <div className="combat-page premium-combat"><Panel title="Finalizando combate"><p className="muted">Preparando o resultado da batalha...</p></Panel></div>}
- const defeated=g.hp<=0,disabled=!myTurn||g.animating||defeated,sharedRoll=isCoop?battle.lastRoll:undefined,intent=enemyIntentFor(e,g.combatTurn)
+ // Consumível é ação rápida (1 por turno, sem gastar o ataque): no coop a rodada em que o jogador
+ // já usou fica em playerBuffs[userId].itemUsedRound; no solo, itemUsedTurn compara com combatTurn.
+ const defeated=g.hp<=0,disabled=!myTurn||g.animating||defeated,itemUsedThisTurn=isCoop?Number(battle?.playerBuffs?.[coop.userId]?.itemUsedRound??-1)===Number(battle?.round??1):g.itemUsedTurn===g.combatTurn,sharedRoll=isCoop?battle.lastRoll:undefined,intent=enemyIntentFor(e,g.combatTurn)
  // Sem limite de quantos tipos aparecem aqui -- a lista já rola (combat-v033 .combat-consumables
  // tem overflow-y:auto), então cortar em 6 (sempre os primeiros comprados, por ordem de chave do
  // objeto inventory) deixava tipos comprados depois inacessíveis em combate, mesmo tendo o item.
@@ -2126,7 +2131,7 @@ function CombatScreen(){
  // avançamos o turno pelo mesmo canal das outras ações cooperativas (coopAbility).
  const performUseConsumable=(id:string)=>{
   if(!isCoop){g.useConsumable(id);return}
-  if(!myTurn)return
+  if(!myTurn||itemUsedThisTurn)return
   const it=CONSUMABLES.find(x=>x.id===id)
   if(!it||(g.inventory[id]??0)<=0)return
   if(consumableBonusActive(it,g))return
@@ -2139,7 +2144,7 @@ function CombatScreen(){
   else if(it.tipo==='vida_max'){const success=Math.random()<(LIFE_CHANCE[id]??.35);if(success){const newMax=maxHp(g)+value,newHp=id==='elixir_fenix'?newMax:Math.min(newMax,g.hp+value);useGame.setState({inventory:inv,attr:{...g.attr,vida:g.attr.vida+value},hp:newHp});description=`vida máxima aumentada permanentemente em ${value}`}else{useGame.setState({inventory:inv});description='a tentativa falhou e a vida máxima não aumentou'}}
   else if(it.tipo==='regen_boost'){useGame.setState({inventory:inv,regenBoostUntil:Date.now()+3600000,lastPassiveHealAt:Date.now()});description='cura acelerada ativada'}
   else{useGame.setState({inventory:inv,pendingAttackBonus:g.pendingAttackBonus+Math.max(1,value),activePotionIds});description=`+${value} de ataque no próximo ataque`}
-  void coop.coopAbility(it.nome,0,description)
+  void coop.coopAbility(it.nome,0,description,true)
  }
  const performFervor=()=>{if(fervorLevel<3)return;if(isCoop){const heal=coopHealProc(g),critDamageBonusPct=hasCraftedEffect(g,'dano_critico_bonus')?.1:0,spec=specializationBonuses(g),bossBonus=(g.talents.includes('cacador')&&e.boss?2:0)+(e.boss?spec.bossDamage:0)+g.firstStrikeBonus;void coop.coopAttack(attackValue(g)+bossBonus,Math.max(0,(e.dificuldade??1)-2),0,false,heal.chance,heal.amount,'Fervor de Combate',undefined,true,0,critDamageBonusPct,heroWeaponElement(g),false,spec.elemental);if(g.firstStrikeBonus)useGame.setState({firstStrikeBonus:0})}else g.useFervor()}
  // g.ultimateAttack() (game.ts) só entende o turno solo (s.playerTurn/s.enemy) -- por isso o
@@ -2174,7 +2179,9 @@ function CombatScreen(){
  autoTurnRunnerRef.current=()=>{
   if(!myTurn||g.animating||defeated)return
   if((g.ultimateGauge??0)>=100){performUltimate();return}
-  if(g.hp<maxHp(g)*.35&&(g.inventory['pocao_cura']??0)>0){performUseConsumable('pocao_cura');return}
+  // A poção é ação rápida (não gasta o turno): depois dela o auto ainda age na mesma vez, e o
+  // efeito de reagendamento acima é acionado pelo novo registro no log.
+  if(g.hp<maxHp(g)*.35&&(g.inventory['pocao_cura']??0)>0&&!itemUsedThisTurn){performUseConsumable('pocao_cura');return}
   if(tryAutoItemSkill('urgent'))return
   // Ataque Duplo (e qualquer outra habilidade "keepsTurn", ver DOUBLE_ATTACK em CoopContext.tsx)
   // libera extraActions[userId] e mantém o turno com o mesmo jogador pra ele de fato golpear de
@@ -2298,7 +2305,7 @@ function CombatScreen(){
    <Panel className="combat-consumables-panel combat-consumables-area">
       <div className="consumables-head"><span>ITENS CONSUMÍVEIS</span><small>{consumables.length?`${consumables.length} tipos disponíveis`:'Nenhum item disponível'}</small></div>
       <div className="combat-consumables">
-       {consumables.length?consumables.map(({item,qty})=>{const desc=consumableDescription(item,g),active=consumableBonusActive(item,g);return <article key={item.id} className={`combat-consumable rarity-${cardRarity(item,'Consumível')}`} title={active?'Esta poção já está ativa. Use outra poção para combinar bônus.':desc}><span className="consumable-qty">{qty}</span><div className="combat-consumable-art"><ArtPreview image={cardArt(item)} name={item.nome} text={desc} stats={`${item.tipo} • Valor ${consumableEffectiveValue(item,g)} • Quantidade ${qty}`}/></div><strong>{item.nome}</strong><small>{active?'Efeito desta poção já está ativo.':desc}</small><button disabled={disabled||active} title={active?undefined:disabled?'Aguarde seu turno':undefined} onClick={()=>performUseConsumable(item.id)}>{active?'ATIVA':'USAR'}</button></article>}):<div className="consumables-empty"><FlaskConical/><span>Seus consumíveis aparecerão aqui durante o combate.</span></div>}
+       {consumables.length?consumables.map(({item,qty})=>{const desc=consumableDescription(item,g),active=consumableBonusActive(item,g);return <article key={item.id} className={`combat-consumable rarity-${cardRarity(item,'Consumível')}`} title={active?'Esta poção já está ativa. Use outra poção para combinar bônus.':desc}><span className="consumable-qty">{qty}</span><div className="combat-consumable-art"><ArtPreview image={cardArt(item)} name={item.nome} text={desc} stats={`${item.tipo} • Valor ${consumableEffectiveValue(item,g)} • Quantidade ${qty}`}/></div><strong>{item.nome}</strong><small>{active?'Efeito desta poção já está ativo.':desc}</small><button disabled={disabled||active||itemUsedThisTurn} title={active?undefined:disabled?'Aguarde seu turno':itemUsedThisTurn?'Você já usou um consumível neste turno':'Ação rápida: não gasta o seu ataque'} onClick={()=>performUseConsumable(item.id)}>{active?'ATIVA':'USAR'}</button></article>}):<div className="consumables-empty"><FlaskConical/><span>Seus consumíveis aparecerão aqui durante o combate.</span></div>}
       </div>
    </Panel>
 

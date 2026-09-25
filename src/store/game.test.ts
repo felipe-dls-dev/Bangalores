@@ -15,10 +15,26 @@ function groupKey(item: (typeof EQUIPMENT)[number]) {
 }
 
 describe('resolveCombatRoll', () => {
-  it('roll 1 is a fumble: no damage to target, self-damage instead', () => {
-    const r = resolveCombatRoll(10, 2, 1, 3)
-    expect(r.damage).toBe(0)
-    expect(r.selfDamage).toBeGreaterThan(0)
+  it('roll 1 is a glancing blow (Raspão): half the normal damage and NO damage to the attacker', () => {
+    const normal = resolveCombatRoll(10, 2, 3, 3)
+    const glance = resolveCombatRoll(10, 2, 1, 3)
+    expect(glance.selfDamage).toBe(0)
+    expect(glance.damage).toBeGreaterThan(0)
+    expect(glance.damage).toBe(Math.floor(normal.damage / 2))
+  })
+  it('a glancing blow still deals at least 1 damage, even against high defense', () => {
+    expect(resolveCombatRoll(1, 50, 1, 3).damage).toBe(1)
+    expect(resolveCombatRoll(10, 9, 1, 3).damage).toBeGreaterThanOrEqual(1)
+  })
+  it('no attack roll can ever hurt the attacker any more', () => {
+    for (let attackRoll = 1; attackRoll <= 6; attackRoll++)
+      for (let defenseRoll = 1; defenseRoll <= 6; defenseRoll++)
+        expect(resolveCombatRoll(20, 5, attackRoll, defenseRoll).selfDamage).toBe(0)
+  })
+  it('the defense roll still applies to a glancing blow (a perfect defense halves it again, never below 0)', () => {
+    const plain = resolveCombatRoll(20, 2, 1, 3)
+    const perfect = resolveCombatRoll(20, 2, 1, 6)
+    expect(perfect.damage).toBe(Math.floor(plain.damage * 0.5))
   })
   it('roll 6 is a critical hit: more damage than a normal roll', () => {
     const normal = resolveCombatRoll(10, 2, 3, 3)
@@ -35,9 +51,10 @@ describe('resolveCombatRoll', () => {
     const r = resolveCombatRoll(1, 50, 3, 3)
     expect(r.damage).toBeGreaterThanOrEqual(1)
   })
-  it('effectiveAttack (raw hit power) is 0 on a fumble and unaffected by defense', () => {
-    expect(resolveCombatRoll(10, 2, 1, 3).effectiveAttack).toBe(0)
+  it('effectiveAttack (raw hit power) is unaffected by defense, and a glancing blow keeps the raw power', () => {
+    expect(resolveCombatRoll(10, 2, 1, 3).effectiveAttack).toBe(10)
     expect(resolveCombatRoll(10, 8, 3, 3).effectiveAttack).toBe(10)
+    expect(resolveCombatRoll(10, 8, 5, 3).effectiveAttack).toBe(11)
   })
   it('high defense leaves a bigger gap between effectiveAttack and final damage (used as coop "damage resisted" credit)', () => {
     const lowDefense = resolveCombatRoll(10, 1, 3, 3)

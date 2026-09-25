@@ -2135,6 +2135,7 @@ body::after{content:"VERSÃO 0.8.108 • 24/09/2026\A Sprites dos 6 heróis do C
 body::after{content:"VERSÃO 0.8.109 • 24/09/2026\A Terceiro lote de sprites do Codex: Caçadora e Druida completam os 13 estados sem poses emprestadas; Guardião ganha Descanso/Defesa/Esquiva/Dano Recebido/Posturas na grade padrão de 8 quadros";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.110 • 24/09/2026\A Correção crítica: a mochila não é mais perdida na derrota (junto com todos os itens guardados). Só equipamentos vestidos entram no sorteio de perda.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.111 • 25/09/2026\A Guilda: Bênção de Proteção (gaste ouro para não perder equipamento na derrota) e Depósito da Guilda com slots gratuitos e slots extras comprados com ouro.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.112 • 25/09/2026\A Combate: face 1 do dado vira Raspão (metade do dano, sem autodano) e consumíveis viram ação rápida (1 por turno, sem gastar o ataque), no solo e no coop.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
