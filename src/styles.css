@@ -2144,6 +2144,7 @@ body::after{content:"VERSÃO 0.8.117 • 25/09/2026\A Tela inicial e login remod
 body::after{content:"VERSÃO 0.8.118 • 25/09/2026\A Seleção de herói remodelada no modo Moderno: herói em destaque com função, dificuldade, atributos e habilidade à vista, fileira de classes e escolha pelo teclado. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.119 • 25/09/2026\A Combate no modo Moderno: painel de Previsão (dano do seu ataque e do golpe do inimigo com os seus bônus atuais, aviso quando o inimigo pode derrubar você) e faixa de turno. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.120 • 25/09/2026\A Modo Moderno: tela do chefe com fases, fraquezas, o que ainda é incerto e preparo antes de enfrentar; tela de Vitória com recompensas, saque com comparação e Equipar agora, e recuperação. O modo Clássico não mudou.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.121 • 25/09/2026\A Forja no modo Moderno: catálogo de receitas em lista com a receita escolhida em detalhe (Pronta / Faltam N em cada linha, filtro só as que posso criar, teclado). A página deixa de ter mais de 48 mil pixels de altura. O modo Clássico não mudou.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4438,3 +4439,29 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
 @media (max-width:1100px){.vc-grid{grid-template-columns:1fr 1fr}.vc-drop{grid-column:1/-1;order:-1}}
 @media (max-width:640px){.vc-grid{grid-template-columns:1fr}.vc-drop-body{grid-template-columns:1fr}.vc-hero{padding:14px 16px}.vc-hero>svg{width:34px;height:34px}}
 .loot-modern .loot-preparation,.loot-modern .loot-equipment{width:100%;max-width:none;margin-inline:0}
+
+/* Forja (modo Moderno): lista compacta de receitas + receita escolhida em detalhe. */
+.fc-ready-toggle{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border:1px solid #4c351d;border-radius:10px;background:#15100b;color:#cdbf9f;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.fc-ready-toggle input{accent-color:#d7a84b}
+.fc-ready-toggle b{min-width:26px;padding:1px 8px;border-radius:999px;background:#2a2018;color:#ffe7ae;font-size:.76rem;text-align:center}
+.fc-ready-toggle.on{border-color:#d7a84b;color:#ffe7ae}
+.fc-layout{display:grid;grid-template-columns:minmax(300px,390px) minmax(0,1fr);gap:16px;align-items:start}
+.fc-list{display:grid;gap:6px;max-height:calc(100vh - 360px);min-height:320px;margin:0;padding:0 4px 0 0;overflow-y:auto;list-style:none;scrollbar-width:thin;scrollbar-color:#704b25 transparent}
+.fc-list li{margin:0}
+.fc-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:6px 10px 6px 6px;border:1px solid #3a2a19;border-radius:10px;background:#120d09;text-align:left}
+.fc-row:hover:not(:disabled){transform:none;border-color:#8a6a35;background:#19120c}
+.fc-row img{width:44px;height:44px;border-radius:8px;object-fit:cover;background:#080605}
+.fc-name{display:grid;min-width:0}
+.fc-name strong{overflow:hidden;color:#f3e2b8;font:700 .92rem Georgia,serif;text-overflow:ellipsis;white-space:nowrap}
+.fc-name small{color:#9d8c72;font-size:.72rem}
+.fc-row em{padding:3px 9px;border:1px solid #4c351d;border-radius:999px;color:#a99983;font-size:.7rem;font-style:normal;font-weight:800;white-space:nowrap}
+.fc-row.s-ready em{border-color:#4f8a3f;background:rgba(31,52,24,.6);color:#b8e4a8}
+.fc-row.s-missing em,.fc-row.s-sacrifice em,.fc-row.s-bag em{border-color:#8a6a35;color:#f0d9a0}
+.fc-row.s-locked{opacity:.72}
+.fc-row.s-locked em{border-color:#8c332f;color:#ffb3aa}
+.fc-row.selected{border-color:#d7a84b;background:linear-gradient(90deg,#3a2810,#17110b);box-shadow:0 0 0 1px #d7a84b}
+.fc-detail{position:sticky;top:74px;min-width:0}
+.fc-single{grid-template-columns:1fr!important}
+.fc-single article{min-height:0}
+@media (max-width:1000px){.fc-layout{grid-template-columns:1fr}.fc-list{max-height:320px;min-height:0}.fc-detail{position:static}}
+[data-ui-mode="modern"] .forge-active-head,[data-ui-mode="modern"] .forge-hero-actions{display:none}

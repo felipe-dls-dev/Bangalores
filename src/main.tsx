@@ -19,6 +19,7 @@ import { HeroSelectModern } from './ui/HeroSelectModern'
 import { CombatForecast } from './ui/CombatForecast'
 import { BossIntroModern } from './ui/BossIntroModern'
 import { VictoryModern } from './ui/VictoryModern'
+import { ForgeCatalogModern } from './ui/ForgeCatalogModern'
 import { previewEnemyAttack, previewHeroAttack } from './store/combatPreview'
 import { npcsForRegion, npcById, type NpcDefinition } from './data/npcs'
 import { STORY_QUESTS, questById, questsOfferedByNpc, questsDeliverableToNpc, type StoryQuest } from './data/storyQuests'
@@ -844,6 +845,10 @@ function RecipeCard({recipe,item,g,mastery}:{recipe:typeof FORGE_RECIPES[number]
 }
 type ForgeCategoryFilter='all'|ReturnType<typeof forgeCategory>
 function RecipeCatalog(){
+ const g=useGame(),uiMode=useUiMode(),mastery=forgeLevelInfo(g.forgeXp??0)
+ return uiMode==='modern'?<ForgeCatalogModern art={item=>assetUrl(cardArt(item))} renderRecipe={({recipe,item})=><RecipeCard recipe={recipe} item={item} g={g} mastery={mastery}/>}/>:<RecipeCatalogClassic/>
+}
+function RecipeCatalogClassic(){
  const g=useGame(),mastery=forgeLevelInfo(g.forgeXp??0)
  const [category,setCategory]=React.useState<ForgeCategoryFilter>('all'),[search,setSearch]=React.useState('')
  const entries=FORGE_RECIPES.map(recipe=>({recipe,item:EQUIPMENT.find(e=>e.id===recipe.equipmentId)})).filter(entry=>entry.item&&equipmentClassAllowed(entry.item,g.heroId)) as {recipe:typeof FORGE_RECIPES[number],item:Equipment}[]
