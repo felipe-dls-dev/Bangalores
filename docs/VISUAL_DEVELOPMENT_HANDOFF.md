@@ -93,6 +93,7 @@ Read it before starting work. Update it in the same change that delivers or cons
 | P1 | Battle stage flip: KOF-style fighter sprites | — | INTEGRATED | See ART-030 -- animated pixel-art fighter sprites (13 states) for all 9 heroes, wired into the combat screen's card-flip "fighter view". |
 | P1 | Druid Defesa sheet, regeneration | Codex | INTEGRATED | See ART-031 -- new `druida/Bases/Defesa.png` delivered with an opaque body; cut into `defend_00..07` (8 frames, 4x2; also serves `hit`). |
 | P1 | Eight-frame sheets, third Codex delivery (cacadora, druida, guardiao) | — | INTEGRATED | See ART-032 -- cacadora and druida now have all 13 states as native 8-frame sheets (no more borrowed/stand-in poses); guardiao's Idle/Defesa/Esquiva/Dano_Recebido/Posturas upgraded from their original 4-6 frame counts to the standard 8-frame grid. |
+| P1 | Monster card art that shows the wrong creature | Codex | REQUESTED | See ART-033 -- 9 new card illustrations (3 wolves, 2 spiders, salamander, goblin, 2 dragons) plus 3 optional; today 17 enemies share 3 illustrations (goat, raven, plant guardian). |
 | P2 | Shared equipment art, last 2 pieces | — | DONE | ART-029 delivered the tier-0 Andarilhos calças/botas; shared-equipment art audit now has no known missing paths. |
 | P2 | Steelmere "Act 2" story content (Contrato 11) | Codex | INTEGRATED | CONTENT-001 delivered a playable optional Steelmere quest chain in `src/data/storyQuests.ts`, deepening the industrial-rebellion plot without changing the main quest spine. |
 
@@ -615,6 +616,28 @@ Integration (Claude Code):
 - `SPRITE_FRAME_SEQUENCES` and `SPRITE_STATE_FRAME_ALIAS` are now empty (both heroes' stand-in entries removed at the source instead of patched at runtime); `getBattleSpriteFramePath()` reverted to its plain generic form.
 - Test suite (`src/battleSprites.test.ts`) updated to match: the two dead `describe.skip` blocks that asserted the old stand-in sequences were deleted outright (not left skipped), the guardian frame-count test reflects the new 8-frame counts, and `cacadora`/`druida` joined the shared `EIGHT_FRAME_HEROES` list alongside the other 6 all-native-sheet heroes.
 Acceptance check: `npm run typecheck`, `npm run lint`, `npm test` (305/305) and `npm run build` all pass; every hero resolves all 13 states to real on-disk frame files with no stand-ins and no stale leftover frames.
+
+### ART-033 - Monster card art that shows the wrong creature
+Status: REQUESTED
+Requested by: Claude Code, on behalf of Felipe (product audit v0.8.84, item GAME-005)
+Gameplay purpose: 17 enemies in `src/data/subregioes.json` share only 3 illustrations (`cabra_malgor`, `corvo_ignaroth`, `guardia_seiva`), so wolves, spiders, a salamander, a goblin and dragons are drawn as a goat, a raven or a plant guardian. Each creature needs its own card art so the enemy on screen matches its name.
+Required assets (priority P1, clearly wrong today):
+- `lobo_dos_campos` -- "Lobo dos Campos" (plain grassland wolf)
+- `lobo_de_abdendriel` -- "Lobo de Abdendriel" (forest wolf, stalking pose)
+- `lobo_do_gelo` -- "Lobo do Gelo" (ice variant: frosted fur, pale blue eyes)
+- `viuva_de_abdendriel` -- "Viúva de Abdendriel" (venomous spider)
+- `tecela_gigante` -- "Tecelã Gigante" (giant forest weaver spider, webs)
+- `salamandra_de_ignaris` -- "Salamandra de Ignaris" (fire salamander, glowing skin)
+- `goblin_bombeiro` -- "Goblin Bombeiro" (goblin throwing explosive flasks)
+- `filhote_de_dragao_vermelho` -- "Filhote de Dragão Vermelho" (young red dragon)
+- `dragao_do_vazio` -- "Dragão do Vazio" (void dragon, black-matter breath)
+Optional (priority P2, arguable today): `minotauro_jovem`, `morcego_de_cristal`, `morcego_das_galerias`.
+Target paths (per creature id above; the HD file name is the id with `_` turned into `-`):
+- Base card: `public/assets/art/monsters/<id>.webp`, 253x189 (same as `cabra_malgor.webp`).
+- HD card: `public/assets/art/hd/monsters/<id-with-hyphens>-hd.webp`, 1086x1448 portrait (same as `cabra-malgor-hd.webp`).
+Style: match the existing set (`cabra_malgor`, `guardia_seiva`, `corvo_ignaroth` and their HD versions): same rendering style, framing, lighting and background treatment. Open the existing files first and compare side by side before delivering. Do not restyle anything existing.
+Code dependency: Claude Code repoints the `arte` field of each enemy in `src/data/subregioes.json` and adds the HD entries to `HD_ART` in `src/store/game.ts`. Codex must not edit those files. Enemy fighter sprites (13-state sheets) are out of scope here and will get their own request.
+Acceptance check: each creature reads as its species at 253x189; visually consistent with the existing monster cards; files have the exact dimensions above; every final path is listed in the handoff.
 
 ## Handoff Log
 
