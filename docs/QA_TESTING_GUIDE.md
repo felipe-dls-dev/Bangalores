@@ -301,3 +301,14 @@ recording if possible) since the code doesn't support the described behavior on 
 | **Caçadora Ataque Duplo** | 3-turn buff duration & `extraHeroAttacks` rearming | `qa-verification.test.ts` (3-turn lifecycle verified) | Lasts 3 full combat turns, rearms each turn, expires correctly | **PASS** |
 | **Responsive Viewport** | 1280px wide desktop vs 420px narrow mobile | Browser CDP test (`scrollWidth === clientWidth`) | 0 horizontal page-level overflow | **PASS** |
 | **Reduced Motion** | "Reduzir efeitos visuais" settings toggle | Store setting & CSS `.reduced-motion` | Disables looping animations while preserving static art | **PASS** |
+
+### Playtest Fase 1 (v0.8.112 - Tarefa T-007)
+
+| Item do Roteiro | Escopo / Cenário Testado | Método de Teste | Verificação no Navegador / Comportamento Observado | Resultado |
+| --- | --- | --- | --- | --- |
+| **A. Primeiros Minutos** | Guerreiro (Legionário), modal de tour, primeiro combate | Playwright Chrome (1366px e 390px) | Tour abre automaticamente; botão "Pular" fecha limpo; botões de combate, dados e log claros. Zero erros de console. | **OK** |
+| **B. Raspão (Face 1)** | Dado de ataque = 1 (herói e inimigo) | Playwright com interceptação de Math.random no ataque | Cartão exibe "Raspão"; alvo sofre dano = 50% (mín 1); sem autodano; sem "Falha crítica". | **OK** |
+| **C. Poção Ação Rápida** | Uso de consumível em combate, vida baixa; modo AUTO | Playwright Chrome | Cura sem passar turno; botão "USAR" desabilita com tooltip "Você já usou um consumível neste turno"; AUTO bebe e ataca no mesmo turno sem travar. | **OK** |
+| **D. Derrota e Bênção** | Morte contra inimigo 999 ATK sem bênção vs com 1 bênção | Playwright Chrome | Mochila e depósito 100% preservados em ambas. Sem bênção: perde 1 item equipado ("O equipamento X foi perdido..."). Com bênção: 0 itens perdidos e carga consumida ("Sua Bênção de Proteção foi consumida..."). | **OK** |
+| **E. Guilda: Bênção e Depósito** | Comprar bênção (máx 3), depósito (guardar/retirar), +5 slots (10 a 60), isolamento entre campanhas | Playwright Chrome (1366px e 390px) | Cargas sobem até 3/3; ouro debitado; guardar/retirar respeita limites com avisos; compra de slots amplia capacidade; persistência no reload; 0 overflow no mobile; Campanha 2 isolada da Campanha 1. | **OK** |
+| **F. Varredura de Telas** | Mapa, Loja, Forja, Ficha, Mochila, Guilda | Playwright Chrome (1366px e 390px) | Telas renderizam perfeitamente sem cortes ou overflow horizontal (`scrollWidth === clientWidth`). 0 erros de console. | **OK** |
