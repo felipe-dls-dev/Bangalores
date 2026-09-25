@@ -2147,6 +2147,7 @@ body::after{content:"VERSÃO 0.8.120 • 25/09/2026\A Modo Moderno: tela do chef
 body::after{content:"VERSÃO 0.8.121 • 25/09/2026\A Forja no modo Moderno: catálogo de receitas em lista com a receita escolhida em detalhe (Pronta / Faltam N em cada linha, filtro só as que posso criar, teclado). A página deixa de ter mais de 48 mil pixels de altura. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.122 • 25/09/2026\A Correção do menu Acampamento (mostrava o texto camp), achado QA-005 do playtest da interface Moderna.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.123 • 25/09/2026\A Equipamento no modo Moderno: herói no centro com os dez espaços ao redor e, para o espaço escolhido, as peças da mochila comparadas em Ataque, Defesa e Vida com botão Equipar. O modo Clássico não mudou.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.124 • 25/09/2026\A Modo Moderno: Crônicas e Guilda em abas (a Guilda mostra 12 contratos por vez), checklist no Criador de cartas e correção da imagem quebrada na arte vazia da carta. O modo Clássico não mudou.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4506,3 +4507,25 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
 .pd-none{margin:0;color:#8f8068;font-size:.86rem}
 @media (max-width:760px){.pd-stage{grid-template-columns:72px minmax(0,1fr) 72px;gap:8px}.pd-slot{width:72px;height:72px}.pd-figure{min-height:380px}.pd-candidates>li{grid-template-columns:44px minmax(0,1fr)}.pd-candidates>li>img{width:44px;height:44px}.pd-equip{grid-column:1/-1;justify-content:center}}
 @media (max-width:420px){.pd-stage{grid-template-columns:62px minmax(0,1fr) 62px;gap:6px}.pd-slot{width:62px;height:62px}.pd-slot small{font-size:.54rem}}
+
+/* Abas de seção (modo Moderno): Crônicas e Guilda deixam de ser uma página única de milhares de pixels. */
+.st-tabs{display:flex;gap:8px;margin:0 0 16px;padding:6px;overflow-x:auto;border:1px solid #4c351d;border-radius:14px;background:linear-gradient(180deg,#1b140e,#0d0907);scrollbar-width:thin}
+.st-tabs button{position:relative;display:inline-flex;flex:none;align-items:center;gap:8px;min-height:44px;padding:0 18px;border:1px solid transparent;border-radius:10px;background:transparent;color:#cdbf9f;font:700 .92rem Georgia,serif;letter-spacing:.04em;white-space:nowrap}
+.st-tabs button:hover:not(:disabled){transform:none;border-color:#6c522f;background:#1d150e}
+.st-tabs button.active{border-color:#d7a84b;background:linear-gradient(180deg,#5a3c12,#2f1e0a);color:#fff2cf;box-shadow:0 0 18px rgba(215,168,75,.22)}
+.st-tabs b{min-width:24px;padding:1px 8px;border-radius:999px;background:#2a2018;color:#ffe7ae;font:800 .72rem Inter,sans-serif;text-align:center}
+.st-alert{width:9px;height:9px;border-radius:50%;background:#e0645a;box-shadow:0 0 8px rgba(224,100,90,.8)}
+.st-panel{display:grid;gap:16px;max-width:1100px;margin:0 auto}
+.chronicle-tabs,.guild-page>.st-tabs{max-width:1100px;margin-inline:auto}
+.guild-page>.st-tabs{margin-bottom:16px}
+.chronicle-page>*,.guild-page>*,.chronicle-tabs,.st-panel{min-width:0}
+.st-tabs{max-width:100%}
+.chronicle-tabs{width:100%}
+.guild-more{display:block;width:100%;margin-top:14px;min-height:48px;border-color:#6c522f;color:#e5bf73;font-weight:800}
+.cc-checklist{gap:6px;margin:0 0 10px;padding:10px 12px;list-style:none;border:1px solid #3a2a19;border-radius:10px;background:rgba(10,7,5,.7);text-align:left}
+.cc-checklist li{display:flex;align-items:center;gap:8px;color:#8f8068;font-size:.82rem}
+.cc-checklist li span{display:inline-grid;place-items:center;width:18px;color:#6c5a40;font-weight:900}
+.cc-checklist li small{margin-left:auto;color:#6c5a40;font-size:.7rem}
+.cc-checklist li.done{color:#cfe8c4}.cc-checklist li.done span{color:#86c26a}
+.cc-checklist li.todo{color:#ffcfc8}.cc-checklist li.todo span{color:#ef8f88}.cc-checklist li.todo small{color:#ef8f88}
+[data-ui-mode="modern"] .cc-checklist{display:grid}
