@@ -2133,6 +2133,7 @@ body::after{content:"VERSÃO 0.8.106 • 23/09/2026\A Ao concluir o tour guiado,
 body::after{content:"VERSÃO 0.8.107 • 23/09/2026\A Planícies de Alvora agora está sempre disponível no mapa-mundi: o marcador, a lista lateral e as sub-regiões abrem de qualquer região, sem precisar caminhar de volta";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.108 • 24/09/2026\A Sprites dos 6 heróis do Codex refeitos (Guerreiro, Arcanista, Sacerdotisa, Caçador, Monge, Conjurador) + Druida: 13 estados de 8 quadros, escala e chão estáveis";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.109 • 24/09/2026\A Terceiro lote de sprites do Codex: Caçadora e Druida completam os 13 estados sem poses emprestadas; Guardião ganha Descanso/Defesa/Esquiva/Dano Recebido/Posturas na grade padrão de 8 quadros";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.110 • 24/09/2026\A Correção crítica: a mochila não é mais perdida na derrota (junto com todos os itens guardados). Só equipamentos vestidos entram no sorteio de perda.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

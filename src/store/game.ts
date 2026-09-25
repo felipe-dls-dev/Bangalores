@@ -1667,7 +1667,7 @@ function resumeAutoAfterRevive(set:any,get:any){
  const s=get() as GameState
  if(s.autoCombat)setTimeout(()=>runAutoCombatTurn(set,get),getCombatDelay(s,900))
 }
-function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
+export function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
  const s=get() as GameState
  // Bênção da Vida (Sacerdotisa): se o ward estiver armado, intercepta a derrota uma vez por
  // batalha em vez de encerrar o combate — sobrevive com 30% da vida máxima.
@@ -1701,22 +1701,20 @@ function applyDefeatPenalty(set:any,get:any,reason='Você foi derrotado.'){
  const goldLossPct=Math.max(.08,.3-priorLosses*.06)
  const equipmentLossChance=Math.max(0,.2-priorLosses*.07)
  const goldLost=Math.min(s.gold,Math.ceil(s.gold*goldLossPct))
- const eligible=(Object.entries(s.equipped) as [Slot,string][]).filter(([,id])=>Boolean(id))
+ // A bolsa nunca entra no sorteio: perdê-la apagava também todos os equipamentos guardados nela
+ // (bug crítico da auditoria v0.8.84), uma punição desproporcional ao "perder um item".
+ const eligible=(Object.entries(s.equipped) as [Slot,string][]).filter(([slot,id])=>slot!=='bolsa'&&Boolean(id))
  const lostEntry=eligible.length&&Math.random()<equipmentLossChance?eligible[Math.floor(Math.random()*eligible.length)]:undefined
  const equipped={...s.equipped}
- let equipmentBag=[...s.equipmentBag]
+ const equipmentBag=[...s.equipmentBag]
  const equipmentUpgrades={...s.equipmentUpgrades},equipmentGems={...s.equipmentGems},craftedEffects={...s.craftedEffects},forgedGemLocked={...s.forgedGemLocked},equipmentElements={...s.equipmentElements},equipmentResistances={...s.equipmentResistances}
  let itemMessage='Nenhum equipamento foi perdido.'
  if(lostEntry){
   const [slot,id]=lostEntry
   delete equipped[slot]
-  const storedLost=slot==='bolsa'?[...equipmentBag]:[]
-  if(slot==='bolsa')equipmentBag=[]
   const remainingEquipped=new Set(Object.values(equipped))
-  for(const lostId of [id,...storedLost])if(!remainingEquipped.has(lostId)){delete equipmentUpgrades[lostId];delete equipmentGems[lostId];delete craftedEffects[lostId];delete forgedGemLocked[lostId];delete equipmentElements[lostId];delete equipmentResistances[lostId]}
-  itemMessage=slot==='bolsa'
-   ?`A bolsa ${eqById(id)?.nome??id} foi perdida com ${storedLost.length} equipamento${storedLost.length===1?'':'s'} armazenado${storedLost.length===1?'':'s'}. Os consumíveis foram preservados.`
-   :`O equipamento ${eqById(id)?.nome??id} foi perdido, incluindo suas melhorias e encaixes.`
+  if(!remainingEquipped.has(id)){delete equipmentUpgrades[id];delete equipmentGems[id];delete craftedEffects[id];delete forgedGemLocked[id];delete equipmentElements[id];delete equipmentResistances[id]}
+  itemMessage=`O equipamento ${eqById(id)?.nome??id} foi perdido, incluindo suas melhorias e encaixes.`
  }
  const recovered={...s,equipped,gold:s.gold-goldLost,hp:0} as GameState
  const recoveredHp=maxHp(recovered)
