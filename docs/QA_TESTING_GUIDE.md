@@ -285,6 +285,29 @@ recording if possible) since the code doesn't support the described behavior on 
 
 ---
 
+### QA-005 - Raw technical identifier 'camp' displayed as label in Acampamento navigation dropdown
+Found by: Antigravity (QA Specialist)
+Where: Top Navigation Bar (Moderna) / `src/main.tsx` (`navLabel`) / `src/ui/ModernNav.tsx` (`Acampamento` dropdown)
+Steps:
+1. Set UI mode to Modern (`bangalores-ui-mode: 'modern'`).
+2. Enter the game campaign and locate the top navigation bar.
+3. Click or navigate with keyboard (Space/Enter) to the first group button ("Acampamento").
+4. Inspect the first item rendered in the opened dropdown menu list.
+Expected: The dropdown menu item displays human-friendly Portuguese text, such as "Acampamento" (or "Visão Geral" / "Hub").
+Actual: The dropdown item displays the raw internal technical identifier string `"camp"`.
+Severity: cosmetic
+Fix applied: v0.8.122 (Claude Code): `navLabel` ganhou o mapa `MODERN_ONLY_SCREEN_LABELS` (`src/ui/navGroups.ts`) e um teste garante que toda tela de todo grupo tem nome legível. Conferido no Chrome: o menu mostra "Acampamento" e "Tutorial".
+Recommendation: In `src/main.tsx`, `navLabel(screen)` resolves against the legacy `nav` tuple array, which does not include `'camp'`. Add an explicit case or map entry:
+```ts
+const navLabel = (screen: GameScreen): string => {
+  if (screen === 'camp') return 'Acampamento';
+  return nav.find(([id]) => id === screen)?.[1] ?? screen;
+};
+```
+Verification: Confirmed in browser playtest (Chrome headless).
+
+---
+
 ## Test Verification & QA Pass Matrix
 
 | Checklist Item | Scope / Files Tested | Automated Test Status | Browser / Visual Verification | Result |
@@ -312,3 +335,18 @@ recording if possible) since the code doesn't support the described behavior on 
 | **D. Derrota e Bênção** | Morte contra inimigo 999 ATK sem bênção vs com 1 bênção | Playwright Chrome | Mochila e depósito 100% preservados em ambas. Sem bênção: perde 1 item equipado ("O equipamento X foi perdido..."). Com bênção: 0 itens perdidos e carga consumida ("Sua Bênção de Proteção foi consumida..."). | **OK** |
 | **E. Guilda: Bênção e Depósito** | Comprar bênção (máx 3), depósito (guardar/retirar), +5 slots (10 a 60), isolamento entre campanhas | Playwright Chrome (1366px e 390px) | Cargas sobem até 3/3; ouro debitado; guardar/retirar respeita limites com avisos; compra de slots amplia capacidade; persistência no reload; 0 overflow no mobile; Campanha 2 isolada da Campanha 1. | **OK** |
 | **F. Varredura de Telas** | Mapa, Loja, Forja, Ficha, Mochila, Guilda | Playwright Chrome (1366px e 390px) | Telas renderizam perfeitamente sem cortes ou overflow horizontal (`scrollWidth === clientWidth`). 0 erros de console. | **OK** |
+
+### Playtest Interface Moderna (v0.8.117 - Tarefa T-015)
+
+| Item do Roteiro | Escopo / Cenário Testado | Método de Teste | Verificação no Navegador / Comportamento Observado | Resultado |
+| --- | --- | --- | --- | --- |
+| **A. Alternância** | Clássica vs Moderna, 3 pontos de alternância, persistência no localStorage | Playwright Chrome headless | Inicia 'classic'; alterna pela tela inicial, topo e Menu; escolha persiste no reload sem vazar para o save da campanha; botão continua ativo e funcional em combate. | **OK** |
+| **B. Topo Moderno** | 6 grupos, dropdowns com teclado/clique, bloqueio em combate | Playwright Chrome headless | 6 grupos operacionais; atalhos Enter/Espaço/Setas/Home/End/Esc funcionam; fecha ao clicar fora; grupo ativo destacado; bloqueado em combate com tooltip "Fuja da batalha..."; primeiro item do dropdown exibe 'camp'. | **QA-005** |
+| **C. Acampamento** | Hub moderno com dados reais, objetivos, provisão, fallback Clássico | Playwright Chrome headless | Capítulo/missão reais; "Continuar expedição" leva ao Mapa; ficha completa do herói (nível, EXP, atributos); 3 objetivos (2 diários + 1 semanal) resgatáveis; provisão funcional; "Convidar" desabilitado sem conta; save com 'camp' no Clássico cai no Mapa. Continuar campanha no Moderno cai no Acampamento; no Clássico cai no Mapa. | **OK** |
+| **D. Cristais de Éter** | Chip no HUD, resgate de diário, conclusão de capítulo, isolamento | Playwright Chrome headless | Moderno: chip sempre visível; Clássico: visível apenas se saldo > 0. Resgate de diário paga 2 cristais + 25 de ouro; capítulo de história paga 5 cristais; saldo persiste e não vaza entre campanhas. | **OK** |
+| **E. Desafios no Dia Local** | Contador de reinício diário | Playwright Chrome headless | Texto "Diários reiniciam em Xh Ym" calculado com base na meia-noite do fuso local (diferença de 0 minutos com o relógio local). | **OK** |
+| **F. Tela Inicial e Login** | Wallpaper dos 9 heróis, 3 botões, biblioteca de campanhas, abas | Playwright Chrome headless | Wallpaper `heroes-wallpaper.webp` exibe todos os 9 heróis (desktop e mobile 390px); botões "Continuar", "Nova campanha" e "Criador de cartas" funcionam; biblioteca lista saves; tela inicial clássica inalterada. | **OK** |
+| **G. Responsividade e Larguras** | 10 viewports (360px a 2560px), HUD cheio (9999999 ouro, 12345 cristais) | Playwright Chrome headless | 0 rolagem horizontal em todas as 20 combinações; botão Menu acessível; grupos inativos colapsam para ícones em 1024px e 1180px conforme especificado. | **OK** |
+| **H. Acessibilidade Básica** | Navegação por Tab, contraste de texto, botões touch mobile | Playwright Chrome headless | Foco visual delimitado por outline; ratios de contraste adequados (maioria 8:1 a 15:1); áreas de toque no mobile adequadas. | **OK** |
+| **I. Varredura de Telas** | Todas as 12 telas nos modos Moderno e Clássico | Playwright Chrome headless | 12 telas renderizadas sem travamentos, sem tela branca e com zero erros de console nos dois modos de UI. | **OK** |
+

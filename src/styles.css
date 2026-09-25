@@ -2145,6 +2145,7 @@ body::after{content:"VERSÃO 0.8.118 • 25/09/2026\A Seleção de herói remode
 body::after{content:"VERSÃO 0.8.119 • 25/09/2026\A Combate no modo Moderno: painel de Previsão (dano do seu ataque e do golpe do inimigo com os seus bônus atuais, aviso quando o inimigo pode derrubar você) e faixa de turno. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.120 • 25/09/2026\A Modo Moderno: tela do chefe com fases, fraquezas, o que ainda é incerto e preparo antes de enfrentar; tela de Vitória com recompensas, saque com comparação e Equipar agora, e recuperação. O modo Clássico não mudou.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.121 • 25/09/2026\A Forja no modo Moderno: catálogo de receitas em lista com a receita escolhida em detalhe (Pronta / Faltam N em cada linha, filtro só as que posso criar, teclado). A página deixa de ter mais de 48 mil pixels de altura. O modo Clássico não mudou.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.122 • 25/09/2026\A Correção do menu Acampamento (mostrava o texto camp), achado QA-005 do playtest da interface Moderna.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES

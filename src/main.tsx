@@ -14,6 +14,7 @@ import { MAX_PROTECTION_BLESSINGS, VAULT_SLOTS_PER_UPGRADE, vaultCapacity, vault
 import { crystalsLabel } from './data/crystals'
 import { useUiMode, toggleUiMode, getUiMode } from './ui/uiMode'
 import { ModernNav } from './ui/ModernNav'
+import { MODERN_ONLY_SCREEN_LABELS } from './ui/navGroups'
 import { CampScreen } from './ui/CampScreen'
 import { HeroSelectModern } from './ui/HeroSelectModern'
 import { CombatForecast } from './ui/CombatForecast'
@@ -74,7 +75,7 @@ const MODERN_AVAILABLE_SCREENS:ReadonlySet<string>=new Set<string>([...nav.map((
 // No modo Moderno, continuar/carregar uma campanha que estava no mapa aterrissa no Acampamento (o
 // hub). Telas que precisam ser retomadas de verdade (combate, evento, saque) nunca são puladas.
 function landOnCampIfModern(){if(getUiMode()==='modern'&&useGame.getState().screen==='map')useGame.getState().setScreen('camp')}
-const navLabel=(screen:string)=>nav.find(([id])=>id===screen)?.[1]??screen
+const navLabel=(screen:string)=>nav.find(([id])=>id===screen)?.[1]??MODERN_ONLY_SCREEN_LABELS[screen]??screen
 const slotNames:Record<Slot,string>={amuleto:'Amuleto',capacete:'Capacete',bolsa:'Bolsa',anel_1:'Anel 1',peitoral:'Peitoral',anel_2:'Anel 2',calcas:'Calças',mao_esquerda:'Mão esquerda',mao_direita:'Mão direita',botas:'Botas'}
 const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Mago',druida:'Druida',cacador:'Caçador',monge:'Monge',sacerdotisa:'Sacerdotisa',conjurador:'Conjurador'}
 // classeExclusiva pode ser uma classe só ou uma lista (conjuntos compartilhados) — normaliza

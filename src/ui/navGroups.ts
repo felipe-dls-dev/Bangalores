@@ -18,6 +18,9 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   { id: 'achievements', label: 'Conquistas', screens: ['gallery'] },
 ]
 
+/** Nome das telas que só existem no modo Moderno (as demais têm nome na lista plana `nav` de main.tsx). */
+export const MODERN_ONLY_SCREEN_LABELS: Readonly<Record<string, string>> = { camp: 'Acampamento' }
+
 // Telas que não aparecem no topo mas pertencem a uma "área" para destacar o grupo certo.
 // Exploração e combate acontecem dentro de Expedição.
 const SCREEN_AREA: Record<string, string> = {

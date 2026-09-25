@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_UI_MODE, UI_MODE_KEY, getUiMode, resetUiModeCache, setUiMode, subscribeUiMode, toggleUiMode } from './uiMode'
-import { NAV_GROUPS, groupOfScreen, visibleNavGroups } from './navGroups'
+import { MODERN_ONLY_SCREEN_LABELS, NAV_GROUPS, groupOfScreen, visibleNavGroups } from './navGroups'
 
 const realStorage = globalThis.localStorage
 
@@ -92,6 +92,15 @@ describe('grupos do topo moderno', () => {
       const owners = NAV_GROUPS.filter((g) => g.screens.includes(screen))
       expect(owners.map((g) => g.id), `tela "${screen}"`).toHaveLength(1)
     }
+  })
+
+  it('toda tela de todo grupo tem um nome legível (QA-005: o menu chegou a mostrar o id "camp")', () => {
+    const classic = new Set(classicNavScreens())
+    for (const screen of NAV_GROUPS.flatMap((g) => g.screens)) {
+      const named = classic.has(screen) || Boolean(MODERN_ONLY_SCREEN_LABELS[screen])
+      expect(named, `tela "${screen}" sem nome`).toBe(true)
+    }
+    expect(MODERN_ONLY_SCREEN_LABELS.camp).toBe('Acampamento')
   })
 
   it('não repete tela entre grupos, nem grupo, e o Acampamento é o primeiro', () => {
