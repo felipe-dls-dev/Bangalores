@@ -2142,6 +2142,7 @@ body::after{content:"VERSÃO 0.8.115 • 25/09/2026\A Nova moeda: Cristais de É
 body::after{content:"VERSÃO 0.8.116 • 25/09/2026\A Modo Moderno: nova tela Acampamento (capítulo e objetivo da história, herói, desafios com resgate e contagem, provisão diária, atalhos) e topo agrupado que cabe em qualquer largura. Ao continuar uma campanha no modo Moderno você cai no Acampamento.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.117 • 25/09/2026\A Tela inicial e login remodelados no modo Moderno: wallpaper com os nove heróis, cartão de vidro escuro, abas Entrar / Criar conta / Recuperar senha e versão para celular. O botão Clássica/Moderna também aparece na tela inicial.";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.118 • 25/09/2026\A Seleção de herói remodelada no modo Moderno: herói em destaque com função, dificuldade, atributos e habilidade à vista, fileira de classes e escolha pelo teclado. O modo Clássico não mudou.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.119 • 25/09/2026\A Combate no modo Moderno: painel de Previsão (dano do seu ataque e do golpe do inimigo com os seus bônus atuais, aviso quando o inimigo pode derrubar você) e faixa de turno. O modo Clássico não mudou.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -4287,3 +4288,34 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
   .hs-confirm{position:sticky;bottom:10px;z-index:3;order:1;box-shadow:0 8px 24px rgba(0,0,0,.7),0 0 22px rgba(215,168,75,.25)}
   .hs-back{order:2;justify-content:center}
 }
+
+/* Combate (modo Moderno): faixa de turno no lugar do texto de orientação e painel de Previsão. */
+[data-ui-mode="modern"] .combat-v033>.screen-intro{display:none}
+[data-ui-mode="modern"] .combat-turn-banner{display:flex}
+/* com a Previsão na tela, o aviso genérico "Próxima ação" só ocupa espaço */
+[data-ui-mode="modern"] .combat-dice-panel:has(.combat-forecast) .combat-action-callout{display:none}
+.combat-actions-panel{position:relative}
+.combat-turn-banner{position:absolute;top:9px;right:12px;z-index:2;align-items:center;gap:9px;padding:4px 12px;flex:0 0 auto;border:1px solid #4c351d;border-radius:10px;background:linear-gradient(180deg,rgba(33,23,17,.92),rgba(14,10,7,.96))}
+.combat-turn-banner span{color:#9d8c72;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.combat-turn-banner strong{color:#d9c9a3;font:700 .9rem Georgia,serif;letter-spacing:.1em;text-transform:uppercase}
+.combat-turn-banner.is-mine{border-color:#d7a84b;background:linear-gradient(180deg,#4a3110,#1f1408);box-shadow:0 0 22px rgba(215,168,75,.25)}
+.combat-turn-banner.is-mine strong{color:#ffe7ae}
+.combat-turn-banner.is-busy strong{color:#b9a684}
+.combat-turn-banner.is-defeated{border-color:#8c332f}
+.combat-turn-banner.is-defeated strong{color:#ef8f88}
+.combat-forecast{display:grid;gap:8px;padding:10px 12px;border:1px solid #5d482e;border-radius:10px;background:linear-gradient(180deg,#1b140e,#100b08)}
+.combat-forecast h3{margin:0;color:#d4ae65;font-size:.72rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+.cf-row{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;align-items:start;padding:8px 10px;border:1px solid #3a2a19;border-radius:8px;background:rgba(10,7,5,.7)}
+.cf-row>svg{margin-top:2px}
+.cf-hero>svg{color:#e0645a}
+.cf-enemy>svg{color:#72a9dc}
+.cf-row strong{display:block;color:#e5bf73;font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.cf-row p{margin:2px 0 0;color:#e2d6ba;font-size:.98rem}
+.cf-row b{color:#ffe7ae;font:700 1.25rem Georgia,serif}
+.cf-row small{display:block;margin-top:3px;color:#a99983;font-size:.76rem;line-height:1.4}
+.cf-enemy.cf-warn{border-color:#8a6a35}
+.cf-enemy.cf-warn>svg{color:#e5bf73}
+.cf-enemy.cf-lethal{border-color:#b63a35;background:rgba(74,21,18,.55)}
+.cf-enemy.cf-lethal>svg,.cf-enemy.cf-lethal b{color:#ff9a90}
+.cf-foot{margin:0;color:#7f705c;font-size:.7rem}
+@media (max-height:900px) and (min-width:1001px){.cf-foot{display:none}.cf-row p{font-size:.9rem}.cf-row b{font-size:1.1rem}}

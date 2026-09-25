@@ -16,6 +16,8 @@ import { useUiMode, toggleUiMode, getUiMode } from './ui/uiMode'
 import { ModernNav } from './ui/ModernNav'
 import { CampScreen } from './ui/CampScreen'
 import { HeroSelectModern } from './ui/HeroSelectModern'
+import { CombatForecast } from './ui/CombatForecast'
+import { previewEnemyAttack, previewHeroAttack } from './store/combatPreview'
 import { npcsForRegion, npcById, type NpcDefinition } from './data/npcs'
 import { STORY_QUESTS, questById, questsOfferedByNpc, questsDeliverableToNpc, type StoryQuest } from './data/storyQuests'
 import { onlineConfigured } from './online/supabase'
@@ -2009,6 +2011,7 @@ function CoopTeammatesRow({coop,battle}:{coop:any,battle:any}){
  })}</div>
 }
 function CombatScreen(){
+ const combatUiMode=useUiMode()
  const g=useGame(),coop=useCoop(),h=HEROES.find(x=>x.id===g.heroId)!;const e=g.enemy,battle=coop.room?.shared_state?.battle as any,isCoop=Boolean(coop.room&&battle?.status==='playing'),myTurn=isCoop?battle.activeUserId===coop.userId:g.playerTurn
  const [battleViewMode,setBattleViewMode]=React.useState<BattleViewMode>('sprites')
  const toggleBattleViewMode=()=>setBattleViewMode(v=>v==='cards'?'sprites':'cards')
@@ -2263,6 +2266,9 @@ function CombatScreen(){
  // rica de CombatDiceRoll/FleeDiceRoll que o modo solo tem — mesmo já existindo dados suficientes
  // no estado compartilhado para isso. Aqui a gente prioriza a animação sempre que possível.
  const coopDiceRoll=isCoop&&sharedRoll&&(sharedRoll.attacker==='hero'||sharedRoll.attacker==='enemy')?sharedRoll:undefined
+ // Previsão (modo Moderno, solo): só enquanto o jogador decide; o cálculo é o mesmo do combate real (store/combatPreview.ts).
+ const forecastPreview=!isCoop&&combatUiMode==='modern'&&e&&!disabled?{attack:previewHeroAttack(g as any),threat:previewEnemyAttack(g as any)}:undefined
+ const forecastNode=forecastPreview?.attack&&forecastPreview.threat?<motion.div key="forecast" initial={{opacity:0}} animate={{opacity:1}}><CombatForecast attack={forecastPreview.attack} threat={forecastPreview.threat} hp={g.hp} hasSummons={Boolean(g.summon||g.summons?.length)}/></motion.div>:undefined
  const idleDice=<motion.div className="combat-dice-idle" initial={{opacity:0}} animate={{opacity:1}}><Dices/><strong>Aguardando a próxima jogada</strong><small>Os resultados de ataque, defesa e fuga aparecerão aqui.</small></motion.div>
  const diceNode=isCoop
   ?(battle.fleeRoll?<FleeDiceRoll key={`coop-flee-${battle.turn}`} roll={battle.fleeRoll}/>
@@ -2271,7 +2277,7 @@ function CombatScreen(){
     :idleDice)
   :(g.fleeRoll&&g.animating?<FleeDiceRoll key={`flee-${g.combatTurn}-${g.fleeRoll.roll}`} roll={g.fleeRoll}/>
     :g.combatRoll&&g.animating?<CombatDiceRoll key={`${g.combatTurn}-${g.combatRoll.attacker}`} roll={g.combatRoll}/>
-    :idleDice)
+    :forecastNode??idleDice)
  return <div className="combat-page premium-combat combat-v033">
   <div className="screen-intro"><small>FOCO DO TURNO</small><p>Olhe primeiro a intenção do inimigo, depois os bônus ativos e os consumíveis. O log continua disponível, mas a ação principal precisa ser lida em um só olhar.</p></div>
   <div className="battle-summary-strip"><span><small>SEU ATAQUE</small><strong>{attackValue(g)}</strong></span><span><small>SUA DEFESA</small><strong>{defenseValue(g)}</strong></span><span><small>INTENÇÃO</small><strong>{intent.label}</strong></span></div>
@@ -2311,6 +2317,7 @@ function CombatScreen(){
    </Panel>
 
    <Panel title="Ações" className="combat-actions-panel combat-actions-area">
+      <div className={`combat-turn-banner ui-modern-only${defeated?' is-defeated':g.animating?' is-busy':myTurn?' is-mine':''}`} role="status"><span>Turno {isCoop?battle.round:g.combatTurn}</span><strong>{defeated?'Você caiu':g.animating?'Resolvendo a rodada…':myTurn?'Sua vez':isCoop?'Vez dos outros combatentes':'Vez do inimigo'}</strong></div>
       {defeated&&<p className="coop-defeated-notice">DERROTADO • Você não pode mais realizar ações nesta batalha. As penalidades serão aplicadas ao final.</p>}
       <div className="combat-actions-grid">
        <button className="attack-btn premium-action" disabled={disabled} title={disabled?(defeated?'Você foi derrotado':'Aguarde seu turno'):undefined} onClick={()=>performAttack()}><Sword/>Atacar</button>
