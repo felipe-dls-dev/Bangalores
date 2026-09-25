@@ -2134,6 +2134,7 @@ body::after{content:"VERSÃO 0.8.107 • 23/09/2026\A Planícies de Alvora agora
 body::after{content:"VERSÃO 0.8.108 • 24/09/2026\A Sprites dos 6 heróis do Codex refeitos (Guerreiro, Arcanista, Sacerdotisa, Caçador, Monge, Conjurador) + Druida: 13 estados de 8 quadros, escala e chão estáveis";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.109 • 24/09/2026\A Terceiro lote de sprites do Codex: Caçadora e Druida completam os 13 estados sem poses emprestadas; Guardião ganha Descanso/Defesa/Esquiva/Dano Recebido/Posturas na grade padrão de 8 quadros";white-space:pre-line}
 body::after{content:"VERSÃO 0.8.110 • 24/09/2026\A Correção crítica: a mochila não é mais perdida na derrota (junto com todos os itens guardados). Só equipamentos vestidos entram no sorteio de perda.";white-space:pre-line}
+body::after{content:"VERSÃO 0.8.111 • 25/09/2026\A Guilda: Bênção de Proteção (gaste ouro para não perder equipamento na derrota) e Depósito da Guilda com slots gratuitos e slots extras comprados com ouro.";white-space:pre-line}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
@@ -3971,3 +3972,23 @@ html.high-contrast .panel,html.high-contrast .item-card,html.high-contrast .map-
   }
   .forge-upgrade-card>button,.forge-upgrade-state{width:100%;margin-left:0;margin-right:0}
 }
+
+/* Capela e cofre da Guilda (Bênção de Proteção + Depósito). */
+.guild-vault-panel{margin:14px 0;padding:18px 22px;border:1px solid #594020;border-radius:11px;background:linear-gradient(135deg,#1c130d,#0d0907)}
+.guild-vault-head{margin-bottom:12px}
+.guild-vault-head h2{margin:2px 0 0;font:700 1.15rem Georgia,serif;color:#e9c377}
+.guild-vault-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.guild-vault-card{display:grid;align-content:start;gap:9px;padding:14px 16px;border:1px solid #49341f;border-radius:9px;background:#100b08}
+.guild-vault-card header{display:flex;align-items:center;gap:8px;color:#d4ae65}
+.guild-vault-card header svg{width:20px;height:20px}
+.guild-vault-card h3{margin:0;font:700 1rem Georgia,serif}
+.guild-vault-card p{margin:0;color:#a89475;font-size:.72rem;line-height:1.5}
+.guild-vault-stats{display:flex;gap:10px}
+.guild-vault-stats span{display:grid;flex:1;gap:2px;padding:7px 10px;border:1px solid #3e2b1a;border-radius:7px;background:#150f0a}
+.guild-vault-stats small{color:#8f806b;font-size:.51rem;font-weight:900;letter-spacing:.12em}
+.guild-vault-stats strong{display:flex;align-items:center;gap:5px;color:#efcc82;font-size:.95rem}
+.guild-vault-hint{color:#87745a;font-size:.62rem}
+.guild-vault-toggle{border-color:#4c351d;background:#150f0a;color:#a99879}
+.guild-vault-lists h4{margin:16px 0 8px;color:#d4ae65;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+.guild-vault-empty{margin:4px 0 0;color:#87745a;font-size:.7rem}
+@media (max-width:760px){.guild-vault-grid{grid-template-columns:1fr}.guild-vault-panel{padding:14px}}
