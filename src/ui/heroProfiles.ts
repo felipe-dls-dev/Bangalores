@@ -46,7 +46,7 @@ export const HERO_EDITORIAL: Record<string, HeroEditorial> = {
   },
   monge: {
     difficulty: 2,
-    playstyle: 'Golpes fortes acumulam Fervor e o Golpe Flamejante deixa o inimigo queimando.',
+    playstyle: 'Golpes fortes recuperam Energia extra para o Fervor e o Golpe Flamejante deixa o inimigo queimando.',
   },
   druida: {
     difficulty: 2,

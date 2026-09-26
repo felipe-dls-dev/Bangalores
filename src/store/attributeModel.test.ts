@@ -9,10 +9,13 @@ import {
   championStats,
   defenseValue,
   energyNow,
+  fervorEnergyCost,
   heroAbilityPotency,
   heroDodgeChance,
   heroSkillEnergyCost,
   maxHp,
+  runAutoCombatTurn,
+  ultimateEffects,
   useGame,
   xpForLevel,
 } from './game'
@@ -245,11 +248,11 @@ describe('fontes de bônus nos atributos (equipamento, forja, gemas, talentos, e
   })
 })
 
-describe('Energia no combate solo', () => {
+describe('Energia: ganhos, gastos e descanso', () => {
   let randomSpy: ReturnType<typeof vi.spyOn>
   beforeEach(() => {
     vi.useFakeTimers()
-    randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5) // dado 4: golpe comum, sem crítico
   })
   afterEach(() => {
     randomSpy.mockRestore()
@@ -259,62 +262,169 @@ describe('Energia no combate solo', () => {
 
   const startCombat = (heroId: string, patch: Record<string, unknown> = {}) => {
     fresh(heroId)
-    useGame.setState({ screen: 'combat', enemy, enemyHp: 999, hp: maxHp(state()), playerTurn: true, animating: false, autoCombat: false, heroSkillCooldown: 0, heroSkillUses: 0, combatTurn: 1, energy: championStats(state()).energiaMaxima, energyTurn: 1, combatLog: [], summons: [], summon: undefined, ...patch } as any)
+    useGame.setState({ screen: 'combat', enemy, enemyHp: 999, hp: maxHp(state()), playerTurn: true, animating: false, autoCombat: false, heroSkillCooldown: 0, heroSkillUses: 0, combatTurn: 1, combatLog: [], summons: [], summon: undefined, ...patch } as any)
   }
+  const max = (id: string) => championStats({ ...state(), heroId: id } as any).energiaMaxima
 
-  it('a habilidade gasta o custo da classe e entra em recarga', () => {
+  it('a Energia começa cheia numa campanha nova e é do herói: não volta a encher a cada combate', () => {
+    fresh('guerreiro')
+    expect(energyNow(state())).toBe(max('guerreiro'))
+    useGame.setState({ energy: 4 } as any)
+    state().startEncounter('campos_estrada')
+    if (state().screen !== 'combat') return
+    expect(energyNow(state())).toBe(4)
+  })
+
+  it('o ataque normal dá +1 de Energia', () => {
+    startCombat('guerreiro', { energy: 4 })
+    state().attack()
+    expect(energyNow(state())).toBe(4 + ATTRIBUTE_RULES.energia.ganhoAtaque)
+  })
+
+  it('o crítico dá mais Energia que o ataque comum', () => {
+    randomSpy.mockReturnValue(0.99) // todos os dados dão 6: crítico
+    startCombat('guerreiro', { energy: 4 })
+    state().attack()
+    expect(state().combatRoll?.attackRoll).toBe(6)
+    expect(energyNow(state())).toBe(4 + ATTRIBUTE_RULES.energia.ganhoCritico)
+    expect(ATTRIBUTE_RULES.energia.ganhoCritico).toBeGreaterThan(ATTRIBUTE_RULES.energia.ganhoAtaque)
+  })
+
+  it('a Energia nunca passa do máximo ao atacar', () => {
+    startCombat('guerreiro') // cheia
+    state().attack()
+    expect(energyNow(state())).toBe(max('guerreiro'))
+  })
+
+  it('a habilidade gasta o custo da classe, não devolve Energia e entra em recarga', () => {
     startCombat('guerreiro')
     const cost = heroSkillEnergyCost('guerreiro')
-    const before = energyNow(state())
     state().heroSkill()
     expect(state().heroSkillUses).toBe(1)
-    expect(energyNow(state())).toBe(before - cost)
+    expect(energyNow(state())).toBe(max('guerreiro') - cost)
+    expect(state().heroSkillCooldown).toBeGreaterThan(0)
   })
 
   it('sem Energia suficiente a habilidade fica bloqueada: nada é gasto nem a recarga começa', () => {
-    startCombat('guerreiro', { energy: 3, energyTurn: 1 })
+    startCombat('guerreiro', { energy: heroSkillEnergyCost('guerreiro') - 1 })
     state().heroSkill()
     expect(state().heroSkillUses).toBe(0)
     expect(state().heroSkillCooldown).toBe(0)
-    expect(energyNow(state())).toBe(3)
+    expect(energyNow(state())).toBe(heroSkillEnergyCost('guerreiro') - 1)
     expect(state().combatLog.some((line) => line.includes('Energia insuficiente'))).toBe(true)
   })
 
-  it('a Energia regenera por rodada e nunca passa do máximo', () => {
-    startCombat('guerreiro', { energy: 0, energyTurn: 1, combatTurn: 1 })
+  it('o Fervor de Combate custa Energia (no lugar de 3 críticos) e não devolve Energia', () => {
+    const cost = fervorEnergyCost()
+    startCombat('guerreiro', { energy: cost + 3 })
+    state().useFervor()
+    expect(state().combatRoll?.attackRoll).toBe(6) // crítico garantido
+    expect(energyNow(state())).toBe(3)
+  })
+
+  it('sem Energia o Fervor fica bloqueado, mesmo depois de vários críticos', () => {
+    randomSpy.mockReturnValue(0.99)
+    startCombat('guerreiro', { energy: 0 })
+    state().useFervor()
+    expect(state().animating).toBe(false)
     expect(energyNow(state())).toBe(0)
-    useGame.setState({ combatTurn: 3 } as any)
-    expect(energyNow(state())).toBe(2 * ATTRIBUTE_RULES.energia.regeneracaoPorRodada)
-    useGame.setState({ combatTurn: 500 } as any)
-    expect(energyNow(state())).toBe(championStats(state()).energiaMaxima)
   })
 
   it('o Conjurador paga Energia por fera invocada e é bloqueado sem ela', () => {
     startCombat('conjurador')
     state().summonMonster('atacante')
     expect(state().heroSkillUses).toBe(1)
-    expect(energyNow(state())).toBe(championStats(state()).energiaMaxima - heroSkillEnergyCost('conjurador'))
-    startCombat('conjurador', { energy: 1, energyTurn: 1 })
+    expect(energyNow(state())).toBe(max('conjurador') - heroSkillEnergyCost('conjurador'))
+    startCombat('conjurador', { energy: 1 })
     state().summonMonster('atacante')
     expect(state().heroSkillUses).toBe(0)
   })
 
   it('save antigo sem Energia gravada começa cheio, não zerado', () => {
     startCombat('guerreiro')
-    useGame.setState({ energy: undefined, energyTurn: undefined } as any)
-    expect(energyNow(state())).toBe(championStats(state()).energiaMaxima)
+    useGame.setState({ energy: undefined } as any)
+    expect(energyNow(state())).toBe(max('guerreiro'))
   })
 
-  it('a Energia nunca fica negativa', () => {
-    startCombat('guerreiro', { energy: -50, energyTurn: 1 })
+  it('a Energia nunca fica negativa nem acima do máximo, mesmo com valor corrompido', () => {
+    startCombat('guerreiro', { energy: -50 })
     expect(energyNow(state())).toBe(0)
+    useGame.setState({ energy: 9999 } as any)
+    expect(energyNow(state())).toBe(max('guerreiro'))
   })
 
-  it('o Golpe Supremo não gasta Energia (barra própria)', () => {
-    startCombat('guerreiro', { ultimateGauge: 100 })
-    const before = energyNow(state())
-    state().ultimateAttack()
-    expect(energyNow(state())).toBeGreaterThanOrEqual(before)
+  it('o Golpe Supremo do Monge dá Energia; os demais não', () => {
+    expect(ultimateEffects('monge', 10, 30).extraEnergy).toBe(2)
+    for (const id of HERO_IDS.filter((hero) => hero !== 'monge')) expect(ultimateEffects(id, 10, 30).extraEnergy, id).toBe(0)
+  })
+
+  it('addEnergy soma dentro dos limites', () => {
+    startCombat('guerreiro', { energy: 1 })
+    state().addEnergy(3)
+    expect(energyNow(state())).toBe(4)
+    state().addEnergy(999)
+    expect(energyNow(state())).toBe(max('guerreiro'))
+    state().addEnergy(-5)
+    expect(energyNow(state())).toBe(max('guerreiro'))
+  })
+
+  describe('descansar na fogueira', () => {
+    it('cada tick devolve Energia e vida ao mesmo tempo', () => {
+      fresh('guerreiro')
+      useGame.setState({ hp: maxHp(state()) - 3, energy: 1 } as any)
+      const hp = state().hp
+      const result = state().campfireHealTick()
+      expect(result).toEqual({ hp: true, energy: true })
+      expect(energyNow(state())).toBe(1 + ATTRIBUTE_RULES.energia.ganhoDescansoPorTick)
+      expect(state().hp).toBe(hp + 1)
+    })
+
+    it('recupera a Energia mesmo com a vida cheia, e avisa que só a Energia subiu', () => {
+      fresh('guerreiro')
+      useGame.setState({ energy: 0 } as any)
+      expect(state().campfireHealTick()).toEqual({ hp: false, energy: true })
+      expect(energyNow(state())).toBe(ATTRIBUTE_RULES.energia.ganhoDescansoPorTick)
+    })
+
+    it('depois de encher tudo o tick não faz mais nada e nunca passa do máximo', () => {
+      fresh('guerreiro')
+      useGame.setState({ energy: max('guerreiro') - 1 } as any)
+      expect(state().campfireHealTick()).toEqual({ hp: false, energy: true })
+      expect(energyNow(state())).toBe(max('guerreiro'))
+      expect(state().campfireHealTick()).toEqual({ hp: false, energy: false })
+      expect(energyNow(state())).toBe(max('guerreiro'))
+    })
+  })
+
+  describe('auto-combate', () => {
+    const auto = () => runAutoCombatTurn(useGame.setState, useGame.getState)
+
+    it('usa o Fervor quando a habilidade não está disponível e há Energia', () => {
+      startCombat('guerreiro', { autoCombat: true, combatSpeed: 3, heroSkillCooldown: 2, energy: fervorEnergyCost() })
+      auto()
+      expect(state().combatLog.some((line) => line.includes('Fervor de Combate'))).toBe(true)
+      expect(energyNow(state())).toBe(0)
+    })
+
+    it('guarda a Energia para a habilidade enquanto ela ainda vale a pena (não gasta em Fervor)', () => {
+      const cost = heroSkillEnergyCost('guerreiro')
+      startCombat('guerreiro', { autoCombat: true, combatSpeed: 3, heroSkillCooldown: 0, energy: cost - 1 })
+      auto()
+      expect(state().combatLog.some((line) => line.includes('Fervor de Combate'))).toBe(false)
+      expect(energyNow(state())).toBeGreaterThanOrEqual(cost - 1) // atacou e ganhou Energia
+    })
+
+    it('usa a habilidade quando pode pagar', () => {
+      startCombat('guerreiro', { autoCombat: true, combatSpeed: 3 })
+      auto()
+      expect(state().heroSkillUses).toBe(1)
+    })
+
+    it('sem Energia nenhuma, ataca em vez de travar', () => {
+      startCombat('guerreiro', { autoCombat: true, combatSpeed: 3, heroSkillCooldown: 2, energy: 0 })
+      auto()
+      expect(state().animating).toBe(true)
+    })
   })
 })
 

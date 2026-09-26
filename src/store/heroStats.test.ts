@@ -6,14 +6,15 @@ import {
   abilityPotency,
   armorMitigation,
   basicAttackPower,
+  attackEnergyGain,
   canSpendEnergy,
+  clampEnergy,
+  gainEnergy,
   classAttributeAtLevel,
   computeChampionStats,
   dodgeFromDexterity,
   effectResistance,
   elementalResistance,
-  energyAt,
-  fullEnergy,
   initiativeBonus,
   magicPower,
   maxEnergy,
@@ -165,37 +166,54 @@ describe('Esquiva, iniciativa e Destreza', () => {
 describe('Energia', () => {
   const max = 10
 
-  it('começa cheia', () => {
-    expect(fullEnergy(max, 1)).toEqual({ energy: max, turn: 1 })
-    expect(energyAt(fullEnergy(max, 1), 1, max)).toBe(max)
+  it('não regenera sozinha: só as fontes configuradas somam', () => {
+    // não existe mais regeneração por rodada; o que sobe a Energia é atacar, crítico e descansar
+    expect(Object.keys(ATTRIBUTE_RULES.energia).sort()).toEqual(['custoFervor', 'ganhoAtaque', 'ganhoCritico', 'ganhoDescansoPorTick'])
   })
 
-  it('gastar reduz a energia e a regeneração por rodada é configurável', () => {
-    const start = fullEnergy(max, 1)
-    const spent = spendEnergy(start, 1, max, 10)
-    expect(spent.ok).toBe(true)
-    expect(spent.state.energy).toBe(0)
-    expect(energyAt(spent.state, 2, max, 2)).toBe(2)
-    expect(energyAt(spent.state, 4, max, 2)).toBe(6)
-    expect(energyAt(spent.state, 4, max, 3)).toBe(9)
-    expect(energyAt(spent.state, 4, max, 0)).toBe(0)
+  it('o ataque normal dá Energia e o crítico dá mais', () => {
+    expect(attackEnergyGain(false)).toBe(ATTRIBUTE_RULES.energia.ganhoAtaque)
+    expect(attackEnergyGain(true)).toBe(ATTRIBUTE_RULES.energia.ganhoCritico)
+    expect(attackEnergyGain(true)).toBeGreaterThan(attackEnergyGain(false))
+    expect(attackEnergyGain(false)).toBeGreaterThan(0)
   })
 
-  it('nunca passa do máximo nem fica negativa', () => {
-    expect(energyAt({ energy: 9, turn: 1 }, 50, max)).toBe(max)
-    expect(energyAt({ energy: -20, turn: 1 }, 1, max)).toBe(0)
-    expect(energyAt({ energy: 5, turn: 9 }, 3, max)).toBe(5) // relógio "voltou": não regenera nem perde
+  it('ganhar soma sem passar do máximo, e valores negativos ou inválidos não tiram nada', () => {
+    expect(gainEnergy(4, max, 2)).toBe(6)
+    expect(gainEnergy(9, max, 5)).toBe(max)
+    expect(gainEnergy(4, max, -3)).toBe(4)
+    expect(gainEnergy(4, max, Number.NaN)).toBe(4)
+    expect(gainEnergy(Number.NaN, max, 2)).toBe(2)
   })
 
-  it('a habilidade fica bloqueada sem energia suficiente e nada é gasto na tentativa', () => {
-    const low = { energy: 3, turn: 1 }
-    expect(canSpendEnergy(energyAt(low, 1, max), 10)).toBe(false)
-    const blocked = spendEnergy(low, 1, max, 10)
-    expect(blocked.ok).toBe(false)
-    expect(blocked.state.energy).toBe(3)
-    expect(blocked.available).toBe(3)
-    // com a regeneração de 4 rodadas (3 + 4×2 = 11) volta a ser possível
-    expect(spendEnergy(low, 5, max, 10).ok).toBe(true)
+  it('gastar reduz a Energia e nada é gasto quando falta', () => {
+    const spent = spendEnergy(10, max, 5)
+    expect(spent).toEqual({ ok: true, energy: 5 })
+    const blocked = spendEnergy(3, max, 5)
+    expect(blocked).toEqual({ ok: false, energy: 3 })
+    expect(spendEnergy(5, max, 5)).toEqual({ ok: true, energy: 0 }) // custo exato é possível
+  })
+
+  it('nunca fica negativa nem passa do máximo', () => {
+    expect(clampEnergy(-20, max)).toBe(0)
+    expect(clampEnergy(99, max)).toBe(max)
+    expect(clampEnergy(Number.NaN, max)).toBe(0)
+    expect(spendEnergy(-4, max, 1).ok).toBe(false)
+    expect(spendEnergy(999, max, 1).energy).toBe(max - 1)
+  })
+
+  it('a habilidade fica bloqueada sem Energia suficiente', () => {
+    expect(canSpendEnergy(3, 5)).toBe(false)
+    expect(canSpendEnergy(5, 5)).toBe(true)
+  })
+
+  it('o custo do Fervor e das habilidades cabe na Energia máxima da classe', () => {
+    expect(ATTRIBUTE_RULES.energia.custoFervor).toBeGreaterThan(0)
+    for (const id of HERO_IDS) {
+      const profile = heroStatProfile(id)
+      expect(profile.energiaBase, id).toBeGreaterThanOrEqual(profile.habilidade.custoEnergia * 2) // dá para juntar duas habilidades
+      expect(profile.energiaBase, id).toBeGreaterThanOrEqual(ATTRIBUTE_RULES.energia.custoFervor)
+    }
   })
 
   it('a Energia máxima cresce com o nível e com bônus, e nunca é negativa', () => {
@@ -206,13 +224,6 @@ describe('Energia', () => {
     expect(maxEnergy(profile, 1, -1000)).toBe(0)
   })
 
-  it('o custo de toda habilidade cabe na Energia inicial da classe', () => {
-    for (const id of HERO_IDS) {
-      const profile = heroStatProfile(id)
-      expect(profile.habilidade.custoEnergia).toBeGreaterThan(0)
-      expect(profile.energiaBase).toBeGreaterThanOrEqual(profile.habilidade.custoEnergia)
-    }
-  })
 })
 
 describe('Potência da habilidade', () => {

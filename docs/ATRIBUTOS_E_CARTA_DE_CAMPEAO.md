@@ -1,4 +1,4 @@
-# Atributos do Campeão, Energia, Armadura e Carta de Campeão (v0.9.0)
+# Atributos do Campeão, Energia, Armadura e Carta de Campeão (v0.9.x)
 
 Documento de referência do novo modelo de atributos. Todos os números moram em um só lugar,
 [`src/data/heroStatProfiles.ts`](../src/data/heroStatProfiles.ts); as fórmulas puras estão em
@@ -36,12 +36,29 @@ Cada ponto de atributo por nível continua sendo 1 (`pontosPorNivel`). O valor d
 
 ### Energia
 
-- Começa **cheia** em todo combate (solo e coop).
-- Regenera **2 por rodada** (`ATTRIBUTE_RULES.energia.regeneracaoPorRodada`), nunca passa do máximo nem fica negativa.
-- Cada habilidade ativa tem `custoEnergia` por perfil. Sem Energia suficiente ela fica **bloqueada** (botão desabilitado, o
-  auto-combate não a tenta e nada é gasto). O Conjurador paga por fera invocada.
+A Energia é do herói (não zera a cada combate), começa **cheia** numa campanha nova e **não regenera sozinha**. Os números moram
+em `ATTRIBUTE_RULES.energia` (`heroStatProfiles.ts`):
+
+| Fonte | Energia |
+| --- | --- |
+| Ataque normal (`Ataque` e `Ataque direcionado`) | **+1** |
+| Ataque normal que acerta **crítico** (rolagem 6) | **+2** |
+| Descansar na fogueira (a cada tick de 6 s, junto com +1 de vida) | **+2** |
+| Passiva do Monge (golpe forte, rolagem 5, 25%) | +1 |
+| Golpe Supremo do Monge | +2 |
+
+| Gasto | Energia |
+| --- | --- |
+| **Fervor de Combate** (o ataque crítico garantido; no lugar dos 3 críticos de antes) | **3** |
+| Habilidade do herói (`custoEnergia` por classe, tabela abaixo) | 3 a 5 |
+
+- O Fervor e as habilidades **não devolvem** Energia (só o ataque normal devolve), para não haver ciclo infinito.
+- Sem Energia suficiente o botão fica bloqueado, o auto-combate não tenta e nada é gasto. O Conjurador paga por fera invocada.
+- O auto-combate **guarda** a Energia para a habilidade enquanto ela ainda vale a pena naquele turno; só usa o Fervor quando a
+  habilidade não é opção (em recarga, sem alvo útil) ou quando sobra Energia para as duas coisas.
 - A barra do **Golpe Supremo** continua separada e não gasta Energia.
-- No coop o relógio da regeneração é a rodada da batalha compartilhada.
+- No coop cada jogador tem a própria Energia: o ganho é aplicado no cliente de quem atacou depois que a jogada é publicada.
+- A Energia máxima é a da classe (10 a 12, cresce um pouco com o nível): dá para juntar duas habilidades.
 
 ### Armadura
 
@@ -53,15 +70,15 @@ a Armadura antes da curva. O escudo é outro recurso e continua separado.
 
 | Classe | Força | Magia | Vigor | Destreza | Vida | Energia | Ataque básico | Habilidade (custo) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Guerreiro | 3 | 1 | 6 | 3 | 18 | 10 | Físico | Ímpeto Marcial (10) |
-| Guardião | 2 | 1 | 7 | 2 | 20 | 10 | Físico | Provocar (10) |
-| Caçadora (Ladino) | 5 | 1 | 3 | 5 | 20 | 10 | Físico | Ataque Duplo (10) |
-| Arcanista (Mago) | 1 | 6 | 3 | 3 | 18 | 12 | Mágico | Ascensão Arcana (10) |
-| Druida | 1 | 4 | 4 | 3 | 20 | 12 | Mágico | Brisa Revigorante (8) |
-| Caçador | 5 | 1 | 4 | 5 | 18 | 10 | Físico | Marca do Predador (8) |
-| Monge | 4 | 3 | 5 | 4 | 18 | 10 | Híbrido | Golpe Flamejante (10) |
-| Sacerdotisa | 1 | 3 | 5 | 2 | 20 | 12 | Mágico | Bênção da Vida (10) |
-| Conjurador | 1 | 4 | 3 | 3 | 22 | 12 | Mágico | Conjurar Fera Espectral (6 por fera) |
+| Guerreiro | 3 | 1 | 6 | 3 | 18 | 10 | Físico | Ímpeto Marcial (5) |
+| Guardião | 2 | 1 | 7 | 2 | 20 | 10 | Físico | Provocar (5) |
+| Caçadora (Ladino) | 5 | 1 | 3 | 5 | 20 | 10 | Físico | Ataque Duplo (5) |
+| Arcanista (Mago) | 1 | 6 | 3 | 3 | 18 | 12 | Mágico | Ascensão Arcana (5) |
+| Druida | 1 | 4 | 4 | 3 | 20 | 12 | Mágico | Brisa Revigorante (4) |
+| Caçador | 5 | 1 | 4 | 5 | 18 | 10 | Físico | Marca do Predador (4) |
+| Monge | 4 | 3 | 5 | 4 | 18 | 10 | Híbrido | Golpe Flamejante (5) |
+| Sacerdotisa | 1 | 3 | 5 | 2 | 20 | 12 | Mágico | Bênção da Vida (5) |
+| Conjurador | 1 | 4 | 3 | 3 | 22 | 12 | Mágico | Conjurar Fera Espectral (3 por fera) |
 
 A tabela mostra a Vida da classe sem itens; com o kit inicial a Vida é a de antes (ver abaixo).
 
@@ -82,8 +99,14 @@ A tabela mostra a Vida da classe sem itens; com o kit inicial a Vida é a de ant
 5. **Habilidades** escalam por atributo (potência 1 = valor inicial; ver fórmulas). Classificação:
    física (Guerreiro, Caçadora, Caçador), mágica (Arcanista, Druida, Sacerdotisa), híbrida (Monge, Conjurador), utilidade
    (Guardião).
-6. **Energia substitui o limite de "1 uso por combate"** da habilidade: com custo 6–10, energia inicial 10–12 e regeneração 2,
-   o ritmo real fica parecido com a recarga de 3 turnos que já existia (a recarga continua valendo no solo).
+6. **Energia substitui o limite de "1 uso por combate"** da habilidade. Ela agora é conquistada (atacar, crítico, descansar) em vez de
+   regenerar sozinha: com +1 por ataque (+2 no crítico), um combate de 3 a 4 ataques rende uns 4 a 5 de Energia, o custo de uma
+   habilidade, então o ritmo fica perto de "uma habilidade por combate" e o Fervor (3) é o que se paga com o que sobrar.
+   A recarga de 3 turnos da habilidade continua valendo no solo.
+   Simulação (Havendown, 9 classes × 3 campanhas; média das classes): mortes 63,9 (código antigo) → 44,6 (0.9.0) → 46,0 (Energia por
+   ganho, sem usar Fervor) → 43,6 (usando Fervor); chefes derrotados de 40: 33,7 → 35,0 → 35,0 → 35,7. A economia nova não muda o
+   equilíbrio já medido; o Fervor melhora um pouco (o simulador só o usa depois da habilidade). O dano médio por golpe cai (76 → 69)
+   porque a habilidade é usada menos vezes.
 
 ## 4. Migração de saves (`balanceVersion: 3`)
 
@@ -128,7 +151,7 @@ curva; sem `armor` publicado (cliente antigo), cai na defesa já mitigada. A pot
 
 ## 7. Testes
 
-`heroStats.test.ts` (fórmulas, teto de esquiva, retorno decrescente da Armadura, Energia, nove classes),
+`heroStats.test.ts` (fórmulas, teto de esquiva, retorno decrescente da Armadura, ganho/gasto de Energia, nove classes),
 `attributeMigration.test.ts` (v1/v2→v3 e saves corrompidos), `attributeModel.test.ts` (equipamento, forja, gemas, talentos,
 especializações, Energia no combate, paridade do início do jogo), `coopAttributes.test.ts`, `championCard.test.tsx`,
 `heroSelect.test.tsx`, além dos ajustes nos testes existentes.
@@ -136,3 +159,18 @@ especializações, Energia no combate, paridade do início do jogo), `coopAttrib
 Simulação de balanceamento: `npm run test:balance` e `npm run test:balance:coop`. Para uma rodada reduzida use
 `BALANCE_RUNS`, `BALANCE_HEROES`, `BALANCE_STEELMERE=0`, `BALANCE_OUT`, `BALANCE_PROGRESS` (progresso por sub-região) e, no coop,
 `BALANCE_POOL_FILE` (reaproveita os marcos de um resultado solo).
+
+## 8. Cores do tema (todo objeto acompanha a região)
+
+Cada região tem um tema (`data-region-theme`). Antes só botões, painéis e alguns tokens (`--gold`, `--line`, `--panel`...) mudavam;
+o resto do CSS tinha ouro/marrom escrito à mão. Agora [`scripts/postcss-theme-colors.mjs`](../scripts/postcss-theme-colors.mjs),
+ligado no `vite.config.ts`, reescreve **toda cor quente** (matiz de ouro/marrom) em cor relativa que gira de matiz e ajusta o croma
+com `--theme-hue` e `--theme-chroma`, definidos por região no fim de `styles.css`. No tema padrão a cor é a mesma de antes (comparação
+de pixels: 0 diferença nas telas testadas); nos outros temas as bordas, fundos escuros, textos suaves, brilhos e a carta acompanham a região.
+
+- O atributo `data-region-theme` também vai para o `<html>`: diálogos em portal (fora do `.app-shell`) seguem o tema.
+- `--text` e `--muted` também mudam com a região (antes ficavam sempre no bege padrão).
+- **Não giram** (significado do jogo): raridade, status, elemento, dano, perigo e terreno do mapa, além de cores que não são ouro/marrom
+  (vermelho de vida, verde de cura). Para excluir um caso: comentário `/* theme:skip */` antes da regra ou da declaração.
+- Código novo com cores quentes escritas à mão já sai temado; para cores frias use as variáveis (`var(--blue)`, `var(--red)`, `var(--green)`).
+- O navegador sem cor relativa (Chrome < 119, Safari < 16.4, Firefox < 128) usa a cor original, que fica na declaração anterior.

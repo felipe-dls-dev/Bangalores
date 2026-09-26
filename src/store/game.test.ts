@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, TERRITORIES, TOUR_STEPS, HOME_REGION_ID, canFastTravelToRegion, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
+import { useGame, championStats, fervorEnergyCost, TERRITORIES, TOUR_STEPS, HOME_REGION_ID, canFastTravelToRegion, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
 import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
 import { STORY_QUESTS } from '../data/storyQuests'
@@ -297,26 +297,28 @@ describe('combate: postura de combate e Fervor de Combate', () => {
     expect(defenseValue(useGame.getState())).toBe(baseDef)
   })
 
-  it('useFervor() é bloqueado abaixo do medidor cheio e consome o medidor imediatamente ao usar', () => {
+  it('useFervor() é bloqueado sem Energia suficiente e gasta a Energia imediatamente ao usar', () => {
+    const cost = fervorEnergyCost()
     useGame.getState().newGame('guerreiro')
-    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, fervor: 2 } as any)
+    useGame.setState({ enemy: fakeEnemy, enemyHp: 999, playerTurn: true, animating: false, energy: cost - 1 } as any)
     useGame.getState().useFervor()
-    expect(useGame.getState().fervor).toBe(2)
+    expect(useGame.getState().animating).toBe(false)
+    expect(useGame.getState().energy).toBe(cost - 1)
 
-    useGame.setState({ fervor: 3 } as any)
+    useGame.setState({ energy: cost + 4 } as any)
     useGame.getState().useFervor()
     const s = useGame.getState()
-    expect(s.fervor).toBe(0)
     expect(s.animating).toBe(true)
+    expect(s.energy).toBe(4) // gastou o custo e o Fervor não devolve Energia
   })
 
-  it('newGame() zera battleStance e fervor de uma campanha anterior', () => {
+  it('newGame() zera battleStance de uma campanha anterior e devolve a Energia cheia', () => {
     useGame.getState().newGame('arcanista')
-    useGame.setState({ battleStance: 'ofensiva', stanceChangeUsed: true, fervor: 3 } as any)
+    useGame.setState({ battleStance: 'ofensiva', stanceChangeUsed: true, energy: 0 } as any)
     useGame.getState().newGame('guerreiro')
     const s = useGame.getState()
     expect(s.battleStance).toBe('neutra')
-    expect(s.fervor).toBe(0)
+    expect(s.energy).toBe(championStats(s).energiaMaxima)
   })
 })
 
@@ -1229,7 +1231,7 @@ describe('auto-combate com habilidades de itens', () => {
         animating: false,
         autoCombat: true,
         heroSkillCooldown: 2,
-        fervor: 0,
+        energy: 0, // sem Energia para o Fervor: o auto cai na habilidade do item
         itemSkillUsed: false,
         combatMinions: [],
         equipped: { [item.slot]: item.id },

@@ -99,8 +99,12 @@ export const ATTRIBUTE_RULES = {
   iniciativa: { porPonto: 0.004, teto: 0.2 },
   /** Cada ponto do atributo de escala acima do valor inicial da classe aumenta a habilidade em tanto. */
   potenciaHabilidade: { porPonto: 0.04, teto: 2 },
-  /** Energia: começa cheia e regenera por rodada (nunca fica negativa nem passa do máximo). */
-  energia: { regeneracaoPorRodada: 2 },
+  /**
+   * Energia (recurso das habilidades e do Fervor de Combate). Não regenera sozinha: sobe ao atacar, sobe mais com crítico
+   * e ao descansar na fogueira; desce ao usar habilidade ou Fervor. Nunca fica negativa nem passa do máximo da classe.
+   * A Energia é do herói (não zera a cada combate): um save novo começa com ela cheia.
+   */
+  energia: { ganhoAtaque: 1, ganhoCritico: 2, ganhoDescansoPorTick: 2, custoFervor: 3 },
   /** Fatores do Poder exibido na carta (mesma régua que o orçamento de inimigos: vida/2 + ataque + defesa). */
   poder: { escala: 10, vidaPeso: 0.5, secundarioPeso: 0.5, destrezaPeso: 0.25, energiaPeso: 0.25 },
 } as const
@@ -128,7 +132,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 10,
     energiaCrescimento: 0.05,
     ataqueBasico: 'fisico',
-    habilidade: { nome: 'Ímpeto Marcial', escala: 'fisica', atributoEscala: 'forca', custoEnergia: 10, tags: ['Reforço', 'Medo', 'Sangramento'] },
+    habilidade: { nome: 'Ímpeto Marcial', escala: 'fisica', atributoEscala: 'forca', custoEnergia: 5, tags: ['Reforço', 'Medo', 'Sangramento'] },
     esquivaPassiva: 0,
     estilo: ['Equilibrado', 'Intimida', 'Sangramento'],
   },
@@ -141,7 +145,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 10,
     energiaCrescimento: 0.05,
     ataqueBasico: 'fisico',
-    habilidade: { nome: 'Provocar', escala: 'utilidade', atributoEscala: 'vigor', custoEnergia: 10, tags: ['Provoca', 'Proteção', 'Muralha'] },
+    habilidade: { nome: 'Provocar', escala: 'utilidade', atributoEscala: 'vigor', custoEnergia: 5, tags: ['Provoca', 'Proteção', 'Muralha'] },
     esquivaPassiva: 0,
     estilo: ['Provoca', 'Muralha', 'Resistente'],
   },
@@ -154,7 +158,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 10,
     energiaCrescimento: 0.05,
     ataqueBasico: 'fisico',
-    habilidade: { nome: 'Ataque Duplo', escala: 'fisica', atributoEscala: 'destreza', custoEnergia: 10, tags: ['Golpe duplo', 'Esquiva', 'Ágil'] },
+    habilidade: { nome: 'Ataque Duplo', escala: 'fisica', atributoEscala: 'destreza', custoEnergia: 5, tags: ['Golpe duplo', 'Esquiva', 'Ágil'] },
     esquivaPassiva: 0.2,
     estilo: ['Esquiva', 'Ataque duplo', 'Ágil'],
   },
@@ -167,7 +171,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 12,
     energiaCrescimento: 0.08,
     ataqueBasico: 'magico',
-    habilidade: { nome: 'Ascensão Arcana', escala: 'magica', atributoEscala: 'magia', custoEnergia: 10, tags: ['Dados +1', 'Reforço', 'Grupo'] },
+    habilidade: { nome: 'Ascensão Arcana', escala: 'magica', atributoEscala: 'magia', custoEnergia: 5, tags: ['Dados +1', 'Reforço', 'Grupo'] },
     esquivaPassiva: 0,
     estilo: ['Dados +1', 'Poder de ataque', 'Ofensivo'],
   },
@@ -180,7 +184,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 12,
     energiaCrescimento: 0.08,
     ataqueBasico: 'magico',
-    habilidade: { nome: 'Brisa Revigorante', escala: 'magica', atributoEscala: 'magia', custoEnergia: 8, tags: ['Cura', 'Purifica', 'Enfraquece'] },
+    habilidade: { nome: 'Brisa Revigorante', escala: 'magica', atributoEscala: 'magia', custoEnergia: 4, tags: ['Cura', 'Purifica', 'Enfraquece'] },
     esquivaPassiva: 0,
     estilo: ['Cura', 'Purifica', 'Enfraquece'],
   },
@@ -193,7 +197,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 10,
     energiaCrescimento: 0.05,
     ataqueBasico: 'fisico',
-    habilidade: { nome: 'Marca do Predador', escala: 'fisica', atributoEscala: 'destreza', custoEnergia: 8, tags: ['Crítico', 'Grupo', 'Esquiva'] },
+    habilidade: { nome: 'Marca do Predador', escala: 'fisica', atributoEscala: 'destreza', custoEnergia: 4, tags: ['Crítico', 'Grupo', 'Esquiva'] },
     esquivaPassiva: 0.2,
     estilo: ['Crítico', 'Esquiva', 'Grupo'],
   },
@@ -206,7 +210,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 10,
     energiaCrescimento: 0.05,
     ataqueBasico: 'hibrido',
-    habilidade: { nome: 'Golpe Flamejante', escala: 'hibrida', atributoEscala: 'forca', custoEnergia: 10, tags: ['Fervor', 'Fogo', 'Golpe'] },
+    habilidade: { nome: 'Golpe Flamejante', escala: 'hibrida', atributoEscala: 'forca', custoEnergia: 5, tags: ['Fervor', 'Fogo', 'Golpe'] },
     esquivaPassiva: 0,
     estilo: ['Fervor', 'Fogo', 'Golpe flamejante'],
   },
@@ -219,7 +223,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 12,
     energiaCrescimento: 0.08,
     ataqueBasico: 'magico',
-    habilidade: { nome: 'Bênção da Vida', escala: 'magica', atributoEscala: 'magia', custoEnergia: 10, tags: ['Protege', 'Reanima', 'Cura'] },
+    habilidade: { nome: 'Bênção da Vida', escala: 'magica', atributoEscala: 'magia', custoEnergia: 5, tags: ['Protege', 'Reanima', 'Cura'] },
     esquivaPassiva: 0,
     estilo: ['Reanima', 'Protege', 'Recupera vida'],
   },
@@ -232,7 +236,7 @@ export const HERO_STAT_PROFILES: Record<string, HeroStatProfile> = {
     energiaBase: 12,
     energiaCrescimento: 0.08,
     ataqueBasico: 'magico',
-    habilidade: { nome: 'Conjurar Fera Espectral', escala: 'hibrida', atributoEscala: 'magia', custoEnergia: 6, tags: ['Fera', 'Intercepta', 'Invoca'] },
+    habilidade: { nome: 'Conjurar Fera Espectral', escala: 'hibrida', atributoEscala: 'magia', custoEnergia: 3, tags: ['Fera', 'Intercepta', 'Invoca'] },
     esquivaPassiva: 0,
     estilo: ['Fera espectral', 'Escolhas', 'Cura por fera'],
   },

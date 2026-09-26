@@ -2,7 +2,7 @@ import {
   useGame, SUBREGIONS, TERRITORIES, EQUIPMENT, CONSUMABLES,
   deriveLevel, equipmentClassAllowed, equipmentLevelAllowed, equipmentAttackForHero,
   equipmentWeaponClass, equipmentByRef, equipmentBaseId, equipmentBagCapacity, maxHp,
-  attackValue, defenseValue, energyNow, heroSkillEnergyCost
+  attackValue, defenseValue, energyNow, fervorEnergyCost, heroSkillEnergyCost
 } from '../src/store/game'
 import { SPECIALIZATION_CHOICES } from '../src/data/expansion'
 import fs from 'node:fs'
@@ -146,10 +146,15 @@ function combatStep(heroId: string, counters: Counters) {
     const potionId = healingPotionId()
     if (potionId) { useGame.getState().useConsumable(potionId); counters.heroActions++; return }
   }
-  // As habilidades ativas gastam Energia: o simulador só as usa quando há Energia (senão a ação seria ignorada e o laço não avançaria).
+  // As habilidades ativas e o Fervor gastam Energia (que sobe atacando): o simulador só os usa quando há Energia (senão a ação seria
+  // ignorada e o laço não avançaria). A habilidade vem primeiro; o Fervor só depois de ela ter sido usada (ou estar em recarga),
+  // para não gastar a Energia que a habilidade está esperando.
   const hasEnergy = energyNow(s) >= heroSkillEnergyCost(s.heroId)
   if (hasEnergy && (s.heroSkillCooldown ?? 0) === 0 && (s.heroSkillUses ?? 0) < 1 && s.heroId !== 'conjurador') { useGame.getState().heroSkill(); counters.heroActions++; return }
   if (hasEnergy && s.heroId === 'conjurador' && (s.summons?.length ?? 0) < 2 && (s.heroSkillUses ?? 0) < 2) { useGame.getState().summonMonster('atacante'); counters.heroActions++; return }
+  const skillSpent = s.heroId === 'conjurador' ? (s.heroSkillUses ?? 0) >= 2 : (s.heroSkillUses ?? 0) >= 1 || (s.heroSkillCooldown ?? 0) > 0
+  // BALANCE_FERVOR=0 desliga o Fervor no simulador (para comparar com a simulação antiga, que nunca o usava).
+  if (process.env.BALANCE_FERVOR !== '0' && skillSpent && energyNow(s) >= fervorEnergyCost()) { useGame.getState().useFervor(); counters.heroActions++; return }
   useGame.getState().attack(); counters.heroActions++
 }
 

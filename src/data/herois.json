@@ -71,7 +71,7 @@
     "vida": 18,
     "ataque": 4,
     "defesa": 5,
-    "habilidade": "Passivo: 25% de chance de golpes fortes (rolagem 5) também gerarem Fervor de Combate. Ativo: Golpe Flamejante — ataca imediatamente com +2 de dano e aplica Pegando Fogo garantido no inimigo, uma vez por batalha.",
+    "habilidade": "Passivo: 25% de chance de golpes fortes (rolagem 5) também recuperarem 1 de Energia. Ativo: Golpe Flamejante — ataca imediatamente com +2 de dano e aplica Pegando Fogo garantido no inimigo, uma vez por batalha.",
     "imagem": "assets/heroes/monge-ignaris-v2.png",
     "arte": "assets/heroes/monge-ignaris-v2.png",
     "raridade": "heroico"

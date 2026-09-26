@@ -97,7 +97,7 @@ export function ChampionCard({ data, assetUrl, className, hideDetailsButton, onO
             <b style={{ width: `${lifePercent}%` }} />
           </i>
         </li>
-        <li className="cc-res cc-res-energy" title="Energia atual e máxima: as habilidades ativas gastam Energia">
+        <li className="cc-res cc-res-energy" title="Energia atual e máxima: habilidades e Fervor de Combate gastam Energia; atacar e descansar na fogueira recuperam">
           <span className="cc-icon">
             <Zap aria-hidden focusable="false" />
           </span>
@@ -257,7 +257,7 @@ export function ChampionDetailsDialog({ data, onClose }: { data: ChampionCardDat
               <b>Iniciativa</b>: +{percentText(d.iniciativa)} de chance de agir primeiro.
             </li>
             <li>
-              <b>Energia</b>: começa cheia em cada batalha e regenera {rules.energia.regeneracaoPorRodada} por rodada.
+              <b>Energia</b>: não regenera sozinha. Ataque normal dá +{rules.energia.ganhoAtaque}, crítico dá +{rules.energia.ganhoCritico} e descansar na fogueira devolve +{rules.energia.ganhoDescansoPorTick} a cada 6s. A habilidade custa {formatNumber(data.habilidade.custoEnergia)} e o Fervor de Combate, {rules.energia.custoFervor}.
             </li>
           </ul>
         </section>

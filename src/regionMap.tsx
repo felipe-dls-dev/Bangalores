@@ -198,7 +198,7 @@ const GAMEPAD_AXIS_DEAD_ZONE = 0.5
 const RIDE_DURATION_MS = 1150 // bate com a transition-duration de .regionmap-player.is-riding no CSS
 const SECRET_BURST_MS = 900 // duração do efeito de revelação da parede ilusória (ART-026)
 const CAMPFIRE_REST_RADIUS = 1 // área 3x3 (raio de Chebyshev 1) ao redor da fogueira
-const CAMPFIRE_TICK_MS = 6000 // intervalo de cada +1 de vida enquanto descansa
+const CAMPFIRE_TICK_MS = 6000 // intervalo de cada +1 de vida (e +2 de Energia) enquanto descansa
 const HEAL_POPUP_MS = 1300 // duração do "+1" verde estilo 1-up (Mario) -- some tempo maior que o antigo pop sutil, pra caber a subida mais longa
 const AMBUSH_CHANCE = 0.05 // chance de emboscada cega por passo (fora de um marcador de local) -- reduzida porque agora convive com monstros visíveis no mapa (ver WANDER_*), que cobrem a maior parte dos encontros e podem ser evitados
 const WANDER_RADIUS = 2 // quão longe do ponto de origem cada monstro visível pode se afastar
@@ -1146,7 +1146,8 @@ export function TileWorldExplorer({
   openedChests?: Record<string, boolean>
   onOpenChest?: (chest: RegionMapChest) => void
   onRestCampfire?: (campfire: RegionMapCampfire) => void
-  onCampfireTick?: (campfire: RegionMapCampfire) => boolean
+  /** Chamado a cada tick de descanso. Devolve o que recuperou (vida e/ou Energia) para mostrar o popup certo; `true` = só vida. */
+  onCampfireTick?: (campfire: RegionMapCampfire) => boolean | { hp?: boolean; energy?: boolean }
   playerSprite?: string
   exploredTiles?: Set<string>
   onExplore?: (tiles: Array<{ x: number; y: number }>) => void
@@ -1201,7 +1202,7 @@ export function TileWorldExplorer({
   const restTimerRef = React.useRef<number>()
   // "+1" verde que sobe e some a cada cura de verdade (fogueira) -- renderizado como filho de
   // .regionmap-player (acima do cronômetro), então segue o herói sem precisar guardar posição.
-  const [healPopups, setHealPopups] = React.useState<Array<{ id: number }>>([])
+  const [healPopups, setHealPopups] = React.useState<Array<{ id: number; kind: 'hp' | 'energy' }>>([])
   const healPopupIdRef = React.useRef(0)
   const movingRef = React.useRef(false)
   const movementTimers = React.useRef<number[]>([])
@@ -1210,7 +1211,22 @@ export function TileWorldExplorer({
   const posRef = React.useRef(pos)
   const dragRef = React.useRef<{ x: number; y: number; camX: number; camY: number; dragged: boolean } | null>(null)
   const didDragRef = React.useRef(false)
+  const frameRef = React.useRef<HTMLDivElement | null>(null)
   const viewportRef = React.useRef<HTMLDivElement | null>(null)
+  const [frameSize, setFrameSize] = React.useState<{ width: number; height: number } | null>(null)
+  React.useEffect(() => {
+    const frame = frameRef.current
+    if (!frame) return
+    const measure = () => {
+      const width = Math.max(1, Math.floor(frame.clientWidth))
+      const height = Math.max(1, Math.floor(frame.clientHeight))
+      setFrameSize(previous => previous?.width === width && previous.height === height ? previous : { width, height })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(frame)
+    return () => observer.disconnect()
+  }, [])
   const adjustZoom = React.useCallback((direction: -1 | 1) => {
     setZoom(z => clamp(Math.round((z + direction * ZOOM_STEP) * 100) / 100, ZOOM_MIN, ZOOM_MAX))
   }, [])
@@ -1261,9 +1277,9 @@ export function TileWorldExplorer({
     if (newly.length) onExplore(newly)
   }, [pos.x, pos.y])
 
-  const spawnHealPopup = React.useCallback(() => {
+  const spawnHealPopup = React.useCallback((kind: 'hp' | 'energy' = 'hp') => {
     const id = ++healPopupIdRef.current
-    setHealPopups(prev => [...prev, { id }])
+    setHealPopups(prev => [...prev, { id, kind }])
     window.setTimeout(() => setHealPopups(prev => prev.filter(p => p.id !== id)), HEAL_POPUP_MS)
   }, [])
 
@@ -1285,7 +1301,9 @@ export function TileWorldExplorer({
     if (zone) {
       onRestCampfire?.(zone)
       restTimerRef.current = window.setInterval(() => {
-        if (onCampfireTick?.(zone)) spawnHealPopup()
+        const recovered = onCampfireTick?.(zone)
+        if (recovered === true || (recovered && typeof recovered === 'object' && recovered.hp)) spawnHealPopup('hp')
+        if (recovered && typeof recovered === 'object' && recovered.energy) spawnHealPopup('energy')
       }, CAMPFIRE_TICK_MS)
     }
   }, [pos.x, pos.y, paused, map, onRestCampfire, onCampfireTick, spawnHealPopup])
@@ -1612,8 +1630,8 @@ export function TileWorldExplorer({
 
   const tilePx = map.tileSize * map.scale
   const worldW = map.width * tilePx, worldH = map.height * tilePx
-  const viewportW = Math.min(worldW, VIEWPORT_TILES_X * tilePx)
-  const viewportH = Math.min(worldH, VIEWPORT_TILES_Y * tilePx)
+  const viewportW = Math.min(worldW, VIEWPORT_TILES_X * tilePx, frameSize?.width ?? Infinity)
+  const viewportH = Math.min(worldH, VIEWPORT_TILES_Y * tilePx, frameSize?.height ?? Infinity)
   const visibleW = viewportW / zoom, visibleH = viewportH / zoom
   const followCamX = clamp(pos.x * tilePx + tilePx / 2 - visibleW / 2, 0, Math.max(0, worldW - visibleW))
   const followCamY = clamp(pos.y * tilePx + tilePx / 2 - visibleH / 2, 0, Math.max(0, worldH - visibleH))
@@ -1622,7 +1640,7 @@ export function TileWorldExplorer({
   const sprite = playerSpriteFrames(playerSprite)[facing]
   const frameSrc = sprite.frames[frame]
 
-  return <div className="regionmap-frame">
+  return <div ref={frameRef} className="regionmap-frame">
     <div ref={viewportRef} className="regionmap-viewport" style={{ width: viewportW, height: viewportH }} onPointerDown={event => {
       // setPointerCapture no viewport retarget o "click" resultante pra ELE MESMO (não pro
       // elemento de fato tocado), mesmo com stopPropagation no filho -- então um toque em cima
@@ -1860,12 +1878,12 @@ export function TileWorldExplorer({
           style={{ left: pos.x * tilePx, top: pos.y * tilePx, width: tilePx, height: tilePx }}>
           <span className="regionmap-player-shadow" />
           {restingCampfire && (
-            <span className="regionmap-rest-timer" title={`Descansando na fogueira ${restingCampfire.name}: +1 de vida a cada 6s`}>
+            <span className="regionmap-rest-timer" title={`Descansando na fogueira ${restingCampfire.name}: +1 de vida e +2 de Energia a cada 6s`}>
               <span className="regionmap-rest-timer-hand" />
             </span>
           )}
           {healPopups.map(popup => (
-            <span key={popup.id} className="regionmap-heal-popup"><span className="heal-popup-plus1">+1</span></span>
+            <span key={popup.id} className={`regionmap-heal-popup${popup.kind === 'energy' ? ' is-energy' : ''}`}><span className={`heal-popup-plus1${popup.kind === 'energy' ? ' heal-popup-energy' : ''}`}>{popup.kind === 'energy' ? '+2 EN' : '+1'}</span></span>
           ))}
           {riding ? (
             <img className="regionmap-player-vehicle" src={mapAsset(`assets/maps/objects/${riding.vehicle}/moving.png`)} alt="" />

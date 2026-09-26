@@ -174,30 +174,28 @@ export function abilityPotency(profile: HeroStatProfile, attributeTotal: number)
 // ---------------------------------------------------------------------------------------------
 // Energia (recurso das habilidades ativas)
 // ---------------------------------------------------------------------------------------------
-export interface EnergyState {
-  /** Energia guardada no `turn` indicado. */
-  energy: number
-  /** Rodada em que `energy` foi guardada. */
-  turn: number
-}
+// A Energia não regenera sozinha: sobe ao atacar (mais com crítico) e ao descansar na fogueira, e desce ao usar habilidade ou
+// Fervor. Estas funções só fazem a conta; o estado fica no store (`energy`).
 
-/** Energia disponível na rodada `turn`: regenera por rodada, sem passar do máximo nem ficar negativa. */
-export function energyAt(state: EnergyState, turn: number, max: number, regen: number = ATTRIBUTE_RULES.energia.regeneracaoPorRodada): number {
-  const rounds = Math.max(0, finite(turn) - finite(state.turn))
-  return clamp(finite(state.energy) + rounds * Math.max(0, regen), 0, Math.max(0, max))
-}
+/** Energia dentro dos limites: nunca negativa nem acima do máximo. */
+export const clampEnergy = (value: number, max: number): number => clamp(finite(value), 0, Math.max(0, finite(max)))
 
 export const canSpendEnergy = (available: number, cost: number): boolean => finite(available) >= Math.max(0, finite(cost))
 
-/** Gasta energia; se não houver o bastante, não gasta nada (`ok: false`). */
-export function spendEnergy(state: EnergyState, turn: number, max: number, cost: number, regen?: number): { ok: boolean; state: EnergyState; available: number } {
-  const available = energyAt(state, turn, max, regen)
-  if (!canSpendEnergy(available, cost)) return { ok: false, state: { energy: available, turn }, available }
-  return { ok: true, state: { energy: available - Math.max(0, finite(cost)), turn }, available }
+/** Soma energia sem passar do máximo. Quantidades negativas ou inválidas não tiram nada. */
+export function gainEnergy(current: number, max: number, amount: number): number {
+  return clampEnergy(finite(current) + Math.max(0, finite(amount)), max)
 }
 
-/** Energia cheia no começo do combate. */
-export const fullEnergy = (max: number, turn: number): EnergyState => ({ energy: Math.max(0, finite(max)), turn })
+/** Gasta energia; se não houver o bastante, não gasta nada (`ok: false`). */
+export function spendEnergy(current: number, max: number, cost: number): { ok: boolean; energy: number } {
+  const available = clampEnergy(current, max)
+  if (!canSpendEnergy(available, cost)) return { ok: false, energy: available }
+  return { ok: true, energy: available - Math.max(0, finite(cost)) }
+}
+
+/** Energia que um ataque normal dá: a base, ou a maior (crítico). */
+export const attackEnergyGain = (critical: boolean): number => (critical ? ATTRIBUTE_RULES.energia.ganhoCritico : ATTRIBUTE_RULES.energia.ganhoAtaque)
 
 // ---------------------------------------------------------------------------------------------
 // Conjunto: valores finais e Poder

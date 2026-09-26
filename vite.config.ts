@@ -1,8 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import themeColors from './scripts/postcss-theme-colors.mjs'
 
 export default defineConfig({
   plugins: [react()],
+  // Todo objeto acompanha o tema da região: ver scripts/postcss-theme-colors.mjs.
+  css: { postcss: { plugins: [themeColors()] } },
   base: './',
   test: {
     setupFiles: ['./src/test/setup.ts'],

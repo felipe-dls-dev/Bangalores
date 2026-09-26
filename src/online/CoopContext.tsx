@@ -1,5 +1,6 @@
 import React from 'react'
-import { attackEffect, applyElementalStatus, buildSummon, scaleSummon, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, STANCE_ATTACK_PCT, STANCE_DEFENSE_PCT, STANCE_LABELS, type AttackAnimType, type BattleStance, type EquipmentForgeSnapshot, type StatusEffects, type Summon, type SummonType } from '../store/game'
+import { attackEffect, applyElementalStatus, buildSummon, scaleSummon, useGame, consumeStun, defenseEffect, enemyDefenseValue, resolveCombatRoll, rollPenaltyFrom, summonBossMinions, tickStatus, SUMMON_ATTACK_ANIMATION, SUMMON_INTERCEPT_CHANCE, STATUS_LABELS, STANCE_ATTACK_PCT, STANCE_DEFENSE_PCT, STANCE_LABELS, type AttackAnimType, type BattleStance, type EquipmentForgeSnapshot, type StatusEffects, type Summon, type SummonType } from '../store/game'
+import { attackEnergyGain } from '../store/heroStats'
 import type { Element } from '../data/expansion'
 import { selectCoopAutoHealTarget } from './coopAutoCombat'
 import { coopBuffedAttack, coopEnemyAttackRoll, coopEnemyDamage, coopHeroAttackRoll, coopHeroCritBoost, coopHeroDefenseRoll, coopHeroRollBonus, coopMemberDefenseBase, coopMemberDefensePct, coopMemberDefenseRoll, coopMemberDodge } from './coopMath'
@@ -159,7 +160,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    return{...current.shared_state,market:market.filter(item=>item.id!==listingId)}
   })}catch{}
  }
- const coopAttack=async(attackBase:number,defenseBase:number,rollBonus=0,critBoost=false,healChance=0,healAmount=0,label?:string,targetMinionId?:string,forceCrit=false,critChancePct=0,critDamageBonusPct=0,weaponElement:Element='fisico',forceStatus=false,extraStatusTurn=false)=>{try{await updateState(current=>{
+ const coopAttack=async(attackBase:number,defenseBase:number,rollBonus=0,critBoost=false,healChance=0,healAmount=0,label?:string,targetMinionId?:string,forceCrit=false,critChancePct=0,critDamageBonusPct=0,weaponElement:Element='fisico',forceStatus=false,extraStatusTurn=false)=>{let energyGain=0;try{await updateState(current=>{energyGain=0;
   const battle=current.shared_state.battle as any
   if(!battle||battle.status!=='playing'||battle.activeUserId!==userId)return current.shared_state
   const group=battle.groupBuff??{}
@@ -168,7 +169,6 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    const actorName=membersRef.current.find(m=>m.user_id===userId)?.display_name??'Aventureiro',next=nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
    return{...current.shared_state,battle:{...battle,...next,playerBuffs:{...(battle.playerBuffs??{}),[userId]:{...personal,stunned:false}},turn:Number(battle.turn??1)+1,log:[...(battle.log??[]).slice(-15),`${actorName} está atordoado e perde a ação neste turno.`]}}
   }
-  if(forceCrit&&Number(personal.fervor??0)<3)return current.shared_state
   const minions:any[]=Array.isArray(battle.combatMinions)?battle.combatMinions:[]
   const target=targetMinionId?minions.find(m=>m.id===targetMinionId&&m.hp>0):undefined
   const enemyStun=target?{status:(battle.enemyStatus??{}) as StatusEffects,wasStunned:false}:consumeStun(battle.enemyStatus)
@@ -212,8 +212,9 @@ export function CoopProvider({children}:{children:React.ReactNode}){
   const keepsTurn=!selfDamage&&extra>0
   const next=keepsTurn?{activeUserId:userId,initiativeIndex:battle.initiativeIndex,round:battle.round}:nextInitiative(battle,aliveCoopUserIds(membersRef.current,(current.shared_state.memberVitals??{}) as Record<string,any>))
   const extraActions=selfDamage?battle.extraActions:{...(battle.extraActions??{}),[userId]:Math.max(0,extra-1)}
-  const fervorGain=forceCrit?0:attackRoll===6?Math.min(3,Number(personal.fervor??0)+1):Number(personal.fervor??0)
-  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,nextRoll:0,fervor:fervorGain}}
+  // Energia (local de quem atacou, aplicada depois que a jogada é publicada): ataque normal +1, crítico +2; Fervor e habilidades não devolvem. Passiva do Monge: golpe forte (5) às vezes rende +1.
+  energyGain=(label==null||label==='Ataque'||label==='Ataque direcionado'?attackEnergyGain(attackRoll===6):0)+(membersRef.current.find(m=>m.user_id===userId)?.hero_id==='monge'&&attackRoll===5&&Math.random()<.25?1:0)
+  const playerBuffs={...(battle.playerBuffs??{}),[userId]:{...personal,nextRoll:0}}
   const enemyRollBonus=attackRoll===2?1:Number(battle.enemyRollBonus??0)
   const vitals=(current.shared_state.memberVitals??{}) as Record<string,{hp:number;maxHp:number}>
   const myVitals=vitals[userId]
@@ -231,7 +232,7 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    ?`${actor}${tag?` usa ${tag} e`:' ataca, mas'} falha catastroficamente (dado ${attackRoll}) e sofre ${selfDamage} de dano do próprio golpe.`
    :`${actor}${tag?` usa ${tag}:`:':'} ataque ${attackRoll} contra defesa ${defenseRoll}; causou ${actual} de dano${target?` a ${foeName}${felled?' (derrotado)':''}`:''}.${phased?` ${enemy.nome} entra em nova fase e convoca reforços!`:''}${keepsTurn?' Ataque Duplo permite atacar novamente.':''}${attackRoll===2?' O inimigo recebe +1 na próxima rolagem.':''}${healTargetUserId?` A energia natural do equipamento cura ${healAmount}${healTargetName?` de ${healTargetName}`:''}.`:''}${enemyStun.wasStunned?` ${foeName} estava atordoado e não conseguiu se defender.`:''}${statusResult.appliedKind?` ${foeName} fica ${STATUS_LABELS[statusResult.appliedKind]}.`:''}`
   return{...current.shared_state,battle:{...battle,...next,extraActions,playerBuffs,enemyRollBonus,enemy,enemyHp,enemyStatus:statusResult.status,combatMinions,damageByPlayer,healingByPlayer,fleeRoll:undefined,status:enemyHp<=0?'won':'playing',activeUserId:enemyHp<=0?null:next.activeUserId,turn:Number(battle.turn??1)+(keepsTurn?0:1),lastRoll:{attacker:'hero',attackerUserId:userId,naturalAttackRoll,attackRoll,attackBonus:totalRollBonus,attackBase:buffedAttack,defenseBase:target?0:defenseBase,attackEffect:attackEffect(attackRoll),defenseEffect:defenseEffect(defenseRoll),defenseRoll,damage:actual,actor,selfDamage,selfDamageUserId:selfDamage>0?userId:undefined,...(healTargetUserId?{healTargetUserId,healAmount}:{})},log:[...(battle.log??[]).slice(-15),message]}}
- })}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
+ });if(energyGain>0)useGame.getState().addEnergy(energyGain)}catch(error){setNotice(error instanceof Error?error.message:'Não foi possível executar a ação cooperativa.')}}
  // Postura de combate é uma escolha persistente (dura até o jogador trocar de novo), não uma
  // ação de um único turno. Trocá-la pela primeira vez na batalha não consome o turno
  // (activeUserId permanece o mesmo); trocar de novo depois consome normalmente, igual a
@@ -483,11 +484,10 @@ export function CoopProvider({children}:{children:React.ReactNode}){
    }
    const resistedDamage=Math.max(0,Number(resolved.effectiveAttack??0)-damage)
    if(resistedDamage>0)workingResisted[target.user_id]=Number(workingResisted[target.user_id]??0)+resistedDamage
-   const fervorGain=!intercepting&&defenseRoll===6?Math.min(3,Number(targetBuffs.fervor??0)+1):Number(targetBuffs.fervor??0)
    const statusApplied=!intercepting&&canApplyStatus&&!rogueDodge&&!resolved.selfDamage&&damage>0&&!resisted&&naturalAttackRoll===6?applyElementalStatus(targetStun.status,enemyElement,attackBase):{status:targetStun.status}
    if(statusApplied.appliedKind){appliedStatusKind=statusApplied.appliedKind;appliedStatusTargetName=target.display_name}
    const summonsAfter=intercepting?targetSummons.map(fera=>fera===targetSummon?{...fera,hp:Math.max(0,fera.hp-damage)}:fera).filter(fera=>fera.hp>0):targetSummons
-   workingBuffs[target.user_id]={...statusApplied.status,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),fervor:fervorGain,summons:summonsAfter,summon:summonsAfter[0],...(!summonsAfter.some(fera=>fera.tipo==='arcano')?{attackPct:0,defensePct:0}:{})}
+   workingBuffs[target.user_id]={...statusApplied.status,nextRoll:attackRoll===2?1:Number(targetBuffs.nextRoll??0),summons:summonsAfter,summon:summonsAfter[0],...(!summonsAfter.some(fera=>fera.tipo==='arcano')?{attackPct:0,defensePct:0}:{})}
    return{target,naturalAttackRoll,attackBonus:bonus,attackBase,defenseBase,attackRoll,defenseRoll,damage,shieldBlocked,selfDamage:resolved.selfDamage,rogueDodge,druidaLuck,resisted,wasStunned:targetStun.wasStunned,intercepting,summonName:targetSummon?.nome,summonDied}
   }
   const mainStrike=strike(Number(battle.enemy?.ataque??1),enemyRollBonusStart,true)
