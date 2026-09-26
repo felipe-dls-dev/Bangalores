@@ -1,14 +1,14 @@
 import React from 'react'
-import { Backpack, ChevronDown, Compass, Tent, Trophy, UserRound, Users } from 'lucide-react'
+import { ChevronDown, Compass, Store, Tent, Trophy, UserRound, Users } from 'lucide-react'
 import { groupOfScreen, visibleNavGroups } from './navGroups'
 
 const GROUP_ICONS = {
   camp: Tent,
   expedition: Compass,
   hero: UserRound,
-  inventory: Backpack,
-  social: Users,
+  town: Store,
   achievements: Trophy,
+  coop: Users,
 } as const
 
 export interface ModernNavProps {

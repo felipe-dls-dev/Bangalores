@@ -1,6 +1,14 @@
 // Agrupamento das telas do topo para o modo Moderno. Só dados: o modo Clássico continua usando a
-// lista plana `nav` de main.tsx, e as telas em si são as mesmas nos dois modos.
+// lista plana `nav` de main.tsx (na mesma ordem destes grupos), e as telas em si são as mesmas nos dois modos.
 // (Item GAME-006 da auditoria: 11 botões espremidos viram 6 grupos.)
+//
+// Reorganização por assunto (v0.9.7): cada grupo responde a uma pergunta do jogador.
+//   Acampamento  onde estou e o que faço agora (painel inicial + tutorial)
+//   Expedição    para onde vou lutar (mapa, masmorras, crônicas da história)
+//   Herói        quem é meu personagem e o que ele carrega (ficha, equipamento, mochila)
+//   Vila         serviços da cidade (loja, forja, guilda): antes Mochila, Loja e Forja eram "Inventário" e a Guilda era "Social"
+//   Conquistas   o que já conquistei (títulos, histórico, bestiário, coleção de cartas): antes só abria a Coleção
+//   Coop         jogar com amigos
 
 export interface NavGroup {
   id: string
@@ -11,11 +19,11 @@ export interface NavGroup {
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   { id: 'camp', label: 'Acampamento', screens: ['camp', 'tutorial'] },
-  { id: 'expedition', label: 'Expedição', screens: ['map', 'chronicle'] },
-  { id: 'hero', label: 'Herói', screens: ['character', 'equipment'] },
-  { id: 'inventory', label: 'Inventário', screens: ['inventory', 'shop', 'forge'] },
-  { id: 'social', label: 'Social', screens: ['guild', 'coop'] },
-  { id: 'achievements', label: 'Conquistas', screens: ['gallery'] },
+  { id: 'expedition', label: 'Expedição', screens: ['map', 'dungeon', 'chronicle'] },
+  { id: 'hero', label: 'Herói', screens: ['character', 'equipment', 'inventory'] },
+  { id: 'town', label: 'Vila', screens: ['shop', 'forge', 'guild'] },
+  { id: 'achievements', label: 'Conquistas', screens: ['achievements', 'gallery'] },
+  { id: 'coop', label: 'Coop', screens: ['coop'] },
 ]
 
 /** Nome das telas que só existem no modo Moderno (as demais têm nome na lista plana `nav` de main.tsx). */

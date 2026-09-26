@@ -84,7 +84,7 @@ describe('grupos do topo moderno', () => {
   }
 
   it('acha a lista do topo clássico em main.tsx (sanidade do próprio teste)', () => {
-    expect(classicNavScreens().length).toBeGreaterThanOrEqual(11)
+    expect(classicNavScreens().length).toBeGreaterThanOrEqual(13)
   })
 
   it('toda tela do topo clássico está em exatamente um grupo', () => {
@@ -112,10 +112,13 @@ describe('grupos do topo moderno', () => {
   })
 
   it('um grupo só aparece se a tela principal existir, e só lista telas que existem', () => {
-    const classic = new Set(['map', 'character', 'inventory', 'equipment', 'shop', 'forge', 'guild', 'chronicle', 'gallery', 'coop', 'tutorial'])
+    const classic = new Set(['map', 'dungeon', 'chronicle', 'character', 'equipment', 'inventory', 'shop', 'forge', 'guild', 'achievements', 'gallery', 'coop', 'tutorial'])
     const withoutHub = visibleNavGroups(classic)
-    expect(withoutHub.map((g) => g.id)).toEqual(['expedition', 'hero', 'inventory', 'social', 'achievements']) // sem Acampamento
-    expect(withoutHub.find((g) => g.id === 'inventory')?.screens).toEqual(['inventory', 'shop', 'forge'])
+    expect(withoutHub.map((g) => g.id)).toEqual(['expedition', 'hero', 'town', 'achievements', 'coop']) // sem Acampamento
+    expect(withoutHub.find((g) => g.id === 'expedition')?.screens).toEqual(['map', 'dungeon', 'chronicle'])
+    expect(withoutHub.find((g) => g.id === 'hero')?.screens).toEqual(['character', 'equipment', 'inventory'])
+    expect(withoutHub.find((g) => g.id === 'town')?.screens).toEqual(['shop', 'forge', 'guild'])
+    expect(withoutHub.find((g) => g.id === 'achievements')?.screens).toEqual(['achievements', 'gallery'])
 
     const withHub = visibleNavGroups(new Set([...classic, 'camp']))
     expect(withHub[0]).toMatchObject({ id: 'camp', screens: ['camp', 'tutorial'] })
@@ -127,8 +130,30 @@ describe('grupos do topo moderno', () => {
     expect(groupOfScreen('map')?.id).toBe('expedition')
     expect(groupOfScreen('region')?.id).toBe('expedition')
     expect(groupOfScreen('combat')?.id).toBe('expedition')
-    expect(groupOfScreen('forge')?.id).toBe('inventory')
+    expect(groupOfScreen('forge')?.id).toBe('town')
+    expect(groupOfScreen('dungeon')?.id).toBe('expedition')
+    expect(groupOfScreen('inventory')?.id).toBe('hero')
+    expect(groupOfScreen('achievements')?.id).toBe('achievements')
     expect(groupOfScreen('camp')?.id).toBe('camp')
     expect(groupOfScreen('menu')).toBeUndefined()
+  })
+})
+
+describe('organização dos menus por assunto (v0.9.7)', () => {
+  const main = () => fs.readFileSync(path.resolve(__dirname, '..', 'main.tsx'), 'utf8')
+  it('a ordem do topo clássico acompanha os grupos do Moderno', () => {
+    const source = main()
+    const block = source.match(/const nav=\[(.*?)\] as const/s)?.[1] ?? ''
+    const classicOrder = [...block.matchAll(/\['([a-z]+)',/g)].map((m) => m[1]).filter((id) => id !== 'tutorial')
+    const groupOrder = NAV_GROUPS.flatMap((g) => g.screens).filter((id) => id !== 'camp' && id !== 'tutorial')
+    expect(classicOrder).toEqual(groupOrder)
+  })
+  it('Crônicas ficam só com História e Missões; Masmorras, Conquistas e o resumo da build têm tela própria', () => {
+    const source = main()
+    const chronicleTabs = source.match(/function ChronicleTabsModern\(\)\{[\s\S]*?const tabs=\[(.*?)\]\r?\n/)?.[1] ?? ''
+    expect([...chronicleTabs.matchAll(/label:'([^']+)'/g)].map((m) => m[1])).toEqual(['História', 'Missões'])
+    expect(source).toMatch(/function DungeonScreen\(\)[\s\S]*?<DungeonPanel\/>/)
+    expect(source).toMatch(/function AchievementsScreen\(\)[\s\S]*?<AchievementsPanel\/>[\s\S]*?<BestiaryPanel\/>/)
+    expect(source).toMatch(/<\/div><EquipmentRulesPanel\/><\/>\}/)
   })
 })

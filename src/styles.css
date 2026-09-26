@@ -2157,6 +2157,7 @@ body::after{content:"VERSÃO 0.9.3 • 26/09/2026\A Carta de Campeão inteira na
 body::after{content:"VERSÃO 0.9.4 • 26/09/2026\A Equipamentos nos novos atributos: peças de classe dão Força ou Magia da própria escola (as universais seguem o seu ataque), a Vida das peças vira Vigor e peças raras, épicas e lendárias ganham afixos de Vigor, Destreza, Energia e Esquiva. A comparação mostra todos os atributos e um Índice.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.5 • 26/09/2026\A Loja: os cards da vitrine mostram os atributos de cada peça (Força, Magia, Vigor, Destreza, Armadura, Vida, Energia, Esquiva), a diferença para a peça equipada no mesmo espaço e se ela é melhor ou pior pelo Índice.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.6 • 26/09/2026\A Imagens sem corte desnecessário: cards de item (Equipamento, Mochila, Espólio), vitrine da Loja, receitas da Forja, chefe, consumíveis do combate e diálogo do mapa mostram a arte inteira; retratos de herói não cortam mais a cabeça.";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.7 • 26/09/2026\A Menus por assunto: Expedição (Mapa, Masmorras, Crônicas), Herói (Ficha, Equipamento, Mochila), Vila (Loja, Forja, Guilda), Conquistas (títulos e bestiário, Coleção) e Coop. Masmorras e Conquistas ganham tela própria; resumo da build vai para o Equipamento e a provisão diária para a Guilda.";white-space:pre-line}
 /* Equipamentos nos atributos novos (v0.9.4): as diferenças por atributo quebram linha; estilo da peça e aviso de escola na comparação. */
 .item-stat-diff{flex-wrap:wrap;row-gap:2px}
 .equipment-compare .compare-style{display:block;margin:-2px 0 6px;color:#a98752;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase}
@@ -5131,3 +5132,9 @@ html.high-contrast .vc-scene{opacity:.3}
 .cc-art img{object-position:50% 6%}
 .pd-figure img{object-position:50% 4%}
 @media(max-width:760px){.select-page .hero-select-image img{object-position:50% 6%}}
+/* Menus por assunto (v0.9.7): o topo Clássico passou de 11 para 13 telas (Masmorras e Conquistas ganharam tela própria).
+   Ícones um pouco mais justos no desktop para tudo caber numa linha; no celular a grade de 3 colunas já agrupa por assunto. */
+@media (min-width:761px){
+  .topbar>nav:not(.nav-modern){gap:4px}
+  .topbar>nav:not(.nav-modern)>button{padding-inline:7px}
+}
