@@ -2156,6 +2156,7 @@ body::after{content:"VERSÃO 0.9.2 • 26/09/2026\A Modo Moderno: todas as telas
 body::after{content:"VERSÃO 0.9.3 • 26/09/2026\A Carta de Campeão inteira na Ficha e na Coleção (sem barra de rolagem nem corte, nas 9 classes); Equipamento, Resumo do herói, masmorras e lista de regiões sem rolagem interna";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.4 • 26/09/2026\A Equipamentos nos novos atributos: peças de classe dão Força ou Magia da própria escola (as universais seguem o seu ataque), a Vida das peças vira Vigor e peças raras, épicas e lendárias ganham afixos de Vigor, Destreza, Energia e Esquiva. A comparação mostra todos os atributos e um Índice.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.5 • 26/09/2026\A Loja: os cards da vitrine mostram os atributos de cada peça (Força, Magia, Vigor, Destreza, Armadura, Vida, Energia, Esquiva), a diferença para a peça equipada no mesmo espaço e se ela é melhor ou pior pelo Índice.";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.6 • 26/09/2026\A Imagens sem corte desnecessário: cards de item (Equipamento, Mochila, Espólio), vitrine da Loja, receitas da Forja, chefe, consumíveis do combate e diálogo do mapa mostram a arte inteira; retratos de herói não cortam mais a cabeça.";white-space:pre-line}
 /* Equipamentos nos atributos novos (v0.9.4): as diferenças por atributo quebram linha; estilo da peça e aviso de escola na comparação. */
 .item-stat-diff{flex-wrap:wrap;row-gap:2px}
 .equipment-compare .compare-style{display:block;margin:-2px 0 6px;color:#a98752;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase}
@@ -5095,3 +5096,38 @@ html.high-contrast .vc-scene{opacity:.3}
   .topbar nav .nav-group-btn.active{flex:1 1 0;min-width:0}
   .topbar nav .nav-group-btn.active .nav-group-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
+/* ==========================================================================================================
+   Imagens sem corte desnecessário (v0.9.6). Varredura de 21 telas (e abas) nos modos Clássico e Moderno, em
+   1440x900 e 390x844, medindo quanto de cada imagem fica escondido por object-fit: cover ou por contêiner com
+   overflow: hidden. Aqui só entra corte que tirava conteúdo da arte PRINCIPAL; cenas decorativas (faixas, fundos,
+   mastheads), molduras de carta e ícones pequenos (<=64px) continuam preenchendo a caixa de propósito.
+   ========================================================================================================== */
+/* Cards de item (Equipamento, Mochila, Espólio): a coluna da arte (112px) esticava até a altura do texto e a arte
+   virava uma fatia vertical (até 69% cortada). A coluna mantém o fundo; a arte fica no topo, em 3:4, inteira. */
+.item-card>.item-art-wrap>.art-preview-trigger{height:auto;min-height:0;aspect-ratio:3/4}
+.item-card>.item-art-wrap>.art-preview-trigger>img{height:100%;min-height:0;object-fit:contain}
+/* Vitrine da Loja: miniatura 92x156 (mais estreita que 3:4) cortava 22% das artes 3:4 e 42% das quadradas. */
+.shop-row-media{min-height:0;align-self:start}
+.shop-row-thumb{height:auto;aspect-ratio:3/4}
+.shop-row-thumb img{object-fit:contain}
+@media(max-width:760px){.shop-row-media{min-height:0}.shop-row-thumb{height:auto}}
+@media(max-width:420px){.shop-row-media{min-height:0}.shop-row-thumb{height:auto}}
+/* O emblema de classe só tem estilo de selo na miniatura do slot; nos outros gatilhos de arte ele ficava do tamanho da
+   arte e escondido (invisível, mas carregado). O card de item e a vitrine já mostram o emblema em outro lugar. */
+.art-preview-trigger:not(.slot-art-preview)>.slot-class-emblem{display:none}
+/* Forja (receitas, desmonte, aprimoramento): a arte ocupava 116x238 a 116x390 e perdia até 70% das laterais. */
+.recipe-grid article>.forge-item-art,.salvage-list article>.forge-item-art,.forge-redesign .recipe-grid article>.forge-item-art,.forge-upgrade-card .forge-item-art{height:auto;min-height:0;align-self:start;aspect-ratio:3/4}
+.forge-item-art>img,.recipe-grid article>.forge-item-art>img,.salvage-list article>.forge-item-art>img,.forge-upgrade-card .forge-item-art>img{object-fit:contain}
+@media(max-width:460px){.forge-redesign .recipe-grid article>.forge-item-art,.forge-upgrade-card .forge-item-art{width:min(100%,180px);height:auto;min-height:0;justify-self:center}}
+/* Chefe (introdução, modo Clássico): arte quadrada numa caixa alta perdia 30-45% das laterais. */
+.boss-art-preview{height:auto;max-height:min(520px,58vh);aspect-ratio:1/1}
+.boss-art-preview>img{object-fit:contain}
+/* Consumíveis do combate: a imagem tinha a altura da largura (104px) numa caixa de 62px e perdia 42% em cima e embaixo. */
+.combat-consumable-art>.art-preview-trigger{display:block;height:100%;min-height:0}
+.combat-consumable-art>.art-preview-trigger>img{width:100%;height:100%;max-height:100%;object-fit:contain}
+/* Diálogo no mapa: o sprite era ampliado 2,1x a partir da base, então a cabeça saía da caixa e só o tronco aparecia. */
+.regionmap-dialogue-avatar img{transform-origin:50% 0}
+/* Retratos de herói: o enquadramento no alto do corpo mantém-se, mas o topo da cabeça encostava/saía da borda. */
+.cc-art img{object-position:50% 6%}
+.pd-figure img{object-position:50% 4%}
+@media(max-width:760px){.select-page .hero-select-image img{object-position:50% 6%}}
