@@ -697,6 +697,25 @@ Final paths:
 - `docs/design/title-screen-mock-mobile.png` — 390x844 PNG RGB phone title-screen reference.
 Visual acceptance check: both wallpapers depict the nine requested class silhouettes (warrior, guardian, rogue, ranger, arcanist, conjurer plus spectral wolf, druid, monk and priestess). The desktop wallpaper reserves its dark low-detail left 38%; the mobile wallpaper reserves its calm bottom 45%. The desktop reference shows the campaign actions, saved-campaign list and login flow (entrar/criar conta/recuperar senha/jogar sem conta); the companion phone reference shows the title flow. No ART-035 item was left out.
 
+### ART-036 - Screen header scenes for the Modern UI (screens that still reuse art or have none)
+Status: TODO
+Requested by: Claude Code, on behalf of Felipe (2026-09-26)
+Gameplay purpose: every Modern-mode screen now opens with the same header as the Acampamento (`src/ui/ScreenMasthead.tsx`): eyebrow, editorial title, real campaign numbers and one main action, over an optional panoramic scene. Today the scenes come only from existing art: Expedição/Mapa uses `card-quote.webp`, Forja uses `card-forge.webp`, Guilda uses `card-allies.webp` (the same card the Acampamento shows for "Jogue com aliados"), Cooperativo uses `heroes-wallpaper*.webp`, Crônicas and the victory header use the current chapter's cinematic. Mochila, Equipamento, Loja, Coleção and Tutorial have NO scene (compact header, sky and ember only). Nothing below blocks the game; each file makes one screen more specific.
+How the header frames the art (read before composing):
+- Desktop: the scene fills the RIGHT ~66% of a ~1400x260-340px header, faded to transparent toward the left; title, numbers and buttons sit on the left 40%. Compose the subject in the right 60% and keep the left 40% calm and dark. Vertical crop keeps roughly the middle 75%.
+- Phone: the same header becomes a full-width band ~390x170-210px ABOVE the text (bottom fades out). Keep the subject in the upper 70% and fully inside a centered 4:3 area; faces must never touch an edge.
+Required assets (P1):
+- `public/assets/ui/screens/guild-hall.webp` (2000x600) + `guild-hall-mobile.webp` (1080x720) -- the Havendown guild hall at night: a contract board full of pinned notices, a long table, Brenna Ashcombe's desk (reference `public/assets/npcs/brenna-ashcombe.webp`), banners. Replaces the reused `card-allies.webp` on the Guilda.
+- `public/assets/ui/screens/market.webp` (2000x600) + `market-mobile.webp` (1080x720) -- Mira Bellwether's market stall at dusk: potion shelves, weapons on a rack, lanterns (reference `public/assets/npcs/mira-bellwether.webp`). For the Loja header.
+Optional (P2):
+- `public/assets/ui/screens/backpack.webp` + `backpack-mobile.webp` -- a travel satchel opened on a camp table, potions and a map, campfire light (Mochila).
+- `public/assets/ui/screens/armory.webp` + `armory-mobile.webp` -- an armor stand and weapon rack inside a tent (Equipamento). No hero figure: the paperdoll already shows the hero.
+- `public/assets/ui/screens/archive.webp` + `archive-mobile.webp` -- a reliquary/archive of painted cards and trophies by candlelight (Coleção).
+- `public/assets/ui/screens/manual.webp` + `manual-mobile.webp` -- an open journal, compass and region map on a table (Tutorial).
+Style: same painterly dark fantasy as the story cinematics and the camp cards; violet-blue night sky, amber fire, aged gold. No text, logo or UI baked in. Do NOT reuse or overwrite `camp-banner.webp` (the old banner crops the warrior's face).
+Code dependency: Claude Code adds each delivered file to `SCENE_ART` in `src/ui/screenIdentity.ts` and passes `art=` on that screen's `ScreenMasthead`. Codex must not edit `src/`.
+Acceptance check: exact dimensions; WebP under ~250 KB each; left 40% calm on desktop; subject within the centered 4:3 safe area on mobile; every final path listed here.
+
 ## Handoff Log
 
 ### SPR-001 - Class movement sprites

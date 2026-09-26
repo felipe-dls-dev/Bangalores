@@ -6,7 +6,7 @@ import { deriveLevel, storyRequirementProgress } from '../store/game'
 
 type StoryState = Parameters<typeof storyRequirementProgress>[0]
 
-export const CAMP_BANNER = 'assets/ui/camp/camp-banner.webp'
+export const CAMP_BANNER = 'assets/ui/camp/camp-banner-reframed.webp'
 export const CAMP_BANNER_MOBILE = 'assets/ui/camp/camp-banner-mobile.webp'
 export const CAMP_CARD_ART = {
   forge: 'assets/ui/camp/card-forge.webp',

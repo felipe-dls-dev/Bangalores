@@ -11,6 +11,9 @@ export interface PaperdollModernProps {
   /** Endereço da arte de um equipamento (antes de assetUrl). */
   art: (item: Equipment) => string
   slotNames: Record<Slot, string>
+  /** Espaço escolhido, quando quem usa quer controlar (o cabeçalho da tela leva direto a uma melhoria). */
+  selectedSlot?: Slot
+  onSelectSlot?: (slot: Slot) => void
 }
 
 // Os dois anéis formam um grupo só: o jogo põe o anel novo no espaço livre.
@@ -21,9 +24,14 @@ const RIGHT: Slot[] = ['amuleto', 'anel_1', 'anel_2', 'mao_direita', 'mao_esquer
 
 // "Boneco de equipamento" do modo Moderno: o herói no centro com os 10 espaços ao redor. Escolher um espaço
 // mostra o que está nele e as peças da mochila que servem ali, cada uma comparada com o que o herói veste.
-export function PaperdollModern({ assetUrl, art, slotNames }: PaperdollModernProps) {
+export function PaperdollModern({ assetUrl, art, slotNames, selectedSlot, onSelectSlot }: PaperdollModernProps) {
   const g = useGame()
-  const [slot, setSlot] = React.useState<Slot>('mao_direita')
+  const [ownSlot, setOwnSlot] = React.useState<Slot>('mao_direita')
+  const slot = selectedSlot ?? ownSlot
+  const setSlot = (next: Slot) => {
+    setOwnSlot(next)
+    onSelectSlot?.(next)
+  }
   const hero = HEROES.find((h) => h.id === g.heroId)
   const bagFull = g.equipmentBag.length >= equipmentBagCapacity(g)
   const dualWielding = equipmentWeaponClass(equipmentByRef(g.equipped.mao_direita)) === 'facas'

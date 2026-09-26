@@ -33,11 +33,14 @@ export interface VictoryModernProps {
   group?: { rows: CoopShareRow[]; me: string; classLabel: (heroId?: string) => string }
   /** Avisos e ações que a tela já monta (masmorra, bolsa cheia, botões). */
   children?: React.ReactNode
+  /** Cena do capítulo atual (URL já resolvida) para o cabeçalho, na linguagem do Acampamento. Decorativa. */
+  scene?: string
 }
 
 // Cabeçalho da tela de Vitória no modo Moderno: recompensas, saque com comparação e "Equipar agora", e
 // recuperação. A preparação e a mochila continuam logo abaixo, as mesmas do modo Clássico.
-export function VictoryModern({ loot, defeat, epic, nextStep, equipmentCard, itemCard, animated, group, children }: VictoryModernProps) {
+export function VictoryModern({ loot, defeat, epic, nextStep, equipmentCard, itemCard, animated, group, children, scene }: VictoryModernProps) {
+  const [sceneFailed, setSceneFailed] = React.useState(false)
   const g = useGame()
   const [equipped, setEquipped] = React.useState<string | undefined>()
   // Ao abrir, começa no topo mesmo que a tela anterior estivesse rolada.
@@ -60,6 +63,7 @@ export function VictoryModern({ loot, defeat, epic, nextStep, equipmentCard, ite
   return (
     <section className={`vc-page${defeat ? ' is-defeat' : ''}`}>
       <header className="vc-hero">
+        {scene && !sceneFailed && <img className="vc-scene" src={scene} alt="" aria-hidden="true" decoding="async" onError={() => setSceneFailed(true)} />}
         {defeat ? <Skull size={44} aria-hidden /> : <Trophy size={44} className={epic ? 'epic' : ''} aria-hidden />}
         <div>
           <small>Resultado da batalha</small>
