@@ -34,7 +34,8 @@ import { ALL_MONOLITHS } from '../regionMap'
 import { selectAutoItemSkill } from '../autoCombat'
 import { selectCoopAutoHealTarget, selectCoopAutoSummonType } from '../online/coopAutoCombat'
 import { ATTRIBUTE_RULES, NO_ATTRIBUTES, PRIMARY_ATTRIBUTES, heroStatProfile, offensiveTargets, primaryOffense, type PrimaryAttributeKey, type PrimaryAttributes } from '../data/heroStatProfiles'
-import { abilityPotency, armorMitigation, computeChampionStats, effectResistance, elementalResistance, initiativeBonus, mergeBonuses, sanitizeAttributes, totalDodge, attackEnergyGain, clampEnergy, gainEnergy, spendEnergy, type ChampionStatBreakdown, type StatBonuses } from './heroStats'
+import { abilityPotency, armorMitigation, basicAttackPower, computeChampionStats, effectResistance, elementalResistance, initiativeBonus, mergeBonuses, sanitizeAttributes, attackEnergyGain, clampEnergy, gainEnergy, spendEnergy, type ChampionStatBreakdown, type StatBonuses } from './heroStats'
+import { addItemStats, buildEquipmentAttributeProfile, convertLegacyEquipmentStats, emptyItemStats, equipmentStatScore, explicitEquipmentStats, schoolTargets, type ItemStats } from '../data/equipmentAttributes'
 
 const HD_ART:Record<string,string> = {
   'assets/art/monsters/cabra_malgor.webp':'assets/art/hd/monsters/cabra-malgor-hd.webp',
@@ -273,7 +274,11 @@ function applyStarterArmor(items:Equipment[]){
   const statsByClass={...item.statsByClass};for(const[hero,entry]of owners)statsByClass[hero]={...statsByClass[hero],defesa:(statsByClass[hero]?.defesa??0)+entry.bonus}
   return{...item,statsByClass}})
 }
-export const EQUIPMENT=applyStarterArmor(balanceEquipment(RAW_EQUIPMENT))
+// O perfil de atributos (estilo, escola Força/Magia e afixos de raridade) é montado DEPOIS do balanceamento, porque os afixos
+// dependem da raridade e do nível mínimo finais. O orçamento antigo (ataque/defesa/vida) fica no item e continua sendo o que
+// ordena cada grupo: nível, raridade e preço não mudam com a conversão.
+function attachAttributeProfiles(items:Equipment[]){return items.map(item=>item.slot==='bolsa'?item:{...item,perfilAtributos:buildEquipmentAttributeProfile(item,item.slot==='mao_direita'?equipmentAffinity(item):undefined)})}
+export const EQUIPMENT=attachAttributeProfiles(applyStarterArmor(balanceEquipment(RAW_EQUIPMENT)))
 export const FORGE_RECIPES=buildForgeRecipes(EQUIPMENT)
 export function equipmentBagCapacity(s:{equipped:Partial<Record<Slot,string>>}){return eqById(s.equipped.bolsa)?.capacidade??8}
 // Preço atual da Bênção de Proteção: seguro proporcional ao valor médio dos itens vestidos (sem a bolsa).
@@ -599,11 +604,34 @@ export function equipmentGemBonus(itemId:string|undefined,s:GameState){let atk=0
 // usa o mesmo breakdown pra explicar cada peça -- antes a tela somava só base+pedra e nunca
 // mostrava o aprimoramento, então uma arma aprimorada aparecia com um "Ataque" menor no slot do
 // que ela de fato contribuía pro total do personagem.
-export function equipmentInstanceBreakdown(e:Equipment,ref:string|undefined,s:GameState){
- const classDelta=e.statsByClass?.[s.heroId??'']??{},up=ref?s.equipmentUpgrades?.[ref]??0:0,gems=equipmentGemBonus(ref,s)
- const base={atk:equipmentAttackForHero(e,s.heroId)+(classDelta.ataque??0),def:e.defesa+(classDelta.defesa??0),life:e.vida+(classDelta.vida??0)}
- const upgrade={atk:e.ataque?up:0,def:e.defesa?Math.floor((up+1)/2):0,life:up}
- return{base,upgrade,gems,total:{atk:base.atk+upgrade.atk+gems.atk,def:base.def+upgrade.def+gems.def,life:base.life+upgrade.life+gems.life,roll:gems.roll}}
+// Os três números vêm nos atributos novos (Força/Magia, Vigor, Destreza, Armadura, Vida, Energia, Esquiva):
+//   base     orçamento do catálogo + variação da classe + penalidade de afinidade, convertido pelo perfil da peça
+//            (data/equipmentAttributes.ts) + campos explícitos do item;
+//   upgrade  o aprimoramento soma na escola da peça (ou no ataque de quem veste, se ela é adaptável), na Armadura (se ela
+//            protege) e na Vida;
+//   gems     a pedra de ataque vale para o atributo de ataque de QUEM veste (é genérica); defesa -> Armadura; vida -> Vida.
+export interface EquipmentBreakdown{base:ItemStats;upgrade:ItemStats;gems:ItemStats;total:ItemStats;roll:number}
+function equipmentProfileOf(e:Equipment){return e.perfilAtributos??buildEquipmentAttributeProfile(e,e.slot==='mao_direita'?equipmentAffinity(e):undefined)}
+/** Atributos normais da peça para a classe (sem aprimoramento nem pedras). Sem classe informada, usa a dona da peça. */
+export function equipmentBaseStats(e:Equipment,heroId?:string):ItemStats{
+ if(e.slot==='bolsa')return emptyItemStats()
+ const hero=heroId??(Array.isArray(e.classeExclusiva)?e.classeExclusiva[0]:e.classeExclusiva)??equipmentAffinity(e),classDelta=e.statsByClass?.[hero??'']??{}
+ const legacy={ataque:equipmentAttackForHero(e,hero)+(classDelta.ataque??0),defesa:e.defesa+(classDelta.defesa??0),vida:e.vida+(classDelta.vida??0)}
+ return addItemStats(convertLegacyEquipmentStats(equipmentProfileOf(e),legacy,hero),explicitEquipmentStats(e))
+}
+/** Índice de comparação da peça para a classe (a mesma régua do orçamento: 1 de ataque = 1 de Armadura = 2 de Vida). */
+export function equipmentScoreForHero(e:Equipment,heroId?:string){return equipmentStatScore(equipmentBaseStats(e,heroId),heroId)}
+export function equipmentInstanceBreakdown(e:Equipment,ref:string|undefined,s:Pick<GameState,'heroId'|'equipmentUpgrades'|'equipmentGems'>):EquipmentBreakdown{
+ const up=ref?s.equipmentUpgrades?.[ref]??0:0,gemBonus=equipmentGemBonus(ref,s as GameState),profile=equipmentProfileOf(e)
+ const base=equipmentBaseStats(e,s.heroId)
+ const upgrade=emptyItemStats()
+ if(e.ataque)for(const key of schoolTargets(profile.escola,s.heroId))upgrade[key]+=up
+ if(e.defesa)upgrade.armadura+=Math.floor((up+1)/2)
+ upgrade.vida+=up
+ const gems=emptyItemStats()
+ for(const key of offensiveTargets(heroStatProfile(s.heroId).ataqueBasico))gems[key]+=gemBonus.atk
+ gems.armadura+=gemBonus.def;gems.vida+=gemBonus.life
+ return{base,upgrade,gems,total:addItemStats(base,upgrade,gems),roll:gemBonus.roll}
 }
 // Antes o forjador maxava no nível 10 e a receita exigida vinha só da posição do item na
 // lista ordenada por raridade/preço -- com os heróis agora evoluindo até o nível 100
@@ -1461,30 +1489,39 @@ export const useGame = create<GameState>()(persist((set,get)=>({
 // As fórmulas moram em store/heroStats.ts e os números em data/heroStatProfiles.ts; aqui só se REÚNEM as
 // fontes (equipamento, gemas, talentos, especializações, história, coleção, conjuntos) num único bônus.
 // ---------------------------------------------------------------------------------------------
-type AttributeSources={bonus:StatBonuses;roll:number;itemAttack:number;itemArmor:number;itemLife:number}
+type AttributeSources={bonus:StatBonuses;roll:number;items:ItemStats}
 function heroLevelOf(s:GameState){return deriveLevel(s.xp??0).lvl}
 function offenseBonus(heroId:string|undefined,amount:number):Partial<PrimaryAttributes>{const out:Partial<PrimaryAttributes>={};for(const key of offensiveTargets(heroStatProfile(heroId).ataqueBasico))out[key]=amount;return out}
-// Contribuição EXPLÍCITA de um equipamento nos novos atributos (campos opcionais do item), somada ao que o
-// item já dava no formato antigo (ataque -> poder ofensivo da classe, defesa -> Armadura, vida -> Vida Máxima).
-function equipmentExplicitBonus(e:Equipment):StatBonuses{return{forca:e.forca,magia:e.magia,vigor:e.vigor,destreza:e.destreza,vidaMaxima:e.vidaMaxima,energia:e.energia,armadura:e.armadura,resistencias:e.resistencias}}
+// Os equipamentos já chegam nos atributos novos (equipmentInstanceBreakdown): Força e Magia da peça valem como estão (uma
+// espada dá Força mesmo num Mago), Esquiva vem em pontos percentuais. Talentos, história, coleção e conjuntos continuam
+// dando "ataque" genérico, que vai para o atributo de ataque da classe.
 function attributeSources(s:GameState):AttributeSources{
  const talents=s.talents??[],has=(id:string)=>talents.includes(id),spec=specializationBonuses(s),story=storyModifiers(s),mastery=collectionMastery(s),sets=equipmentSetCounts(s)
  let attack=(has('precisao')?1:0)+(has('poder_interior')?1:0)+(has('instinto_predador')?2:0)+spec.attack+story.attack+mastery.attack+(s.pendingAttackBonus??0)
  const vigor=(has('muralha')?1:0)+(has('guarda_ancestral')?2:0)+spec.defense+story.defense+mastery.defense
  const destreza=has('reflexos')?1:0
  let life=(has('vigor')?5:0)+(has('resiliencia')?8:0)+(has('apice_heroico')?15:0)+spec.life+mastery.life
- let armor=0,roll=0,itemAttack=0,itemArmor=0,itemLife=0
- const explicit:StatBonuses[]=[]
- Object.values(s.equipped).forEach(id=>{const e=eqById(id);if(!e)return;const b=equipmentInstanceBreakdown(e,id,s);itemAttack+=b.total.atk;itemArmor+=b.total.def;itemLife+=b.total.life;roll+=b.total.roll;explicit.push(equipmentExplicitBonus(e))})
- attack+=itemAttack;armor+=itemArmor;life+=itemLife
+ let armor=0,roll=0
+ const parts:ItemStats[]=[],resistances:StatBonuses[]=[]
+ Object.values(s.equipped).forEach(id=>{const e=eqById(id);if(!e)return;const b=equipmentInstanceBreakdown(e,id,s);parts.push(b.total);roll+=b.roll;if(e.resistencias)resistances.push({resistencias:e.resistencias})})
+ const items=addItemStats(...parts)
  if(sets.lua>=2)armor+=1;if(sets.lua>=4)life+=4;if(sets.cinzas>=2)attack+=1;if(sets.khar>=2)life+=3;if(sets.eclipse>=2)attack+=1
  if(equipmentWeaponClass(eqById(s.equipped.mao_direita))==='facas'&&!s.equipped.mao_esquerda)attack+=FACAS_OFFHAND_ATTACK_BONUS
- const bonus=mergeBonuses({...offenseBonus(s.heroId,attack),vigor,destreza,vidaMaxima:life,armadura:armor},...explicit)
- return{bonus:bonus as StatBonuses,roll,itemAttack,itemArmor,itemLife}
+ const forgedDodge=hasCraftedEffect(s,'esquiva_forjada')?.05:0
+ const bonus=mergeBonuses({...offenseBonus(s.heroId,attack),vigor,destreza,vidaMaxima:life,armadura:armor},{forca:items.forca,magia:items.magia,vigor:items.vigor,destreza:items.destreza,armadura:items.armadura,vidaMaxima:items.vida,energia:items.energia,esquiva:items.esquiva/100+forgedDodge},...resistances)
+ return{bonus:bonus as StatBonuses,roll,items}
 }
 /** Todos os valores do Campeão (atributos, derivados e Poder) — a mesma fonte da carta, da ficha e do combate. */
 export function championStats(s:GameState):ChampionStatBreakdown{return computeChampionStats({profile:heroStatProfile(s.heroId),level:heroLevelOf(s),points:s.attr,bonus:attributeSources(s).bonus,permanentLife:s.permanentLife})}
-export function equipmentStatBonus(s:GameState){const src=attributeSources(s);return{atk:src.itemAttack,def:src.itemArmor,life:src.itemLife}}
+/**
+ * O que os equipamentos vestidos somam: os atributos (`items`), a parte do Poder de ataque que vem deles (`atk`), a Armadura
+ * (`def`) e a Vida Máxima (`life`: Vida + Vigor × 2).
+ */
+export function equipmentStatBonus(s:GameState){
+ const src=attributeSources(s),items=src.items,stats=championStats(s),type=heroStatProfile(s.heroId).ataqueBasico
+ const atk=stats.poderBasico-basicAttackPower(type,stats.forca-items.forca,stats.magia-items.magia)
+ return{atk,def:items.armadura,life:items.vida+items.vigor*ATTRIBUTE_RULES.vigorVidaPorPonto,items}
+}
 function equipmentRollBonusTotal(s:GameState){return attributeSources(s).roll}
 export function maxHp(s:GameState){return championStats(s).vidaMaxima}
 /** Poder do ataque comum: Força (físico), Magia (mágico) ou o maior dos dois (híbrido), com os bônus percentuais de combate. */
@@ -1493,8 +1530,8 @@ export function attackValue(s:GameState){return Math.ceil(championStats(s).poder
 export function armorValue(s:GameState){return championStats(s).armadura}
 /** Mitigação de dano físico da Armadura, em pontos planos (mesma régua que a antiga Defesa). Retorno decrescente. */
 export function defenseValue(s:GameState){return Math.ceil(armorMitigation(armorValue(s)*(1+(s.combatDefensePct??0)+STANCE_DEFENSE_PCT[s.battleStance??'neutra'])))}
-/** Chance de esquiva do herói: Destreza + passiva da classe + esquiva forjada, com o teto configurado. */
-export function heroDodgeChance(s:GameState){const profile=heroStatProfile(s.heroId);return totalDodge(championStats(s).destreza,profile.esquivaPassiva,hasCraftedEffect(s,'esquiva_forjada')?.05:0)}
+/** Chance de esquiva do herói: Destreza + passiva da classe + Esquiva dos equipamentos + esquiva forjada, com o teto configurado. */
+export function heroDodgeChance(s:GameState){return championStats(s).esquiva}
 export function heroEffectResistance(s:GameState){return effectResistance(championStats(s).vigor)}
 export function heroElementalResistance(s:GameState){return elementalResistance(championStats(s).vigor)}
 /** Energia disponível agora (regenera por rodada, sem passar do máximo). */

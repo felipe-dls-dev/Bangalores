@@ -917,13 +917,13 @@ describe('bugs corrigidos no sistema de forja', () => {
     // lamina_vento é incomum com ataque próprio: aprimoramento +2 soma +2 de ataque, a gema
     // Rubi da Forja soma +2 -- a tela de Equipamentos precisa mostrar essas duas fontes
     // separadas do "normal" (base), não só a soma total.
-    expect(b.upgrade.atk).toBe(2)
-    expect(b.gems.atk).toBe(2)
-    expect(b.total.atk).toBe(b.base.atk + b.upgrade.atk + b.gems.atk)
+    expect(b.upgrade.forca).toBe(2)
+    expect(b.gems.forca).toBe(2)
+    expect(b.total.forca).toBe(b.base.forca + b.upgrade.forca + b.gems.forca)
     // O mesmo breakdown por instância é o que stats()/attackValue() usam por baixo -- não pode
     // haver diferença entre o que a peça soma sozinha e o que ela credita no total do herói.
     const baseline = attackValue({ ...s, equipmentUpgrades: {}, equipmentGems: {} } as any)
-    expect(attackValue(s) - baseline).toBe(b.upgrade.atk + b.gems.atk)
+    expect(attackValue(s) - baseline).toBe(b.upgrade.forca + b.gems.forca)
   })
 })
 

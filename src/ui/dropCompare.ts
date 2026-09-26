@@ -1,16 +1,19 @@
 // Comparação do equipamento que caiu com o que o herói já veste (tela de Vitória do modo Moderno).
 // Não recalcula regras de bônus: simula o `equip` da store (mesmo espaço de destino) e pergunta às
-// próprias funções do jogo qual seria o Poder de ataque, a Armadura, a Vida e a bolsa depois da troca.
+// próprias funções do jogo qual seria o Poder de ataque, a Armadura, a Vida e a bolsa depois da troca (e a Esquiva e a
+// Energia máxima, quando a troca muda essas duas: peças de Destreza, Esquiva ou Energia não ficam como "iguais").
 
 import {
   armorValue,
   attackValue,
+  championStats,
   equipmentBagCapacity,
   equipmentByRef,
   equipmentClassAllowed,
   equipmentLevelAllowed,
   equipmentRequiredLevel,
   equipmentWeaponClass,
+  heroDodgeChance,
   maxHp,
   useGame,
 } from '../store/game'
@@ -19,7 +22,7 @@ import type { Equipment, Slot } from '../types'
 type State = ReturnType<typeof useGame.getState>
 
 export interface CompareRow {
-  id: 'ataque' | 'armadura' | 'vida' | 'bolsa'
+  id: 'ataque' | 'armadura' | 'vida' | 'esquiva' | 'energia' | 'bolsa'
   label: string
   from: number
   to: number
@@ -65,6 +68,9 @@ export function equipBlock(item: Equipment, state: Pick<State, 'heroId' | 'xp' |
   return { ok: true }
 }
 
+/** Chance de esquiva em pontos percentuais inteiros (a mesma do combate). */
+export const dodgePercent = (state: State) => Math.round(heroDodgeChance(state) * 100)
+
 export function compareDrop(ref: string, state: State): DropCompare | undefined {
   const item = equipmentByRef(ref)
   const after = equippedAfter(state, ref)
@@ -74,7 +80,13 @@ export function compareDrop(ref: string, state: State): DropCompare | undefined 
   const rows =
     item.slot === 'bolsa'
       ? [row('bolsa', 'Bolsa', equipmentBagCapacity(state), equipmentBagCapacity(next))]
-      : [row('ataque', 'Poder de ataque', attackValue(state), attackValue(next)), row('armadura', 'Armadura', armorValue(state), armorValue(next)), row('vida', 'Vida', maxHp(state), maxHp(next))]
+      : [
+          row('ataque', 'Poder de ataque', attackValue(state), attackValue(next)),
+          row('armadura', 'Armadura', armorValue(state), armorValue(next)),
+          row('vida', 'Vida', maxHp(state), maxHp(next)),
+          row('esquiva', 'Esquiva (%)', dodgePercent(state), dodgePercent(next)),
+          row('energia', 'Energia máx.', championStats(state).energiaMaxima, championStats(next).energiaMaxima),
+        ].filter((r) => r.id === 'ataque' || r.id === 'armadura' || r.id === 'vida' || r.delta !== 0)
   const gains = rows.filter((r) => r.delta > 0).length
   const losses = rows.filter((r) => r.delta < 0).length
   const verdict: DropCompare['verdict'] = gains && losses ? 'mixed' : gains ? 'better' : losses ? 'worse' : 'same'

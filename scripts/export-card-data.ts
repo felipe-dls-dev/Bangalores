@@ -2,8 +2,9 @@ import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   HEROES, EQUIPMENT, CONSUMABLES, MONSTERS, BOSSES, EVENTS,
-  equipmentAffinity, equipmentRequiredLevel
+  equipmentAffinity, equipmentRequiredLevel, equipmentBaseStats
 } from '../src/store/game'
+import { ITEM_STAT_KEYS, ITEM_STAT_LABELS, STYLE_LABELS } from '../src/data/equipmentAttributes'
 
 const publicRoot = 'https://felipe-dls-dev.github.io/Bangalores/'
 const classNames:Record<string,string>={guerreiro:'Guerreiro',guardiao:'Guardião',cacadora:'Ladino',arcanista:'Mago'}
@@ -22,9 +23,13 @@ const rows:any[]=[]
 for(const card of HEROES) rows.push(row(card,'Herói',{Classe:classNames[card.id]??card.id,Raridade:card.raridade??'heroico'}))
 for(const card of EQUIPMENT){
   const affinity=card.classeExclusiva??equipmentAffinity(card)
+  // Atributos convertidos (Força/Magia, Vigor, Destreza, Armadura, Vida, Energia, Esquiva) para a classe dona da peça;
+  // Ataque/Defesa/Vida continuam sendo o orçamento do catálogo.
+  const stats=equipmentBaseStats(card)
   rows.push(row(card,'Equipamento',{
-    Subcategoria:card.tipoEquipamento??slotNames[card.slot]??card.slot,Classe:affinity?classNames[affinity]:'Universal',Slot:slotNames[card.slot]??card.slot,
-    'Nível mínimo':equipmentRequiredLevel(card),Preço:card.preco
+    Subcategoria:card.tipoEquipamento??slotNames[card.slot]??card.slot,Classe:affinity?[affinity].flat().map(id=>classNames[id]??id).join('/'):'Universal',Slot:slotNames[card.slot]??card.slot,
+    'Nível mínimo':equipmentRequiredLevel(card),Preço:card.preco,Estilo:card.perfilAtributos?STYLE_LABELS[card.perfilAtributos.estilo]:'',
+    ...Object.fromEntries(ITEM_STAT_KEYS.map(key=>[key==='esquiva'?'Esquiva (%)':ITEM_STAT_LABELS[key]==='Vida'?'Vida (item)':ITEM_STAT_LABELS[key],stats[key]]))
   }))
 }
 for(const card of CONSUMABLES) rows.push(row(card,'Consumível',{Subcategoria:card.tipo,Preço:card.preco}))

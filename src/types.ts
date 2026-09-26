@@ -1,4 +1,5 @@
 import type { Element } from './data/expansion'
+import type { EquipmentAttributeProfile } from './data/equipmentAttributes'
 export type Slot = 'amuleto'|'capacete'|'bolsa'|'anel_1'|'peitoral'|'anel_2'|'calcas'|'mao_esquerda'|'mao_direita'|'botas'
 export type Screen = 'menu'|'select'|'map'|'guild'|'chronicle'|'forge'|'region'|'event'|'character'|'inventory'|'equipment'|'shop'|'gallery'|'tutorial'|'coop'|'combat'|'bossIntro'|'loot'|'cardCreator'|'camp'
 export type Rarity = 'comum'|'incomum'|'raro'|'epico'|'lendario'|'mitico'|'heroico'
@@ -12,10 +13,11 @@ export interface Hero { id:string; nome:string; vida:number; ataque:number; defe
 // conjuntos compartilhados entre duas ou três classes aparentadas (ex: Sacerdotisa+Druida).
 // statsByClass permite uma variação sutil de atributos por classe no MESMO item compartilhado
 // (ex: a Sacerdotisa ganha +1 vida, a Druida ganha +1 defesa no mesmo manto).
-// Campos explícitos opcionais (Força, Magia, Vigor, Destreza, Vida Máxima, Energia, Armadura, resistências) somam nos
-// atributos do Campeão além do que o item já dá no formato antigo: `ataque` vira poder ofensivo da classe, `defesa` vira
-// Armadura e `vida` vira Vida Máxima (ver attributeSources em store/game.ts).
-export interface Equipment { id:string; nome:string; slot:Slot; preco:number; ataque:number; vida:number; defesa:number; forca?:number; magia?:number; vigor?:number; destreza?:number; vidaMaxima?:number; energia?:number; armadura?:number; resistencias?:Partial<Record<Element,number>>; habilidade:string; imagem:string; arte?:string; raridade?:Rarity; classeExclusiva?:string|string[]; statsByClass?:Record<string,{ataque?:number;vida?:number;defesa?:number}>; tipoEquipamento?:string; nivelMinimo?:number; capacidade?:number; setId?:EquipmentSetId; activeEffect?:EquipmentActiveEffect }
+// `ataque`/`defesa`/`vida` são o ORÇAMENTO da peça: data/equipmentAttributes.ts os converte em Força ou Magia (a escola
+// da peça de classe; nas universais, o ataque de quem veste), Vigor, Destreza, Armadura, Vida, Energia e Esquiva conforme
+// o estilo e a raridade (`perfilAtributos`, montado junto com o catálogo). Campos explícitos opcionais (Força, Magia,
+// Vigor, Destreza, Vida Máxima, Energia, Armadura, Esquiva em pontos percentuais, resistências) somam por cima da conversão.
+export interface Equipment { id:string; nome:string; slot:Slot; preco:number; ataque:number; vida:number; defesa:number; forca?:number; magia?:number; vigor?:number; destreza?:number; vidaMaxima?:number; energia?:number; armadura?:number; esquiva?:number; resistencias?:Partial<Record<Element,number>>; perfilAtributos?:EquipmentAttributeProfile; habilidade:string; imagem:string; arte?:string; raridade?:Rarity; classeExclusiva?:string|string[]; statsByClass?:Record<string,{ataque?:number;vida?:number;defesa?:number}>; tipoEquipamento?:string; nivelMinimo?:number; capacidade?:number; setId?:EquipmentSetId; activeEffect?:EquipmentActiveEffect }
 export interface Consumable { id:string; nome:string; tipo:string; valor:number; preco:number; descricao:string; imagem:string; arte?:string; raridade?:Rarity }
 export interface GameEvent { id:string; nome:string; tipo:string; valor:number; descricao:string; imagem:string; arte?:string }
 export interface Enemy { id:string; nome:string; ataque:number; defesa?:number; vida:number; ouro:number; dificuldade:number; habilidade:string; imagem:string; arte?:string; raridade?:Rarity; elite?:boolean; boss?:boolean; fase?:number; maxFases?:number; nivel?:number; variante?:string; revenge?:boolean; dungeon?:boolean; elemento?:Element; fraqueza?:string; xpReward?:number }

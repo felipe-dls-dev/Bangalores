@@ -108,6 +108,65 @@ A tabela mostra a Vida da classe sem itens; com o kit inicial a Vida é a de ant
    equilíbrio já medido; o Fervor melhora um pouco (o simulador só o usa depois da habilidade). O dano médio por golpe cai (76 → 69)
    porque a habilidade é usada menos vezes.
 
+## 3.1 Equipamentos nos atributos novos (v0.9.4)
+
+Os 570 equipamentos continuam escritos no formato antigo (`ataque`, `defesa`, `vida`) em `data/*.ts` e `equipamentos.json`:
+esses números são o **orçamento** da peça, e é por eles que o balanceamento por raridade ordena cada grupo (nível mínimo,
+raridade e preço **não mudaram**). [`src/data/equipmentAttributes.ts`](../src/data/equipmentAttributes.ts) converte esse
+orçamento nos atributos novos conforme o **estilo** e a **raridade** da peça:
+
+| Orçamento | Vira |
+| --- | --- |
+| `ataque` | **Força ou Magia**, inteiro. Peça de classe tem **escola fixa**, a da classe dona (espada, machado, facas, arco, manopla = Força; cajado, orbe, cetro, totem = Magia). Peça **universal** (sem classe dona: joias, armas neutras) é **adaptável**: vai para o atributo de ataque de quem veste (os dois no Monge). |
+| `defesa` | **Armadura**, inteira. |
+| `vida` | **Vigor + Vida**, sem mudar a Vida total (1 Vigor = 2 de Vida e ainda dá resistência). Estilos pesado, médio, natural e sagrado passam toda a Vida possível para Vigor; os demais, metade. |
+| raridade | **Afixos** somados: raro 1, épico 2, lendário 3. Tamanho pelo nível mínimo (`0,3 + nível/60` de valor ÷ peso do atributo, pelo menos 1). |
+
+Estilos (pelo `tipoEquipamento`, pela classe dona ou pelo nome) e o primeiro afixo, que é a assinatura do estilo:
+
+| Estilo | Peças | Afixos (1º sempre, os outros variam pelo id) |
+| --- | --- | --- |
+| Pesado | placas, escudos pesados, machados, martelos (Guardião) | Vigor, Energia, Vigor |
+| Médio | malha, escudos leves, espadas (Guerreiro) | Vigor, Destreza, Energia |
+| Furtivo | couro, capuzes, broquéis, facas, adagas (Ladino) | Destreza, Esquiva, Energia |
+| De caça | trajes de caça, aljavas, arcos, balestras (Caçador) | Destreza, Esquiva, Vigor |
+| Leve | trajes de monge, manoplas | Destreza, Energia, Vigor |
+| Arcano | vestes e diademas arcanos, grimórios, orbes, totens (Mago, Conjurador) | Energia, Vigor, Esquiva |
+| Natural | vestimentas, pergaminhos e cajados druídicos | Vigor, Energia, Destreza |
+| Sagrado | vestes vitais e cetros (Sacerdotisa) | Vigor, Energia, Vigor |
+| Joia | anéis e amuletos | pelo tema: vida → Vigor, agilidade → Destreza, mente → Energia, névoa/sombra → Esquiva |
+
+- **Esquiva** de item vem em pontos percentuais e soma com a da Destreza, a passiva da classe e a esquiva forjada, sempre dentro
+  do teto total de 45% (`StatBonuses.esquiva`; `heroDodgeChance` = `championStats().esquiva`).
+- Numa peça de classe a **escola é da peça**, não de quem veste: a espada de Guerreiro num Mago dá Força (−1 da afinidade),
+  que não aumenta o ataque dele; a comparação avisa. Esse é o custo natural de usar a arma de outra classe.
+- **Por que as universais são adaptáveis:** uma primeira versão dava escola pelo tema também às universais. Na simulação,
+  Druida, Sacerdotisa e Conjurador perderam até 45% do ataque de equipamento nos níveis 1–17 (as armas universais do começo
+  são todas físicas — a Espadona Férrea, nível 1 e ataque 3, era a melhor arma deles) e a Arcanista foi de 47 para 71 mortes
+  por campanha. Com as universais adaptáveis, o melhor ataque útil por espaço e nível é **idêntico** ao do modelo antigo
+  nas nove classes (teste `nenhuma classe perde ataque de equipamento`). Talentos, história, coleção, conjuntos e pedras
+  também continuam indo para o atributo de ataque da classe.
+- **Aprimoramento** (+1/+2/+3) soma na escola da peça (se ela ataca), na Armadura (se ela protege) e na Vida; a **pedra** de
+  ataque vale para o atributo de ataque de quem veste.
+- **Comum e incomum não ganham afixos**: o começo do jogo (níveis 1–16) ficou igual, e o kit inicial das nove classes tem
+  exatamente a mesma Vida, ataque e mitigação (teste).
+- **Por que a Armadura não é trocada por Vigor/Destreza:** na simulação de campanhas a mitigação dos heróis fica bem abaixo do
+  ataque dos inimigos (nível 40: mitigação 8–21 contra ataque 26–42), a parte da curva em que cada ponto de Armadura evita 1,2–1,5
+  de dano por golpe. Nessa faixa um ponto de Armadura vale muito mais que 2 de Vida ou meio ponto de esquiva; uma primeira versão
+  que trocava parte da Armadura por atributos "de mesmo valor" deixava a Armadura das peças em 57–80% da antiga, um nerf
+  escondido. Os atributos novos entram como afixos pequenos, por cima.
+- **Índice** (comparação de equipamentos e simulador): `equipmentStatScore` — 1 ponto do atributo de ataque da classe = 1 de
+  Armadura = 1 de Vigor = 2 de Vida; Destreza 0,4 (0,64 para Caçadora e Caçador), Energia 1, Esquiva (1%) 0,5; Força/Magia
+  da escola errada valem 0,1; no Monge conta o maior dos dois (peça adaptável não conta em dobro).
+- Telas: todas as linhas de item usam `formatItemStats` ("Força +5 • Destreza +3 • Esquiva +2%"), os slots a versão curta
+  (`FOR +5 • DES +3`), a comparação mostra todos os atributos das duas peças + Índice + estilo, a gema da carta mostra
+  Força/Magia, Armadura e Vida (Vida + Vigor × 2), e a comparação do espólio ganha Esquiva e Energia máx. quando mudam.
+- **Simulação** (Havendown, 9 classes × 3 campanhas, código anterior × novo): mortes por campanha 42,5 → 41,0, chefes 35,5 → 35,5
+  de 40, nível final 68,0 → 67,8; o ataque das classes mágicas nos marcos de nível ficou igual ao anterior. Limite conhecido: o
+  simulador só compra até raro na loja, então os afixos de épico e lendário (os maiores) quase não entram na conta.
+- Itens novos podem dispensar o formato antigo e escrever os campos explícitos (`forca`, `magia`, `vigor`, `destreza`,
+  `armadura`, `vidaMaxima`, `energia`, `esquiva`, `resistencias`), que somam por cima da conversão.
+
 ## 4. Migração de saves (`balanceVersion: 3`)
 
 `normalizeAttributes` (em `game.ts`) roda ao carregar o save e ao abrir/continuar uma campanha guardada.

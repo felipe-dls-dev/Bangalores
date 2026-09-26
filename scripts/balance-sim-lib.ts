@@ -1,12 +1,13 @@
 import {
   useGame, SUBREGIONS, TERRITORIES, EQUIPMENT, CONSUMABLES,
-  deriveLevel, equipmentClassAllowed, equipmentLevelAllowed, equipmentAttackForHero,
+  deriveLevel, equipmentClassAllowed, equipmentLevelAllowed, equipmentBaseStats,
   equipmentWeaponClass, equipmentByRef, equipmentBaseId, equipmentBagCapacity, maxHp,
   attackValue, defenseValue, energyNow, fervorEnergyCost, heroSkillEnergyCost
 } from '../src/store/game'
 import { SPECIALIZATION_CHOICES } from '../src/data/expansion'
 import fs from 'node:fs'
 import { heroStatProfile, primaryOffense } from '../src/data/heroStatProfiles'
+import { offenseScore } from '../src/data/equipmentAttributes'
 
 // Shared by balance-sim.test.ts (solo campaigns) and balance-sim-coop.test.ts (coop battles
 // built from that same solo progression) -- kept out of any *.test.ts file so importing it
@@ -22,8 +23,12 @@ export function restoreTimeouts() { global.setTimeout = realSetTimeout }
 export const MILESTONES = [10, 20, 40, 50]
 const GEAR_SLOTS = ['mao_direita', 'mao_esquerda', 'peitoral', 'calcas', 'capacete', 'botas', 'amuleto', 'anel_1'] as const
 
+// Mesma régua de antes (ataque ×2, Armadura ×2, Vida ×0,5), agora sobre os atributos convertidos da peça: a Força de uma
+// arma de classe física quase não conta para quem ataca com Magia (e vice-versa), Vigor conta como a Vida que dá, e os
+// afixos novos (Destreza, Energia, Esquiva) só desempatam.
 function scoreFor(e: any, heroId: string) {
-  return equipmentAttackForHero(e, heroId) * 2 + e.defesa * 2 + e.vida * 0.5
+  const st = equipmentBaseStats(e, heroId)
+  return offenseScore(st, heroId) * 2 + st.armadura * 2 + (st.vida + st.vigor * 2) * 0.5 + st.destreza * 0.4 + st.energia * 0.5 + st.esquiva * 0.5
 }
 
 function equipFromBag(heroId: string) {

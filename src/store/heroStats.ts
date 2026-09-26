@@ -23,6 +23,8 @@ export interface StatBonuses extends Partial<PrimaryAttributes> {
   armadura?: number
   /** Resistência extra (0–1) por elemento, vinda de equipamento. */
   resistencias?: Partial<Record<ElementKey, number>>
+  /** Esquiva extra (0–1) de equipamentos e efeitos forjados, somada à da Destreza dentro do teto. */
+  esquiva?: number
 }
 
 export interface ChampionComputedStats {
@@ -264,7 +266,7 @@ export function computeChampionStats(input: ChampionStatInput): ChampionStatBrea
     vidaMaxima: vidaTotal,
     energiaMaxima: energiaTotal,
     armadura: armaduraTotal,
-    esquiva: totalDodge(destreza.total, profile.esquivaPassiva),
+    esquiva: totalDodge(destreza.total, profile.esquivaPassiva, finite(bonus.esquiva)),
     resistencias,
     poder,
     linhas: {
@@ -295,6 +297,7 @@ export function mergeBonuses(...parts: Array<StatBonuses | undefined>): StatBonu
     out.vidaMaxima = finite(out.vidaMaxima) + finite(part.vidaMaxima)
     out.energia = finite(out.energia) + finite(part.energia)
     out.armadura = finite(out.armadura) + finite(part.armadura)
+    out.esquiva = finite(out.esquiva) + finite(part.esquiva)
     for (const [element, value] of Object.entries(part.resistencias ?? {})) {
       const key = element as ElementKey
       out.resistencias[key] = finite(out.resistencias[key]) + finite(value)

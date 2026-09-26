@@ -2154,6 +2154,11 @@ body::after{content:"VERSÃO 0.9.0 • 25/09/2026\A Novos atributos: Força, Mag
 body::after{content:"VERSÃO 0.9.1 • 26/09/2026\A Energia: sobe ao atacar (mais com crítico) e ao descansar na fogueira; Fervor e habilidades gastam Energia. Todas as cores do jogo agora acompanham o tema da região.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.2 • 26/09/2026\A Modo Moderno: todas as telas ganham o visual do Acampamento (cena, título, números reais e ação principal); combate no celular mostra as ações logo de cara; Região não corta mais no celular";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.3 • 26/09/2026\A Carta de Campeão inteira na Ficha e na Coleção (sem barra de rolagem nem corte, nas 9 classes); Equipamento, Resumo do herói, masmorras e lista de regiões sem rolagem interna";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.4 • 26/09/2026\A Equipamentos nos novos atributos: peças de classe dão Força ou Magia da própria escola (as universais seguem o seu ataque), a Vida das peças vira Vigor e peças raras, épicas e lendárias ganham afixos de Vigor, Destreza, Energia e Esquiva. A comparação mostra todos os atributos e um Índice.";white-space:pre-line}
+/* Equipamentos nos atributos novos (v0.9.4): as diferenças por atributo quebram linha; estilo da peça e aviso de escola na comparação. */
+.item-stat-diff{flex-wrap:wrap;row-gap:2px}
+.equipment-compare .compare-style{display:block;margin:-2px 0 6px;color:#a98752;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase}
+.equipment-compare article p.compare-warning{min-height:0;margin:6px 0 0;color:#e0a15a;font-size:.62rem}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
