@@ -2155,10 +2155,25 @@ body::after{content:"VERSÃO 0.9.1 • 26/09/2026\A Energia: sobe ao atacar (mai
 body::after{content:"VERSÃO 0.9.2 • 26/09/2026\A Modo Moderno: todas as telas ganham o visual do Acampamento (cena, título, números reais e ação principal); combate no celular mostra as ações logo de cara; Região não corta mais no celular";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.3 • 26/09/2026\A Carta de Campeão inteira na Ficha e na Coleção (sem barra de rolagem nem corte, nas 9 classes); Equipamento, Resumo do herói, masmorras e lista de regiões sem rolagem interna";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.4 • 26/09/2026\A Equipamentos nos novos atributos: peças de classe dão Força ou Magia da própria escola (as universais seguem o seu ataque), a Vida das peças vira Vigor e peças raras, épicas e lendárias ganham afixos de Vigor, Destreza, Energia e Esquiva. A comparação mostra todos os atributos e um Índice.";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.5 • 26/09/2026\A Loja: os cards da vitrine mostram os atributos de cada peça (Força, Magia, Vigor, Destreza, Armadura, Vida, Energia, Esquiva), a diferença para a peça equipada no mesmo espaço e se ela é melhor ou pior pelo Índice.";white-space:pre-line}
 /* Equipamentos nos atributos novos (v0.9.4): as diferenças por atributo quebram linha; estilo da peça e aviso de escola na comparação. */
 .item-stat-diff{flex-wrap:wrap;row-gap:2px}
 .equipment-compare .compare-style{display:block;margin:-2px 0 6px;color:#a98752;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase}
 .equipment-compare article p.compare-warning{min-height:0;margin:6px 0 0;color:#e0a15a;font-size:.62rem}
+/* Vitrine da Loja (v0.9.5): atributos da peça em chips, com a diferença para a equipada no mesmo espaço e o veredito pelo Índice. */
+.shop-row-stats{display:flex;flex-wrap:wrap;gap:4px;margin:0;padding:0;list-style:none}
+.shop-row-stats li{display:inline-flex;align-items:baseline;gap:4px;padding:2px 7px;border:1px solid rgba(239,204,130,.22);border-radius:6px;background:rgba(0,0,0,.3);line-height:1.35;white-space:nowrap}
+.shop-row-stats small{color:var(--shop-accent-muted,#a99879);font-size:.6rem;font-weight:700;letter-spacing:.05em}
+.shop-row-stats b{color:var(--theme-strong,var(--gold2));font-size:.76rem;font-weight:800}
+.shop-row-stats em{font-style:normal;font-size:.64rem;font-weight:800}
+.shop-row-stats li.up{border-color:rgba(118,193,107,.38)}.shop-row-stats li.up em{color:#7fcf72}
+.shop-row-stats li.down{border-color:rgba(224,122,109,.32)}.shop-row-stats li.down em{color:#ec8b7e}
+.shop-row-stats li.dim{opacity:.55}
+.shop-row-verdict{justify-self:start;padding:2px 9px;border:1px solid rgba(239,204,130,.22);border-radius:999px;color:var(--shop-accent-muted,#a99879);font-size:.66rem;font-weight:800;letter-spacing:.02em}
+.shop-row-verdict.better{border-color:rgba(118,193,107,.42);background:rgba(72,187,120,.1);color:#8fd07f}
+.shop-row-verdict.worse{border-color:rgba(224,122,109,.36);background:rgba(245,101,101,.08);color:#ec8b7e}
+.shop-row-verdict.empty{color:var(--theme-strong,var(--gold2))}
+.shop-row.has-stats .shop-row-desc{-webkit-line-clamp:2;min-height:0}
 
 /* ==========================================
    MODO HISTÓRIA: DIÁLOGOS DE NPCS E MISSÕES
