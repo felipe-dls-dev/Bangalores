@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useGame, championStats, fervorEnergyCost, TERRITORIES, TOUR_STEPS, HOME_REGION_ID, canFastTravelToRegion, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
+import { useGame, campaignEnding, storyLoreTitles, championStats, fervorEnergyCost, TERRITORIES, TOUR_STEPS, HOME_REGION_ID, canFastTravelToRegion, EQUIPMENT, EQUIPMENT_LEVELS, CONSUMABLES, SUBREGIONS, resolveCombatRoll, deriveLevel, guildMissionById, druidHealProc, equipmentAffinity, enemyIntentFor, equipmentSetCounts, itemSkillEffectText, applyElementalStatus, tickStatus, collectionMastery, buildCoopEnemy, buildCoopSubregionBoss, buildSummon, buildEnemy, buildBoss, buildRevengeBoss, balanceEnemyByLevel, enemyPointBudget, enemyPointCost, attackValue, defenseValue, maxHp, SUMMON_ATTACK_ANIMATION, forgeLevelInfo, monsterDropChance, equipmentByRef, equipmentUpgradeMaterialCost, UPGRADE_SUCCESS_CHANCE, UPGRADE_REGRESS_CHANCE, equipmentInstanceBreakdown, heroWeaponElement, heroResistances, worldUnlocked, HERO_ULTIMATES, runAutoCombatTurn, ultimateEffects } from './game'
 import { REGION_MATERIALS, ELEMENT_ADVANTAGES, HERO_SUBCLASSES } from '../data/expansion'
 import { NPCS } from '../data/npcs'
-import { STORY_QUESTS } from '../data/storyQuests'
+import { STORY_QUESTS, isQuestAvailable, questsOfferedByNpc } from '../data/storyQuests'
 
 // Must mirror balanceEquipment's own grouping key exactly (game.ts), including the
 // weapon-affinity fallback for mao_direita items with no classeExclusiva — a naive
@@ -1184,6 +1184,61 @@ describe('Sistema de Missões de História (Story Quests & NPCs)', () => {
     expect(useGame.getState().completedStoryQuests.length).toBe(13)
     expect(useGame.getState().gold).toBeGreaterThan(1500)
     expect(useGame.getState().xp).toBeGreaterThan(3000)
+  })
+
+  it('missões paralelas só aparecem no ato certo (requires)', () => {
+    // Antes, a Irmã Astrid (Kaldrum, nível ~12) já oferecia uma entrega para o Reino do Sol Negro (nível 32+).
+    expect(questsOfferedByNpc('astrid_reclusa', [], {}).map(q => q.id)).not.toContain('q_astrid_star_lens')
+    expect(questsOfferedByNpc('astrid_reclusa', ['q_lucian_to_ignaris'], {}).map(q => q.id)).toContain('q_astrid_star_lens')
+    // A missão final exige as três provas: a memória do Núcleo (anterior na cadeia), o cartão da Unidade 73 e o livro-caixa de Cross.
+    const finale = STORY_QUESTS.find(q => q.id === 'q_steelmere_final_resonance')!
+    expect(isQuestAvailable(finale, ['q_steelmere_reactor_conscience'], {})).toBe(false)
+    expect(isQuestAvailable(finale, ['q_steelmere_reactor_conscience', 'q_rust_to_vance', 'q_cross_secret_ledger'], {})).toBe(true)
+  })
+
+  it('a missão final só é entregue junto com um desfecho, que vira flag e título permanentes', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.getState().acceptStoryQuest('q_steelmere_final_resonance')
+
+    useGame.getState().turnInStoryQuest('q_steelmere_final_resonance')
+    expect(useGame.getState().activeStoryQuests['q_steelmere_final_resonance']).toBeDefined()
+    useGame.getState().turnInStoryQuest('q_steelmere_final_resonance', 'desfecho_inexistente' as any)
+    expect(useGame.getState().completedStoryQuests).not.toContain('q_steelmere_final_resonance')
+
+    useGame.getState().turnInStoryQuest('q_steelmere_final_resonance', 'soberania')
+    const state = useGame.getState()
+    expect(state.completedStoryQuests).toContain('q_steelmere_final_resonance')
+    expect(campaignEnding(state)?.id).toBe('soberania')
+    expect(storyLoreTitles(state)).toEqual(expect.arrayContaining(['Pacificador do Núcleo', 'Guardião da Soberania Primordial']))
+    expect(state.storyFlags.filter(flag => flag.startsWith('final:'))).toEqual(['final:soberania'])
+  })
+
+  it('títulos de lore das missões podem ser exibidos como título do herói', () => {
+    useGame.getState().newGame('guerreiro')
+    useGame.getState().setSelectedTitle('Mensageiro da Alvorada')
+    expect(useGame.getState().selectedTitle).toBeUndefined()
+
+    useGame.getState().acceptStoryQuest('q_alvora_intro')
+    useGame.getState().turnInStoryQuest('q_alvora_intro')
+    useGame.getState().setSelectedTitle('Mensageiro da Alvorada')
+    expect(useGame.getState().selectedTitle).toBe('Mensageiro da Alvorada')
+  })
+
+  it('reward.itemReward entrega o consumível prometido (Célula de Aetherium -> Elixir da Fênix)', () => {
+    useGame.getState().newGame('guerreiro')
+    const before = useGame.getState().inventory['elixir_fenix'] ?? 0
+    useGame.getState().acceptStoryQuest('q_vance_aetherium_cell')
+    expect(useGame.getState().questItems['celula_aetherium_pura']).toBe(1)
+    useGame.getState().turnInStoryQuest('q_vance_aetherium_cell')
+    expect(useGame.getState().inventory['elixir_fenix']).toBe(before + 1)
+  })
+
+  it('a proveniência dos equipamentos fica em historia, fora do texto de habilidade que define o efeito ativo', () => {
+    const lamina = EQUIPMENT.find(item => item.id === 'lamina_sentinela')!
+    expect(lamina.historia).toContain('Valerius')
+    for (const item of EQUIPMENT.filter(e => e.historia)) {
+      expect(item.habilidade, item.id).not.toContain(item.historia!)
+    }
   })
 })
 

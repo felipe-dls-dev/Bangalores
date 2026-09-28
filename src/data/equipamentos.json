@@ -8,6 +8,7 @@
     "vida": 0,
     "defesa": 0,
     "habilidade": "Golpe Rápido: uma vez por combate, cause 2 de dano direto.",
+    "historia": "Forjadas nas docas para cortes silenciosos nas sombras.",
     "imagem": "assets/cards/equipamentos/facas_gemeas.jpg",
     "arte": "assets/art/hd/equipment/facas_gemeas-hd.webp",
     "raridade": "incomum"
@@ -21,6 +22,7 @@
     "vida": 0,
     "defesa": 0,
     "habilidade": "Impacto Arcano: uma vez por combate, some +2 ao dano do ataque.",
+    "historia": "Empunhada pelo Capitão Valerius durante o Cerco de Kholgard contra os primeiros golens infiltradores. O metal absorveu a luz do monólito de pedra e nunca mais esfriou.",
     "imagem": "assets/cards/equipamentos/lamina_sentinela.jpg",
     "arte": "assets/art/hd/equipment/lamina_sentinela-hd.webp",
     "raridade": "epico"
@@ -34,6 +36,7 @@
     "vida": 0,
     "defesa": 0,
     "habilidade": "Colheita Arcana: ao causar 6 ou mais de dano, recupere 2 de vida.",
+    "historia": "Cristal entalhado em ametista das catacumbas de Morvath.",
     "imagem": "assets/art/hd/equipment/orbe_colheitas-hd.webp",
     "arte": "assets/art/hd/equipment/orbe_colheitas-hd.webp",
     "raridade": "raro"
@@ -47,6 +50,7 @@
     "vida": 1,
     "defesa": 1,
     "habilidade": "Concede +1 de Vida máxima enquanto equipada.",
+    "historia": "Couro curtido com seiva de Abdendriel para repelir espinhos e presas.",
     "imagem": "assets/cards/catalogo/233_itens_004.jpg",
     "arte": "assets/art/hd/equipment/armadura_couro-hd.webp",
     "raridade": "incomum"
@@ -60,6 +64,7 @@
     "vida": 2,
     "defesa": 2,
     "habilidade": "Escamas: reduz em 1 o dano recebido.",
+    "historia": "Tecido com cinzas recolhidas da cratera de Ignaroth, nas alturas do Pico de Ignaris, e reforçado com fios de ouro rúnico.",
     "imagem": "assets/cards/catalogo/235_itens_006.jpg",
     "arte": "assets/art/hd/equipment/manto_cinzas-hd.webp",
     "raridade": "epico"
@@ -73,6 +78,7 @@
     "vida": 0,
     "defesa": 1,
     "habilidade": "Guarda Antiga: uma vez por combate, ganhe 3 de escudo.",
+    "historia": "Pedras esculpidas pelos mestres anões que vibram com passos inimigos.",
     "imagem": "assets/cards/catalogo/232_itens_003.jpg",
     "arte": "assets/art/hd/equipment/runas_guardiao-hd.webp",
     "raridade": "raro"
@@ -86,6 +92,7 @@
     "vida": 2,
     "defesa": 0,
     "habilidade": "Destino Partido: repita uma rolagem uma vez por combate.",
+    "historia": "Relíquia pulsante arrancada do usurpador no limiar do Sol Negro.",
     "imagem": "assets/cards/catalogo/231_itens_002.jpg",
     "arte": "assets/art/hd/equipment/coracao_malgor-hd.webp",
     "raridade": "lendario"
@@ -99,6 +106,7 @@
     "vida": 0,
     "defesa": 0,
     "habilidade": "Memória Real: uma vez por combate, cause 2 de dano direto.",
+    "historia": "Pintura em miniatura da Rainha Elisandra antes da queda da corte.",
     "imagem": "assets/cards/equipamentos/retrato_rainha.jpg",
     "arte": "assets/art/hd/equipment/retrato_rainha-hd.webp",
     "raridade": "raro"
@@ -112,6 +120,7 @@
     "vida": 0,
     "defesa": 1,
     "habilidade": "Pode ser usada como escudo improvisado: +1 Defesa.",
+    "historia": "Ferro lascado dos primeiros acampamentos dos pioneiros de Alvora.",
     "imagem": "assets/cards/equipamentos/pederneira_ancestrais.jpg",
     "arte": "assets/art/hd/equipment/pederneira_ancestrais-hd.webp",
     "raridade": "comum"
@@ -125,6 +134,7 @@
     "vida": 1,
     "defesa": 0,
     "habilidade": "Regeneração: uma vez por combate, recupere 4 de vida.",
+    "historia": "Essência vital espessa retirada das cavernas glaciais de Kaldrum.",
     "imagem": "assets/cards/catalogo/230_itens_001.jpg",
     "arte": "assets/art/hd/equipment/frasco_sangue_troll-hd.webp",
     "raridade": "incomum"
@@ -138,6 +148,7 @@
     "vida": 1,
     "defesa": 2,
     "habilidade": "Mente Protegida: +1 Vida e +1 Defesa.",
+    "historia": "Forjado nas oficinas rúnicas de Kholgard com ligas à prova de magias invasoras.",
     "imagem": "assets/cards/equipamentos/elmo_ferro.jpg",
     "arte": "assets/art/hd/equipment/elmo_ferro-hd.webp",
     "raridade": "incomum"
@@ -151,6 +162,7 @@
     "vida": 0,
     "defesa": 1,
     "habilidade": "Emboscada: a habilidade do item causa 3 de dano direto.",
+    "historia": "Véu tecido com névoas das fronteiras proibidas de Morvath.",
     "imagem": "assets/cards/equipamentos/capuz_sombras.jpg",
     "arte": "assets/art/hd/equipment/capuz_sombras-hd.webp",
     "raridade": "raro"
@@ -164,6 +176,7 @@
     "vida": 0,
     "defesa": 1,
     "habilidade": "Passos Leves: +1 Ataque enquanto equipada.",
+    "historia": "Fibras lunares de Abdendriel que silenciam o pisar em folhas secas.",
     "imagem": "assets/cards/equipamentos/calcas_batedor.jpg",
     "arte": "assets/art/hd/equipment/calcas_batedor-hd.webp",
     "raridade": "incomum"
@@ -177,6 +190,7 @@
     "vida": 2,
     "defesa": 3,
     "habilidade": "Postura Firme: +2 Vida e +1 Defesa.",
+    "historia": "Placas maciças de granito anão usadas pela muralha viva dos Portões Cinzentos.",
     "imagem": "assets/cards/equipamentos/grevas_guardiao.jpg",
     "arte": "assets/art/hd/equipment/grevas_guardiao-hd.webp",
     "raridade": "raro"
@@ -190,6 +204,7 @@
     "vida": 1,
     "defesa": 1,
     "habilidade": "Fôlego Longo: +1 Vida máxima.",
+    "historia": "Couro reforçado que já cruzou as sete regiões de Havendown sem rasgar.",
     "imagem": "assets/cards/equipamentos/botas_viajante.jpg",
     "arte": "assets/art/hd/equipment/botas_viajante-hd.webp",
     "raridade": "incomum"
@@ -203,6 +218,7 @@
     "vida": 0,
     "defesa": 2,
     "habilidade": "Passo Flamejante: 2 de dano direto uma vez por combate.",
+    "historia": "Solas temperadas em poças de lava do Pico de Ignaris.",
     "imagem": "assets/cards/equipamentos/botas_brasa.jpg",
     "arte": "assets/art/hd/equipment/botas_brasa-hd.webp",
     "raridade": "raro"
@@ -216,6 +232,7 @@
     "vida": 1,
     "defesa": 0,
     "habilidade": "Luz Fria: +1 Ataque e +1 Vida.",
+    "historia": "Prata esterlina consagrada sob a lua cheia nas clareiras secretas dos druidas.",
     "imagem": "assets/cards/equipamentos/anel_luar.jpg",
     "arte": "assets/art/hd/equipment/anel_luar-hd.webp",
     "raridade": "raro"
@@ -229,6 +246,7 @@
     "vida": 1,
     "defesa": 3,
     "habilidade": "Muralha Viva: ganhe 3 de escudo uma vez por combate.",
+    "historia": "Madeira do carvalho-ancião de Abdendriel que sangra seiva restauradora.",
     "imagem": "assets/cards/equipamentos/escudo_carvalho.jpg",
     "arte": "assets/art/hd/equipment/escudo_carvalho-hd.webp",
     "raridade": "raro"
@@ -242,6 +260,7 @@
     "vida": 0,
     "defesa": 0,
     "habilidade": "Ruptura: cause 3 de dano direto uma vez por combate.",
+    "historia": "Lâmina bruta dos mineradores de Kaldrum que racha rocha e ferro.",
     "imagem": "assets/cards/equipamentos/machado_cinzento.jpg",
     "arte": "assets/art/hd/equipment/machado_cinzento-hd.webp",
     "raridade": "raro"
@@ -255,6 +274,7 @@
     "vida": 2,
     "defesa": 0,
     "habilidade": "Renovo: recupere 4 de vida uma vez por combate.",
+    "historia": "Orbe lacrado contendo orvalho virgem colhido na alvorada do solstício.",
     "imagem": "assets/cards/equipamentos/amuleto_orvalho.jpg",
     "arte": "assets/art/hd/equipment/amuleto_orvalho-hd.webp",
     "raridade": "raro"

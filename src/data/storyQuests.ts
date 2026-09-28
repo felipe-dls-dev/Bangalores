@@ -34,6 +34,13 @@ export interface StoryQuest {
     unlockWorld?: string
   }
   nextQuestId?: string
+  // Missões que precisam estar concluídas, além da anterior na cadeia (nextQuestId), para esta
+  // aparecer. Segura as missões paralelas no ato certo: sem isso, a Irmã Astrid (Kaldrum, nível
+  // ~12) já oferecia uma entrega para o Reino do Sol Negro (nível 32+) na primeira visita.
+  requires?: string[]
+  // A entrega desta missão é a escolha final da campanha (ver CAMPAIGN_ENDINGS em worldLore.ts):
+  // turnInStoryQuest só a conclui junto com um dos desfechos.
+  decidesEnding?: boolean
 }
 
 export const STORY_QUESTS: StoryQuest[] = [
@@ -437,6 +444,7 @@ export const STORY_QUESTS: StoryQuest[] = [
     targetRegionId: 'vulcannis',
     type: 'delivery',
     requiredProgress: 1,
+    requires: ['q_trilhouro_rebellion'],
     questItem: {
       id: 'leituras_criovapor_frostgard',
       name: 'Leituras de Criovapor de Frostgard',
@@ -545,6 +553,252 @@ export const STORY_QUESTS: StoryQuest[] = [
       xp: 1100,
       loreTitle: 'Testemunha da Máquina Viva',
     },
+    nextQuestId: 'q_steelmere_final_resonance',
+  },
+  {
+    id: 'q_steelmere_final_resonance',
+    act: 7,
+    title: 'A Grande Calibração do Reator',
+    summary: 'Leve a matriz de calibração harmônica da Dra. Vance ao Diretor Corvin Vane no Núcleo de Aetherium.',
+    sourceNpcId: 'elian_vance',
+    targetNpcId: 'diretor_vane',
+    targetRegionId: 'aetherium',
+    type: 'delivery',
+    requiredProgress: 1,
+    // O confronto do Ato 7 só acontece com as três provas nas mãos: o cartão mestre da Unidade 73
+    // (q_rust_to_vance), a memória do Núcleo (q_steelmere_reactor_conscience, a anterior na cadeia)
+    // e o livro-caixa de Lorde Cross (q_cross_secret_ledger).
+    requires: ['q_rust_to_vance', 'q_cross_secret_ledger'],
+    decidesEnding: true,
+    questItem: {
+      id: 'matriz_calibracao_vance',
+      name: 'Matriz de Calibração Harmônica',
+      quantity: 1,
+      description: 'Chave rúnico-mecânica do comando do reator. Com ela, o Núcleo pode ser sintonizado aos monolitos, desligado para sempre ou dominado por uma única vontade.',
+      icon: '⚛️',
+    },
+    dialogue: {
+      offer: 'A memória da Unidade 73 foi a chave que me faltava, e o livro-caixa de Cross me deu a coragem. Esta Matriz de Calibração Harmônica abre o comando do reator: com ela, o Núcleo pode ser sintonizado aos monolitos de Havendown, desligado para sempre... ou obedecer a quem a segurar. Leve-a ao Diretor Corvin Vane. Eu não vou escolher por você. Já escolhi errado uma vez.',
+      inProgress: 'O Núcleo de Aetherium fica no centro de Steelmere. O Diretor Vane não tolera hesitações: mostre a ele as leituras.',
+      targetWelcome: 'Você atravessou oceanos, fornalhas e ferrovias até esta sala de controle. O que traz que julga mais importante que a estabilidade do império?',
+      completion: '...Pelas forças primordiais. Estas equações se alinham com os pulsos do Sol Negro. Passei anos acreditando que éramos mestres do poder, quando éramos apenas parasitas acelerando nossa própria extinção. A matriz está no painel. O reator aguarda um comando, e não serei eu a dá-lo. Você atravessou dois mundos para chegar até aqui: decida o que esta verdade vai mover.',
+    },
+    reward: {
+      gold: 1000,
+      xp: 2500,
+      loreTitle: 'Pacificador do Núcleo',
+    },
+  },
+  {
+    id: 'q_engrenverde_conduit',
+    act: 5,
+    title: 'Seiva Sob Pressão',
+    summary: 'Leve uma ampola de seiva eletrificada do Engenheiro Garrick em Engrenverde até Maeve Faísca em Trilhouro.',
+    sourceNpcId: 'garrick_laton',
+    targetNpcId: 'maeve_faisca',
+    targetRegionId: 'trilhouro',
+    type: 'delivery',
+    requiredProgress: 1,
+    requires: ['q_frostgard_manifest'],
+    questItem: {
+      id: 'ampola_seiva_eletrica',
+      name: 'Ampola de Seiva Eletrizada',
+      quantity: 1,
+      description: 'Extrato vegetal condutor extraído das copas suspensas de Engrenverde.',
+      icon: '🧪',
+    },
+    dialogue: {
+      offer: 'O Sindicato instalou condutos de alta pressão nas raízes de Engrenverde! A seiva agora conduz choque e fogo. Leve esta amostra para Maeve em Trilhouro: ela sabe quais trens de munição usam essa seiva como combustível.',
+      inProgress: 'Maeve opera nas oficinas clandestinas dos trilhos. Não balance essa ampola no caminho, a seiva é instável!',
+      targetWelcome: 'O que você traz nessa ampola que cheira a ozônio e pinho queimado?',
+      completion: 'Seiva eletrificada?! Então é disso que são feitas as novas ogivas dos patrulheiros! Com esta amostra, nossos químicos podem formular um neutralizador. Excelente achado!',
+    },
+    reward: {
+      gold: 300,
+      xp: 550,
+      loreTitle: 'Ecologista de Choque',
+    },
+    nextQuestId: 'q_engrenverde_filter',
+  },
+  {
+    id: 'q_engrenverde_filter',
+    act: 5,
+    title: 'O Filtro das Copas',
+    summary: 'Entregue o catalisador rúnico purificador de Maeve de volta a Garrick em Engrenverde.',
+    sourceNpcId: 'maeve_faisca',
+    targetNpcId: 'garrick_laton',
+    targetRegionId: 'engrenverde',
+    type: 'delivery',
+    requiredProgress: 1,
+    questItem: {
+      id: 'filtro_runico_resina',
+      name: 'Filtro Rúnico Anti-Fuligem',
+      quantity: 1,
+      description: 'Dispositivo purificador artesanal adaptado para as válvulas florestais.',
+      icon: '🌿',
+    },
+    dialogue: {
+      offer: 'Nossos artesãos montaram este filtro purificador com peças reaproveitadas. Entregue a Garrick para que ele instale nas bombas principais de Engrenverde antes que a mata morra sufocada.',
+      inProgress: 'Garrick está nas plataformas suspensas de Engrenverde. Siga as tubulações de cobre até as copas mais altas.',
+      targetWelcome: 'Pelos galhos de bronze! Você voltou com algo útil ou com mais curiosidade científica?',
+      completion: 'Um filtro de resina rúnica! Encaixou perfeitamente na válvula mestra! Olhe só: a fumaça preta virou vapor puro e as orquídeas estão se abrindo de novo. Você salvou o pulmão de Steelmere!',
+    },
+    reward: {
+      gold: 380,
+      xp: 720,
+      loreTitle: 'Protetor das Copas de Bronze',
+    },
+  },
+  {
+    id: 'q_astrid_star_lens',
+    act: 3,
+    title: 'O Prisma das Alturas',
+    summary: 'Leve a lente de quartzo estelar de Irmã Astrid na Serra de Kaldrum até a Oráculo Danika no Reino do Sol Negro.',
+    sourceNpcId: 'astrid_reclusa',
+    targetNpcId: 'oraculo_danika',
+    targetRegionId: 'coracao_eclipse',
+    type: 'delivery',
+    requiredProgress: 1,
+    requires: ['q_lucian_to_ignaris'],
+    questItem: {
+      id: 'lente_quartzo_astrid',
+      name: 'Lente de Quartzo Glacial',
+      quantity: 1,
+      description: 'Prisma lapidado no gelo eterno das montanhas capaz de revelar deformações cósmicas.',
+      icon: '🔭',
+    },
+    dialogue: {
+      offer: 'Meus telescópios registraram que a distorção no leste não é um eclipse solar comum. Lapidei esta lente de quartzo glacial puro. Leve até a Oráculo Danika: ela possui o dom de traduzir a geometria do vazio que se forma além das estrelas.',
+      inProgress: 'A Oráculo Danika habita onde o véu se desfez, no Reino do Sol Negro. Mantenha a lente protegida do calor das cinzas.',
+      targetWelcome: 'O ar frio dos cumes de Kaldrum chega antes de você... O que as estrelas do norte enviaram?',
+      completion: 'Coloque a lente sobre o altar... Sim! Agora eu vejo o reflexo subaquático da grande ferida! Astrid acertou: não estamos sendo punidos pelos céus, estamos sendo esvaziados pela ganância mortal. Seu mensageiro é a chave da nossa redenção.',
+    },
+    reward: {
+      gold: 140,
+      xp: 240,
+      loreTitle: 'Observador das Constelações',
+    },
+  },
+  {
+    id: 'q_gideon_pioneer_badge',
+    act: 3,
+    title: 'A Insígnia Esquecida',
+    summary: 'Entregue o brasão dos primeiros guardas de Morvath resgatado por Gideon à Mestra Brenna Ashcombe em Alvora.',
+    sourceNpcId: 'gideon_mascarado',
+    targetNpcId: 'brenna_ashcombe',
+    targetRegionId: 'campos_dourados',
+    type: 'delivery',
+    requiredProgress: 1,
+    requires: ['q_borin_to_morvath'],
+    questItem: {
+      id: 'brasao_primeira_guarda',
+      name: 'Brasão da Primeira Guarda de Havendown',
+      quantity: 1,
+      description: 'Antiga insígnia de prata desgastada, recuperada de um sepulcro inviolado das catacumbas.',
+      icon: '🛡️',
+    },
+    dialogue: {
+      offer: 'Eu mexo com relíquias para sobreviver, mas até um mercador mascarado tem limites morais. Desenterrei o brasão original da Primeira Guarda nas catacumbas. Isso pertence à sede da Guilda. Entregue a Brenna Ashcombe e diga que foi um presente de alguém que ainda lembra o que significa juramento.',
+      inProgress: 'Brenna comanda o quadro da Guilda em Alvora. Ela vai fingir que não se importa, mas eu conheço o olhar dela.',
+      targetWelcome: 'Mais um contrato entregue? Ou você veio me pedir aumento de novo?',
+      completion: 'O que é isso que você... [silêncio]. O brasão do Capitão Kenneth. Achei que tinha sido perdido com a legião nas criptas cinquenta anos atrás. Quem te deu isso? Gideon? Aquele rato mascarado ainda tem um resto de coração, afinal. Tome este pagamento, e saiba que a Guilda nunca esquecerá o que você fez hoje.',
+    },
+    reward: {
+      gold: 110,
+      xp: 180,
+      loreTitle: 'Resgatador de Heranças',
+    },
+  },
+  {
+    id: 'q_ophira_magma_catalyst',
+    act: 4,
+    title: 'O Segredo da Lâmina Vulcânica',
+    summary: 'Leve a essência alquímica ígnea de Ophira Vane ao Mestre Cassian Draye no Pico de Ignaris.',
+    sourceNpcId: 'ophira_vane',
+    targetNpcId: 'cassian_draye',
+    targetRegionId: 'pico_escarlate',
+    type: 'delivery',
+    requiredProgress: 1,
+    requires: ['q_lucian_to_ignaris'],
+    questItem: {
+      id: 'essencia_ignea_ophira',
+      name: 'Destilado de Fogo Primordial',
+      quantity: 1,
+      description: 'Frasco incandescente que mantém qualquer metal sob vibração térmica constante.',
+      icon: '🔥',
+    },
+    dialogue: {
+      offer: 'Cassian vive se gabando de que o aço dele corta montanhas, mas o dragão derreteu três das lâminas dele semana passada. Consegui sintetizar este destilado de cinzas vulcânicas. Entregue para ele antes que ele quebre a quarta espada por orgulho tolo!',
+      inProgress: 'Cassian está na ala dos armeiros do Pico. Ele é teimoso feito uma mula de carga, mas sabe apreciar bom produto.',
+      targetWelcome: 'Se você veio pedir desconto em lâminas raras, volte outro dia. Se veio com negócios sérios, mostre.',
+      completion: 'O quê?! A Ophira destilou fogo primordial líquido sem explodir a própria oficina?! Isso é... extraordinário. Aplicado à forja, este óleo impede a desintegração térmica contra baforadas de dragão. Odeio admitir, mas aquela mulher é um gênio perigoso. Tome seu ouro pelo frete!',
+    },
+    reward: {
+      gold: 135,
+      xp: 220,
+      loreTitle: 'Artífice do Magma',
+    },
+  },
+  {
+    id: 'q_cross_secret_ledger',
+    act: 7,
+    title: 'O Livro-Caixa das Sombras',
+    summary: 'Leve o registro contábil confidencial de Lorde Hamilton Cross à Dra. Elian Vance em Coroferro.',
+    sourceNpcId: 'hamilton_cross',
+    targetNpcId: 'elian_vance',
+    targetRegionId: 'coroferro',
+    type: 'delivery',
+    requiredProgress: 1,
+    requires: ['q_rust_to_vance'],
+    questItem: {
+      id: 'livro_caixa_sindicato',
+      name: 'Livro-Caixa Confidencial do Sindicato',
+      quantity: 1,
+      description: 'Registros contábeis provando que os lucros da energia roubada estavam financiando armamento pesado clandestino.',
+      icon: '📖',
+    },
+    dialogue: {
+      offer: 'Eu gosto de dinheiro, aventureiro. Muito. Mas não posso gastar meu ouro num caixão se este continente inteiro e Havendown afundarem juntos. A Dra. Vance precisa deste livro contábil: ele contém as frequências de ressonância compradas pelo Sindicato para esconder a sobrecarga. Entregue a ela e apague meus rastros.',
+      inProgress: 'A Dra. Vance está no esconderijo dos níveis subterrâneos. Seja discreto: os capangas do Sindicato não podem ver esse livro saindo da minha mansão.',
+      targetWelcome: 'Você voltou? As patrulhas aumentaram na praça central...',
+      completion: 'Os registros contábeis originais de Cross?! Com isso eu posso demonstrar ao Conselho que a sobrecarga do reator não é um acidente, mas um cálculo criminoso encoberto! Agora temos a alavanca política para desligar as turbinas sem sermos fuzilados. Você fez um serviço inestimável para a civilização!',
+    },
+    reward: {
+      gold: 600,
+      xp: 1200,
+      loreTitle: 'Auditor do Latão',
+    },
+  },
+  {
+    id: 'q_vance_aetherium_cell',
+    act: 7,
+    title: 'Carga Pura',
+    summary: 'Leve a Célula de Aetherium Estável calibrada pela Dra. Vance até a Unidade 73, no Charco de Ferrujal.',
+    sourceNpcId: 'elian_vance',
+    targetNpcId: 'unidade_73',
+    targetRegionId: 'ferrujal',
+    type: 'delivery',
+    requiredProgress: 1,
+    requires: ['q_rust_to_vance'],
+    questItem: {
+      id: 'celula_aetherium_pura',
+      name: 'Célula de Aetherium Estável',
+      quantity: 1,
+      description: 'O único cilindro de Aetherium extraído sem traço de óleo sulfúrico, calibrado à mão pela Dra. Vance. Imune a sobrecarga; purifica veneno e ácido de qualquer circuito que alimente.',
+      icon: '🔋',
+    },
+    dialogue: {
+      offer: 'Se o Núcleo mudar de mãos, a colônia de Ferrujal perde a única energia que tem. Passei três noites filtrando este cilindro: Aetherium sem uma gota de óleo sulfúrico, estável o bastante para manter a Unidade 73 e os outros funcionando por anos. Leve até eles. Devo isso a quem o meu reator descartou.',
+      inProgress: 'Ferrujal fica além das fundições, no pântano de rejeitos. A célula aguenta o ácido; você talvez não. Não tire as botas.',
+      targetWelcome: '[ASSINATURA ENERGÉTICA ANÔMALA DETECTADA NA SUA BOLSA.] Solicitação: aproximar-se devagar. Os autômatos mais novos da colônia se assustam com picos de carga.',
+      completion: '(A Unidade 73 pausa suas rotinas de combate e se ajoelha no lodo de ferrugem.) Carga pura detectada. Meus sensores identificam isso como esperança. [EM TROCA: FRASCO INTACTO ENCONTRADO NO LIXÃO. CLASSIFICAÇÃO: DESPERDÍCIO HUMANO DE ALTO VALOR. NOTA PARA A DRA. VANCE: DÍVIDA CONSIDERADA PAGA. ACRESCENTAR: OBRIGADO.]',
+    },
+    reward: {
+      gold: 480,
+      xp: 1000,
+      loreTitle: 'Portador da Carga Pura',
+      itemReward: 'elixir_fenix',
+    },
   },
 ]
 
@@ -558,6 +812,7 @@ export function questPreceding(questId: string): StoryQuest | undefined {
 
 export function isQuestAvailable(quest: StoryQuest, completed: string[] = [], active: Record<string, any> = {}): boolean {
   if (completed.includes(quest.id) || active[quest.id]) return false
+  if (quest.requires?.some(id => !completed.includes(id))) return false
   const prev = questPreceding(quest.id)
   if (!prev) return true
   return completed.includes(prev.id)

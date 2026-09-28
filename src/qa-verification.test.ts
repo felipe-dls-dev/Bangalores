@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import { REGION_MAPS, validateRegionMap } from './regionMap'
-import { useGame, HEROES, SUBREGIONS, EQUIPMENT, TERRITORIES, worldUnlocked, maxHp, attackValue } from './store/game'
+import { useGame, HEROES, SUBREGIONS, EQUIPMENT, CONSUMABLES, TERRITORIES, worldUnlocked, maxHp, attackValue } from './store/game'
 import { NPCS } from './data/npcs'
 import { STORY_QUESTS } from './data/storyQuests'
+import { CAMPAIGN_ENDINGS, ENDING_REACTIONS, ITEM_ECHOES, NPC_LORE, STORY_ACTS } from './data/worldLore'
 import bossArt from './data/bossArt.json'
 
 declare const __dirname: string
@@ -219,9 +220,59 @@ describe('QA Suite: Story Quest Integrity', () => {
       if (!npcIds.has(quest.targetNpcId)) errors.push(`${quest.id}: missing target NPC ${quest.targetNpcId}`)
       if (!territoryIds.has(quest.targetRegionId)) errors.push(`${quest.id}: missing target region ${quest.targetRegionId}`)
       if (quest.nextQuestId && !questIds.has(quest.nextQuestId)) errors.push(`${quest.id}: missing next quest ${quest.nextQuestId}`)
+      for (const required of quest.requires ?? []) {
+        if (!questIds.has(required)) errors.push(`${quest.id}: missing required quest ${required}`)
+        if (required === quest.id) errors.push(`${quest.id}: requires itself`)
+      }
+      if (quest.reward.itemReward && !CONSUMABLES.some(item => item.id === quest.reward.itemReward)) errors.push(`${quest.id}: itemReward ${quest.reward.itemReward} is not a consumable`)
     }
 
     expect(errors, errors.join('; ')).toEqual([])
+  })
+})
+
+describe('QA Suite: World Lore Integrity (Bíblia de narrativa)', () => {
+  const npcIds = new Set(NPCS.map(npc => npc.id))
+  const equipmentIds = new Set(EQUIPMENT.map(item => item.id))
+
+  it('every story quest act has a named act in STORY_ACTS', () => {
+    const acts = new Set(STORY_ACTS.map(act => act.act))
+    expect(STORY_ACTS.map(act => act.act)).toEqual([1, 2, 3, 4, 5, 6, 7])
+    for (const quest of STORY_QUESTS) expect(acts.has(quest.act), `${quest.id} act ${quest.act}`).toBe(true)
+  })
+
+  it('every NPC has lore, and every social link points to another existing NPC', () => {
+    const errors: string[] = []
+    for (const npc of NPCS) if (!NPC_LORE[npc.id]) errors.push(`${npc.id}: no lore`)
+    for (const [npcId, lore] of Object.entries(NPC_LORE)) {
+      if (!npcIds.has(npcId)) errors.push(`lore for unknown NPC ${npcId}`)
+      if (!lore.motivacao.trim()) errors.push(`${npcId}: empty motivation`)
+      if (!lore.lacos.length) errors.push(`${npcId}: no social links`)
+      for (const link of lore.lacos) {
+        if (!npcIds.has(link.npcId)) errors.push(`${npcId}: link to unknown NPC ${link.npcId}`)
+        if (link.npcId === npcId) errors.push(`${npcId}: linked to itself`)
+      }
+    }
+    expect(errors, errors.join('; ')).toEqual([])
+  })
+
+  it('item echoes reference real catalog items and NPCs, and every echoed item has a provenance', () => {
+    const errors: string[] = []
+    for (const echo of ITEM_ECHOES) {
+      if (!equipmentIds.has(echo.itemId)) errors.push(`echo for unknown item ${echo.itemId}`)
+      if (!npcIds.has(echo.npcId)) errors.push(`echo by unknown NPC ${echo.npcId}`)
+      if (!EQUIPMENT.find(item => item.id === echo.itemId)?.historia) errors.push(`${echo.itemId}: echoed but has no historia`)
+    }
+    expect(errors, errors.join('; ')).toEqual([])
+  })
+
+  it('there is exactly one ending quest, and every ending reaction belongs to a real NPC and covers all three endings', () => {
+    expect(STORY_QUESTS.filter(quest => quest.decidesEnding).map(quest => quest.id)).toEqual(['q_steelmere_final_resonance'])
+    expect(new Set(CAMPAIGN_ENDINGS.map(ending => ending.id)).size).toBe(3)
+    for (const [npcId, reactions] of Object.entries(ENDING_REACTIONS)) {
+      expect(npcIds.has(npcId), npcId).toBe(true)
+      for (const ending of CAMPAIGN_ENDINGS) expect(reactions[ending.id], `${npcId}/${ending.id}`).toBeTruthy()
+    }
   })
 })
 

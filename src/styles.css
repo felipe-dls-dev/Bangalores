@@ -2161,6 +2161,7 @@ body::after{content:"VERSÃO 0.9.7 • 26/09/2026\A Menus por assunto: Expediç�
 body::after{content:"VERSÃO 0.9.8 • 28/09/2026\A Celular: navegação no rodapé ao alcance do polegar e topo numa linha só; no combate herói e inimigo ficam lado a lado e as ações presas no rodapé, sem rolar; o mapa da região abre na primeira tela; Forja e Guilda mostram 12 itens por vez.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.9 • 28/09/2026\A Fim do modo Clássico: o jogo passa a ter só a interface Moderna (Acampamento, menus por assunto e telas redesenhadas). O botão de alternar a interface saiu da tela inicial, do topo e do Menu; quem jogava no Clássico abre direto no Moderno.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.10 • 28/09/2026\A Celular: a tela de Vitória deixou de ficar em meia largura com a comparação do saque vazando; Masmorras em duas colunas com o botão de entrar sempre à mão; Loja com duas peças por linha em telas largas; escolhas da história, Conjuntos, Provisão da Guilda e receitas da Forja sem texto espremido; combate sem espaço vazio.";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.11 • 28/09/2026\A História: os personagens agora se conhecem e comentam uns sobre os outros, reconhecem peças lendárias que você estiver usando e revelam o que os move depois que você os ajuda. A campanha ganhou os 7 atos com nome, a fala de agradecimento ao entregar uma missão, títulos da jornada para exibir na Ficha e uma escolha final com três destinos para os dois mundos.";white-space:pre-line}
 /* Equipamentos nos atributos novos (v0.9.4): as diferenças por atributo quebram linha; estilo da peça e aviso de escola na comparação. */
 .item-stat-diff{flex-wrap:wrap;row-gap:2px}
 .equipment-compare .compare-style{display:block;margin:-2px 0 6px;color:#a98752;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase}
@@ -5422,3 +5423,75 @@ html.high-contrast .vc-scene{opacity:.3}
 
 /* Chefe: a classe genérica .empty (texto centralizado) vazava para os itens zerados da preparação. */
 .bi-kit li.empty{text-align:left}
+
+/* Bíblia de narrativa (src/ui/StoryLore.tsx): eco dos itens e teia social no diálogo do NPC, fala de conclusão,
+   escolha final, arco dos 7 atos, títulos da jornada e epílogo no Diário de Missões. */
+.lore-echo{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid rgba(229,191,115,.45);border-radius:10px;background:linear-gradient(180deg,rgba(80,58,24,.35),rgba(30,22,12,.5))}
+.lore-echo-badge{display:flex;align-items:center;gap:6px;color:#e5bf73;font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.lore-echo p{margin:0;color:#efe0c2;font-style:italic;line-height:1.45;font-size:.9rem}
+.lore-ties{border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(15,11,8,.55)}
+.lore-ties>summary{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;color:#d8c29a;font-size:.8rem;font-weight:700;list-style:none}
+.lore-ties>summary::-webkit-details-marker{display:none}
+.lore-ties>summary::after{content:"▾";margin-left:auto;color:#a98752;transition:transform .15s ease}
+.lore-ties[open]>summary::after{transform:rotate(180deg)}
+.lore-ties-list{display:grid;gap:8px;margin:0;padding:0 12px 10px;list-style:none}
+.lore-ties-list li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:center}
+.lore-ties-list img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #5d482e;background:#1b140e}
+.lore-ties-list strong{display:block;color:#efe5cf;font-size:.82rem}
+.lore-ties-list small{color:#a98752;font-size:.62rem;letter-spacing:.04em;text-transform:uppercase}
+.lore-ties-list span{display:block;color:#b9aa92;font-size:.76rem;line-height:1.3}
+.lore-motive{margin:0 12px 12px;padding:10px;border-radius:8px;border-left:3px solid #c89a4b;background:rgba(0,0,0,.25)}
+.lore-motive small{color:#a98752;font-size:.58rem;font-weight:800;letter-spacing:.1em}
+.lore-motive p{display:flex;gap:6px;align-items:flex-start;margin:4px 0 0;color:#e8d8c2;font-size:.84rem;line-height:1.4}
+.lore-motive.locked p{color:#8f8068;font-style:italic}
+.lore-motive.locked svg{flex-shrink:0;margin-top:3px}
+.npc-dialogue-quote.lore-ending-speech{border-left-color:#e5bf73;background:linear-gradient(90deg,rgba(80,58,24,.35),rgba(0,0,0,.25))}
+.lore-completion .npc-quest-badge{display:flex;align-items:center;gap:5px}
+.lore-completion.ending{border-color:#e5bf73;background:linear-gradient(180deg,rgba(80,58,24,.4),rgba(25,18,10,.6));box-shadow:0 0 18px rgba(229,191,115,.2)}
+.lore-dismiss{align-self:flex-start;padding:8px 14px;border-radius:8px}
+.lore-epilogue{padding:10px 12px;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid rgba(229,191,115,.3)}
+.lore-epilogue small{display:flex;align-items:center;gap:6px;color:#e5bf73;font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.lore-epilogue p{margin:6px 0 0;color:#efe5cf;line-height:1.5;font-size:.88rem}
+.lore-ending-choices{display:grid;gap:8px}
+.lore-ending-warning{margin:0;color:#e0a15a;font-size:.78rem;line-height:1.4}
+.lore-ending-option{display:grid;gap:3px;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid #5d482e;background:rgba(20,15,10,.8);cursor:pointer;transition:border-color .15s ease,transform .15s ease}
+.lore-ending-option:hover,.lore-ending-option:focus-visible{border-color:#e5bf73;transform:translateY(-1px)}
+.lore-ending-option strong{color:#f3e2bd;font-size:.92rem}
+.lore-ending-option small{color:#a98752;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.lore-ending-option span{color:#b9aa92;font-size:.78rem;line-height:1.35}
+.lore-ending-option.ending-harmonia{border-left:4px solid #5f8b4a}
+.lore-ending-option.ending-soberania{border-left:4px solid #4d7fb3}
+.lore-ending-option.ending-trono_vazio{border-left:4px solid #8a4fb3}
+.lore-acts{margin:0 0 16px}
+.lore-acts ol{display:grid;gap:6px;margin:8px 0 0;padding:0;list-style:none}
+.lore-act{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(20,15,10,.5)}
+.lore-act-number{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid #5d482e;color:#a98752;font-size:.78rem;font-weight:800}
+.lore-act strong{display:block;color:#d8c29a;font-size:.86rem}
+.lore-act small{color:#8f8068;font-size:.68rem}
+.lore-act p{margin:4px 0 0;color:#b9aa92;font-size:.76rem;line-height:1.35}
+.lore-act.current{border-color:rgba(229,191,115,.45);background:rgba(60,44,20,.35)}
+.lore-act.current .lore-act-number{border-color:#e5bf73;color:#e5bf73}
+.lore-act.done .lore-act-number{border-color:#48bb78;color:#68d391}
+.lore-act.done strong{color:#c6e8cf}
+.lore-act.locked{opacity:.6}
+.lore-titles{margin-top:16px}
+.lore-titles>p{margin:6px 0 10px}
+.lore-titles-list{display:flex;flex-wrap:wrap;gap:6px}
+.lore-titles-list button{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:.78rem}
+.lore-titles-list button small{color:#a98752;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em}
+.lore-titles-list button.selected{border-color:#e5bf73;color:#f3e2bd;background:rgba(80,58,24,.45)}
+.lore-ending-card{margin:0 0 16px;padding:14px 16px;border-radius:12px;border:1px solid #e5bf73;background:linear-gradient(180deg,rgba(80,58,24,.45),rgba(20,15,10,.7))}
+.lore-ending-card small{display:flex;align-items:center;gap:6px;color:#e5bf73;font-size:.62rem;font-weight:800;letter-spacing:.1em}
+.lore-ending-card h3{margin:6px 0;color:#f3e2bd;font:700 1.1rem Georgia,serif}
+.lore-ending-card p{margin:0 0 8px;color:#efe5cf;line-height:1.5}
+.lore-ending-card span{color:#a99983;font-size:.76rem}
+details.story-journal-completed-item{display:block}
+.story-journal-completed-item>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.story-journal-completed-item>summary::-webkit-details-marker{display:none}
+.lore-completed-speech{margin:8px 0 2px 26px;color:#b9aa92;font-size:.8rem;font-style:italic;line-height:1.45}
+.equipment-compare article p.compare-lore,.equipment-compare article p.compare-echo{min-height:0;margin:8px 0 0}
+.equipment-compare article p.compare-lore,.art-preview-lore .compare-lore{font-style:italic;color:#d6c3a0}
+.art-preview-lore:empty{display:none}
+.art-preview-lore p{margin:6px 0 0;color:#b9aa92;font-size:.78rem;line-height:1.4}
+.art-preview-lore p b{display:block;padding:0 0 3px!important;border:0!important;color:#d4a957;font-size:.6rem;text-transform:uppercase;letter-spacing:.06em}
+.portrait-panel .char-title{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 0 6px;color:#e5bf73;font:italic 600 1rem Georgia,serif}

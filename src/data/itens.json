@@ -5,7 +5,7 @@
     "tipo": "cura",
     "valor": 8,
     "preco": 0.75,
-    "descricao": "Recupera até 8 pontos de vida.",
+    "descricao": "Recupera até 8 pontos de vida. Destilada a partir de folhas de camomila rúnica colhidas nas colinas de Alvora.",
     "imagem": "assets/cards/consumiveis/pocao_cura.jpg",
     "arte": "assets/art/hd/consumables/pocao_cura-hd.webp",
     "raridade": "comum"
@@ -16,7 +16,7 @@
     "tipo": "cura",
     "valor": 15,
     "preco": 5,
-    "descricao": "Recupera até 15 pontos de vida.",
+    "descricao": "Recupera até 15 pontos de vida. Infusão concentrada com seiva das raízes profundas de Abdendriel.",
     "imagem": "assets/cards/consumiveis/pocao_cura_maior.jpg",
     "arte": "assets/art/hd/consumables/pocao_cura_maior-hd.webp",
     "raridade": "comum"
@@ -27,7 +27,7 @@
     "tipo": "ataque",
     "valor": 2,
     "preco": 0.25,
-    "descricao": "Concede +2 de ataque durante o próximo combate.",
+    "descricao": "Concede +2 de ataque durante o próximo combate. Extrato de raiz de ferro das encostas de Kaldrum que faz o sangue pulsar com vigor.",
     "imagem": "assets/cards/consumiveis/elixir_forca.jpg",
     "arte": "assets/art/hd/consumables/elixir_forca-hd.webp",
     "raridade": "comum"
@@ -38,7 +38,7 @@
     "tipo": "escudo",
     "valor": 2,
     "preco": 0.25,
-    "descricao": "Reduz em 2 o dano de cada ataque inimigo no próximo combate.",
+    "descricao": "Reduz em 2 o dano de cada ataque inimigo no próximo combate. Óleo denso de resina fóssil usado pela sentinela dos portões.",
     "imagem": "assets/cards/consumiveis/tonico_guardiao.jpg",
     "arte": "assets/art/hd/consumables/tonico_guardiao-hd.webp",
     "raridade": "comum"
@@ -60,7 +60,7 @@
     "tipo": "escudo",
     "valor": 4,
     "preco": 0.75,
-    "descricao": "Concede +4 de escudo no próximo combate.",
+    "descricao": "Concede +4 de escudo no próximo combate. Cinzas de turfa e fuligem rúnica que cegam momentaneamente os atacantes.",
     "imagem": "assets/cards/consumiveis/bomba_fumaca.jpg",
     "arte": "assets/art/hd/consumables/bomba_fumaca-hd.webp",
     "raridade": "comum"
@@ -71,7 +71,7 @@
     "tipo": "ataque",
     "valor": 3,
     "preco": 15,
-    "descricao": "Concede +3 de ataque durante o próximo combate.",
+    "descricao": "Concede +3 de ataque durante o próximo combate. Unguento translúcido que faz o fio da arma vibrar com energia arcana.",
     "imagem": "assets/cards/consumiveis/oleo_encantado.jpg",
     "arte": "assets/art/hd/consumables/oleo_encantado-hd.webp",
     "raridade": "incomum"
@@ -82,7 +82,7 @@
     "tipo": "cura",
     "valor": 5,
     "preco": 0.5,
-    "descricao": "Recupera até 5 pontos de vida.",
+    "descricao": "Recupera até 5 pontos de vida. Fórmula original de Sela Hartwin para estancar febres e toxinas venenosas.",
     "imagem": "assets/cards/consumiveis/antidoto.jpg",
     "arte": "assets/art/hd/consumables/antidoto-hd.webp",
     "raridade": "comum"
@@ -104,7 +104,7 @@
     "tipo": "ataque",
     "valor": 4,
     "preco": 18,
-    "descricao": "Concede +4 de ataque no próximo combate.",
+    "descricao": "Concede +4 de ataque no próximo combate. Destilado misterioso que agudiza a percepção temporal nos golpes cruciais.",
     "imagem": "assets/cards/catalogo/218_pocoes_003.jpg",
     "arte": "assets/art/hd/consumables/destilado_destino-hd.webp",
     "raridade": "incomum"
@@ -115,7 +115,7 @@
     "tipo": "ataque",
     "valor": 3,
     "preco": 14,
-    "descricao": "Concede +3 de ataque no próximo combate.",
+    "descricao": "Concede +3 de ataque no próximo combate. Resíduo de lava de Ignaris que inflama o aço em contato com o ar.",
     "imagem": "assets/cards/catalogo/219_pocoes_004.jpg",
     "arte": "assets/art/hd/consumables/oleo_fogo_ancestral-hd.webp",
     "raridade": "incomum"
@@ -126,7 +126,7 @@
     "tipo": "escudo",
     "valor": 4,
     "preco": 16,
-    "descricao": "Concede +4 de escudo no próximo combate.",
+    "descricao": "Concede +4 de escudo no próximo combate. Mistura mineral de calcário e pó de runa que endurece temporariamente a pele.",
     "imagem": "assets/cards/catalogo/221_pocoes_006.jpg",
     "arte": "assets/art/hd/consumables/pocao_pele_pedra-hd.webp",
     "raridade": "incomum"
@@ -137,7 +137,7 @@
     "tipo": "cura",
     "valor": 12,
     "preco": 16,
-    "descricao": "Recupera até 12 pontos de vida.",
+    "descricao": "Recupera até 12 pontos de vida. Bálsamo prateado abençoado pelas antigas sacerdotisas de Khar-Dur.",
     "imagem": "assets/cards/catalogo/222_pocoes_007.jpg",
     "arte": "assets/art/hd/consumables/lagrima_rainha-hd.webp",
     "raridade": "incomum"
@@ -148,7 +148,7 @@
     "tipo": "escudo",
     "valor": 5,
     "preco": 20,
-    "descricao": "Concede +5 de escudo no próximo combate.",
+    "descricao": "Concede +5 de escudo no próximo combate. Solução de prata rúnica que cria um campo cintilante capaz de desviar golpes.",
     "imagem": "assets/cards/catalogo/223_pocoes_008.jpg",
     "arte": "assets/art/hd/consumables/elixir_reflexo-hd.webp",
     "raridade": "incomum"
@@ -159,7 +159,7 @@
     "tipo": "cura",
     "valor": 3,
     "preco": 0.25,
-    "descricao": "Recupera até 3 pontos de vida.",
+    "descricao": "Recupera até 3 pontos de vida. Tintura simples de hortelã selvagem usada por batedores em patrulha rápida.",
     "imagem": "assets/cards/catalogo/226_pocoes_011.jpg",
     "arte": "assets/art/hd/consumables/pocao_vigor-hd.webp",
     "raridade": "comum"
@@ -170,7 +170,7 @@
     "tipo": "escudo",
     "valor": 3,
     "preco": 0.5,
-    "descricao": "Concede +3 de escudo no próximo combate.",
+    "descricao": "Concede +3 de escudo no próximo combate. Pólen de lírio lunar de Abdendriel que dissipa projéteis no ar.",
     "imagem": "assets/cards/catalogo/227_pocoes_012.jpg",
     "arte": "assets/art/hd/consumables/po_nevoa-hd.webp",
     "raridade": "comum"
@@ -181,7 +181,7 @@
     "tipo": "ataque",
     "valor": 5,
     "preco": 55,
-    "descricao": "Concede +5 de ataque no próximo combate.",
+    "descricao": "Concede +5 de ataque no próximo combate. Sangue de urso das cavernas de Kaldrum despertado sob a fúria das noites sem lua.",
     "imagem": "assets/cards/catalogo/229_pocoes_014.jpg",
     "arte": "assets/art/hd/consumables/elixir_fera-hd.webp",
     "raridade": "raro"

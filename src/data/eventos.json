@@ -4,7 +4,7 @@
     "nome": "A Última Carta da Rainha",
     "tipo": "ouro",
     "valor": 3,
-    "descricao": "Receba 3 de ouro ao entregar a mensagem real.",
+    "descricao": "Um mensageiro caído carrega uma carta lacrada da Rainha Elisandra. Ao entregar a mensagem real intacta à guarnição de Alvora, você recebe 3 de ouro.",
     "imagem": "assets/cards/catalogo/196_eventos_001.jpg"
   },
   {
@@ -12,7 +12,7 @@
     "nome": "Ecos de Malgor",
     "tipo": "dano",
     "valor": 2,
-    "descricao": "As sombras de Malgor causam 2 de dano.",
+    "descricao": "Uma fenda etérea sussurra promessas geladas do Reino do Sol Negro; os ecos de Malgor drenam 2 de vida ao cruzar seu caminho.",
     "imagem": "assets/cards/catalogo/197_eventos_002.jpg"
   },
   {
@@ -20,7 +20,7 @@
     "nome": "A Flor que Não Murcha",
     "tipo": "cura",
     "valor": 4,
-    "descricao": "A flor encantada recupera 4 de vida.",
+    "descricao": "Alimentada pela seiva primordial de Abdendriel, esta flor mística emana um aroma purificador que recupera 4 de vida.",
     "imagem": "assets/cards/catalogo/198_eventos_003.jpg"
   },
   {
@@ -28,7 +28,7 @@
     "nome": "O Duelo por Honra",
     "tipo": "ouro_risco",
     "valor": 4,
-    "descricao": "Teste sua sorte em um duelo: ganhe ou perca ouro.",
+    "descricao": "Um veterano das arenas subterrâneas de Kholgard desafia você para um duelo ritual de esgrima: ganhe ou perca ouro no teste de armas.",
     "imagem": "assets/cards/catalogo/199_eventos_004.jpg"
   },
   {
@@ -36,7 +36,7 @@
     "nome": "O Templo Silencioso",
     "tipo": "cura",
     "valor": 3,
-    "descricao": "A bênção do templo recupera 3 de vida.",
+    "descricao": "Um antigo altar da Deusa da Alvorada permanece imaculado entre as ruínas; sua prece em silêncio recupera 3 de vida.",
     "imagem": "assets/cards/catalogo/200_eventos_005.jpg"
   },
   {
@@ -44,7 +44,7 @@
     "nome": "O Escudeiro Órfão",
     "tipo": "escudo",
     "valor": 2,
-    "descricao": "O escudeiro concede +2 de escudo para o próximo combate.",
+    "descricao": "Um jovem escudeiro das Planícies de Alvora engraxa e afivela suas placas de proteção, concedendo +2 de escudo para o próximo combate.",
     "imagem": "assets/cards/catalogo/201_eventos_006.jpg"
   },
   {
@@ -52,7 +52,7 @@
     "nome": "O Prisioneiro do Poço",
     "tipo": "ouro_risco",
     "valor": 2,
-    "descricao": "Tente libertar o prisioneiro: o dado decide se você encontra uma recompensa ou um inimigo.",
+    "descricao": "Gritos ecoam de uma antiga cisterna anã. O dado decide se a corda resgata um viajante grato com ouro ou um espectro aprisionado.",
     "imagem": "assets/cards/catalogo/214_eventos_019.jpg"
   },
   {
@@ -60,7 +60,7 @@
     "nome": "A Aposta do Taverneiro",
     "tipo": "ouro_risco",
     "valor": 6,
-    "descricao": "Aposte numa rolagem e ganhe ou perca ouro.",
+    "descricao": "O taverneiro de Alvora bate uma caneca de cobre e propõe um jogo de dados arriscado: dobre sua aposta ou saia sem ouro.",
     "imagem": "assets/cards/catalogo/202_eventos_007.jpg"
   },
   {
@@ -68,7 +68,7 @@
     "nome": "Fogo Roubado",
     "tipo": "ataque",
     "valor": 2,
-    "descricao": "O fogo dracônico concede +2 de ataque no próximo combate.",
+    "descricao": "Brasas vivas das caldeiras do Pico de Ignaris envolvem suas lâminas em chamas ardentes, concedendo +2 de ataque no próximo combate.",
     "imagem": "assets/cards/catalogo/203_eventos_008.jpg"
   },
   {
@@ -76,7 +76,7 @@
     "nome": "O Caçador Ferido",
     "tipo": "cura",
     "valor": 3,
-    "descricao": "Ao ajudar o caçador, recupere 3 de vida.",
+    "descricao": "Um batedor da fronteira compartilha unguento de ervas raras de Abdendriel em agradecimento pelo socorro, recuperando 3 de vida.",
     "imagem": "assets/cards/catalogo/204_eventos_009.jpg"
   },
   {
@@ -84,7 +84,7 @@
     "nome": "A Dívida do Ladrão",
     "tipo": "ouro",
     "valor": 2,
-    "descricao": "Uma informação valiosa rende 2 de ouro.",
+    "descricao": "Um contrabandista encurralado oferece um saquinho de moedas rúnicas em troca de você não delatar sua rota aos guardas da Guilda, rendendo 2 de ouro.",
     "imagem": "assets/cards/catalogo/205_eventos_010.jpg"
   },
   {
@@ -92,7 +92,7 @@
     "nome": "Profanação Interrompida",
     "tipo": "dano_ouro",
     "valor": 3,
-    "descricao": "Interrompa o ritual: sofra 1 de dano e receba 3 de ouro.",
+    "descricao": "Cultistas do Sol Negro tentavam abrir uma sepultura rúnica. Você interrompe o ritual: sofre 1 de dano de estilhaços arcanos mas recupera 3 de ouro sagrado.",
     "imagem": "assets/cards/catalogo/206_eventos_011.jpg"
   },
   {
@@ -100,7 +100,7 @@
     "nome": "O Corvo Falante",
     "tipo": "ataque",
     "valor": 1,
-    "descricao": "O presságio concede +1 de ataque no próximo combate.",
+    "descricao": "Um corvo de penas prateadas das montanhas de Kaldrum grasna a fraqueza de seu oponente, concedendo +1 de ataque no próximo combate.",
     "imagem": "assets/cards/catalogo/207_eventos_012.jpg"
   },
   {
@@ -108,7 +108,7 @@
     "nome": "A Loba e os Filhotes",
     "tipo": "cura",
     "valor": 2,
-    "descricao": "A gratidão da alcateia recupera 2 de vida.",
+    "descricao": "Você liberta uma loba branca presa em armadilhas de latão; a alcateia expressa gratidão e guia você a uma fonte pura que recupera 2 de vida.",
     "imagem": "assets/cards/catalogo/208_eventos_013.jpg"
   },
   {
@@ -116,7 +116,7 @@
     "nome": "O Ferreiro Sem Material",
     "tipo": "equipamento",
     "valor": 1,
-    "descricao": "O ferreiro oferece um equipamento aleatório.",
+    "descricao": "Um artesão nômade das minas anãs oferece um equipamento reforçado de sua bigorna em troca de rações de estrada.",
     "imagem": "assets/cards/catalogo/209_eventos_014.jpg"
   },
   {
@@ -124,7 +124,7 @@
     "nome": "O Porco Fujão",
     "tipo": "ouro_risco",
     "valor": 3,
-    "descricao": "Tente capturar o porco e ganhar uma recompensa.",
+    "descricao": "O porco premiado da estalagem escapou em disparada pelo trigal: teste sua destreza para capturá-lo e receber uma gorda recompensa em ouro.",
     "imagem": "assets/cards/catalogo/210_eventos_015.jpg"
   },
   {
@@ -132,7 +132,7 @@
     "nome": "O Contrabandista Perdido",
     "tipo": "item",
     "valor": 1,
-    "descricao": "Receba um consumível aleatório.",
+    "descricao": "Um comboieiro vindo de Steelmere escondeu um caixote hermético entre as raízes antes de fugir da patrulha: receba um consumível valioso.",
     "imagem": "assets/cards/catalogo/211_eventos_016.jpg"
   },
   {
@@ -140,7 +140,7 @@
     "nome": "O Julgamento do Mercador",
     "tipo": "ouro_risco",
     "valor": 5,
-    "descricao": "Resolva a disputa do mercador por uma recompensa.",
+    "descricao": "Dois comerciantes disputam os direitos de um lote de ferro estelar; sua sabedoria arbitra a contenda com recompensa em ouro.",
     "imagem": "assets/cards/catalogo/212_eventos_017.jpg"
   },
   {
@@ -148,7 +148,7 @@
     "nome": "O Grito na Névoa",
     "tipo": "dano",
     "valor": 1,
-    "descricao": "Algo na névoa causa 1 de dano.",
+    "descricao": "Espíritos inquietos arranham o véu em meio à bruma densa que desce dos picos, causando 1 de dano antes de se dissiparem.",
     "imagem": "assets/cards/catalogo/213_eventos_018.jpg"
   },
   {
@@ -156,7 +156,7 @@
     "nome": "A Voz das Planícies de Alvora",
     "tipo": "cura",
     "valor": 5,
-    "descricao": "Uma voz ancestral recupera 5 de vida.",
+    "descricao": "O vento rúnico sussurra hinos esquecidos dos primeiros reis através dos monólitos dourados, abençoando o peregrino e recuperando 5 de vida.",
     "imagem": "assets/cards/catalogo/215_eventos_020.jpg"
   }
 ]

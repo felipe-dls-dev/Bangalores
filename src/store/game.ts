@@ -26,6 +26,7 @@ import eventArt from '../data/eventArt.json'
 import bossArt from '../data/bossArt.json'
 import { BESTIARY_MILESTONES, CLASS_ELEMENT, DIFFICULTIES, ELEMENT_ADVANTAGES, FORGE_BONUS_LABELS, FORGE_BONUS_MATERIAL, FORGE_GEMS, HERO_SUBCLASSES, REGION_MATERIALS, SPECIALIZATION_CHOICES, STORY_CHAPTERS, TALENTS, subregionThemeMaterial, subregionEquipmentKeyword, activeChallenges, bumpChallengeProgress, type DifficultyMode, type Element, type ForgeBonus, type ForgeChoice, type ForgeEffect } from '../data/expansion'
 import { questById, STORY_QUESTS } from '../data/storyQuests'
+import { campaignEndingById, endingFromFlags, ENDING_FLAG_PREFIX, type CampaignEndingId } from '../data/worldLore'
 import { buildForgeRecipes } from '../data/forgeRecipes'
 import { CRYSTAL_REWARDS, crystalsLabel } from '../data/crystals'
 import { MAX_PROTECTION_BLESSINGS, VAULT_SLOTS_PER_UPGRADE, protectionBlessingPrice, vaultCapacity, vaultUpgradePrice } from './guildVault'
@@ -498,7 +499,7 @@ interface GameState {
  escrowMarketEquipment:(ref:string)=>EquipmentForgeSnapshot|false; refundMarketEquipment:(ref:string,snapshot:EquipmentForgeSnapshot)=>void; completeMarketEquipmentPurchase:(ref:string,price:number,snapshot:EquipmentForgeSnapshot)=>void;
  equip:(id:string)=>void; unequip:(slot:Slot)=>void; addAttribute:(k:PrimaryAttributeKey)=>void; setSelectedGallery:(n:number)=>void; toggleShopMode:()=>void; resolveEvent:(accept:boolean,approach?:'class')=>void; finishEvent:()=>void; finishLoot:()=>void; clearSave:()=>void;
  addCustomCard:(card:Omit<CustomCard,'id'|'criadoEm'>)=>void; removeCustomCard:(id:string)=>void;
- setDifficulty:(mode:DifficultyMode)=>void;unlockTalent:(id:string)=>void;chooseSpecialization:(level:number,id:string)=>void;resetSpecializations:()=>void;attuneEquipment:(id:string,element:Element)=>void;craftEquipment:(recipeId?:string,choice?:ForgeChoice)=>void;upgradeEquipment:(id:string)=>void;dismantleEquipment:(id:string)=>void;socketGem:(equipmentId:string,gemId:string)=>void;removeGem:(equipmentId:string,index:number)=>void;setSelectedTitle:(titulo?:string)=>void;startDungeon:()=>void;selectDungeon:(subregionId:string)=>void;leaveDungeon:()=>void;startRevenge:(subregionId:string)=>void;chooseStory:(choiceId:string)=>void;acceptStoryQuest:(questId:string)=>void;turnInStoryQuest:(questId:string)=>void;
+ setDifficulty:(mode:DifficultyMode)=>void;unlockTalent:(id:string)=>void;chooseSpecialization:(level:number,id:string)=>void;resetSpecializations:()=>void;attuneEquipment:(id:string,element:Element)=>void;craftEquipment:(recipeId?:string,choice?:ForgeChoice)=>void;upgradeEquipment:(id:string)=>void;dismantleEquipment:(id:string)=>void;socketGem:(equipmentId:string,gemId:string)=>void;removeGem:(equipmentId:string,index:number)=>void;setSelectedTitle:(titulo?:string)=>void;startDungeon:()=>void;selectDungeon:(subregionId:string)=>void;leaveDungeon:()=>void;startRevenge:(subregionId:string)=>void;chooseStory:(choiceId:string)=>void;acceptStoryQuest:(questId:string)=>void;turnInStoryQuest:(questId:string,endingId?:CampaignEndingId)=>void;
  setCombatSpeed:(speed:1|2|3)=>void;toggleAutoCombat:()=>void;toggleLockEquipment:(ref:string)=>void;sortEquipmentBag:(criteria?:'rarity'|'level'|'name'|'slot')=>void;claimDailyReward:()=>{gold:number;materials?:Record<string,number>;message:string}|null;claimChallenge:(id:string)=>{gold:number;crystals:number;message:string}|null; grantCrystals:(amount:number)=>void;
  openedChests?: Record<string, boolean>; lastCampfire?: { regionId: string; campfireId: string; x: number; y: number };
  // Marca, por subId de local, se o monstro vagante daquele marcador já foi derrotado -- some do
@@ -674,6 +675,11 @@ export const ACHIEVEMENTS:Achievement[]=[
  {id:'vinganca_consumada',nome:'Vingança Consumada',descricao:'Vença 5 rodadas de Vingança contra o mesmo chefe.',titulo:'Vingador',check:s=>Object.values(s.revengeWins??{}).some(w=>w>=5)},
 ]
 export function unlockedAchievements(s:GameState){return ACHIEVEMENTS.filter(a=>a.check(s))}
+// Títulos de lore das missões de história (reward.loreTitle) e do desfecho da campanha: ficam em
+// storyFlags como "titulo:<nome>" desde que o sistema de missões existe, mas nenhuma tela os
+// mostrava. Agora podem ser exibidos na Ficha, como os títulos de conquista.
+export function storyLoreTitles(s:Pick<GameState,'storyFlags'>){return (s.storyFlags??[]).filter(f=>f.startsWith('titulo:')).map(f=>f.slice('titulo:'.length))}
+export function campaignEnding(s:Pick<GameState,'storyFlags'>){return endingFromFlags(s.storyFlags)}
 export function forgeRecipeLevel(recipeId:string){const recipe=FORGE_RECIPES.find(r=>r.id===recipeId),item=recipe&&EQUIPMENT.find(e=>e.id===recipe.equipmentId);if(!item)return FORGE_MASTERY_MAX;const itemLevel=equipmentRequiredLevel(item),tier=RARITY_TIER[item.raridade??'comum'];return Math.min(FORGE_MASTERY_MAX,Math.max(1,Math.ceil(itemLevel/5)+Math.floor(tier/2)))}
 export function forgeSuccessChance(recipeId:string,forgeXp:number,bonus=0){const mastery=forgeLevelInfo(forgeXp).level,required=forgeRecipeLevel(recipeId);return Math.max(.15,Math.min(.75,.45+(mastery-required)*.06+bonus))}
 export function storyRequirementProgress(s:GameState){const chapter=STORY_CHAPTERS.find(c=>c.id===s.storyChapterId),req=chapter?.requirement;if(!req)return{current:1,required:1,complete:true};let current=0;if(req.type==='victories')current=req.target?SUBREGIONS.filter(sub=>sub.regionId===req.target).reduce((sum,sub)=>sum+(s.subregionVictories[sub.id]??0),0):Object.values(s.victories).reduce((a,b)=>a+b,0);if(req.type==='bosses')current=s.subregionBossesDefeated.length;if(req.type==='material')current=s.materials[req.target??'']??0;if(req.type==='upgrade')current=Object.values(s.equipmentUpgrades).filter(v=>v>0).length;if(req.type==='region')current=SUBREGIONS.filter(sub=>sub.regionId===req.target&&s.subregionBossesDefeated.includes(sub.id)).length;return{current:Math.min(current,req.amount),required:req.amount,complete:current>=req.amount}}
@@ -1255,7 +1261,7 @@ export const useGame = create<GameState>()(persist((set,get)=>({
   // então socketGem/removeGem funcionavam como um "empréstimo" sem custo real. Agora remover
   // destrói a pedra, e só o encaixe fica livre para uma pedra nova.
   ,removeGem:(equipmentId:string,index:number)=>{const s=get(),installed=[...(s.equipmentGems[equipmentId]??[])],gemId=installed[index],gem=FORGE_GEMS.find(g=>g.id===gemId);if(!gemId||(index===0&&s.forgedGemLocked?.[equipmentId]))return;installed.splice(index,1);set({equipmentGems:{...s.equipmentGems,[equipmentId]:installed},explorationNote:`${gem?.nome??'A pedra'} foi perdida ao ser removida. Pedras instaladas ficam fixas no item.`})}
-  ,setSelectedTitle:(titulo?:string)=>{const s=get();if(titulo&&!unlockedAchievements(s).some(a=>a.titulo===titulo))return;set({selectedTitle:titulo})}
+  ,setSelectedTitle:(titulo?:string)=>{const s=get();if(titulo&&!unlockedAchievements(s).some(a=>a.titulo===titulo)&&!storyLoreTitles(s).includes(titulo))return;set({selectedTitle:titulo})}
   ,startDungeon:()=>{
     const s=get(),sub=SUBREGIONS.find(x=>x.id===s.dungeonSubregionId)??SUBREGIONS.find(x=>x.id===s.subregionId)??SUBREGIONS.find(x=>x.regionId===s.regionId)??SUBREGIONS[0]
     const freshRun=!s.dungeonActive,depth=(s.dungeonActive?s.dungeonDepth:0)+1
@@ -1333,12 +1339,16 @@ export const useGame = create<GameState>()(persist((set,get)=>({
       storyNotice:`Nova missão aceita: ${quest.title}!`
     });
   }
-  ,turnInStoryQuest:(questId:string)=>{
+  ,turnInStoryQuest:(questId:string,endingId?:CampaignEndingId)=>{
     const quest=questById(questId);
     if(!quest)return;
     const s=get();
     const active=(s.activeStoryQuests??{})[questId];
     if(!active)return;
+    // A entrega da missão final É a escolha do desfecho: sem um desfecho válido (ou se a campanha
+    // já tiver um), nada acontece -- a encomenda continua na bolsa esperando a decisão.
+    const ending=quest.decidesEnding?campaignEndingById(endingId):undefined;
+    if(quest.decidesEnding&&(!ending||endingFromFlags(s.storyFlags)))return;
     const questItems={...(s.questItems??{})};
     if(quest.questItem&&(questItems[quest.questItem.id]??0)<quest.questItem.quantity)return;
     if(quest.questItem){
@@ -1351,9 +1361,13 @@ export const useGame = create<GameState>()(persist((set,get)=>({
     const gold=s.gold+quest.reward.gold;
     const xp=s.xp+quest.reward.xp;
     const storyFlags=[...(s.storyFlags??[])];
-    if(quest.reward.loreTitle&&!storyFlags.includes(`titulo:${quest.reward.loreTitle}`)){
-      storyFlags.push(`titulo:${quest.reward.loreTitle}`);
+    for(const title of [quest.reward.loreTitle,ending?.loreTitle]){
+      if(title&&!storyFlags.includes(`titulo:${title}`))storyFlags.push(`titulo:${title}`);
     }
+    if(ending)storyFlags.push(`${ENDING_FLAG_PREFIX}${ending.id}`);
+    // reward.itemReward é o id de um consumível (validado em qa-verification.test.ts).
+    const rewardItem=quest.reward.itemReward?CONSUMABLES.find(c=>c.id===quest.reward.itemReward):undefined;
+    const inventory=rewardItem?{...s.inventory,[rewardItem.id]:(s.inventory[rewardItem.id]??0)+1}:s.inventory;
     set({
       activeStoryQuests,
       completedStoryQuests,
@@ -1361,7 +1375,10 @@ export const useGame = create<GameState>()(persist((set,get)=>({
       gold,
       xp,
       storyFlags,
-      storyNotice:`Missão entregue: ${quest.title}! (+${quest.reward.gold} ouro, +${quest.reward.xp} XP)`
+      inventory,
+      storyNotice:ending
+        ?`${ending.title}: a campanha chegou ao fim. (+${quest.reward.gold} ouro, +${quest.reward.xp} XP)`
+        :`Missão entregue: ${quest.title}! (+${quest.reward.gold} ouro, +${quest.reward.xp} XP${rewardItem?`, +1 ${rewardItem.nome}`:''})`
     });
   }
   ,startTour:()=>set({tourStep:0,screen:TOUR_STEPS[0].screen})

@@ -40,6 +40,8 @@ import { coopAttackInputs, previewCoopEnemyAttack, previewCoopHeroAttack } from 
 import { coopRewardShare, coopShareTable } from './online/coopMath'
 import { npcsForRegion, npcById, type NpcDefinition } from './data/npcs'
 import { STORY_QUESTS, questById, questsOfferedByNpc, questsDeliverableToNpc, type StoryQuest } from './data/storyQuests'
+import { campaignEndingById, endingFromFlags, endingReaction } from './data/worldLore'
+import { CampaignEndingCard, EndingChoicePanel, JourneyTitlesPanel, NpcWorldEcho, QuestCompletionCard, StoryActsOverview, actLabel, itemRecognizedBy } from './ui/StoryLore'
 import { onlineConfigured } from './online/supabase'
 import { CoopProvider, useCoop, type MarketListing } from './online/CoopContext'
 import { selectCoopAutoSummonType, shouldUseCoopAutoHeroSkill } from './online/coopAutoCombat'
@@ -254,7 +256,15 @@ function EquipmentComparison({item,current,currentTotal,candidateTotal,heroId}:{
  const statMetrics=(stats:ItemStats,other?:ItemStats)=><>{metric('Índice',score(stats),other?score(other):undefined,'','Quanto a peça vale para a sua classe: 1 ponto do atributo do seu ataque = 1 de Armadura = 1 de Vigor = 2 de Vida.')}{keys.map(key=>metric(ITEM_STAT_LABELS[key],stats[key],other?.[key],key==='esquiva'?'%':''))}</>
  const style=(equipment:typeof item)=>equipment.perfilAtributos?<small className="compare-style" title={equipment.perfilAtributos.escola==='adaptavel'?'Peça universal: o ataque dela vale para o atributo de ataque de quem veste (Força ou Magia).':undefined}>Estilo {STYLE_LABELS[equipment.perfilAtributos.estilo]}{equipment.perfilAtributos.escola==='adaptavel'&&(equipment.ataque??0)>0?' • ataque adaptável':''}</small>:null
  const mismatch=item.slot==='bolsa'?'':offenseMismatchNote(candidate,heroId)
- return <section className="equipment-compare"><h3>Comparação de equipamentos</h3><div><article className="compare-candidate"><small>ITEM SELECIONADO</small><strong>{item.nome}</strong>{style(item)}<div className="compare-stats">{item.slot==='bolsa'?metric('Espaços',item.capacidade??8,current?.capacidade):statMetrics(candidate,equipped)}</div>{mismatch&&<p className="compare-warning">{mismatch}</p>}<p><b>Habilidade</b>{item.habilidade}</p></article>{current?<article className="compare-equipped"><small>EQUIPADO AGORA</small><strong>{current.nome}</strong>{style(current)}<div className="compare-stats">{current.slot==='bolsa'?metric('Espaços',current.capacidade??8):statMetrics(equipped!)}</div><p><b>Habilidade</b>{current.habilidade}</p></article>:<article className="compare-empty"><small>EQUIPADO AGORA</small><strong>Slot vazio</strong><p>Nenhum item será substituído.</p></article>}</div></section>}
+ const lore=(equipment:typeof item)=><EquipmentLore equipment={equipment}/>
+ return <section className="equipment-compare"><h3>Comparação de equipamentos</h3><div><article className="compare-candidate"><small>ITEM SELECIONADO</small><strong>{item.nome}</strong>{style(item)}<div className="compare-stats">{item.slot==='bolsa'?metric('Espaços',item.capacidade??8,current?.capacidade):statMetrics(candidate,equipped)}</div>{mismatch&&<p className="compare-warning">{mismatch}</p>}<p><b>Habilidade</b>{item.habilidade}</p>{lore(item)}</article>{current?<article className="compare-equipped"><small>EQUIPADO AGORA</small><strong>{current.nome}</strong>{style(current)}<div className="compare-stats">{current.slot==='bolsa'?metric('Espaços',current.capacidade??8):statMetrics(equipped!)}</div><p><b>Habilidade</b>{current.habilidade}</p>{lore(current)}</article>:<article className="compare-empty"><small>EQUIPADO AGORA</small><strong>Slot vazio</strong><p>Nenhum item será substituído.</p></article>}</div></section>}
+// Item mnemônico (Bíblia de narrativa, seção 4): além da mecânica, a proveniência (historia) e quem
+// no mundo reconhece a peça ao vê-la equipada (ITEM_ECHOES).
+function EquipmentLore({equipment}:{equipment:Equipment}){
+ const recognizers=itemRecognizedBy(equipment.id)
+ if(!equipment.historia&&!recognizers.length)return null
+ return <>{equipment.historia&&<p className="compare-lore"><b>História</b>{equipment.historia}</p>}{recognizers.length>0&&<p className="compare-echo"><b>Reconhecida por</b>{recognizers.map(npc=>`${npc.nome} (${TERRITORIES.find(t=>t.id===npc.regionId)?.nome??npc.regionId})`).join(', ')}</p>}</>
+}
 function ArtPreview({image,name,text,stats,className,imgStyle,compareEquipment=false,allowEquip=false,instanceRef}:{image:string;name:string;text?:string;stats?:string;className?:string;imgStyle?:React.CSSProperties;compareEquipment?:boolean;allowEquip?:boolean;instanceRef?:string}){
  const [open,setOpen]=React.useState(false)
  const equipped=useGame(state=>state.equipped),heroId=useGame(state=>state.heroId),xp=useGame(state=>state.xp),equipmentBag=useGame(state=>state.equipmentBag),equip=useGame(state=>state.equip),equipmentGems=useGame(state=>state.equipmentGems),craftedEffects=useGame(state=>state.craftedEffects),equipmentUpgrades=useGame(state=>state.equipmentUpgrades)
@@ -313,7 +323,7 @@ function ArtPreview({image,name,text,stats,className,imgStyle,compareEquipment=f
   {image&&<img src={src} alt={name} style={imgStyle}/>}
   {emblem&&<img className="slot-class-emblem" src={assetUrl(emblem)} alt={classOwnerLabel(owner)} aria-hidden="true"/>}
  </span>
- {open&&createPortal(<span className="art-preview-overlay" role="dialog" aria-modal="true" aria-label={`Arte completa de ${name}`} onClick={event=>{event.stopPropagation();setOpen(false)}}><span className={`art-preview-card${equipment&&!ownSlot?' equipment-comparison-preview':''}`} onClick={event=>event.stopPropagation()}><img src={src} alt={name}/><span className="art-preview-copy"><button className="art-preview-close" onClick={()=>setOpen(false)} aria-label="Fechar visualização">×</button><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}{equipment&&resolvedRef&&<div className="art-preview-forge-bonuses"><small className="forge-bonus-title">Bônus aplicados nesta peça</small>{appliedBonusEntries.length?<ul>{appliedBonusEntries.map((label,i)=><li key={i}>{label}</li>)}</ul>:<p>Nenhum bônus da Forja aplicado ainda.</p>}</div>}{equipment&&!ownSlot&&<EquipmentComparison item={equipment} current={currentEquipment} currentTotal={currentTotal} candidateTotal={candidateTotal} heroId={heroId}/>} {equipment&&bagRef&&<button className="primary preview-equip-action" disabled={!classAllowed||!levelAllowed||!bagFits} title={!classAllowed?'Este item não pode ser usado por esta classe.':!levelAllowed?`Disponível no nível ${equipmentRequiredLevel(equipment)}`:!bagFits?'Há equipamentos demais para esta bolsa.':undefined} onClick={()=>{equip(bagRef);setOpen(false)}}>{equipLabel}</button>}<em>Clique fora da janela ou pressione Esc para fechar</em></span></span></span>,document.body)}
+ {open&&createPortal(<span className="art-preview-overlay" role="dialog" aria-modal="true" aria-label={`Arte completa de ${name}`} onClick={event=>{event.stopPropagation();setOpen(false)}}><span className={`art-preview-card${equipment&&!ownSlot?' equipment-comparison-preview':''}`} onClick={event=>event.stopPropagation()}><img src={src} alt={name}/><span className="art-preview-copy"><button className="art-preview-close" onClick={()=>setOpen(false)} aria-label="Fechar visualização">×</button><small>ARTE COMPLETA</small><strong>{name}</strong>{text&&<span>{text}</span>}{stats&&<b>{stats}</b>}{equipment&&resolvedRef&&<div className="art-preview-forge-bonuses"><small className="forge-bonus-title">Bônus aplicados nesta peça</small>{appliedBonusEntries.length?<ul>{appliedBonusEntries.map((label,i)=><li key={i}>{label}</li>)}</ul>:<p>Nenhum bônus da Forja aplicado ainda.</p>}</div>}{equipment&&ownSlot&&<div className="art-preview-lore"><EquipmentLore equipment={equipment}/></div>}{equipment&&!ownSlot&&<EquipmentComparison item={equipment} current={currentEquipment} currentTotal={currentTotal} candidateTotal={candidateTotal} heroId={heroId}/>}{equipment&&bagRef&&<button className="primary preview-equip-action" disabled={!classAllowed||!levelAllowed||!bagFits} title={!classAllowed?'Este item não pode ser usado por esta classe.':!levelAllowed?`Disponível no nível ${equipmentRequiredLevel(equipment)}`:!bagFits?'Há equipamentos demais para esta bolsa.':undefined} onClick={()=>{equip(bagRef);setOpen(false)}}>{equipLabel}</button>}<em>Clique fora da janela ou pressione Esc para fechar</em></span></span></span>,document.body)}
  </>
 }
 function cardRarity(card:any,kind?:string):Rarity{
@@ -1221,7 +1231,7 @@ function MapGuildMissions(){
         <header>
           <Mail/>
           <div>
-            <small>{hasItem?'ENCOMENDA PRONTA PARA ENTREGA':`HISTÓRIA • ATO ${q.act}`}</small>
+            <small>{hasItem?'ENCOMENDA PRONTA PARA ENTREGA':`HISTÓRIA • ${actLabel(q.act).toUpperCase()}`}</small>
             <strong>{q.title}</strong>
           </div>
         </header>
@@ -1357,14 +1367,28 @@ function VendorShopPanel({npc}:{npc:NpcDefinition}){
 }
 function NpcStoryQuestSection({ npc, onClose }: { npc: NpcDefinition; onClose: () => void }) {
   const g = useGame()
+  // A fala de conclusão (dialogue.completion) só existia nos dados: a entrega sumia com o card e o
+  // jogador nunca lia a reação do NPC. Agora o card de conclusão fica aberto até "Continuar".
+  const [justCompleted, setJustCompleted] = React.useState<{ quest: StoryQuest; endingId?: string }>()
   const deliverable = questsDeliverableToNpc(npc.id, g.activeStoryQuests ?? {})
   const offered = questsOfferedByNpc(npc.id, g.completedStoryQuests ?? [], g.activeStoryQuests ?? {})
   const activeFromSource = STORY_QUESTS.filter(q => q.sourceNpcId === npc.id && g.activeStoryQuests?.[q.id])
+  const turnIn = (quest: StoryQuest, endingId?: Parameters<typeof g.turnInStoryQuest>[1]) => {
+    g.turnInStoryQuest(quest.id, endingId)
+    if (!useGame.getState().completedStoryQuests?.includes(quest.id)) return
+    // O card de conclusão já mostra recompensas e título; o aviso flutuante (storyNotice) repetia o
+    // mesmo texto por cima do diálogo e cobria o botão "Continuar" do card.
+    useGame.setState({ storyNotice: undefined })
+    setJustCompleted({ quest, endingId })
+    playSfx('levelup')
+    playSfx('coin')
+  }
 
-  if (!deliverable.length && !offered.length && !activeFromSource.length) return null
+  if (!justCompleted && !deliverable.length && !offered.length && !activeFromSource.length) return null
 
   return (
     <div className="npc-quest-container">
+      {justCompleted && <QuestCompletionCard quest={justCompleted.quest} ending={campaignEndingById(justCompleted.endingId)} onDismiss={() => setJustCompleted(undefined)} />}
       {deliverable.map(quest => {
         const hasItem = quest.questItem ? (g.questItems?.[quest.questItem.id] ?? 0) >= quest.questItem.quantity : true
         return (
@@ -1384,15 +1408,9 @@ function NpcStoryQuestSection({ npc, onClose }: { npc: NpcDefinition; onClose: (
               <small>RECOMPENSA:</small>
               <span>+{quest.reward.gold} Ouro • +{quest.reward.xp} XP {quest.reward.loreTitle ? `• Título: ${quest.reward.loreTitle}` : ''}</span>
             </div>
-            {hasItem && (
-              <button
-                className="npc-quest-turnin-btn"
-                onClick={() => {
-                  g.turnInStoryQuest(quest.id)
-                  playSfx('levelup')
-                  playSfx('coin')
-                }}
-              >
+            {hasItem && quest.decidesEnding && <EndingChoicePanel onChoose={endingId => turnIn(quest, endingId)} />}
+            {hasItem && !quest.decidesEnding && (
+              <button className="npc-quest-turnin-btn" onClick={() => turnIn(quest)}>
                 Entregar Encomenda e Concluir
               </button>
             )}
@@ -1406,7 +1424,7 @@ function NpcStoryQuestSection({ npc, onClose }: { npc: NpcDefinition; onClose: (
         return (
           <div key={quest.id} className="npc-quest-card offered">
             <div className="npc-quest-badge">
-              ✨ NOVA MISSÃO (ATO {quest.act})
+              ✨ NOVA MISSÃO • {actLabel(quest.act).toUpperCase()}
             </div>
             <h3 className="npc-quest-title">{quest.title}</h3>
             <p className="npc-quest-speech">“{quest.dialogue.offer}”</p>
@@ -1461,7 +1479,9 @@ function NpcDialog({ npc, onClose }: { npc: NpcDefinition; onClose: () => void }
   const offered = questsOfferedByNpc(npc.id, g.completedStoryQuests ?? [], g.activeStoryQuests ?? {})
   const status = deliverable.length > 0 ? 'ready' : offered.length > 0 ? 'available' : 'default'
   const dialogueIndex = status === 'ready' ? 2 : status === 'available' ? 1 : 0
-  const speech = npc.dialogue[dialogueIndex] ?? npc.dialogue[0]
+  // Depois da escolha final, quem tem opinião sobre o desfecho fala disso em vez da fala de sempre.
+  const endingSpeech = status === 'default' ? endingReaction(npc.id, endingFromFlags(g.storyFlags)) : undefined
+  const speech = endingSpeech ?? npc.dialogue[dialogueIndex] ?? npc.dialogue[0]
   const territory = TERRITORIES.find(t => t.id === npc.regionId)
 
   return (
@@ -1481,7 +1501,9 @@ function NpcDialog({ npc, onClose }: { npc: NpcDefinition; onClose: () => void }
 
         <NpcStoryQuestSection npc={npc} onClose={onClose} />
 
-        <p className="npc-dialogue-quote"><Quote size={15} />{speech}</p>
+        <p className={`npc-dialogue-quote${endingSpeech ? ' lore-ending-speech' : ''}`}><Quote size={15} />{speech}</p>
+
+        <NpcWorldEcho npc={npc} assetUrl={assetUrl} />
 
         {npc.services.includes('guild') && <BrennaMissionPanel />}
         {npc.shopCategory && <VendorShopPanel npc={npc} />}
@@ -1645,7 +1667,7 @@ function CharacterScreen(){const g=useGame();const h=HEROES.find(x=>x.id===g.her
  // Modo Moderno: cabeçalho da Ficha com os números que importam e o próximo passo real (pontos parados, talento liberado ou equipamento).
  const modern=useUiMode()==='modern',next=characterNextStep(g.attributePoints,availableTalentCount(li.lvl,g.talents,TALENTS))
  const goStep=()=>{if(next.step==='equipment'){g.setScreen('equipment');return}focusSection(next.step==='attributes'?'.char-attributes-panel':'.talent-tree-panel')}
- return <>{modern&&<ScreenMasthead className="character-masthead" assetUrl={assetUrl} eyebrow={`Ficha do herói • ${classNames[h.id]??h.id}${subChoice?` • ${subChoice.nome}`:''}`} title={h.nome} lead={<>Nível {li.lvl}: faltam <b>{formatStatNumber(li.next-li.progress)}</b> de experiência para o nível {li.lvl+1}. {profile.ataqueBasico==='hibrido'?'Ataque básico com o maior entre Força e Magia.':`Ataque básico com ${profile.ataqueBasico==='fisico'?'Força':'Magia'}.`}</>} stats={[{label:'Vida',value:`${g.hp}/${champion.vidaMaxima}`},{label:'Energia',value:`${formatStatNumber(energyNow(g))}/${formatStatNumber(champion.energiaMaxima)}`},{label:'Poder',value:formatStatNumber(champion.poder)},{label:'Armadura',value:formatStatNumber(champion.armadura)},{label:'Pontos livres',value:g.attributePoints,hot:g.attributePoints>0}]} action={{label:next.label,detail:next.detail,icon:next.step==='equipment'?<Shield size={20}/>:<Plus size={20}/>,onClick:goStep}} secondary={next.step==='equipment'?[{label:'Mochila',icon:<Backpack size={16}/>,onClick:()=>g.setScreen('inventory')}]:[{label:'Equipamento',icon:<Shield size={16}/>,onClick:()=>g.setScreen('equipment')}]}/>}<div className="char-grid"><Panel className="portrait-panel">{championCard&&<ChampionCard data={championCard} assetUrl={assetUrl}/>}<h1 className="char-fullname">{h.nome}</h1>{subChoice&&<div className="subclass-badge"><Sparkles size={14}/><span>{subChoice.nome} • {subChoice.titulo}</span></div>}<div className="points-box">Pontos disponíveis <strong>{g.attributePoints}</strong></div></Panel><Panel title="Atributos" className="char-attributes-panel"><p className={`attr-points-callout${g.attributePoints?' hot':''}`}><Plus size={15}/><span>{g.attributePoints?<>Você tem <strong>{g.attributePoints}</strong> {g.attributePoints===1?'ponto':'pontos'} de atributo para distribuir abaixo.</>:'Nenhum ponto de atributo disponível agora — suba de nível para ganhar mais.'}</span></p>{PRIMARY_ATTRIBUTES.map(key=>{const line=champion.linhas[key],temp=key!=='vigor'&&key!=='destreza'&&g.pendingAttackBonus&&(profile.ataqueBasico==='hibrido'||(profile.ataqueBasico==='fisico')===(key==='forca'))?g.pendingAttackBonus:0;return <AttrRow key={key} label={ATTRIBUTE_LABELS[key]} value={formatStatNumber(line.total)} n={g.allocatedAttr[key]} detail={[line.bonus?`${line.bonus>0?'+':'−'}${formatStatNumber(Math.abs(line.bonus))} de equipamento e talentos`:'',temp?`+${temp} temporário até o fim do combate`:''].filter(Boolean).join(' • ')||undefined} hint={ATTRIBUTE_HINTS[key]} onPlus={()=>g.addAttribute(key as PrimaryAttributeKey)} disabled={!g.attributePoints}/>})}<h3 className="subhead">Derivados</h3><Stat label="Vida" value={`${g.hp}/${champion.vidaMaxima}${permanentLife?` (+${permanentLife} permanente)`:''}`}/><Stat label="Energia" value={`${formatStatNumber(energyNow(g))}/${formatStatNumber(champion.energiaMaxima)} (sobe ao atacar, mais com crítico, e ao descansar na fogueira)`}/><Stat label="Armadura" value={`${formatStatNumber(champion.armadura)} (só de itens; mitiga ${defenseValue(g)} de dano físico)`}/><Stat label="Esquiva" value={percentText(heroDodgeChance(g))}/><Stat label="Resistência a elementos" value={percentText(heroElementalResistance(g))}/><Stat label="Resistência a efeitos" value={percentText(heroEffectResistance(g))}/><Stat label="Poder" value={formatStatNumber(champion.poder)}/>{totalAllocated>0&&<button className="danger-action reset-attr-btn" onClick={g.resetAttributes} title="Redistribuir todos os pontos de atributo investidos"><ArrowUpDown size={14}/> Redefinir Atributos (Gratuito)</button>}<h3 className="subhead">Progressão</h3><Stat label="Nível" value={li.lvl}/><div className="xp-track"><div style={{width:`${Math.min(100,li.progress/li.next*100)}%`}}/></div><Stat label="XP do nível" value={`${li.progress}/${li.next}`}/><Stat label="XP necessária para o próximo nível" value={li.next-li.progress}/><Stat label="Experiência total" value={g.xp}/><Stat label="Ouro" value={g.gold}/><Stat label="Maior dano em um golpe" value={g.highestDamageDealt?`${g.highestDamageDealt} de dano`:'Nenhum golpe registrado'}/></Panel><TalentPanel/></div><Panel className="char-mechanics" title="Mecânicas do personagem"><div className="mechanics-grid">{ability.passivo&&<div className="mechanics-card"><small>PASSIVO</small><p>{ability.passivo}</p></div>}<div className="mechanics-card"><small>ATIVO • {heroSkillNames[h.id]??'Habilidade do herói'}</small><p>{ability.ativo}</p><span className="mechanics-hint">Custa {heroSkillEnergyCost(g.heroId)} de Energia e tem recarga de 3 turnos.</span></div></div><h3 className="subhead">Como os atributos funcionam</h3><div className="mechanics-attr-list"><div><Sword size={16}/><div><strong>Força</strong><span>{ATTRIBUTE_HINTS.forca}</span></div></div><div><Wand2 size={16}/><div><strong>Magia</strong><span>{ATTRIBUTE_HINTS.magia}</span></div></div><div><Heart size={16} className="heart"/><div><strong>Vigor</strong><span>{ATTRIBUTE_HINTS.vigor} Cada ponto dá +{ATTRIBUTE_RULES.vigorVidaPorPonto} de Vida Máxima.</span></div></div><div><Footprints size={16}/><div><strong>Destreza</strong><span>{ATTRIBUTE_HINTS.destreza}</span></div></div><div><ShieldHalf size={16}/><div><strong>Armadura</strong><span>Vem só de equipamentos e gemas e reduz o dano físico que você recebe, com retorno decrescente: as primeiras peças pesam mais e nenhuma quantidade deixa você invulnerável.</span></div></div><div><Zap size={16}/><div><strong>Energia</strong><span>Recurso das habilidades e do Fervor de Combate. Não regenera sozinha: ataque normal dá +{ATTRIBUTE_RULES.energia.ganhoAtaque}, crítico dá +{ATTRIBUTE_RULES.energia.ganhoCritico} e descansar na fogueira devolve +{ATTRIBUTE_RULES.energia.ganhoDescansoPorTick} a cada 6s. Sua habilidade custa {heroSkillEnergyCost(g.heroId)} e o Fervor, {fervorEnergyCost()}.</span></div></div></div><h3 className="subhead">Talentos</h3><p className="mechanics-note">Cada talento da Árvore de Talentos ao lado é desbloqueado permanentemente ao atingir o nível exigido e concede um bônus fixo — eles se acumulam e nunca expiram, mesmo trocando de equipamento.</p></Panel></>}
+ return <>{modern&&<ScreenMasthead className="character-masthead" assetUrl={assetUrl} eyebrow={`Ficha do herói • ${classNames[h.id]??h.id}${subChoice?` • ${subChoice.nome}`:''}`} title={h.nome} lead={<>Nível {li.lvl}: faltam <b>{formatStatNumber(li.next-li.progress)}</b> de experiência para o nível {li.lvl+1}. {profile.ataqueBasico==='hibrido'?'Ataque básico com o maior entre Força e Magia.':`Ataque básico com ${profile.ataqueBasico==='fisico'?'Força':'Magia'}.`}</>} stats={[{label:'Vida',value:`${g.hp}/${champion.vidaMaxima}`},{label:'Energia',value:`${formatStatNumber(energyNow(g))}/${formatStatNumber(champion.energiaMaxima)}`},{label:'Poder',value:formatStatNumber(champion.poder)},{label:'Armadura',value:formatStatNumber(champion.armadura)},{label:'Pontos livres',value:g.attributePoints,hot:g.attributePoints>0}]} action={{label:next.label,detail:next.detail,icon:next.step==='equipment'?<Shield size={20}/>:<Plus size={20}/>,onClick:goStep}} secondary={next.step==='equipment'?[{label:'Mochila',icon:<Backpack size={16}/>,onClick:()=>g.setScreen('inventory')}]:[{label:'Equipamento',icon:<Shield size={16}/>,onClick:()=>g.setScreen('equipment')}]}/>}<div className="char-grid"><Panel className="portrait-panel">{championCard&&<ChampionCard data={championCard} assetUrl={assetUrl}/>}<h1 className="char-fullname">{h.nome}</h1>{g.selectedTitle&&<p className="char-title"><Trophy size={14}/>{g.selectedTitle}</p>}{subChoice&&<div className="subclass-badge"><Sparkles size={14}/><span>{subChoice.nome} • {subChoice.titulo}</span></div>}<div className="points-box">Pontos disponíveis <strong>{g.attributePoints}</strong></div></Panel><Panel title="Atributos" className="char-attributes-panel"><p className={`attr-points-callout${g.attributePoints?' hot':''}`}><Plus size={15}/><span>{g.attributePoints?<>Você tem <strong>{g.attributePoints}</strong> {g.attributePoints===1?'ponto':'pontos'} de atributo para distribuir abaixo.</>:'Nenhum ponto de atributo disponível agora — suba de nível para ganhar mais.'}</span></p>{PRIMARY_ATTRIBUTES.map(key=>{const line=champion.linhas[key],temp=key!=='vigor'&&key!=='destreza'&&g.pendingAttackBonus&&(profile.ataqueBasico==='hibrido'||(profile.ataqueBasico==='fisico')===(key==='forca'))?g.pendingAttackBonus:0;return <AttrRow key={key} label={ATTRIBUTE_LABELS[key]} value={formatStatNumber(line.total)} n={g.allocatedAttr[key]} detail={[line.bonus?`${line.bonus>0?'+':'−'}${formatStatNumber(Math.abs(line.bonus))} de equipamento e talentos`:'',temp?`+${temp} temporário até o fim do combate`:''].filter(Boolean).join(' • ')||undefined} hint={ATTRIBUTE_HINTS[key]} onPlus={()=>g.addAttribute(key as PrimaryAttributeKey)} disabled={!g.attributePoints}/>})}<h3 className="subhead">Derivados</h3><Stat label="Vida" value={`${g.hp}/${champion.vidaMaxima}${permanentLife?` (+${permanentLife} permanente)`:''}`}/><Stat label="Energia" value={`${formatStatNumber(energyNow(g))}/${formatStatNumber(champion.energiaMaxima)} (sobe ao atacar, mais com crítico, e ao descansar na fogueira)`}/><Stat label="Armadura" value={`${formatStatNumber(champion.armadura)} (só de itens; mitiga ${defenseValue(g)} de dano físico)`}/><Stat label="Esquiva" value={percentText(heroDodgeChance(g))}/><Stat label="Resistência a elementos" value={percentText(heroElementalResistance(g))}/><Stat label="Resistência a efeitos" value={percentText(heroEffectResistance(g))}/><Stat label="Poder" value={formatStatNumber(champion.poder)}/>{totalAllocated>0&&<button className="danger-action reset-attr-btn" onClick={g.resetAttributes} title="Redistribuir todos os pontos de atributo investidos"><ArrowUpDown size={14}/> Redefinir Atributos (Gratuito)</button>}<h3 className="subhead">Progressão</h3><Stat label="Nível" value={li.lvl}/><div className="xp-track"><div style={{width:`${Math.min(100,li.progress/li.next*100)}%`}}/></div><Stat label="XP do nível" value={`${li.progress}/${li.next}`}/><Stat label="XP necessária para o próximo nível" value={li.next-li.progress}/><Stat label="Experiência total" value={g.xp}/><Stat label="Ouro" value={g.gold}/><Stat label="Maior dano em um golpe" value={g.highestDamageDealt?`${g.highestDamageDealt} de dano`:'Nenhum golpe registrado'}/></Panel><TalentPanel/></div><Panel className="char-mechanics" title="Mecânicas do personagem"><div className="mechanics-grid">{ability.passivo&&<div className="mechanics-card"><small>PASSIVO</small><p>{ability.passivo}</p></div>}<div className="mechanics-card"><small>ATIVO • {heroSkillNames[h.id]??'Habilidade do herói'}</small><p>{ability.ativo}</p><span className="mechanics-hint">Custa {heroSkillEnergyCost(g.heroId)} de Energia e tem recarga de 3 turnos.</span></div></div><h3 className="subhead">Como os atributos funcionam</h3><div className="mechanics-attr-list"><div><Sword size={16}/><div><strong>Força</strong><span>{ATTRIBUTE_HINTS.forca}</span></div></div><div><Wand2 size={16}/><div><strong>Magia</strong><span>{ATTRIBUTE_HINTS.magia}</span></div></div><div><Heart size={16} className="heart"/><div><strong>Vigor</strong><span>{ATTRIBUTE_HINTS.vigor} Cada ponto dá +{ATTRIBUTE_RULES.vigorVidaPorPonto} de Vida Máxima.</span></div></div><div><Footprints size={16}/><div><strong>Destreza</strong><span>{ATTRIBUTE_HINTS.destreza}</span></div></div><div><ShieldHalf size={16}/><div><strong>Armadura</strong><span>Vem só de equipamentos e gemas e reduz o dano físico que você recebe, com retorno decrescente: as primeiras peças pesam mais e nenhuma quantidade deixa você invulnerável.</span></div></div><div><Zap size={16}/><div><strong>Energia</strong><span>Recurso das habilidades e do Fervor de Combate. Não regenera sozinha: ataque normal dá +{ATTRIBUTE_RULES.energia.ganhoAtaque}, crítico dá +{ATTRIBUTE_RULES.energia.ganhoCritico} e descansar na fogueira devolve +{ATTRIBUTE_RULES.energia.ganhoDescansoPorTick} a cada 6s. Sua habilidade custa {heroSkillEnergyCost(g.heroId)} e o Fervor, {fervorEnergyCost()}.</span></div></div></div><h3 className="subhead">Talentos</h3><p className="mechanics-note">Cada talento da Árvore de Talentos ao lado é desbloqueado permanentemente ao atingir o nível exigido e concede um bônus fixo — eles se acumulam e nunca expiram, mesmo trocando de equipamento.</p></Panel></>}
 // Item 46 do Quadro de Contratos: cada conquista é recalculada ao vivo (ACHIEVEMENTS/
 // unlockedAchievements, em store/game.ts) a partir de dados que só crescem durante a
 // campanha -- nenhuma lista de "já vistas" pra persistir. A recompensa é o título
@@ -1670,6 +1692,8 @@ function StoryQuestsJournalPanel() {
 
   return (
     <Panel title="Diário de Missões & Entregas" className="story-journal-panel">
+      <CampaignEndingCard />
+      <StoryActsOverview />
       <div className="story-journal-section">
         <div className="story-journal-head">
           <Mail size={16} />
@@ -1687,7 +1711,7 @@ function StoryQuestsJournalPanel() {
               return (
                 <article key={q.id} className={`story-journal-card ${hasItem ? 'ready' : 'in-progress'}`}>
                   <header>
-                    <span className="eyebrow">ATO {q.act} • {q.type === 'delivery' ? 'ENTREGA' : 'MISSÃO'}</span>
+                    <span className="eyebrow">{actLabel(q.act).toUpperCase()} • {q.type === 'delivery' ? 'ENTREGA' : 'MISSÃO'}</span>
                     <h4>{q.title}</h4>
                   </header>
                   <p className="story-journal-summary">{q.summary}</p>
@@ -1735,17 +1759,21 @@ function StoryQuestsJournalPanel() {
           </div>
           <div className="story-journal-completed-list">
             {completed.map(q => (
-              <div key={q.id} className="story-journal-completed-item">
-                <span className="check-icon">✓</span>
-                <div>
-                  <strong>{q.title} (Ato {q.act})</strong>
-                  <small>{q.reward.loreTitle ? `Título: ${q.reward.loreTitle} • ` : ''}Entregue para {npcById(q.targetNpcId)?.nome ?? q.targetNpcId}</small>
-                </div>
-              </div>
+              <details key={q.id} className="story-journal-completed-item">
+                <summary>
+                  <span className="check-icon">✓</span>
+                  <div>
+                    <strong>{q.title} ({actLabel(q.act)})</strong>
+                    <small>{q.reward.loreTitle ? `Título: ${q.reward.loreTitle} • ` : ''}Entregue para {npcById(q.targetNpcId)?.nome ?? q.targetNpcId}</small>
+                  </div>
+                </summary>
+                <p className="lore-completed-speech">“{q.dialogue.completion}”</p>
+              </details>
             ))}
           </div>
         </div>
       )}
+      <JourneyTitlesPanel />
     </Panel>
   )
 }
