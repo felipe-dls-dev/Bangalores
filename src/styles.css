@@ -2160,6 +2160,7 @@ body::after{content:"VERSÃO 0.9.6 • 26/09/2026\A Imagens sem corte desnecess�
 body::after{content:"VERSÃO 0.9.7 • 26/09/2026\A Menus por assunto: Expedição (Mapa, Masmorras, Crônicas), Herói (Ficha, Equipamento, Mochila), Vila (Loja, Forja, Guilda), Conquistas (títulos e bestiário, Coleção) e Coop. Masmorras e Conquistas ganham tela própria; resumo da build vai para o Equipamento e a provisão diária para a Guilda.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.8 • 28/09/2026\A Celular: navegação no rodapé ao alcance do polegar e topo numa linha só; no combate herói e inimigo ficam lado a lado e as ações presas no rodapé, sem rolar; o mapa da região abre na primeira tela; Forja e Guilda mostram 12 itens por vez.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.9 • 28/09/2026\A Fim do modo Clássico: o jogo passa a ter só a interface Moderna (Acampamento, menus por assunto e telas redesenhadas). O botão de alternar a interface saiu da tela inicial, do topo e do Menu; quem jogava no Clássico abre direto no Moderno.";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.10 • 28/09/2026\A Celular: a tela de Vitória deixou de ficar em meia largura com a comparação do saque vazando; Masmorras em duas colunas com o botão de entrar sempre à mão; Loja com duas peças por linha em telas largas; escolhas da história, Conjuntos, Provisão da Guilda e receitas da Forja sem texto espremido; combate sem espaço vazio.";white-space:pre-line}
 /* Equipamentos nos atributos novos (v0.9.4): as diferenças por atributo quebram linha; estilo da peça e aviso de escola na comparação. */
 .item-stat-diff{flex-wrap:wrap;row-gap:2px}
 .equipment-compare .compare-style{display:block;margin:-2px 0 6px;color:#a98752;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase}
@@ -5337,3 +5338,87 @@ html.high-contrast .vc-scene{opacity:.3}
   .topbar .hud-bag{display:none}
   .app-shell .region-head .eyebrow{letter-spacing:.06em}
 }
+
+/* ==== Celular: organização e proporção das telas (v0.9.10) ====
+   Varredura de 22 telas em 9 larguras (360 a 760px). Dois tipos de defeito: na faixa 561-760px (celular com zoom de
+   exibição reduzido, dobrável, paisagem) grades herdavam o layout de tablet pela metade; em 360-420px grades de duas
+   colunas espremiam nomes e textos em 4 a 6 linhas. */
+
+/* Vitória: no ≤760 as áreas passavam a ser de uma coluna, mas a grade continuava com as 2 colunas do ≤1100. Resultado:
+   Recompensas, Saque e Recuperação em meia largura e a comparação do saque vazando para fora do cartão. */
+@media (max-width:760px){
+  .vc-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"rewards recover" "drop drop"}
+  .vc-drop-body{grid-template-columns:minmax(180px,280px) minmax(0,1fr)}
+  .vc-drop-card{width:100%}
+}
+@media (max-width:560px){
+  .vc-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"rewards" "drop" "recover"}
+  .vc-drop-body{grid-template-columns:minmax(0,1fr)}
+  .vc-drop-card{width:min(100%,320px)}
+}
+/* Mochila do espólio: os três botões (Equipar, Desmontar, Vender) ficavam um embaixo do outro mesmo com espaço. */
+@media (min-width:481px) and (max-width:760px){.loot-item-actions button{flex:1 1 88px}}
+
+/* Números do cabeçalho: 5 números em 3 colunas deixavam um buraco; em 2 colunas (≤360), número ímpar deixava o
+   último sozinho em meia linha. O último passa a ocupar o espaço que sobraria. */
+@media (max-width:760px){.masthead-stats>div:nth-child(5):last-child{grid-column:span 2}}
+@media (max-width:360px){.masthead-stats>div:last-child:nth-child(odd){grid-column:1/-1}}
+
+/* Mapa: os totais tinham colunas fixas de 180px (dois terços vazios em 740px) e, no Resumo do herói, nível, pontos e
+   Missões ativas ficavam presos na primeira de duas colunas. */
+@media (max-width:760px){
+  .map-index-totals{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .map-layout-with-index>.summary>:not(.stat){grid-column:1/-1}
+}
+
+/* Masmorras: em 360px as 40 sub-regiões viravam uma coluna só (2.800px de lista) e o botão de entrar ficava no fim.
+   Agora duas colunas, e "Entrar na masmorra" acompanha a rolagem logo acima da barra do rodapé. */
+@media (max-width:760px){
+  .dungeon-sub-row{grid-template-columns:repeat(auto-fill,minmax(136px,1fr))}
+  .dungeon-sub-button span{font-size:.74rem;line-height:1.25}
+  .dungeon-page>.panel>button.primary{position:sticky;bottom:calc(var(--m-nav-h,0px) + env(safe-area-inset-bottom,0px) + 8px);z-index:5;width:100%;box-shadow:0 -8px 22px rgba(0,0,0,.6)}
+}
+
+/* Crônicas: as duas escolhas da história ficavam lado a lado em 143px ("Exigir pagamento pela investigação" em 4
+   linhas). Lado a lado só quando cada uma tem ao menos 220px. */
+@media (max-width:760px){.story-choices button{flex:1 1 220px}}
+
+/* Equipamento (Resumo da build): Conjuntos e Efeitos equipados em duas colunas de 150px quebravam em 5-6 linhas. */
+@media (max-width:480px){.build-tags{grid-template-columns:minmax(0,1fr)}}
+
+/* Loja: entre 421 e 760px cada peça ocupava a largura toda com preço e botão empilhados (238px de altura por item).
+   Preço e botão na mesma linha, e duas peças por linha quando cabem. */
+@media (max-width:760px){
+  .shop-row-action{grid-template-columns:auto minmax(112px,1fr);align-items:center}
+  .shop-row-price{justify-content:flex-start}
+}
+@media (min-width:681px) and (max-width:760px){.shop-list,.shop-group-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Em ≤420px o nome dividia 206px com a raridade e o emblema e quebrava em 3 linhas: raridade e emblema vão para a
+   linha de cima, como um sobrescrito, e o nome usa a largura toda. */
+@media (max-width:420px){.shop-row-title>strong{flex:1 1 100%;order:1}}
+
+/* Forja: em 701-760px Maestria (curta) e Materiais (longa) dividiam a linha e a Maestria esticava com 400px vazios.
+   Em ≤460px a arte da receita caía para depois do botão; volta a ser a miniatura à esquerda, como no resto das telas. */
+@media (max-width:760px){.forge-side-panel{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:561px) and (max-width:760px){.forge-material-group>div:not(.forge-material-group-title){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:460px){
+  .forge-redesign .recipe-grid article{grid-template-columns:88px minmax(0,1fr)}
+  .forge-redesign .recipe-grid article>.forge-item-art{grid-column:1;grid-row:1/3;width:88px;justify-self:stretch;border-right:1px solid var(--theme-border-soft,#4d3a27);border-bottom:0}
+  .forge-redesign .recipe-grid article>div,.forge-redesign .recipe-grid article>ul{grid-column:2}
+  .forge-redesign .recipe-grid article>div{padding:10px 10px 6px 0!important}
+  .forge-redesign .recipe-grid article>ul{padding:0 10px 8px 0!important}
+  .forge-redesign .recipe-grid article>button{grid-column:1/-1}
+}
+
+/* Guilda: a Provisão diária dividia 330px entre o texto e um botão de 4-5 linhas. Botão embaixo, na largura toda. */
+@media (max-width:560px){
+  .daily-reward-box{flex-direction:column;align-items:stretch;gap:12px;padding:12px 14px}
+  .daily-reward-box>button{width:100%}
+}
+
+/* Combate: o painel de consumíveis mantinha a altura mínima de tablet (360px) e, com uma poção só, sobravam ~250px
+   vazios entre os dados e as habilidades dos itens. */
+@media (max-width:760px){.app-shell .combat-v033 .combat-consumables-panel{min-height:0}}
+
+/* Chefe: a classe genérica .empty (texto centralizado) vazava para os itens zerados da preparação. */
+.bi-kit li.empty{text-align:left}
