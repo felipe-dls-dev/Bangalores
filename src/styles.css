@@ -2158,6 +2158,7 @@ body::after{content:"VERSÃO 0.9.4 • 26/09/2026\A Equipamentos nos novos atrib
 body::after{content:"VERSÃO 0.9.5 • 26/09/2026\A Loja: os cards da vitrine mostram os atributos de cada peça (Força, Magia, Vigor, Destreza, Armadura, Vida, Energia, Esquiva), a diferença para a peça equipada no mesmo espaço e se ela é melhor ou pior pelo Índice.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.6 • 26/09/2026\A Imagens sem corte desnecessário: cards de item (Equipamento, Mochila, Espólio), vitrine da Loja, receitas da Forja, chefe, consumíveis do combate e diálogo do mapa mostram a arte inteira; retratos de herói não cortam mais a cabeça.";white-space:pre-line}
 body::after{content:"VERSÃO 0.9.7 • 26/09/2026\A Menus por assunto: Expedição (Mapa, Masmorras, Crônicas), Herói (Ficha, Equipamento, Mochila), Vila (Loja, Forja, Guilda), Conquistas (títulos e bestiário, Coleção) e Coop. Masmorras e Conquistas ganham tela própria; resumo da build vai para o Equipamento e a provisão diária para a Guilda.";white-space:pre-line}
+body::after{content:"VERSÃO 0.9.8 • 28/09/2026\A Celular: navegação no rodapé ao alcance do polegar e topo numa linha só; no combate herói e inimigo ficam lado a lado e as ações presas no rodapé, sem rolar; o mapa da região abre na primeira tela; Forja e Guilda mostram 12 itens por vez.";white-space:pre-line}
 /* Equipamentos nos atributos novos (v0.9.4): as diferenças por atributo quebram linha; estilo da peça e aviso de escola na comparação. */
 .item-stat-diff{flex-wrap:wrap;row-gap:2px}
 .equipment-compare .compare-style{display:block;margin:-2px 0 6px;color:#a98752;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase}
@@ -5137,4 +5138,201 @@ html.high-contrast .vc-scene{opacity:.3}
 @media (min-width:761px){
   .topbar>nav:not(.nav-modern){gap:4px}
   .topbar>nav:not(.nav-modern)>button{padding-inline:7px}
+}
+/* ==========================================================================================================
+   Celular (v0.9.8, <=760px). Jogatina completa em 390x844 com toque, nos modos Clássico e Moderno: todas as telas,
+   batalha comum e de chefe até o espólio. Achados que este bloco corrige:
+   - o topo ocupava 145px (Moderno) e 357px (Clássico) em TODA tela, com a navegação longe do polegar;
+   - no combate o botão Atacar ficava a ~790px (Moderno) e ~1.900px (Clássico) do topo, e o resultado dos dados
+     vinha depois das ações: era preciso rolar para agir e rolar de novo para ver o que aconteceu;
+   - o rodapé "Auto-save ativo" ficava fixo por cima dos botões de ação;
+   - o mapa andável da Região começava abaixo da primeira dobra.
+   Tudo aqui vale só no celular; o desktop não muda. `data-screen` (no .app-shell) diz a tela atual.
+   ========================================================================================================== */
+@media (max-width:760px){
+  /* Toque: sem espera de duplo toque para zoom, sem o flash azul do navegador, e campos com 16px (o iOS amplia a
+     página inteira ao focar um campo com letra menor). */
+  button,a,input,select,label,summary,[role="button"],[role="tab"],[role="menuitem"]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea{font-size:16px}
+
+  /* Altura da barra de navegação do rodapé. Some no combate (a navegação fica travada lá) e nas telas sem topo
+     (menu, seleção de herói, evento, criador de cartas). */
+  .app-shell{--m-nav-h:60px;padding-bottom:calc(var(--m-nav-h) + env(safe-area-inset-bottom,0px))}
+  .app-shell[data-screen="combat"],.app-shell:not(:has(>.topbar)){--m-nav-h:0px}
+  .footer-tip{display:none}
+
+  /* ---- Topo: uma linha com os recursos e o Menu; o sino da Guilda fica no canto. ---- */
+  /* Sem backdrop-filter: ele faz do topo o bloco de contenção dos filhos position:fixed, e a barra do rodapé (que
+     mora dentro do topo) ficava presa em cima. O fundo já é quase opaco. */
+  .app-shell>.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;height:auto;min-height:0;padding:calc(6px + env(safe-area-inset-top,0px)) 52px 6px 8px;gap:6px;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .app-shell[data-screen="combat"]>.topbar{padding-right:8px}
+  .app-shell>.topbar>.hud{flex:1 1 auto;min-width:0;margin:0;display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:4px 3px}
+  .topbar .hud-vital{gap:3px}
+  .topbar .hud-vital>svg{width:17px;height:17px}
+  .topbar .hud-vital strong,.topbar .hud-resource strong,.topbar .hud-level strong{font-size:.8rem;letter-spacing:-.01em}
+  /* Recursos sem a cápsula (borda e fundo) para caberem numa linha com o Menu e o sino. */
+  .app-shell .topbar .hud-resource,.app-shell .topbar .hud-level{min-height:30px;padding:0 2px;gap:3px;border:0;background:none;box-shadow:none}
+  .topbar .hud-resource>svg,.topbar .hud-level>svg{width:15px;height:15px}
+  .topbar .hud-level small{display:none}
+  .topbar .ui-mode-toggle{display:none}
+  .app-shell[data-screen="combat"] .save-indicator{display:none}
+  .topbar .menu-dropdown-wrap{margin-left:auto}
+  .topbar .menu-mini{min-width:42px;min-height:40px;padding:0 10px;gap:0;justify-content:center;font-size:0}
+  .topbar .menu-mini svg{width:20px;height:20px}
+  .topbar .menu-mini .menu-caret{display:none}
+  .topbar .guild-herald{position:fixed;top:calc(6px + env(safe-area-inset-top,0px));right:6px;z-index:46}
+  .topbar .guild-herald-toggle{width:40px;height:40px}
+  .guild-herald-panel{position:fixed;top:calc(56px + env(safe-area-inset-top,0px));right:8px;left:8px;bottom:auto;width:auto;max-width:none;margin:0;max-height:calc(100dvh - 72px - var(--m-nav-h) - env(safe-area-inset-bottom,0px));overflow-y:auto}
+
+  /* ---- Navegação no rodapé, ao alcance do polegar (os dois modos). ---- */
+  .app-shell>.topbar>nav{position:fixed;left:0;right:0;bottom:0;z-index:45;display:flex;flex-wrap:nowrap;align-items:stretch;width:auto;height:auto;min-height:0;margin:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));gap:2px;border-top:1px solid #5a3f1e;background:rgba(11,8,6,.97);box-shadow:0 -10px 26px rgba(0,0,0,.5)}
+  .app-shell[data-screen="combat"]>.topbar>nav{display:none}
+  /* Moderno: os 6 grupos dividem a largura; o grupo atual ganha espaço para o nome, os outros mostram só o ícone. */
+  .topbar>nav.nav-modern .nav-groups{display:flex;flex:1 1 auto;width:100%;min-width:0;gap:2px}
+  .topbar>nav.nav-modern .nav-groups>*{flex:1 1 0;min-width:0;display:flex}
+  .topbar>nav.nav-modern .nav-groups>.nav-group-btn.active,.topbar>nav.nav-modern .nav-groups>.nav-group:has(>.nav-group-btn.active){flex-grow:1.9}
+  .topbar>nav.nav-modern .nav-group{position:static}
+  .app-shell .topbar>nav.nav-modern .nav-group-btn{position:relative;flex:1 1 0;width:auto;min-width:0;min-height:50px;flex-direction:column;justify-content:center;align-items:center;gap:3px;padding:5px 2px;font-size:.66rem;letter-spacing:.02em}
+  .app-shell .topbar>nav.nav-modern .nav-group-btn>svg:first-child{width:21px;height:21px}
+  .app-shell .topbar>nav.nav-modern .nav-group-btn .nav-group-label{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.1}
+  .app-shell .topbar>nav.nav-modern .nav-group-btn:not(.active) .nav-group-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .app-shell .topbar>nav.nav-modern .nav-group-btn .nav-group-caret{display:block;position:absolute;top:4px;right:4px;width:9px;height:9px;transform:rotate(180deg);opacity:.7}
+  /* Os submenus (ex.: Expedição → Mapa, Masmorras, Crônicas) abrem para cima, acima da barra. */
+  .topbar>nav.nav-modern .nav-group-menu{position:fixed;left:8px;right:8px;top:auto;bottom:calc(var(--m-nav-h) + env(safe-area-inset-bottom,0px) + 6px);min-width:0;width:auto;margin:0;max-height:calc(100dvh - 150px);overflow-y:auto}
+  .topbar>nav.nav-modern .nav-group-menu>button{min-height:48px;font-size:.95rem}
+  .topbar>nav.nav-modern .nav-group-menu::before{content:attr(aria-label);display:block;padding:4px 12px 6px;color:#b99a62;font:800 .66rem/1.2 Inter,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+  /* Clássico: as 13 telas numa faixa rolável; a tela atual é centralizada (efeito em TopBar). */
+  .app-shell .topbar>nav:not(.nav-modern){justify-content:flex-start;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none}
+  .app-shell .topbar>nav:not(.nav-modern)::-webkit-scrollbar{display:none}
+  .app-shell .topbar>nav:not(.nav-modern)>button{flex:0 0 62px;min-height:52px;flex-direction:column;justify-content:center;align-items:center;gap:3px;padding:5px 2px;scroll-snap-align:start}
+  .app-shell .topbar>nav:not(.nav-modern)>button>svg{width:20px;height:20px}
+  .app-shell .topbar>nav:not(.nav-modern) .nav-tooltip{font-size:.66rem;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* Avisos flutuantes ficam acima da barra do rodapé (ou do painel de ações no combate), sem cobrir botões. */
+  /* "Progresso salvo" vira só o ícone de confirmação: salva a cada ação e cobria menus e botões. O texto continua
+     no DOM para leitores de tela. */
+  .save-indicator{top:calc(58px + env(safe-area-inset-top,0px));right:10px;bottom:auto;width:28px;height:28px;padding:0;justify-content:center;border-radius:50%;font-size:0;gap:0}
+  .save-indicator>svg{width:15px;height:15px}
+  .app-shell:not(:has(>.topbar)) .save-indicator{top:calc(8px + env(safe-area-inset-top,0px))}
+  body::after{bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+  .consumable-result{left:12px;right:12px;bottom:calc(var(--m-nav-h) + env(safe-area-inset-bottom,0px) + 12px);max-width:none}
+  .story-toast-banner{bottom:calc(var(--m-nav-h) + env(safe-area-inset-bottom,0px) + 12px);width:calc(100vw - 24px);max-width:none}
+  .tour-overlay{padding-bottom:calc(var(--m-nav-h) + env(safe-area-inset-bottom,0px) + 10px)}
+  .vc-actions{bottom:calc(var(--m-nav-h) + env(safe-area-inset-bottom,0px) + 8px)}
+
+  /* ---- Combate: arena compacta com herói e inimigo lado a lado, resultado dos dados logo abaixo, e as ações num
+     painel preso ao rodapé, sempre à mão. Ordem de leitura: quem está vivo → o que aconteceu → o que faço. ---- */
+  .app-shell .combat-v033{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:8px;height:auto;min-height:0}
+  .app-shell .combat-v033>*{flex:1 1 100%;min-width:0;margin:0}
+  .app-shell .combat-v033>.screen-intro,.app-shell .combat-v033>.combat-tip{display:none}
+  .app-shell .combat-v033>.battle-summary-strip{order:1;flex:1 1 55%;display:flex;gap:6px;min-height:0}
+  .app-shell .combat-v033>.battle-summary-strip>span{flex:1 1 0;min-width:0;min-height:40px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:6px;padding:5px 9px}
+  .app-shell .combat-v033>.battle-summary-strip>span:nth-child(3){display:none}
+  .app-shell .combat-v033>.battle-summary-strip small{font-size:.62rem;line-height:1.1}
+  .app-shell .combat-v033>.battle-summary-strip strong{font-size:.95rem}
+  .app-shell .combat-v033>.combat-controls-strip{order:2;flex:0 0 auto;display:flex;padding:0;border:0;background:none;box-shadow:none;min-height:0}
+  .app-shell .combat-auto-toggle{min-height:40px;padding:0 11px;font-size:.7rem}
+  .app-shell .combat-v033>.combat-hero-area{order:3;flex:1 1 40%;display:flex;flex-direction:column;gap:6px}
+  .app-shell .combat-v033>.combat-enemy-area{order:4;flex:1 1 40%;display:flex;flex-direction:column;gap:6px}
+  .app-shell .combat-v033 .combat-hero-area>.fighter,.app-shell .combat-v033 .combat-enemy-area>.fighter{flex:none;min-height:0;height:clamp(236px,66vw,310px)}
+  .app-shell .combat-v033 .hero-energy-meter,.app-shell .combat-v033 .hero-ultimate-intent{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px 6px;min-height:0;margin:0;padding:6px 9px}
+  .app-shell .combat-v033 .hero-energy-meter>small,.app-shell .combat-v033 .hero-ultimate-intent>small{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-size:.64rem}
+  .app-shell .combat-v033 .hero-energy-meter>strong,.app-shell .combat-v033 .hero-ultimate-intent>strong{font-size:.8rem}
+  .app-shell .combat-v033 .hero-energy-meter>.energy-track,.app-shell .combat-v033 .hero-ultimate-intent>.ultimate-track{grid-column:1/-1;margin:0}
+  .app-shell .combat-v033 .enemy-intent{order:-1;min-height:0;margin:0;padding:7px 9px}
+  .app-shell .combat-v033 .enemy-intent>small{font-size:.6rem}
+  .app-shell .combat-v033 .enemy-intent>strong{font-size:.9rem;line-height:1.15}
+  .app-shell .combat-v033 .enemy-intent>span{font-size:.72rem;line-height:1.3}
+  .app-shell .combat-v033>.combat-dice-area{order:5;min-height:0;padding:10px}
+  .app-shell .combat-v033>.combat-dice-area>.panel-title{display:none}
+  .app-shell .combat-v033 .combat-action-callout{min-height:0;margin-bottom:8px;padding:7px 10px}
+  .app-shell .combat-v033 .combat-action-callout>span{display:none}
+  .app-shell .combat-v033 .combat-dice-roll .damage-steps{display:none}
+  .app-shell .combat-v033>.combat-consumables-area{order:6}
+  .app-shell .combat-v033>.combat-effects-area{order:7}
+  .app-shell .combat-v033>.combat-log-area{order:8;min-height:0}
+  .app-shell .item-ability-use{min-height:40px;min-width:62px}
+  /* Painel de ações preso ao rodapé. Linha 1: Atacar (metade da largura), habilidade, Fervor. Linha 2: posturas,
+     fuga, Golpe Supremo. O Conjurador ganha uma linha para escolher a fera enquanto ainda pode invocar. */
+  .app-shell .combat-v033>.combat-actions-area{order:9;position:sticky;bottom:0;z-index:25;flex-basis:calc(100% + 24px);min-height:0;margin:2px -12px -12px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));border-width:1px 0 0;border-radius:16px 16px 0 0;background:linear-gradient(180deg,rgba(30,20,12,.98),rgba(10,7,5,.99));box-shadow:0 -12px 30px rgba(0,0,0,.65)}
+  .app-shell .combat-v033>.combat-actions-area>.panel-title{display:none}
+  /* O aviso de turno (antes só do Moderno) aparece nos dois modos no celular: com as ações presas no rodapé, é ele
+     que diz de quem é a vez quando os botões ficam apagados. */
+  .app-shell .combat-actions-area .combat-turn-banner{margin:0 0 7px;min-height:0;padding:4px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .app-shell .combat-actions-area .combat-turn-banner>span{font-size:.62rem}
+  .app-shell .combat-actions-area .combat-turn-banner>strong{font-size:.8rem;line-height:1.2;text-align:right}
+  .app-shell .combat-actions-area .coop-defeated-notice{margin:0 0 7px;font-size:.72rem}
+  .app-shell .combat-actions-area .combat-actions-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:row dense;gap:6px;margin:0}
+  .app-shell .combat-actions-grid>*{grid-column:span 3;min-width:0;margin:0}
+  .app-shell .combat-actions-grid>.attack-btn{grid-column:span 6;order:1}
+  .app-shell .combat-actions-grid>.skill-action,.app-shell .combat-actions-grid>.summon-choice-row{order:2}
+  .app-shell .combat-actions-grid>.summon-choice-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .app-shell .combat-actions-grid>.fervor-action{order:3}
+  .app-shell .combat-actions-grid>.stance-row{grid-column:span 6;order:4;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:0}
+  .app-shell .combat-actions-grid>.flee-action{order:5}
+  .app-shell .combat-actions-grid>.ultimate-action-btn{order:6}
+  /* Botões secundários: ícone em cima e o nome embaixo, em Inter (mais estreita que a serifada) para as palavras
+     não quebrarem no meio ("Defensiv-a"). */
+  .app-shell .combat-actions-grid .premium-action{width:100%;min-width:0;min-height:50px;height:auto;margin:0;padding:5px 4px;flex-direction:column;gap:3px;font:700 .68rem/1.15 Inter,system-ui,sans-serif;letter-spacing:0;white-space:normal;text-align:center;justify-content:center;align-items:center}
+  .app-shell .combat-actions-grid .premium-action>svg{flex:none;width:16px;height:16px}
+  .app-shell .combat-actions-grid>.attack-btn{width:100%;min-width:0;min-height:56px;height:auto;margin:0;padding:6px;flex-direction:row;gap:7px;justify-content:center;align-items:center;font-size:1.05rem}
+  .app-shell .combat-actions-grid>.attack-btn>svg{width:20px;height:20px}
+  .app-shell .combat-actions-grid>.stance-row>button{min-height:48px;padding:4px 2px;gap:2px;font-size:.64rem}
+  .app-shell .combat-actions-grid>.stance-row>button>svg{width:15px;height:15px}
+
+  /* ---- Região: o mapa andável é o jogo. Vem logo depois de um cabeçalho curto; a navegação entre regiões, os
+     personagens e os avisos ficam abaixo dele. ---- */
+  .app-shell .region-page{display:flex;flex-direction:column;gap:10px;height:auto;min-height:0}
+  .app-shell .region-page>*{min-width:0;margin:0}
+  .app-shell .region-page>.region-head{order:1}
+  .app-shell .region-page>.regionmap-shell,.app-shell .region-page>.subregion-grid,.app-shell .region-page>.subregion-list-back{order:2}
+  .app-shell .region-page>.exploration-note{order:3}
+  .app-shell .region-page>.region-step-nav{order:4}
+  .app-shell .region-page>.region-npcs-bar{order:5}
+  .app-shell .region-head{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 12px;padding:10px 12px!important}
+  .app-shell .region-head>.region-back{grid-row:1/3;align-self:center;width:auto;min-width:48px;min-height:48px;margin:0;padding:0 10px;flex-direction:column;gap:1px;font-size:.66rem}
+  .app-shell .region-head>div:not(.region-side-actions){min-width:0}
+  .app-shell .region-head h1{margin:1px 0 0;font-size:1.25rem;line-height:1.15}
+  .app-shell .region-head p{display:none}
+  .app-shell .region-head .region-side-actions{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+  .app-shell .region-head .region-level{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 6px;margin:0;padding:0;border:0;text-align:left}
+  .app-shell .region-head .region-level small,.app-shell .region-head .region-level span{font-size:.72rem}
+  .app-shell .region-head .region-level strong{font-size:.95rem}
+  .app-shell .region-head .region-world-button{width:auto;min-height:40px}
+  /* O mapa usa a altura que sobra na tela (até o tamanho máximo da câmera, 12 tiles = 576px). */
+  .app-shell .regionmap-shell{grid-template-rows:clamp(320px,calc(100dvh - 290px),576px) auto auto auto}
+  .app-shell .regionmap-frame{min-height:0}
+  .regionmap-zoom-hud button{min-width:36px;min-height:36px}
+  /* O título do palco repetia o cabeçalho e ficava sob o zoom; o fundo escuro do direcional cobria meio mapa. */
+  .app-shell .regionmap-stage-title{display:none}
+  .app-shell[data-region-theme] .regionmap-controls,.app-shell .regionmap-controls{border:0;background:transparent;box-shadow:none}
+  .regionmap-dpad button{opacity:.92}
+
+  /* ---- Listas de filtros viram faixas roláveis de uma linha (Forja Clássica ocupava 5 linhas; Guilda, 3). ---- */
+  .app-shell .forge-category-tabs,.app-shell .guild-filter{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;margin-inline:-4px;padding:2px 4px 8px;scrollbar-width:none}
+  .app-shell .forge-category-tabs::-webkit-scrollbar,.app-shell .guild-filter::-webkit-scrollbar{display:none}
+  .app-shell .forge-category-tabs>button,.app-shell .guild-filter>button{flex:0 0 auto;width:auto;min-height:40px;white-space:nowrap}
+  .recipe-more{margin-top:12px}
+
+  /* ---- Legibilidade e toque. Rótulos medidos entre 7 e 9px no celular sobem para ~10,5px; botões com menos de 40px
+     de altura (abaixo do mínimo confortável para o dedo) crescem. ---- */
+  .map-index-totals small,.map-index-region-button small,.map-sub-pin>b,.map-active-missions article header small,
+  .guild-current-rank small,.guild-rank-road>span,.challenge-kind,.guild-summary small,.guild-vault-stats small,
+  .guild-mission>header small,.guild-fast-travel small,.guild-reward small,.guild-delivery-item>em,
+  .region-step-nav small,.region-step-nav em,.regionmap-details small,.regionmap-loot>small,.regionmap-navigation small,
+  .combat-log-turn>small,.combat-roll-label{font-size:.66rem}
+  .map-active-missions button,.map-mission-guild-link,.map-mission-empty button,.danger-action,.pd-unequip,.sort-bag-btn,
+  .camp-link,.guild-reset-rank,.challenge-card button{min-height:40px}
+  .shop-row-action button{min-height:44px}
+}
+@media (max-width:430px){
+  /* Cristais de Éter ainda não compram nada e aparecem no Acampamento; em telas estreitas saem do topo para o
+     Menu e o sino caberem na mesma linha. */
+  .topbar .hud-crystals{display:none}
+}
+@media (max-width:380px){
+  /* Em 360px nem assim cabia (o Menu descia para uma segunda linha). A ocupação da mochila continua na Mochila, no
+     Equipamento e no espólio, onde ela decide algo. */
+  .topbar .hud-bag{display:none}
+  .app-shell .region-head .eyebrow{letter-spacing:.06em}
 }
