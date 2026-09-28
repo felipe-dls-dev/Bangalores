@@ -1,75 +1,45 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_UI_MODE, UI_MODE_KEY, getUiMode, resetUiModeCache, setUiMode, subscribeUiMode, toggleUiMode } from './uiMode'
+import { DEFAULT_UI_MODE, UI_MODE_KEY, applyUiMode, getUiMode, useUiMode } from './uiMode'
 import { MODERN_ONLY_SCREEN_LABELS, NAV_GROUPS, groupOfScreen, visibleNavGroups } from './navGroups'
 
 const realStorage = globalThis.localStorage
 
 beforeEach(() => {
   globalThis.localStorage.clear()
-  resetUiModeCache()
 })
 afterEach(() => {
   ;(globalThis as any).localStorage = realStorage
-  resetUiModeCache()
 })
 
-describe('modo de interface (preferência global)', () => {
-  it('começa Clássico por padrão (decisão do Felipe) e ignora valores inválidos', () => {
-    expect(DEFAULT_UI_MODE).toBe('classic')
-    expect(getUiMode()).toBe('classic')
-    globalThis.localStorage.setItem(UI_MODE_KEY, 'algo-estranho')
-    resetUiModeCache()
-    expect(getUiMode()).toBe('classic')
-  })
-
-  it('persiste a escolha e lê de novo depois de "recarregar"', () => {
-    setUiMode('modern')
-    expect(globalThis.localStorage.getItem(UI_MODE_KEY)).toBe('modern')
-    resetUiModeCache() // simula recarregar a página
+describe('modo de interface (Clássico desativado na v0.9.9)', () => {
+  it('é sempre o Moderno, mesmo para quem tinha escolhido o Clássico', () => {
+    expect(DEFAULT_UI_MODE).toBe('modern')
+    globalThis.localStorage.setItem(UI_MODE_KEY, 'classic')
     expect(getUiMode()).toBe('modern')
-    toggleUiMode()
-    expect(getUiMode()).toBe('classic')
-    expect(globalThis.localStorage.getItem(UI_MODE_KEY)).toBe('classic')
+    expect(useUiMode()).toBe('modern')
   })
 
-  it('avisa quem está inscrito e para de avisar depois de cancelar', () => {
-    let calls = 0
-    const unsubscribe = subscribeUiMode(() => calls++)
-    toggleUiMode()
-    toggleUiMode()
-    expect(calls).toBe(2)
-    unsubscribe()
-    toggleUiMode()
-    expect(calls).toBe(2)
-  })
-
-  it('mantém o atributo data-ui-mode do <html> em dia (a tela de login aparece antes do App montar)', () => {
+  it('apaga a preferência antiga e marca o <html> (a tela de login aparece antes do App montar)', () => {
     const fakeDocument = { documentElement: { dataset: {} as Record<string, string> } }
     ;(globalThis as any).document = fakeDocument
     try {
-      resetUiModeCache()
-      expect(getUiMode()).toBe('classic')
-      expect(fakeDocument.documentElement.dataset.uiMode).toBe('classic') // aplicado já na primeira leitura
-      setUiMode('modern')
+      globalThis.localStorage.setItem(UI_MODE_KEY, 'classic')
+      applyUiMode()
       expect(fakeDocument.documentElement.dataset.uiMode).toBe('modern')
-      toggleUiMode()
-      expect(fakeDocument.documentElement.dataset.uiMode).toBe('classic')
+      expect(globalThis.localStorage.getItem(UI_MODE_KEY)).toBeNull()
     } finally {
       delete (globalThis as any).document
     }
   })
 
-  it('sem localStorage utilizável o botão continua funcionando na sessão', () => {
-    const throwing = {
+  it('não quebra com o armazenamento bloqueado', () => {
+    ;(globalThis as any).localStorage = {
       getItem() { throw new Error('bloqueado') },
-      setItem() { throw new Error('bloqueado') },
+      removeItem() { throw new Error('bloqueado') },
     }
-    ;(globalThis as any).localStorage = throwing
-    resetUiModeCache()
-    expect(getUiMode()).toBe('classic')
-    expect(() => setUiMode('modern')).not.toThrow()
+    expect(() => applyUiMode()).not.toThrow()
     expect(getUiMode()).toBe('modern')
   })
 })

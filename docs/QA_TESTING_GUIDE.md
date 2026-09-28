@@ -5,6 +5,11 @@ browser and checks that recent work looks and behaves right. It complements
 `VISUAL_DEVELOPMENT_HANDOFF.md` (the Codex/Claude Code content contract) — that one is about
 producing art and mechanics; this one is about verifying the result by playing it.
 
+> **Interface mode (since v0.9.9, 2026-09-28):** the Classic mode was disabled; the game only runs the
+> Modern interface and there is no toggle anymore (`src/ui/uiMode.ts` always returns `'modern'` and
+> deletes the old `bangalores-ui-mode` key). Test only the Modern interface. Older entries below that
+> mention the Classic mode or switching modes are historical.
+
 ## Autonomy & authorization
 
 Felipe has authorized Antigravity to edit any file in this repository directly — code, data,
