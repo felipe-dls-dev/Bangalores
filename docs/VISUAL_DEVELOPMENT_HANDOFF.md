@@ -62,12 +62,14 @@ Read it before starting work. Update it in the same change that delivers or cons
 | Mini-map / radar HUD | Removed | Product decision 2026-09-13: dropped in favor of fog of war (showing the full layout on a radar defeated the point of hiding it). No art impact — it only used inline SVG shapes. |
 | Weather + day/night effects | Available | ART-012/ART-013 integrated: weather on Frostgard/Vulcannis/Ferrujal/Coroferro, day/night cycle global (cosmetic only). |
 | Boss portraits | 15 unique, rest shared | ART-016 through ART-020 integrated; remaining bosses still reuse a shared portrait until a future request covers them. |
-| Story cinematics | Available | ART-015 integrated: one banner per act plus both endings. |
+| Story cinematics | Acts 1-4 available; 5-7 and chapter scenes requested | ART-015 integrated: one banner per act plus both endings. v0.9.12 extended the Chronicle to Acts 5-7 and 30 new chapters: ART-037 (act 5-7 + final epilogue) and ART-038 (one scene per new chapter) requested. |
 
 ## Production Queue
 
 | Priority | Request | Owner now | Status | Visual deliverables |
 | --- | --- | --- | --- | --- |
+| P1 | Story cinematics for Acts 5-7 and the final epilogue | Codex | REQUESTED | See ART-037 -- `act-05-crossing`, `act-06-furnace`, `act-07-reactor`, `ending-two-worlds` (1280x720 WebP). |
+| P2 | Chronicle chapter scenes for the 30 new chapters | Codex | REQUESTED | See ART-038 -- `public/assets/story/cinematics/chapters/<chapter-id>.webp`, one per chapter id in `src/data/storyExpansion.ts`. |
 | P1 | NPC quest portraits | Codex + Claude Code | PARTIAL DELIVERY | 13 integrated; 7 portraits remain queued. |
 | P0 | Steelmere all 7 territory maps | — | DONE | All delivered and integrated, see ART-001 and ART-005 through ART-010. |
 | P1 | Fog of war | Claude Code | SHIPPED (v1) | Tile-radius reveal + flat CSS mask, no art dependency. Old saves that already walked a region keep it fully revealed there (no retroactive fog). |
@@ -715,6 +717,72 @@ Optional (P2):
 Style: same painterly dark fantasy as the story cinematics and the camp cards; violet-blue night sky, amber fire, aged gold. No text, logo or UI baked in. Do NOT reuse or overwrite `camp-banner.webp` (the old banner crops the warrior's face).
 Code dependency: Claude Code adds each delivered file to `SCENE_ART` in `src/ui/screenIdentity.ts` and passes `art=` on that screen's `ScreenMasthead`. Codex must not edit `src/`.
 Acceptance check: exact dimensions; WebP under ~250 KB each; left 40% calm on desktop; subject within the centered 4:3 safe area on mobile; every final path listed here.
+
+### ART-037 - Story cinematics for Acts 5-7 and the final epilogue
+Status: REQUESTED
+Requested by: Claude Code, on behalf of Felipe (2026-09-28)
+Gameplay purpose: v0.9.12 extended the Chronicle (`STORY_CHAPTERS`, see `docs/STORY_CHOICES_EXPANSION.md`) into Steelmere: Acts 5, 6 and 7 plus a closing chapter `epilogo_dois_mundos`. ART-015 only covers Acts 1-4 and the two Havendown endings, so every Steelmere chapter shows no scene today in the Chronicle banner, the Crônicas header, the Acampamento chapter card and the victory header.
+Required assets (P1):
+- `public/assets/story/cinematics/act-05-crossing.webp` -- Act 5 "A Grande Travessia" (Frostgard → Trilhouro). A Havendown expedition ship reaching the frozen steam-port of Frostgard at dawn: drilling rigs biting into glaciers, sirens and steam plumes, and thick brass cables descending from the sky into the sea (the cables that drain Havendown's Éter). Cold blue-white palette, amber harbor lamps.
+- `public/assets/story/cinematics/act-06-furnace.webp` -- Act 6 "A Fornalha dos Esquecidos" (Vulcannis → Ferrujal). The colossal boiler foundry of Vulcannis glowing red under dangerous pressure (gauges past the red, valves venting), and in the lower half the rust marsh of Ferrujal: decommissioned automatons half-sunk in toxic green pools. Red-orange above, sickly green below.
+- `public/assets/story/cinematics/act-07-reactor.webp` -- Act 7 "O Pulso de Dois Mundos" (Coroferro → Aetherium). The Grand Clock Tower of Coroferro in the foreground; behind it the Aetherium reactor: a ring of giant pistons around a pulsing violet-cyan core that reads as ALIVE (an imprisoned consciousness, not a machine), aether streams rising into the sky. Violet and cyan with aged brass.
+- `public/assets/story/cinematics/ending-two-worlds.webp` -- chapter `epilogo_dois_mundos` "Dois Mundos, Uma Corrente". A horizon split by the sea at dusk: Havendown's green hills and runic ruins with the Guild banner on one side, Steelmere's brass chimneys on the other, joined by ONE current of light flowing across the water. Calm and hopeful. At most one small hero silhouette on a cliff. It must NOT depict a specific campaign ending (harmonia / soberania / trono vazio are decided elsewhere) -- no throne, no destroyed reactor, no crown.
+Target paths: exactly the four above (same folder as ART-015).
+Canvas dimensions / tile scale: 1280x720, WebP RGB, 16:9, under ~300 KB each (ART-015 files are 115-330 KB).
+Transparency required: no.
+Composition (read before painting): the same file is framed four ways. Chronicle banner: full width, bottom fades out. Crônicas header on desktop: the scene fills the right ~66% and fades toward the left, so keep the LEFT ~35% calm and dark (no faces, no focal point there). Phones: a centered band, so the main subject must sit inside the centered 4:3 area and never touch an edge. Acampamento card: small crop around the center.
+Visual references or territory: match `act-01-havendown.webp` … `ending-throne.webp` exactly in painterly dark-fantasy rendering, lighting and texture. Steelmere mood from the Steelmere map backgrounds (ART-001, 005-010) and boss art in `public/assets/art/hd/bosses/steelmere/` (e.g. `tirano-mecanico-coroferro-hd.webp`, `arquiteto-de-steelmere-hd.webp`). No text, logo or UI baked in.
+Code dependency: Claude Code maps `chapter.act` 5/6/7 to the three act files and `epilogo_dois_mundos` to `ending-two-worlds` in `storyChapterArt` (`src/main.tsx`) after delivery. Codex must not edit `src/`.
+Acceptance check: 4 files, exactly 1280x720, WebP, under ~300 KB; left 35% calm; subject inside the centered 4:3 area; side by side with the ART-015 files they read as the same series.
+
+### ART-038 - Chronicle chapter scenes (30 new chapters)
+Status: REQUESTED
+Requested by: Claude Code, on behalf of Felipe (2026-09-28)
+Gameplay purpose: v0.9.12 added 30 chapters to the Chronicle (ids and full text in `src/data/storyExpansion.ts`; design in `docs/STORY_CHOICES_EXPANSION.md`). Today every chapter of an act shares that act's cinematic. One scene per chapter makes each decision feel like its own moment. Each chapter scene replaces the act cinematic only for that chapter; chapters without a scene keep using the act art.
+Required assets (P2), one per chapter, at `public/assets/story/cinematics/chapters/<chapter-id>.webp`. Each brief names the place, who is there and the dramatic subject. NPC and boss references are real files -- keep their faces and costumes consistent with them.
+Act 1 (Planícies de Alvora, golden farmland, harvest dusk):
+- `agua_que_brilha` -- the village well of Valedouro glowing an unnatural metallic cyan at night, cyan mist curling out of it; Sela Hartwin (ref `public/assets/npcs/sela_hartwin.webp`) holding a lantern and a stoppered vial, worried villagers keeping their distance.
+- `espantalho_de_valedouro` -- a wheat field at sunset guarded by the Barão Espantalho (ref boss art `public/assets/art/hd/named-bosses/boss-020.jpg`) wearing an ill-fitting steel breastplate; Colm Aldric (ref `colm_aldric.webp`) peeking from behind a haystack, embarrassed.
+- `carga_sem_dono` -- the Ponte de Eldrimar after an ambush: an overturned medicine wagon, crates of potions spilled on the stone bridge, smoke; Toby Harlan (ref `toby_harlan.webp`) eyeing the loot a little too eagerly.
+- `selos_de_latao` -- the Havendown guild hall at night; Brenna Ashcombe (ref `brenna-ashcombe.webp`) at her desk examining bandit tools stamped with small brass seals, golden fiber (Fibra Dourada) bundles tying a stack of reports.
+Act 2 (Floresta de Abdendriel → Serra de Kaldrum → Kholgard):
+- `diplomacia_goblin` -- a forest clearing: a band of goblins around their chief (ref `boss-004.jpg`) sitting for a parley on a log; Kip Pé-Ligeiro (ref `kip_ligeiro.webp`) hiding behind a tree in the foreground, terrified.
+- `reflexo_que_mente` -- the Lago do Espelho under a silver moon; the still water reflects a black sun where the moon should be; Mestra Lyriel (ref `lyriel_noite.webp`) kneeling at the shore.
+- `raizes_que_choram` -- the roots of the Árvore Anciã (ref `boss-024.jpg` for the corrupted forest heart) pierced by cold brass pipes that hum and glow; sap weeping from the wounds like tears.
+- `neve_com_gosto_de_oleo` -- the snowy Passagem da Serra de Kaldrum at night: unfamiliar drilling machines lit by work lamps, oily black snow around them; Torvald Barbaneve (ref `torvald_barbaneve.webp`) and dwarf miners watching angrily from the rocks.
+- `o_ceu_tem_opiniao` -- the Cume do Trovão summit in a lightning storm: an astronomer's brass telescope and star charts pinned against the wind; the constellations above are visibly out of place, as if pushed. (Irmã Astrid, "Astróloga do Vento Alto", eccentric, windswept -- no portrait exists yet, keep her small or from behind.)
+- `os_que_nao_voltaram` -- the entrance of the Mina dos Anões Caídos: collapsed timber supports, a rescue team with lanterns and ropes, Torvald leading them down into the dark.
+- `o_labirinto_tem_senha` -- a rune-carved stone labyrinth corridor in Kholgard, a glowing rune lock on a wall; the silhouette of the Minotauro Ancestral (ref `boss-016.jpg`) at the far end of the corridor; Borin Fenrick (ref `borin-fenrick.webp`) squinting at the runes.
+- `cofre_dos_reis` -- the Cofre dos Reis Anões: a vault of gold and dwarven tombs, and on a pedestal HALF of a broken crown, cold and faintly whispering (dark violet glow); Borin at the threshold, hat in hand.
+Act 3a (Pico de Ignaris, volcanic, ember-orange):
+- `fogo_de_segunda_mao` -- a volcanic slope where the lava has cooled to a dull red; Ophira Vane (ref `ophira_vane.webp`) measuring it with a strange brass thermometer, an apprentice holding a notebook, heat visibly being drawn down into cracks.
+- `aco_que_respira` -- the Forja dos Draconatos: draconian smiths (ref `boss-030.jpg`) forging a blade that exhales fire; Cassian Draye (ref `cassian_draye.webp`) watching with crossed arms, pretending not to be impressed.
+- `fenix_presa` -- the Cratera do Sol Morto: the Fênix do Sol Morto (ref `boss-031.jpg`) rising from its ashes darker each time, chained by its own cycle; a master armorer (Alaric Thorne, dramatic, no portrait yet -- keep him small) reaching toward the flames.
+- `tesouro_de_ignaroth` -- inside the dragon's nest: Ignaroth (ref `boss-011.jpg`) coiled around a hoard of ten kingdoms' gold, head lowered to face the viewer, calm and ancient.
+Act 3b (Terras de Morvath, cold violet-grey, fog):
+- `mortos_nao_pagam_aluguel` -- a Morvath village street at night where translucent ghosts go about daily life; Gideon Mascarado (ref `gideon_mascarado.webp`) presenting three relics on a velvet cloth.
+- `prefeito_sem_face` -- the Vila dos Sem-Rosto: villagers with blank, smooth faces; the Prefeito sem Face (ref `boss-032.jpg`) on the town hall steps; a priest (Padre Lucian, "Coveiro das Almas Perdidas", somber, no portrait yet) writing names in a nearly empty book by candlelight.
+- `selos_rompidos` -- the Catacumbas de Morvath: broken seal-stones cracked by drill marks, dead hands reaching through the gaps; candles of a vigil laid around the broken seals.
+- `quem_paga_os_necromantes` -- the Torre da Necromancia library: ledgers and piles of brass coins on a necromancer's desk, a window showing the sea; Gideon reading a ledger with a mischievous smile.
+Act 4 (Reino do Sol Negro, black sun, violet void):
+- `porteiro_do_fim` -- the Portões do Sol Negro: colossal black gates under a black sun, guarded by Asterion (ref `boss-017.jpg`); the Oráculo Danika (ref `oraculo_danika.webp`) standing beside the traveler, unmoved.
+- `o_que_vaelora_viu` -- the Torre do Véu Partido: Vaelora, Senhora do Véu (ref `boss-018.jpg`) at a torn veil in the sky, through which brass cables descend from far across the sea.
+- `cronista_do_fim` -- the Arquivo das Eras Perdidas: endless shelves, the Cronista do Fim (ref `boss-039.jpg`) holding out a book of possible endings, some pages burning on their own.
+Acts 5-7 (Steelmere, brass, steam, industrial):
+- `carga_nao_declarada` -- a Frostgard drilling convoy in a blizzard: a sealed cargo container glowing green from inside, something forest-like trapped in it; a stern captain in a fur-lined naval coat (Capitã Vanya, "Comandante da Rota do Gelo", dry and severe, no portrait yet).
+- `flores_de_cobre` -- the Estufa de Vapor of Engrenverde: copper roses whose stems turn tiny gears, one of them biting a glove; Garrick Engrenafolha (ref `garrick_laton.webp`) delighted; a pipe labelled only by its glow bringing green sap from far away.
+- `greve_nos_trilhos` -- the Trilhos do Grão of Trilhouro: stopped trains, workers on a picket line with banners (no readable text), a fiery organizer on a crate (Maeve Faísca, "Voz dos Trabalhadores", passionate, no portrait yet) facing a nervous inspector (ref `silas_sterling.webp`).
+- `caldeira_no_vermelho` -- inside the Fundição Colossal: a giant pressure gauge with its needle far past red, steam jets, a cheerful stout engineer (Mestre Ignatius Drake, "Controlador da Grande Fornalha", jovial, no portrait yet) holding a huge wrench.
+- `os_que_foram_desligados` -- the Cemitério de Autômatos in Ferrujal: rows of switched-off automatons in rusty water; one of them (Unidade 73) has lit eyes and is sitting up, looking at the viewer.
+- `baile_do_magnata` -- a lavish ballroom in Coroferro: chandeliers, clockwork decorations, aristocrats; a pompous magnate raising a toast (Lorde Hamilton Cross, "Magnata de Coroferro", no portrait yet); in a corner a nervous architect (Dra. Elian Vance) secretly passing a folded note.
+- `consciencia_no_reator` -- the heart of the Aetherium reactor: a vast pulsing violet-cyan core inside a ring of pistons; the custodian Corvin Vane (ref `diretor_vane.webp`) standing before it, grave; the core's light bends toward him as if listening.
+Target paths: `public/assets/story/cinematics/chapters/<chapter-id>.webp`, with the ids exactly as above (they are the `id` fields in `src/data/storyExpansion.ts`).
+Canvas dimensions / tile scale: 1280x720, WebP RGB, 16:9, under ~250 KB each.
+Transparency required: no.
+Composition: identical rules to ART-037 (left ~35% calm; subject inside the centered 4:3 area; nothing important touching an edge).
+Visual references or territory: same series as ART-015 / ART-037. Keep every referenced NPC and boss recognizable. Characters without a portrait (Astrid, Alaric, Lucian, Vanya, Maeve, Ignatius, Hamilton, Elian) are small, turned away or in silhouette, so a future portrait is not contradicted. No text, logo or UI baked in; banners and signs stay unreadable.
+Code dependency: Claude Code adds a chapter-scene lookup in `storyChapterArt` (`src/main.tsx`) listing only the delivered ids, falling back to the act cinematic for the rest. Partial deliveries are fine: list exactly which ids were delivered. Codex must not edit `src/`.
+Acceptance check: every delivered file is exactly 1280x720 WebP under ~250 KB at the exact path; a contact sheet of the delivered files next to `act-01-havendown.webp` reads as one series.
 
 ## Handoff Log
 
