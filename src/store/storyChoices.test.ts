@@ -1,4 +1,6 @@
+import { existsSync, statSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
+import storyScenes from '../data/storyScenes.json'
 import { FORGE_MATERIALS, REGION_MATERIALS, STORY_CHAPTERS } from '../data/expansion'
 import { STORY_EXPANSION_CHAPTERS } from '../data/storyExpansion'
 import { STORY_CAPS, fx, parseStoryEffect, storyTotals } from '../data/storyEffects'
@@ -72,6 +74,22 @@ describe('Crônicas: dados da expansão', () => {
 
   it('toda escolha dos capítulos novos tem efeito real', () => {
     for (const c of STORY_EXPANSION_CHAPTERS) for (const ch of c.choices) expect(ch.effects?.length, `${c.id} › ${ch.id}`).toBeGreaterThan(0)
+  })
+})
+
+describe('Crônicas: arte dos capítulos', () => {
+  const cinematic = (name: string) => `public/assets/story/cinematics/${name}.webp`
+  const present = (path: string) => existsSync(path) && statSync(path).size > 0
+
+  it('toda cena da lista existe em disco e é de um capítulo que existe', () => {
+    for (const id of storyScenes.chapters) {
+      expect(NEW_CHAPTER_IDS.has(id), id).toBe(true)
+      expect(present(cinematic(`chapters/${id}`)), id).toBe(true)
+    }
+  })
+
+  it('os Atos 5 a 7 e o epílogo final têm cinemática', () => {
+    for (const name of ['act-05-crossing', 'act-06-furnace', 'act-07-reactor', 'ending-two-worlds']) expect(present(cinematic(name)), name).toBe(true)
   })
 })
 
