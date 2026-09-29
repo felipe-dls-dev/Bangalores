@@ -1,6 +1,6 @@
 # Crônicas: 90 novas escolhas com efeito
 
-Proposta de conteúdo e de motor para as escolhas da aba **Crônicas › História**. Escrita a partir do código da v0.9.10 (`STORY_CHAPTERS` em `src/data/expansion.ts`, `chooseStory` e `storyModifiers` em `src/store/game.ts`). Nada disto está no jogo ainda.
+Proposta de conteúdo e de motor para as escolhas da aba **Crônicas › História**. Escrita a partir do código da v0.9.10 (`STORY_CHAPTERS` em `src/data/expansion.ts`, `chooseStory` e `storyModifiers` em `src/store/game.ts`). Implementado na v0.9.12 (dados em `src/data/storyExpansion.ts`, efeitos e tetos em `src/data/storyEffects.ts`, testes em `src/store/storyChoices.test.ts`).
 
 ## 1. Resumo
 
